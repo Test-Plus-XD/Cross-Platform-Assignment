@@ -3,7 +3,7 @@
         'name' => 'test-plus/crossplatformassignment',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '619b0195726b994e2951d06899c584f64e406011',
+        'reference' => '3f11661aa5cb8a3cd4c1ff3b66b3c00c07f2cc80',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -76,6 +76,15 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'sentry/sdk' => array(
+            'pretty_version' => '4.0.0',
+            'version' => '4.0.0.0',
+            'reference' => 'fcbca864e8d1dc712f3ecfaa95ea89d024fb2e53',
+            'type' => 'metapackage',
+            'install_path' => null,
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'sentry/sentry' => array(
             'pretty_version' => '4.15.2',
             'version' => '4.15.2.0',
@@ -106,7 +115,7 @@
         'test-plus/crossplatformassignment' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '619b0195726b994e2951d06899c584f64e406011',
+            'reference' => '3f11661aa5cb8a3cd4c1ff3b66b3c00c07f2cc80',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
