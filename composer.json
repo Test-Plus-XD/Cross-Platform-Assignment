@@ -6,5 +6,7 @@
             "email": "Baldwon0xd@gmail.com"
         }
     ],
-    "require": {}
+    "require": {
+        "sentry/sentry": "^4.15"
+    }
 }
