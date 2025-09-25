@@ -1,7 +1,12 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\API",
+    "\\APP",
+    "\\APP\\css",
+    "\\APP\\js",
+    "\\PHP"
   ],
-  "SelectedNode": "\\vendor",
+  "SelectedNode": "\\package.json",
   "PreviewInSolutionExplorer": false
 }
