@@ -3,7 +3,6 @@
 
 .vs
 .env
-node_modules
 
 *~
 *.sw[mnpcod]
