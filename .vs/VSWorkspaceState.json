@@ -1,15 +1,16 @@
 {
   "ExpandedNodes": [
     "",
-    "\\.angular",
-    "\\.angular\\cache",
     "\\src",
     "\\src\\app",
-    "\\src\\app\\home",
+    "\\src\\app\\pages",
+    "\\src\\app\\pages\\home",
+    "\\src\\app\\services",
     "\\src\\assets",
-    "\\src\\assets\\css",
-    "\\src\\assets\\icon",
-    "\\src\\assets\\js"
+    "\\src\\assets\\js",
+    "\\src\\style",
+    "\\src\\theme"
   ],
+  "SelectedNode": "\\src\\app\\app-routing.module.ts",
   "PreviewInSolutionExplorer": false
 }

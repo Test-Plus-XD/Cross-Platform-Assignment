@@ -72,7 +72,7 @@
     "@capacitor/core": "^7.4.3",
     "@ionic/angular-toolkit": "^12.0.0",
     "@ionic/cli": "^7.2.1",
-    "@tailwindcss/cli": "^4.1.13",
+    "@tailwindcss/cli": "^4.1.14",
     "@tailwindcss/postcss": "^4.1.14",
     "@types/jasmine": "~5.1.0",
     "@typescript-eslint/eslint-plugin": "7.11.0",

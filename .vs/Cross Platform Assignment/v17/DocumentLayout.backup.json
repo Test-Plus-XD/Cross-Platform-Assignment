@@ -1,7 +1,28 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\wamp64\\www\\Cross Platform Assignment\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\pages\\home\\home.page.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.html||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\pages\\home\\home.page.html||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\restaurant.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\services\\restaurant.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\language.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\services\\language.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\theme.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:src\\app\\services\\theme.service.ts||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 11,
           "Children": [
             {
               "$type": "Bookmark",
@@ -50,6 +71,71 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "home.page.html",
+              "DocumentMoniker": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.html",
+              "RelativeDocumentMoniker": "src\\app\\pages\\home\\home.page.html",
+              "ToolTip": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.html",
+              "RelativeToolTip": "src\\app\\pages\\home\\home.page.html",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001512|",
+              "WhenOpened": "2025-10-02T09:26:14.414Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "home.page.ts",
+              "DocumentMoniker": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.ts",
+              "RelativeDocumentMoniker": "src\\app\\pages\\home\\home.page.ts",
+              "ToolTip": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\pages\\home\\home.page.ts",
+              "RelativeToolTip": "src\\app\\pages\\home\\home.page.ts",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAdAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-10-02T09:25:53.137Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "restaurant.service.ts",
+              "DocumentMoniker": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\restaurant.service.ts",
+              "RelativeDocumentMoniker": "src\\app\\services\\restaurant.service.ts",
+              "ToolTip": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\restaurant.service.ts",
+              "RelativeToolTip": "src\\app\\services\\restaurant.service.ts",
+              "ViewState": "AgIAACYAAAAAAAAAAAAAAAkAAAAYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-10-02T09:24:28.942Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "language.service.ts",
+              "DocumentMoniker": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\language.service.ts",
+              "RelativeDocumentMoniker": "src\\app\\services\\language.service.ts",
+              "ToolTip": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\language.service.ts",
+              "RelativeToolTip": "src\\app\\services\\language.service.ts",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-10-02T09:18:26.686Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "theme.service.ts",
+              "DocumentMoniker": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\theme.service.ts",
+              "RelativeDocumentMoniker": "src\\app\\services\\theme.service.ts",
+              "ToolTip": "C:\\wamp64\\www\\Cross Platform Assignment\\src\\app\\services\\theme.service.ts",
+              "RelativeToolTip": "src\\app\\services\\theme.service.ts",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-10-02T08:30:14.236Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
             }
           ]
         }
