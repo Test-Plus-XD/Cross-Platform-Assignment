@@ -1,9 +1,11 @@
+// Import Observable utilities
 import { Component, OnInit } from '@angular/core';
+import { Observable, of } from 'rxjs';
+
+// Import your services and types
 import { Restaurant, RestaurantService } from '../../services/restaurant.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -11,31 +13,37 @@ import { map } from 'rxjs/operators';
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
+
 export class HomePage implements OnInit {
-    restaurants$: Observable<Restaurant[]>;
-    lang$ = this.lang.lang$;
-    isDark$ = this.theme.isDark$;
+  // Initialise with an empty observable so that the template is always safe
+  restaurants$: Observable<Restaurant[]> = of([]);
 
-    constructor(
-        private rest: RestaurantService,
-        private lang: LanguageService,
-        private theme: ThemeService
-    ) { }
+  // Expose language stream from LanguageService (emits 'en' or 'tc')
+  lang$ = this.lang.lang$;
 
-    ngOnInit() {
-        this.restaurants$ = this.rest.getAll();
-    }
+  // Expose theme stream from ThemeService (emits true/false for dark mode)
+  isDark$ = this.theme.isDark$;
 
-    toggleTheme() {
-        this.theme.toggle();
-    }
+  // Inject services for data, language and theme
+  constructor(
+    private rest: RestaurantService,
+    private lang: LanguageService,
+    private theme: ThemeService
+  ) { }
 
-    setLang(l: 'EN' | 'TC') {
-        this.lang.setLang(l);
-    }
+  // Lifecycle hook: runs after constructor, good for initial data loading
+  ngOnInit() {
+    // Assign the real restaurant stream from the service
+    this.restaurants$ = this.rest.getAll();
+  }
 
-    // Small helper in template to choose text according to current language
-    showName(item: Restaurant, currentLang: 'EN' | 'TC') {
-        return currentLang === 'TC' ? item.Name_TC || item.Name_EN : item.Name_EN || item.Name_TC;
-    }
+  // Toggle the theme (light/dark)
+  toggleTheme() {
+    this.theme.toggle();
+  }
+
+  // Set language
+  setLang(l: 'EN' | 'TC') {
+    this.lang.setLang(l);
+  }
 }

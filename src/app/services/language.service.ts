@@ -1,3 +1,4 @@
+// Language service to manage and persist selected language
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
@@ -5,20 +6,21 @@ export type Lang = 'EN' | 'TC';
 
 @Injectable({ providedIn: 'root' })
 export class LanguageService {
-    private _lang = new BehaviorSubject<Lang>(this.getSaved());
-    lang$ = this._lang.asObservable();
+  // BehaviourSubject that holds the current language
+  private _lang = new BehaviorSubject<Lang>(this.getSaved());
 
-    private getSaved(): Lang {
-        return (localStorage.getItem('lang') as Lang) || 'EN';
-    }
+  // Public observable the UI subscribes to
+  lang$ = this._lang.asObservable();
 
-    setLang(lang: Lang) {
-        localStorage.setItem('lang', lang);
-        this._lang.next(lang);
-    }
+  // Read saved language from localStorage, default to EN
+  private getSaved(): Lang {
+    const saved = localStorage.getItem('lang') as Lang | null;
+    return saved || 'EN';
+  }
 
-    // helper to pick field from record
-    t<T extends Record<string, any>>(obj: T, keyEN: string, keyTC: string) {
-        return this._lang.value === 'TC' ? obj[keyTC] ?? obj[keyEN] : obj[keyEN] ?? obj[keyTC];
-    }
+  // Set a language and persist to localStorage, then emit it
+  setLang(lang: Lang) {
+    localStorage.setItem('lang', lang);
+    this._lang.next(lang);
+  }
 }

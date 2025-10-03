@@ -31,10 +31,16 @@
                 "output": "./svg"
               }
             ],
-            "styles": [ "src/global.scss", "src/theme/variables.scss" ],
+            "styles": [
+              "src/assets/css/universal.css",
+              "src/global.scss",
+              "src/theme/variables.scss"
+            ],
             "scripts": [
               "src/assets/js/UI.js"
-            ]
+            ],
+            "serviceWorker": true,
+            "ngswConfigPath": "ngsw-config.json"
           },
           "configurations": {
             "production": {

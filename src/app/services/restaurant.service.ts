@@ -29,7 +29,7 @@ export class RestaurantService {
             "Longitude": 114.1993903,
             "Keyword_EN": ["vegetarian"],
             "Keyword_TC": ["素食", "素食館"],
-            image: 'assets/img/placeholder.jpg'
+            image: 'assets/icon/Placeholder.png'
         },
         {
             "Name_EN": "妙法齋",
@@ -42,7 +42,7 @@ export class RestaurantService {
             "Longitude": 113.9748913,
             "Keyword_EN": [],
             "Keyword_TC": ["齋"],
-            image: 'assets/img/placeholder.jpg'
+            image: 'assets/icon/Placeholder.png'
         }
     ];
 
