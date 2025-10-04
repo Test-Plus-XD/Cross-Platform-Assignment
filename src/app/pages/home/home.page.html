@@ -1,23 +1,41 @@
-<ion-content class="bg-slate-50 dark:bg-slate-900 min-h-screen">
-  <main class="max-w-6xl mx-auto p-4">
-    <!-- Header / Controls -->
-    <div class="flex items-center justify-between mb-4">
+﻿<!-- Root content area for the page -->
+<ion-content class="min-h-screen bg-slate-50 dark:bg-slate-900">
+  <!-- Main layout container with max width and padding -->
+  <main class="mx-auto max-w-6xl p-4">
+    <!-- Header row: branding and controls -->
+    <div class="mb-4 flex items-center justify-between">
+      <!-- Site title / brand -->
       <div class="flex items-center gap-3">
-        <h1 class="text-xl font-bold dark:text-slate-100">Pour Rice / 倒米</h1>
+        <!-- Page title with explicit light and dark text colour -->
+        <h1 class="text-xl font-bold text-slate-900 dark:text-slate-100">
+          Pour Rice / 倒米
+        </h1>
       </div>
 
+      <!-- Controls: language and theme -->
       <div class="flex items-center gap-3">
-        <!-- language toggle -->
-        <button (click)="setLang('EN')" class="px-2 py-1 rounded-md" title="English">
-          <span>🇬🇧</span>
-        </button>
-        <button (click)="setLang('TC')" class="px-2 py-1 rounded-md" title="繁體中文">
-          <span>🇭🇰</span>
+        <!-- Language button: EN -->
+        <button (click)="setLang('EN')"
+                aria-label="Switch to English"
+                class="rounded-md px-2 py-1 text-slate-700 dark:text-slate-200">
+          🇬🇧
         </button>
 
-        <!-- Theme toggle -->
-        <button (click)="toggleTheme()" class="ml-2 p-2 rounded-md bg-white dark:bg-slate-800 border">
+        <!-- Language button: TC -->
+        <button (click)="setLang('TC')"
+                aria-label="Switch to Traditional Chinese"
+                class="rounded-md px-2 py-1 text-slate-700 dark:text-slate-200">
+          🇭🇰
+        </button>
+
+        <!-- Theme toggle button -->
+        <button (click)="toggleTheme()"
+                aria-pressed="{{ (isDark$ | async) ? 'true' : 'false' }}"
+                class="ml-2 rounded-md border bg-white p-2 dark:border-slate-700 dark:bg-slate-800"
+                title="Toggle theme">
+          <!-- Icon changes with observable -->
           <ng-container *ngIf="(isDark$ | async); else light">
+            <!-- Moon icon when dark -->
             ☾
           </ng-container>
           <ng-template #light>☀</ng-template>
@@ -25,43 +43,72 @@
       </div>
     </div>
 
-    <!-- Hero / Search -->
+    <!-- Search hero with explicit colours for input and button -->
     <section class="mb-6">
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
+      <!-- Card-like container using explicit bg and text colours -->
+      <div class="rounded-lg bg-white p-6 shadow dark:bg-slate-800">
         <div class="flex gap-3">
-          <input class="flex-1 p-3 rounded border dark:bg-slate-700 dark:text-slate-100" placeholder="Search restaurants, dishes or locations..." />
-          <button class="px-4 py-3 bg-indigo-600 text-white rounded">Search</button>
+          <!-- Search input with placeholder and text colour variants -->
+          <input aria-label="Search restaurants or dishes"
+                 class="flex-1 rounded border p-3 text-slate-900 placeholder:text-slate-400 dark:bg-slate-700 dark:text-slate-100 dark:placeholder:text-slate-300"
+                 placeholder="Search restaurants, dishes or locations..." />
+          <!-- Primary search button with both colour variants -->
+          <button class="rounded bg-indigo-600 px-4 py-3 text-white dark:bg-indigo-500">
+            Search
+          </button>
         </div>
       </div>
     </section>
 
-    <!-- Trending restaurants grid -->
+    <!-- Trending restaurants heading -->
     <section>
-      <h2 class="text-lg font-semibold mb-3 dark:text-slate-100">Trending Restaurants</h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- Section title with both colour variants -->
+      <h2 class="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        Trending Restaurants
+      </h2>
+
+      <!-- Responsive grid for cards -->
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Use async pipe to unwrap restaurants observable into local variable rests -->
         <ng-container *ngIf="restaurants$ | async as rests">
-          <article *ngFor="let r of rests" class="bg-white dark:bg-slate-800 rounded-lg shadow overflow-hidden">
-            <img [src]="r.image || 'assets/img/placeholder.jpg'" class="w-full h-40 object-cover" alt="{{r.Name_EN}}" />
+          <!-- Loop over restaurants and render card for each -->
+          <article *ngFor="let r of rests"
+                   class="overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800"
+                   role="article"
+                   aria-label="Restaurant card">
+            <!-- Restaurant image with explicit fallback and object-cover -->
+            <img [src]="r.image || 'assets/img/placeholder.jpg'"
+                 class="h-40 w-full object-cover"
+                 [alt]="(r.Name_EN || r.Name_TC) + ' image'" />
+
+            <!-- Card content area -->
             <div class="p-4">
-              <!-- Show bilingual title according to LanguageService stream -->
+              <!-- Local language selector for content; subscription with async -->
               <div *ngIf="lang$ | async as curLang">
-                <h3 class="font-semibold text-lg dark:text-slate-50">
+                <!-- Restaurant title uses explicit light/dark text classes -->
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {{ curLang === 'TC' ? (r.Name_TC || r.Name_EN) : (r.Name_EN || r.Name_TC) }}
                 </h3>
+
+                <!-- Address uses a muted text tone in both modes -->
                 <div class="text-sm text-slate-600 dark:text-slate-300">
                   {{ curLang === 'TC' ? (r.Address_TC || r.Address_EN) : (r.Address_EN || r.Address_TC) }}
                 </div>
               </div>
 
+              <!-- Keywords or tags in a muted style -->
               <p class="mt-2 text-sm text-slate-700 dark:text-slate-300">
                 {{ r.Keyword_EN && r.Keyword_EN.length ? r.Keyword_EN.join(', ') : (r.Keyword_TC && r.Keyword_TC.length ? r.Keyword_TC.join(', ') : '-') }}
               </p>
 
+              <!-- Footer row of the card with rating and link -->
               <div class="mt-3 flex items-center justify-between">
+                <!-- Rating with explicit colour variants -->
                 <div class="text-sm text-slate-800 dark:text-slate-100">★ 4.2</div>
-                <a class="text-indigo-600 hover:underline text-sm" [routerLink]="['/restaurant', r.Name_EN]">
-                  View
-                </a>
+
+                <!-- View link with dark variant for the tint colour -->
+                <a class="text-sm text-indigo-600 hover:underline dark:text-indigo-400"
+                   [routerLink]="['/restaurant', r.Name_EN]">View</a>
               </div>
             </div>
           </article>
@@ -69,16 +116,23 @@
       </div>
     </section>
 
-    <!-- Footer Promo -->
+    <!-- Footer promo area with explicit variable-based colours -->
     <section class="mt-8">
-      <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow flex items-center justify-between">
+      <!-- Promo card uses both bg and text variants -->
+      <div class="flex items-center justify-between rounded-lg bg-white p-6 shadow dark:bg-slate-800">
         <div>
-          <h4 class="font-semibold dark:text-slate-100">Mobile App</h4>
-          <p class="text-sm text-slate-600 dark:text-slate-300">Download our app for deals & location features.</p>
+          <!-- Heading for app promo -->
+          <h4 class="font-semibold text-slate-900 dark:text-slate-100">Mobile App</h4>
+          <!-- Supporting paragraph with muted tone -->
+          <p class="text-sm text-slate-600 dark:text-slate-300">
+            Download our app for deals &amp; location features.
+          </p>
         </div>
+
+        <!-- App store buttons as images (no colour switching needed) -->
         <div class="flex gap-2">
-          <img src="assets/icon/app_store.png" class="h-10" alt="App Atore" />
-          <img src="assets/icon/google_play.png" class="h-10" alt="Google Play" />
+          <img src="assets/icon/App_Store.png" class="h-10" alt="App Store" />
+          <img src="assets/icon/Google_Play.png" class="h-10" alt="Google Play" />
         </div>
       </div>
     </section>

@@ -33,7 +33,7 @@
             ],
             "styles": [
               "src/assets/css/universal.css",
-              "src/global.scss",
+              "src/style/global.scss",
               "src/theme/variables.scss"
             ],
             "scripts": [

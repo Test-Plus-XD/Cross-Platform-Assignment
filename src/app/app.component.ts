@@ -13,6 +13,6 @@ export class AppComponent {
     // Ensure the initial theme is applied right away.
     // This re-applies whatever ThemeService computed in getInitialTheme().
     // (ThemeService's setTheme will also write to localStorage.)
-    this.theme.setTheme(this.theme['getInitialTheme']());
+    this.theme.init();
   }
 }

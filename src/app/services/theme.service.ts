@@ -5,38 +5,43 @@ import { BehaviorSubject } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   // BehaviourSubject that stores current theme state: true => dark, false => light
-  private _isDark = new BehaviorSubject<boolean>(this.getInitialTheme());
+  private _isDark = new BehaviorSubject<boolean>(this.readSaved());
 
   // Public observable for components to subscribe to
   isDark$ = this._isDark.asObservable();
 
   // Read initial theme from localStorage or system preference
-  private getInitialTheme(): boolean {
+  private readSaved(): boolean {
     const saved = localStorage.getItem('theme');
-    if (saved) {
-      return saved === 'dark';
-    }
-    // Default to system preference when nothing saved
-    return typeof window !== 'undefined' && window.matchMedia
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-      : false;
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  // Initialise once at app startup to ensure class exists before UI renders
+  init() {
+    // Apply current state immediately
+    this.apply(this._isDark.value);
+    // Keep DOM synced with future changes
+    this._isDark.subscribe(v => this.apply(v));
   }
 
   // Toggle between light and dark and persist selection
   toggle() {
     const next = !this._isDark.value;
-    this.setTheme(next);
+    localStorage.setItem('theme', next ? 'dark' : 'light');
+    this._isDark.next(next);
   }
 
   // Set theme explicitly and persist to localStorage, also update DOM class
-  setTheme(dark: boolean) {
-    this._isDark.next(dark);
-    if (dark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
+  setTheme(isDark: boolean) {
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    this._isDark.next(isDark);
+  }
+
+  // Apply simply adds or removes the .dark class
+  private apply(isDark: boolean) {
+    if (isDark) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }
 }

@@ -1,0 +1,76 @@
+.theme-text {
+  color: var(--ion-text-color) !important
+}
+
+/* Light Theme*/
+:root {
+  --bg: #ffffff;
+  --text: #0f172a; /* Primary page text */
+  --muted: #64748b; /* Secondary text */
+  --card-bg: #ffffff;
+  --surface: #f8fafc;
+  --accent: #6366f1; /* Indigo-600-ish */
+  --border: #e6eef8;
+  --ion-background-color: #fff;
+  --ion-text-color: #0f172a;
+  --ion-card-background: #fff;
+  --ion-toolbar-background: #fff
+}
+
+/* Dark Theme*/
+html.dark, .dark {
+  --bg: #0b1220;
+  --text: #e6eef8;
+  --muted: #94a3b8;
+  --card-bg: #071022;
+  --surface: #061026;
+  --accent: #818cf8; /* Indigo-400-ish */
+  --border: #23303b;
+  --ion-background-color: #0b1220;
+  --ion-text-color: #e6eef8;
+  --ion-card-background: #0b1220;
+  --ion-toolbar-background: #071022
+}
+
+/* Ensure body and core elements inherit the variable values */
+html, body, ion-app, ion-content, .ion-page {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+ion-app, ion-content {
+  --background: var(--bg);
+  --color: var(--text);
+}
+
+/* Map variables into common ionic components — helps shadow DOM internals */
+ion-card {
+  --background: var(--card-bg);
+  --color: var(--text);
+}
+
+ion-item, ion-label, ion-title, ion-text {
+  color: var(--text);
+  --color: var(--text)
+}
+
+.theme-text {
+  color: var(--text);
+}
+
+.theme-muted {
+  color: var(--muted);
+}
+
+.theme-bg {
+  background-color: var(--card-bg);
+}
+
+.theme-accent {
+  color: var(--accent);
+}
+
+/* Fallback for plain elements (and tailwind-less parts) */
+p, h1, h2, h3, h4, h5, h6, a, li, span {
+  color: var(--text)
+}
