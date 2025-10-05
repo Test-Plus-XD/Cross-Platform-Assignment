@@ -1,11 +1,11 @@
 // Import Observable utilities
 import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
-
-// Import your services and types
-import { Restaurant, RestaurantService } from '../../services/restaurant.service';
+// Import services and types
+import { MockDataService, Restaurant } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
+//import { DataService } from '../../services/data.service'; // Firestore
 
 @Component({
   selector: 'app-home',
@@ -15,8 +15,15 @@ import { ThemeService } from '../../services/theme.service';
 })
 
 export class HomePage implements OnInit {
-  // Initialise with an empty observable so that the template is always safe
-  restaurants$: Observable<Restaurant[]> = of([]);
+  // Observables expected to come from services (Firestore-friendly)
+  offers$: Observable<any[]> = of([]);
+  articles$: Observable<any[]> = of([]);
+  reviews$: Observable<any[]> = of([]);
+  restaurants$: Observable<any[]> = of([]);
+  ads$: Observable<any[]> = of([]);
+
+  // Bound featured image for the hero large image
+  featuredImage: string | null = null;
 
   // Expose language stream from LanguageService (emits 'en' or 'tc')
   lang$ = this.lang.lang$;
@@ -26,15 +33,32 @@ export class HomePage implements OnInit {
 
   // Inject services for data, language and theme
   constructor(
-    private rest: RestaurantService,
+    private mock: MockDataService,
+    //private data: DataService,
     private lang: LanguageService,
     private theme: ThemeService
   ) { }
 
   // Lifecycle hook: runs after constructor, good for initial data loading
   ngOnInit() {
-    // Assign the real restaurant stream from the service
-    this.restaurants$ = this.rest.getAll();
+    // Initialise theme class early (ThemeService should apply .dark)
+    this.theme.init?.();
+
+    // Load Firestore collections via DataService
+    // Collections: "offers", "articles", "reviews", "restaurants", "ads"
+    this.offers$ = this.mock.offers$();
+    this.articles$ = this.mock.articles$();
+    this.reviews$ = this.mock.reviews$();
+    this.restaurants$ = this.mock.restaurants$();
+    this.ads$ = this.mock.ads$();
+
+    // Set a default featured image once offers exist
+    this.offers$.subscribe(arr => { if (arr && arr.length) this.featuredImage = arr[0].image || this.featuredImage; });
+  }
+
+  // Set featured image on hover/focus
+  setFeatured(url?: string | null) {
+    if (url) this.featuredImage = url;
   }
 
   // Toggle the theme (light/dark)
