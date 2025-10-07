@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
 import { ThemeService } from './services/theme.service';
+import { register } from 'swiper/element/bundle';
+register(); // Register Swiper custom elements once in AppComponent ideally
 
 @Component({
   selector: 'app-root',

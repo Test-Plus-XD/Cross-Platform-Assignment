@@ -32,7 +32,6 @@
               }
             ],
             "styles": [
-              "src/assets/css/universal.css",
               "src/style/global.scss",
               "src/theme/variables.scss"
             ],

@@ -1,13 +1,14 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>search</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="bg-slate-50 p-4 dark:bg-slate-900">
+  <!-- Search input -->
+  <div class="mb-4 flex gap-2">
+    <input [(ngModel)]="q" placeholder="Search..." class="flex-1 rounded border p-2 dark:bg-slate-700 dark:text-slate-100" />
+  </div>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">search</ion-title>
-    </ion-toolbar>
-  </ion-header>
+  <!-- Results filter locally in template for demo -->
+  <div *ngIf="restaurants$ | async as rests">
+    <div *ngFor="let r of rests" class="mb-3 rounded-md bg-white p-3 shadow dark:bg-slate-800">
+      <h4 class="font-semibold text-slate-900 dark:text-slate-50">{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}</h4>
+      <p class="text-sm text-slate-600 dark:text-slate-300">{{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}</p>
+    </div>
+  </div>
 </ion-content>

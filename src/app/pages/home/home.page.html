@@ -1,0 +1,247 @@
+<!-- Page root: ion-content keeps Ionic behaviour -->
+<ion-content class="mx-auto min-h-screen w-full max-w-screen bg-slate-50 dark:bg-slate-900">
+  <!-- Expose language and theme once for template convenience -->
+  <ng-container *ngIf="lang$ | async as curLang">
+    <ng-container *ngIf="isDark$ | async as isDark">
+
+      <!-- Main container -->
+      <!-- Add horizontal padding responsive: px-3 on mobile, px-6 on larger -->
+      <main class="mx-auto p-4 px-3 sm:px-6">
+
+        <!-- Header: branding + nav -->
+        <!-- Header row: brand + nav controls -->
+        <header class="mb-6 flex items-center justify-between">
+          <!-- Brand: icon or text -->
+          <div class="flex items-center gap-3">
+            <!-- Show brand icon or fallback text; fixed -->
+            <img [src]="brandIcon$ | async" alt="Pour Rice" class="h-[67px] w-[67px] object-contain" decoding="async"/>
+          </div>
+
+          <!-- Nav controls -->
+          <nav class="aria-expanded flex items-center gap-3">
+            <!-- Login -->
+            <a class="text-sm text-slate-700 dark:text-slate-200" routerLink="/login">
+              {{ curLang === 'TC' ? '登入' : 'Login' }}
+            </a>
+
+            <!-- Search-->
+            <a class="text-sm text-slate-700 dark:text-slate-200" routerLink="/search">
+              {{ curLang === 'TC' ? '搜尋' : 'Search' }}
+            </a>
+
+            <!-- Language toggle -->
+            <div class="flex items-center gap-1">
+              <button (click)="setLang('EN')" class="py-1 pl-2 text-slate-700 dark:text-slate-200">🇬🇧</button>|
+              <button (click)="setLang('TC')" class="py-1 pr-2 text-slate-700 dark:text-slate-200">🇭🇰</button>
+            </div>
+
+            <!-- Theme toggle -->
+            <button (click)="toggleTheme()" class="rounded border bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-800">
+              <ng-container *ngIf="isDark; else sun">🌒</ng-container>
+              <ng-template #sun>☀</ng-template>
+            </button>
+          </nav>
+        </header>
+
+        <!-- Ads carousel: use Swiper -->
+        <section class="relative mb-8">
+          <!-- Swiper container with template reference to control it from TS -->
+          <swiper-container #SwiperBar class="rounded-lg" [loop]="true" [autoplay]="{ delay: 4000 }">
+            <swiper-slide *ngFor="let a of (ads$ | async) || []" class="flex items-center justify-center">
+              <a [href]="a.href" class="block w-full">
+                <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" class="h-44 w-full rounded-lg object-cover" />
+              </a>
+            </swiper-slide>
+          </swiper-container>
+
+          <!-- Swiper controls: show only on non-native (desktop/web) -->
+          <button *ngIf="!isNative" (click)="SwiperPrev()" aria-label="Previous ad"
+                  class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
+            <!-- Left chevron -->
+            <ion-icon name="arrow-back-outline"></ion-icon>
+          </button>
+          <button *ngIf="!isNative" (click)="SwiperNext()" aria-label="Next ad"
+                  class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
+            <!-- Right chevron -->
+            <ion-icon name="arrow-forward-outline"></ion-icon>
+          </button>
+        </section>
+
+        <!-- Featured image under carousel -->
+        <section class="mb-8">
+          <div class="mt-4 overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800">
+            <img [src]="featuredImage || (offers$ | async)?.[0]?.image || 'assets/icon/Placeholder.png'"
+                 alt="featured" class="h-52 w-full object-cover" />
+          </div>
+        </section>
+
+        <!-- Special offers: show 3 on browser, 2 on mobile, horizontal scroll for rest -->
+        <section class="mb-8">
+          <!-- Section header -->
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ curLang === 'TC' ? '甄選優惠' : 'Featured Offer' }}
+            </h3>
+            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/offers">See all</a>
+          </div>
+
+          <!-- Flexible row: children are shrink-0; widths give 2 per mobile, 3 per browser -->
+          <div class="flex gap-3 overflow-x-auto pb-3">
+            <div *ngFor="let o of (offers$ | async) || []"
+                 class="theme-bg flex-shrink-0 rounded-lg bg-white p-3 shadow sm:w-[32%] dark:bg-slate-800 dark:shadow-lg"
+                 (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" tabindex="0">
+              <!-- Card uses ion-card for native feel but inner text uses -->
+              <ion-card class="!bg-transparent !shadow-none">
+                <div class="text-sm font-semibold">
+                  {{ o.title }}
+                </div>
+                <div class="mt-1 text-xs">
+                  {{ o.restaurant }}
+                </div>
+              </ion-card>
+            </div>
+          </div>
+
+          <!-- swipe hint arrows at ends -->
+          <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
+            <span class="flex items-center gap-1">
+              <ion-icon name="arrow-back-outline"></ion-icon>
+              {{ curLang === 'TC' ? '可滑動' : 'Swipe' }}
+            </span>
+            <span class="flex items-center gap-1">
+              {{ curLang === 'TC' ? '向右滑動查看更多' : 'Swipe right to see more' }}
+              <ion-icon name="arrow-forward-outline"></ion-icon>
+            </span>
+          </div>
+        </section>
+
+        <!-- Articles / Gourmet's note -->
+        <section class="mb-8">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ curLang === 'TC' ? '飲食札記' : "Gourmet's Note" }}
+            </h3>
+            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/articles">See all</a>
+          </div>
+
+          <!-- Horizontal article cards: same responsive widths -->
+          <div class="flex gap-3 overflow-x-auto pb-3">
+            <article *ngFor="let a of (articles$ | async) || []" class="theme-bg w-[48%] flex-shrink-0 rounded-lg bg-white p-3 shadow sm:w-[32%] dark:bg-slate-800 dark:shadow-lg">
+              <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="article" class="h-36 w-full rounded object-cover" />
+              <h4 class="mt-2 font-semibold text-slate-900 dark:text-slate-50">
+                {{ curLang === 'TC' ? a.title_TC : a.title_EN }}
+              </h4>
+              <p class="mt-1 line-clamp-3 text-sm">
+                {{ curLang === 'TC' ? a.excerpt_TC : a.excerpt_EN }}
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Latest reviews -->
+        <section class="mb-8">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ curLang === 'TC' ? '最近評論' : 'Latest Review' }}
+            </h3>
+            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/reviews">See all</a>
+          </div>
+
+          <div class="flex gap-3 overflow-x-auto pb-3">
+            <div *ngFor="let r of (reviews$ | async) || []" class="theme-bg w-[48%] flex-shrink-0 rounded-lg bg-white p-3 shadow sm:w-[32%] dark:bg-slate-800 dark:shadow-lg">
+              <div class="flex items-center gap-3">
+                <img [src]="r.avatar || 'assets/icon/Placeholder.png'" alt="avatar" class="h-10 w-10 rounded-full object-cover" />
+                <div>
+                  <p class="text-sm font-semibold">
+                    {{ r.name }}
+                  </p>
+                  <p class="text-xs">
+                    {{ r.meta }}
+                  </p>
+                </div>
+              </div>
+              <p class="mt-2 line-clamp-4 text-sm">
+                {{ r.text }}
+              </p>
+              <p class="mt-2 text-xs">
+                ★ {{ r.rating }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trending restaurants -->
+        <section class="mb-8">
+          <div class="mb-3 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
+              {{ curLang === 'TC' ? '熱門餐廳' : 'Trending Restaurant' }}
+            </h3>
+            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/restaurants">See all</a>
+          </div>
+
+          <div class="flex gap-3 overflow-x-auto pb-3">
+            <div *ngFor="let r of (restaurants$ | async) || []" class="theme-bg w-[48%] flex-shrink-0 rounded-lg bg-white p-3 shadow sm:w-[32%] dark:bg-slate-800 dark:shadow-lg">
+              <img [src]="r.image || 'assets/icon/Placeholder.png'" alt="rest" class="h-36 w-full rounded object-cover" />
+              <div class="mt-2">
+                <h4 class="font-semibold text-slate-900 dark:text-slate-50">
+                  {{ curLang === 'TC' ? r.Name_TC : r.Name_EN }}
+                </h4>
+                <p class="mt-1 line-clamp-3 text-xs">
+                  {{ curLang === 'TC' ? r.Address_TC : r.Address_EN }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Mobile promo -->
+        <section class="mb-8">
+          <div class="mb-3 flex items-center justify-between">
+            <h4 class="font-semibold text-slate-900 dark:text-slate-100">
+              {{ curLang === 'TC' ? '手機程式' : 'Mobile App' }}
+            </h4>
+            <p class="text-sm">
+              {{ curLang === 'TC' ? '下載應用程式以取得優惠與位置功能。' : 'Download for deals & location features.' }}
+            </p>
+            <div class="mt-3 flex gap-2">
+              <img src="assets/icon/App_Store.png" alt="App Store" class="h-10" />
+              <img src="assets/icon/Google_Play.png" alt="Google Play" class="h-10" />
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="mb-8">
+          <div class="theme-bg flex flex-col gap-4 rounded-lg bg-white p-6 shadow dark:bg-slate-800">
+            <div class="flex items-start justify-between gap-4">
+              <!-- Footer links bilingual -->
+              <div class="flex-shrink-0">
+                <nav class="flex flex-col gap-2 text-sm">
+                  <a routerLink="/about">
+                    {{ curLang === 'TC' ? '關於我們' : 'About Us' }}
+                  </a>
+                  <a routerLink="/vegevents">
+                    {{ curLang === 'TC' ? '素食活動' : 'Veg Events' }}
+                  </a>
+                  <a routerLink="/faq">
+                    {{ curLang === 'TC' ? '常見問題' : 'FAQ' }}
+                  </a>
+                  <a routerLink="/terms">
+                    {{ curLang === 'TC' ? '條款與細則' : 'Terms' }}
+                  </a>
+                  <a routerLink="/community">
+                    {{ curLang === 'TC' ? '素食社群' : 'Community' }}
+                  </a>
+                  <a routerLink="/write-review" class="rounded">
+                  {{ curLang === 'TC' ? '撰寫食評' : 'Write a Review' }}
+                  </a>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </footer>
+
+      </main>
+    </ng-container>
+  </ng-container>
+</ion-content>

@@ -1,13 +1,14 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>restaurant</ion-title>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">restaurant</ion-title>
-    </ion-toolbar>
-  </ion-header>
+﻿<ion-content class="bg-slate-50 p-4 dark:bg-slate-900">
+  <ng-container *ngIf="rest$ | async as r">
+    <img [src]="r?.image || 'assets/icon/Placeholder.png'" alt="restaurant" class="mb-3 h-44 w-full rounded-lg object-cover" />
+    <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100">{{ (lang$ | async) === 'TC' ? r?.Name_TC : r?.Name_EN }}</h2>
+    <p class="text-sm text-slate-600 dark:text-slate-300">{{ (lang$ | async) === 'TC' ? r?.Address_TC : r?.Address_EN }}</p>
+    <div class="mt-4">
+      <h3 class="font-semibold text-slate-900 dark:text-slate-100">Details</h3>
+      <p class="text-sm text-slate-700 dark:text-slate-300">Keywords: {{ (r?.Keyword_EN || []).join(', ') || (r?.Keyword_TC || []).join(', ') || '-' }}</p>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="!(rest$ | async)">
+    <div class="text-slate-700 dark:text-slate-300">Restaurant not found.</div>
+  </ng-container>
 </ion-content>
