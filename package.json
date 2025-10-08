@@ -44,6 +44,7 @@
     "@angular/pwa": "^20.3.4",
     "@angular/router": "^20.3.3",
     "@angular/service-worker": "^20.3.3",
+    "@augmentcode/auggie": "^0.5.7",
     "@capacitor/android": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
     "@ionic/angular": "^8.7.5",

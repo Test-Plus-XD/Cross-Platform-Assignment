@@ -1,0 +1,20 @@
+[
+  { "District_EN": "Islands", "District_TC": "離島" },
+  { "District_EN": "Kwai Tsing", "District_TC": "葵青" },
+  { "District_EN": "North", "District_TC": "北區" },
+  { "District_EN": "Sai Kung", "District_TC": "西貢" },
+  { "District_EN": "Sha Tin", "District_TC": "沙田" },
+  { "District_EN": "Tai Po", "District_TC": "大埔" },
+  { "District_EN": "Tsuen Wan", "District_TC": "荃灣" },
+  { "District_EN": "Tuen Mun", "District_TC": "屯門" },
+  { "District_EN": "Yuen Long", "District_TC": "元朗" },
+  { "District_EN": "Kowloon City", "District_TC": "九龍城" },
+  { "District_EN": "Kwun Tong", "District_TC": "觀塘" },
+  { "District_EN": "Sham Shui Po", "District_TC": "深水埗" },
+  { "District_EN": "Wong Tai Sin", "District_TC": "黃大仙" },
+  { "District_EN": "Yau Tsim Mong", "District_TC": "油尖旺區" },
+  { "District_EN": "Central/Western", "District_TC": "中西區" },
+  { "District_EN": "Eastern", "District_TC": "東區" },
+  { "District_EN": "Southern", "District_TC": "南區" },
+  { "District_EN": "Wan Chai", "District_TC": "灣仔" }
+]

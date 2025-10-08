@@ -1,0 +1,1511 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "天一閣素食",
+        "Name_TC": "天一閣素食",
+        "Address_EN": "3/F., CODA PLAZA, 51 GARDEN ROAD, CENTRAL, HONG KONG",
+        "Address_TC": "香港花園道51號科達中心三樓",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1562206,
+          22.2763632
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "福祿壽健康素食",
+        "Name_TC": "福祿壽健康素食",
+        "Address_EN": "G/F., 8 TIT HONG LANE, CENTRAL, HONG KONG",
+        "Address_TC": "香港中環鐵行里8號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1552277,
+          22.2846988
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Three Virtues Vegetarian Restaurant",
+        "Name_TC": "三德素食館",
+        "Address_EN": "EAST WING, 1/F, 395 KING'S ROAD, NORTH POINT, HONG KONG",
+        "Address_TC": "香港北角英皇道395號1樓東翼",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食",
+          "素食館"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1993903,
+          22.2912958
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "妙法齋",
+        "Name_TC": "妙法齋",
+        "Address_EN": "G/F, 8 MING NGAI STREET, TUEN MUN, NEW TERRITORIES",
+        "Address_TC": "新界屯門明藝街8號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.9748913,
+          22.3975735
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "從善素食",
+        "Name_TC": "從善素食",
+        "Address_EN": "SHOP NO. G-61, G/F, AREA 37A, COMM. CENTRE, TMTL194, WALDORF GARDEN, TUEN MUN, NEW TERRITORIES",
+        "Address_TC": "新界屯門屯門市地段194號第37A區華都花園商場地下G6 1號舖",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          113.976116,
+          22.3928512
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "新聚寶素食(分店)",
+        "Name_TC": "新聚寶素食(分店)",
+        "Address_EN": "G/F, 85 TAI PO ROAD, SHAM SHUI PO, KOWLOON",
+        "Address_TC": "九龍深水埗大埔道85號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.163958,
+          22.332388
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "妙法齋",
+        "Name_TC": "妙法齋",
+        "Address_EN": "79 G/F., HO PUI STREET, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣河背街79號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1165346,
+          22.3682913
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "素食家",
+        "Name_TC": "素食家",
+        "Address_EN": "SHOP 52 &55, 1/F, CHEONG ON BUILDING, TSUEN CHEONG CENTRE, 186-200 SAI LAU KOK ROAD, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣西樓角路186-200號荃昌中心 昌安大厦1樓52及55號舖",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1198742,
+          22.3715678
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "天賜素齋",
+        "Name_TC": "天賜素齋",
+        "Address_EN": "SHOP NO 20, 2/F, COMMERCIAL COMPLEX, WO CHE ESTATE, SHA TIN, NEW TERRITORIES",
+        "Address_TC": "新界沙田 禾輋邨商場 2樓20號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋",
+          "素齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1952465,
+          22.3879585
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Vegetarian Kitchen",
+        "Name_TC": "素食園坊",
+        "Address_EN": "SHOP NO. 3, G/F, EVERWIN BUILDING, 406-408 KING'S ROAD, HONG KONG",
+        "Address_TC": "香港北角 英皇道406至408號 康威大廈地下3號鋪",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1988943,
+          22.2906171
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "美味齋飯店",
+        "Name_TC": "美味齋飯店",
+        "Address_EN": "G/F, 19 WAN FUNG ST., FUNG WONG SAN TSUEN, TSZ WAN SHAN, WONG TAI SIN, KOWLOON",
+        "Address_TC": "九龍黃大仙慈雲山鳳凰新村環鳳街19號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1982891,
+          22.3442586
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "LUK YUNG VEGETARIAN RESTAURANT",
+        "Name_TC": "六榕仙館",
+        "Address_EN": "G/F & M/F, 38 JORDAN ROAD, KOWLOON",
+        "Address_TC": "九龍佐敦道38號地下及閣樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1688715,
+          22.3053784
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "KUNG TAK LAM SHANGHAI VEGETARIAN",
+        "Name_TC": "功德林上海素食",
+        "Address_EN": "7/F, 1 PEKING ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀北京道1號7樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.170058,
+          22.2960938
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "LIGHT VEGETARIAN RESTAURANT",
+        "Name_TC": "普光齋",
+        "Address_EN": "SHOP H, I OF G/F AND SHOP I OF M/F, NEW LUCKY HOUSE, 13 JORDAN ROAD, JORDAN, KOWLOON",
+        "Address_TC": "九龍佐敦佐敦道13號 華豐大廈地下 H, I 舖及閣樓I舖",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1718875,
+          22.305765
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "大中華素食",
+        "Name_TC": "大中華素食",
+        "Address_EN": "G/F, 131-135 PARKES STREET, KOWLOON",
+        "Address_TC": "九龍白加士街131-135號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1709497,
+          22.3069345
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "佛慈齋",
+        "Name_TC": "佛慈齋",
+        "Address_EN": "G/F., NO. 22 FOOK HONG STREET, YUEN LONG, NEW TERRITORIES",
+        "Address_TC": "新界元朗 福康街22號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0288238,
+          22.4454794
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Best to Best Vegetable Diet Restaurant",
+        "Name_TC": "齋之寶齋菜館",
+        "Address_EN": "SHOP NO. 1, G/F, HING LUNG BUILDING, YLTL 289, 14 HUNG MIN COURT, YUEN LONG, NEW TERRITORIES",
+        "Address_TC": "新界元朗 元朗市地段第289號 紅棉圍14號 興隆樓地下1號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0297736,
+          22.4427588
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Green Veggie",
+        "Name_TC": "天然齋",
+        "Address_EN": "SHOP NOS.11-12, G/F, TONNOCHY TOWERS, 254-272 JAFFE ROAD, WAN CHAI, HONG KONG",
+        "Address_TC": "香港灣仔謝斐道254-272號杜誌台地下11-12號鋪",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1771209,
+          22.2790464
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "寶光齋",
+        "Name_TC": "寶光齋",
+        "Address_EN": "GROUND FLOOR, 29-31 SHUNG YAN STREET, KWUN TONG, KOWLOON",
+        "Address_TC": "九龍觀塘 崇仁街29-31號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.224145,
+          22.316185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Cafe La Fresco Veggie",
+        "Name_TC": "清新素食",
+        "Address_EN": "SHOP 2, 1/F, ENTERPRISE SQUARE, 9 SHEUNG YUET RD, KLN BAY, KOWLOON",
+        "Address_TC": "九龍九龍灣 常悅道9號企業廣場1樓2號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2079355,
+          22.3220294
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "香積厨素食館",
+        "Name_TC": "香積厨素食館",
+        "Address_EN": "G/F, 110 FA YUEN STREET, MONG KOK, KOWLOON",
+        "Address_TC": "九龍旺角花園街110號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食",
+          "素食館"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1710561,
+          22.3201654
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "PO LIN YIEN",
+        "Name_TC": "寶蓮苑素食",
+        "Address_EN": "G/F., NO. 308 QUEEN'S ROAD WEST, HONG KONG",
+        "Address_TC": "香港皇后大道西308號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1419024,
+          22.2868072
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "每日 Everyday Veggie",
+        "Name_TC": "每日 Everyday Veggie",
+        "Address_EN": "SHOP 1, G/F, DIAMOND COURT, 10-12 HILLWOOD ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀山林道10-12號 山林閣地下1號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1727087,
+          22.3025429
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GALA VEGGIE SHOP",
+        "Name_TC": "大自然素食",
+        "Address_EN": "SHOP 335, 3/F, PIONEER CENTRE, 750 NATHAN ROAD, KOWLOON",
+        "Address_TC": "九龍彌敦道750號始創中心3樓335號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.168971,
+          22.3219509
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "THREE VIRTUES VEGETARIAN RESTAURANT",
+        "Name_TC": "三德素食館",
+        "Address_EN": "4/F, J D MALL, 233-239 NATHAN ROAD, KOWLOON",
+        "Address_TC": "九龍彌敦道233-239號佐敦薈4字樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食",
+          "素食館"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1714927,
+          22.3048985
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GAIA-VEGGIE SHOP",
+        "Name_TC": "大自然素食",
+        "Address_EN": "8/F., THE GOLDMARK, 502 HENNESSY ROAD, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣軒尼詩道502號黃金廣場8樓",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1842939,
+          22.2798889
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "金膳健康素食",
+        "Name_TC": "金膳健康素食",
+        "Address_EN": "SHOP F & G, G/F., SCENIC HORIZON, NO. 250 SHAU KEI WAN ROAD, SHAU KEI WAN, HONG KONG",
+        "Address_TC": "香港筲箕灣筲箕灣道250號御景軒地下F及G號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2249093,
+          22.2801424
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "佛友源素食",
+        "Name_TC": "佛友源素食",
+        "Address_EN": "SHOP 8-10, G/F., FUNG CHEUNG HOUSE SHOPPING ARCADE, 340 UN CHAU STREET, CHEUNG SHA WAN, KOWLOON",
+        "Address_TC": "九龍長沙灣元州街340號豐祥大廈商場地下8-10號舖",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1566649,
+          22.3376612
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "VEGGIE KINGDOM",
+        "Name_TC": "緻素坊",
+        "Address_EN": "THE WHOLE OF THE FOURTH FLOOR, KYOTO PLAZA, 491-499 LOCKHART ROAD, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣駱克道491至499號京都廣場4樓全層",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1830013,
+          22.2807534
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Miu's Veggie",
+        "Name_TC": "妙善",
+        "Address_EN": "SHOP 106-107, 1/F, SITE 8, WHAMPOA GARDEN, HUNG HOM, KOWLOON",
+        "Address_TC": "九龍紅磡黃埔花園第8期1樓106-107號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1892659,
+          22.3037908
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Soo Good Luen Wo Vegan Restaurant",
+        "Name_TC": "好素聯和純素餐廳",
+        "Address_EN": "SHOP A, G/F, TAI CHEONG HOUSE, 55 WO TAI STREET, LUEN WO HUI, FANLING, NEW TERRITORIES",
+        "Address_TC": "新界粉嶺聯和墟和泰街55號泰昌樓地下A鋪",
+        "Keyword_EN": [
+          "vegan"
+        ],
+        "Keyword_TC": [
+          "純素",
+          "素餐"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1425894,
+          22.5002132
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "健康齋廚",
+        "Name_TC": "健康齋廚",
+        "Address_EN": "G/F, 34 FEI FUNG STREET, WONG TAI SIN, KOWLOON",
+        "Address_TC": "九龍黃大仙飛鳳街34號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.196437,
+          22.343793
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "小樂佛素食",
+        "Name_TC": "小樂佛素食",
+        "Address_EN": "G/F, 41-43 STATION LANE, HUNG HOM, KOWLOON",
+        "Address_TC": "九龍紅磡差館里41-43號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1854343,
+          22.307948
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GAIA VEGGIE",
+        "Name_TC": "大自然素食",
+        "Address_EN": "SHOP 433, LEVEL 4, TSUEN WAN PLAZA, 4-30 TAI PA STREET, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣大覇街4-30號荃灣廣場4樓433號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1112277,
+          22.370821
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "南齋",
+        "Name_TC": "南齋",
+        "Address_EN": "G/F, CANTEEN BLOCK, WUN CHUEN SIN KWOON, 188 PING CHE ROAD, TA KWU LING, FANLING, NEW TERRITORIES",
+        "Address_TC": "新界粉嶺打鼓嶺坪輋路188號雲泉仙館南齋地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1554842,
+          22.52961357
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Tin Yu Vegetarian",
+        "Name_TC": "天譽素食",
+        "Address_EN": "G/F, 141 UN CHAU STREET, SHAM SHUI PO, KOWLOON",
+        "Address_TC": "九龍深水埗元州街141號地下",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1609235,
+          22.3340108
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GAIA VEGGIE",
+        "Name_TC": "大自然素食",
+        "Address_EN": "SHOP 2-3, 1/F, LIONS RISE MALL, 8 MUK LUN STREET, WONG TAI SIN, KOWLOON",
+        "Address_TC": "九龍黃大仙睦鄰街8號現崇山商場1樓2-3號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.19725,
+          22.340777
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "ISOYA JAPANESE VEGETARIAN RESTAURANT",
+        "Name_TC": "居素屋日本野菜料理",
+        "Address_EN": "FIRST FLOOR, 1-11 MALLORY STREET, WAN CHAI, HONG KONG",
+        "Address_TC": "香港灣仔茂羅街1-11號1字樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1766123,
+          22.277516
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "一森素食",
+        "Name_TC": "一森素食",
+        "Address_EN": "ROOM 5-6, 2/F, UNIVERSAL COMMERCIAL BUILDING, 65-69 PEKING ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀北京道65-69號環球商業大廈2字樓5-6室",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1716137,
+          22.2962104
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "SARAVANA INDIAN VEGETARIAN RESAURANT",
+        "Name_TC": "SARAVANA INDIAN VEGETARIAN RESAURANT",
+        "Address_EN": "SHOP 105, 1/F, CHUNG KING MANSION, 36-44 NATHAN ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀彌敦道36-44號重慶大廈1樓105號舖",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1727721,
+          22.2966364
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Veggie Spinner",
+        "Name_TC": "素食微調",
+        "Address_EN": "G/F., 144 TUNG LO WAN ROAD, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣銅鑼灣道144號地下",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1921226,
+          22.2810083
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "滋味齋健康食品超級市場",
+        "Name_TC": "滋味齋健康食品超級市場",
+        "Address_EN": "SHOP NO. 1, G/F, PROSPEROUS BUILDING, 70-88 SHUI CHE KWUN STREET, YUEN LONG, NEW TERRITORIES",
+        "Address_TC": "新界元朗水車館街70-80號興旺大廈地下1號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0303568,
+          22.4447901
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "M Garden Vegetarian",
+        "Name_TC": "常悅素食",
+        "Address_EN": "WHOLE OF 2/F, OMEGA PLAZA, 32-34A DUNDAS STREET, MONG KOK, KOWLOON",
+        "Address_TC": "九龍旺角登打士街32-34A號歐美廣場2樓全層",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1693867,
+          22.3150533
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "PAK BO VEGETARIAN KITCHEN",
+        "Name_TC": "百寶齋廚",
+        "Address_EN": "SHOP A&B, G/F, LAI YING BUILDING, 780-782 NATHAN ROAD, MONG KOK, KOWLOON",
+        "Address_TC": "九龍旺角彌敦道780號至782號麗英大廈地下A舖及B舖",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "齋"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.168285,
+          22.3256154
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GAIA VEGGIE",
+        "Name_TC": "大自然素食",
+        "Address_EN": "SHOP NO(S). 3217-3218, LEVEL 3, MOSTOWN, NO. 18 ON LUK STREET, SHA TIN, NEW TERRITORIES",
+        "Address_TC": "",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2314688,
+          22.4241633
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "一森素食",
+        "Name_TC": "一森素食",
+        "Address_EN": "SHOP 11B, G/F, BLOCK B, WING TAK BUILDING WEST WING, NOS. 9-11 WATERLOO ROAD, NO. 44 PORTLAND STREET, YAU MA TEI, KOWLOON",
+        "Address_TC": "九龍油麻地砵蘭街44號 窩打老道9-11號 榮德大廈西翼B座地下11B鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1701301,
+          22.3131043
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "SANGEETHA VEGETARIAN RESTAURANT",
+        "Name_TC": "SANGEETHA VEGETARIAN RESTAURANT",
+        "Address_EN": "SHOP UG1-5 & UG31, UG/F, WING ON PLAZA, 62 MODY ROAD, TSIM SHA TSUI EAST, KOWLOON",
+        "Address_TC": "九龍尖沙咀東麼地道62號永安廣場地下高層 UG1-5及UG31鋪",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1763546,
+          22.2966713
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "D'Lite Veggie",
+        "Name_TC": "泰有營素食",
+        "Address_EN": "SHOP 6B ON G/F & SHOP 1 ON 1/F, THE SORENTINO, 483 SHUN NING ROAD, SHAM SHUI PO, KOWLOON",
+        "Address_TC": "九龍深水埗順寧道483號順景華庭地下6B舖及1樓1號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1551291,
+          22.3399106
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "大力素食",
+        "Name_TC": "大力素食",
+        "Address_EN": "SHOP 7, G/F AND COCKLOFT AND OUTSIDE SEATING ACCOMMODATION AT SHOP FRONT ON G/F, FOOK CHEONG BUILDING, 35 MA WANG ROAD, YUEN LONG, NEW TERRITORIES",
+        "Address_TC": "新界元朗媽橫路35號福昌大廈地下及閣樓7號鋪 及鋪前露天座位",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0223441,
+          22.4473973
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "GAIA VEGGIE",
+        "Name_TC": "大自然素食",
+        "Address_EN": "SHOP 212, , L2, MIRA PLACE ONE,132 NATHAN ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀彌敦道132號美麗華廣場一期2樓212舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1722875,
+          22.3010487
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "三寶素食",
+        "Name_TC": "三寶素食",
+        "Address_EN": "SHOP 5 , UG/F, LAI BO GARDEN, 38 CHEUNG WAH STREET, 383 PO ON ROAD, SHAM SHUI PO, KOWLOON",
+        "Address_TC": "九龍深水埗保安道383號昌華街38號麗寶花園 地下高層5號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1551291,
+          22.3404338
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Oriental Vegetarian",
+        "Name_TC": "東方素",
+        "Address_EN": "3/F., NOS. 237-239 HENNESSY ROAD, WAN CHAI, HONG KONG",
+        "Address_TC": "香港灣仔軒尼詩道237-239號3樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1760189,
+          22.278135
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Elegantly Veggie",
+        "Name_TC": "雅悠蔬食",
+        "Address_EN": "SHOP A & B, 3/F, CHINA INSURANCE BUILDING, 48 CAMERON ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀金馬倫道48號中國保險大廈 3樓A&B舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1750077,
+          22.2991175
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Tong De Veggie",
+        "Name_TC": "同德素食",
+        "Address_EN": "1/F, 10 PRAT AVENUE, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀寶勒巷10號1樓",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1744504,
+          22.2986716
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "越式素食",
+        "Name_TC": "越式素食",
+        "Address_EN": "G/F., 5 HOI CHAK STREET, QUARRY BAY, HONG KONG",
+        "Address_TC": "香港鰂魚涌海澤街5號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2105849,
+          22.2888094
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Lotus Seed Liza Veggies",
+        "Name_TC": "蓮子麗姐健康素食館",
+        "Address_EN": "G/F., 74 STONE NULLAH LANE, WAN CHAI, HONG KONG",
+        "Address_TC": "香港灣仔石水渠街74地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食",
+          "素食館"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1741307,
+          22.2738835
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "YAU VEGGIE BISTRO",
+        "Name_TC": "YAU VEGGIE BISTRO",
+        "Address_EN": "UNIT 118, 1/F, THE MILLS, 45 PAK TIN PAR STREET, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣白田壩街45號南豐紗廠  1樓118號鋪",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1101695,
+          22.3750707
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Heartful Veggie",
+        "Name_TC": "從心素食",
+        "Address_EN": "SHOP 107, 1/F, MIKIKI, 638 PRINCE EDWARD ROAD EAST, SAN PO KONG, WONG TAI SIN, KOWLOON",
+        "Address_TC": "九龍黃大仙新蒲崗太子道東638號 MIKIKI 1樓107號舖",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1969753,
+          22.3335249
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "PO LIN VEGETARIAN FOOD",
+        "Name_TC": "普蓮素食",
+        "Address_EN": "SHOP 13A AND 15, G/F, YUCCIE SQUARE, 38 YUEN LONG ON NING ROAD, YUEN LONG, NEW TERRITORIES",
+        "Address_TC": "新界元朗元朗安寧路38號世宙地下13A及15號鋪",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.0277319,
+          22.4466648
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "泰國素食",
+        "Name_TC": "泰國素食",
+        "Address_EN": "G/F, CHEONG WONG BUILDING, 28 SOUTH WALL ROAD, KOWLOON CITY, KOWLOON",
+        "Address_TC": "九龍九龍城城南道28號昌旺樓地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.191128,
+          22.3292
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Yuan Shan Vegetarian",
+        "Name_TC": "圓善素食",
+        "Address_EN": "G/F., 434 MA TAU WAI ROAD, KOWLOON",
+        "Address_TC": "九龍馬頭圍道434號地下",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1873846,
+          22.3194702
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "(no record found)",
+        "Name_TC": "上善素餐廳",
+        "Address_EN": "G/F., 7-9 KAM PING STREET, NORTH POINT, HONG KONG",
+        "Address_TC": "香港北角錦屏街7至9號地下",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素餐"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2000509,
+          22.29075393
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "TSUI LIN VEGETARIAN FOOD",
+        "Name_TC": "翠連素食",
+        "Address_EN": "G/F, NO. 81 CHUNG ON STREET, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣眾安街81號地下",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.11619,
+          22.36903
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Heartful Veggie",
+        "Name_TC": "從心素食",
+        "Address_EN": "SHOP 263C, LEVEL 2, EAST POINT CITY, 8 CHUNG WA ROAD, TSEUNG KWAN O, SAI KUNG, NEW TERRITORIES",
+        "Address_TC": "新界西貢將軍澳重華路8號東港城第二層263C號鋪",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.2653434,
+          22.3163803
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "--",
+        "Name_TC": "樂園素食",
+        "Address_EN": "SHOP B04, BASEMENT FLOOR, TOWER 535, NO. 535 JAFFE ROAD, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣謝斐道535號TOWER 535地庫B04號鋪",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1839249,
+          22.2813968
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Root Vegan",
+        "Name_TC": "本原純素",
+        "Address_EN": "ROOM 102&103, 1/F, SUNWISE MANSION, NOS. 112-114 WELLINGTON STREET, CENTRAL, HONG KONG",
+        "Address_TC": "香港中環 威靈頓街112-114號 新威大廈 1樓102及103室",
+        "Keyword_EN": [
+          "vegan"
+        ],
+        "Keyword_TC": [
+          "純素"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1541769,
+          22.2832687
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "BAO LIAN VEGETARIAN FOOD",
+        "Name_TC": "寶蓮素食",
+        "Address_EN": "SHOP NOS. G17 & G18 (PORTION), G/F, PLAZA 328, BO SHEK MANSION, 328 SHA TSUI ROAD, TSUEN WAN, NEW TERRITORIES",
+        "Address_TC": "新界荃灣沙咀道 328 號寶石大廈 328廣場地下G17及G18(部份)號鋪",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1182173,
+          22.36873261
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "WOODLANDS",
+        "Name_TC": "印度素食",
+        "Address_EN": "1/F., NO. 20 LUARD ROAD, WAN CHAI, HONG KONG",
+        "Address_TC": "香港灣仔盧押道20號1樓",
+        "Keyword_EN": [],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1718584,
+          22.2786786
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "KINDNESS GATHER VEGETARIAN",
+        "Name_TC": "慈素小聚",
+        "Address_EN": "8/F., MODY HOUSE, NO. 30 MODY ROAD, TSIM SHA TSUI, KOWLOON",
+        "Address_TC": "九龍尖沙咀麼地道30號MODY HOUSE 8樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": []
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.174462,
+          22.2970894
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "KUNG TAK LAM SHANGHAI VEGETARIAN CUISINE",
+        "Name_TC": "功德林上海素食",
+        "Address_EN": "20/F., SUGAR+, 31 SUGAR STREET, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣糖街31號 SUGAR+ 20樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1868504,
+          22.2801032
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "YE YE DOU DOU Vegetarian Restaurant",
+        "Name_TC": "葉葉豆豆素食餐廳",
+        "Address_EN": "9/F, EVERNEW HOUSE, 485 LOCKHART ROAD, CAUSEWAY BAY, HONG KONG",
+        "Address_TC": "香港銅鑼灣駱克道485號 恒景大廈9樓",
+        "Keyword_EN": [
+          "vegetarian"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.18272,
+          22.280715
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "Name_EN": "Veggie Factory",
+        "Name_TC": "素食工房",
+        "Address_EN": "G/F, 41 KING FUK STREET, SAN PO KONG, KOWLOON",
+        "Address_TC": "九龍新蒲崗景福街41號地下",
+        "Keyword_EN": [
+          "veggie"
+        ],
+        "Keyword_TC": [
+          "素食"
+        ]
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          114.1966407,
+          22.33406587
+        ]
+      }
+    }
+  ]
+}
