@@ -1,0 +1,22 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Plain-Text Carousel</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- Swiper container custom element -->
+  <swiper-container #swiperEl class="demo-swiper" aria-label="Text slider">
+    <swiper-slide *ngFor="let text of slides">
+      <div class="slide-inner">{{ text }}</div>
+    </swiper-slide>
+
+    <!-- Add pagination slot so the dots show -->
+    <div class="swiper-pagination" slot="pagination"></div>
+  </swiper-container>
+
+  <!-- Controls -->
+  <div class="controls">
+    <ion-button expand="block" (click)="next()">Next slide →</ion-button>
+  </div>
+</ion-content>

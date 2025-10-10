@@ -14,7 +14,7 @@
           <!-- Brand: icon or text -->
           <div class="flex items-center gap-3">
             <!-- Show brand icon or fallback text; fixed -->
-            <img [src]="brandIcon$ | async" alt="Pour Rice" class="h-[67px] w-[67px] object-contain" decoding="async"/>
+            <img [src]="brandIcon$ | async" alt="Pour Rice" class="h-[67px] w-[67px] object-contain" decoding="async" />
           </div>
 
           <!-- Nav controls -->
@@ -45,8 +45,8 @@
 
         <!-- Ads carousel: use Swiper -->
         <section class="relative mb-8">
-          <!-- Swiper container with template reference to control it from TS -->
-          <swiper-container #SwiperBar class="rounded-lg" [loop]="true" [autoplay]="{ delay: 4000 }">
+          <!-- Swiper container (no template reference) -->
+          <swiper-container class="rounded-lg" loop="true" autoplay="{ delay: 4000 }" css-mode="true">
             <swiper-slide *ngFor="let a of (ads$ | async) || []" class="flex items-center justify-center">
               <a [href]="a.href" class="block w-full">
                 <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" class="h-44 w-full rounded-lg object-cover" />
@@ -54,17 +54,21 @@
             </swiper-slide>
           </swiper-container>
 
-          <!-- Swiper controls: show only on non-native (desktop/web) -->
           <button *ngIf="!isNative" (click)="SwiperPrev()" aria-label="Previous ad"
                   class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
-            <!-- Left chevron -->
             <ion-icon name="arrow-back-outline"></ion-icon>
           </button>
           <button *ngIf="!isNative" (click)="SwiperNext()" aria-label="Next ad"
                   class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
-            <!-- Right chevron -->
             <ion-icon name="arrow-forward-outline"></ion-icon>
           </button>
+        </section>
+
+        <section class="mb-8">
+          <div class="mt-4 overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800">
+            <img [src]="featuredImage || (offers$ | async)?.[0]?.image || 'assets/icon/Placeholder.png'"
+                 alt="featured" class="h-52 w-full object-cover" />
+          </div>
         </section>
 
         <!-- Featured image under carousel -->
@@ -233,7 +237,7 @@
                     {{ curLang === 'TC' ? '素食社群' : 'Community' }}
                   </a>
                   <a routerLink="/write-review" class="rounded">
-                  {{ curLang === 'TC' ? '撰寫食評' : 'Write a Review' }}
+                    {{ curLang === 'TC' ? '撰寫食評' : 'Write a Review' }}
                   </a>
                 </nav>
               </div>
