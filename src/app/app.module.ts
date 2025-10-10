@@ -1,4 +1,4 @@
-import { CUSTOM_ELEMENTS_SCHEMA, NgModule, isDevMode} from '@angular/core';
+import { NgModule, isDevMode} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -18,6 +18,6 @@ register(); // Register custom elements globally so <swiper-container> works
 })],
   providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy }],
   bootstrap: [AppComponent],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]
+  //schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class AppModule {}
