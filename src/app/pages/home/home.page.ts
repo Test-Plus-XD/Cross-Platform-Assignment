@@ -48,6 +48,10 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
 
   // Guard flags to ensure each swiper is initialised only once per page presentation
   private hasInit: Record<string, boolean> = { ads: false, offers: false, articles: false, reviews: false, restaurants: false };
+  // Limited retry counters to avoid infinite retries when something unexpected fails
+  private initAttempts: Record<string, number> = { ads: 0, offers: 0, articles: 0, reviews: 0, restaurants: 0 };
+  // Maximum number of times we will attempt to initialise a section before giving up
+  private readonly MAX_INIT_ATTEMPTS = 3;
   // Subscriptions for data arrival to reinitialise swipers when async data arrives
   private subs: Subscription[] = [];
 
@@ -150,6 +154,8 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
   private triggerInit(section: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants') {
     // Reset guard so ngAfterViewChecked will attempt initialisation again
     this.hasInit[section] = false;
+    // Reset attempts so we allow up to MAX_INIT_ATTEMPTS new tries
+    this.initAttempts[section] = 0;
     // Immediate attempt after a short delay to allow change detection to run
     setTimeout(() => this.tryInitAll(), 10);
   }
@@ -163,71 +169,86 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
     this.tryInitIfReady('restaurants', this.restaurantsSwiper, this.restaurantsSwiperConfig);
   }
 
-  // Attempt to initialise a swiper only if it is present, has slides and has not been initialised yet
+  // Attempt to initialise a swiper only if it is present, has slides and has not been fully initialised yet
   private tryInitIfReady(
     name: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants',
     viewRef: ElementRef | undefined,
     config: any
   ) {
-    // Guard if already initialised
+    // If we've already initialised successfully or exhausted retries, skip
     if (this.hasInit[name]) return;
-    // Guard if ViewChild not found in this cycle
-    if (!viewRef || !viewRef.nativeElement) {
-      // Not in DOM yet; will be picked up in subsequent ngAfterViewChecked runs
+    if (this.initAttempts[name] >= this.MAX_INIT_ATTEMPTS) {
+      console.warn(`HomePage: tryInitIfReady() — giving up initialising ${name} after ${this.initAttempts[name]} attempts`);
+      this.hasInit[name] = true; // mark as done to avoid repeated logs
       return;
     }
+
+    // Guard if ViewChild not found in this cycle
+    if (!viewRef || !viewRef.nativeElement) return;
+
     const el: any = viewRef.nativeElement;
     // Count child slides; require at least one slide to avoid Swiper internal errors
-    const slideCount = el.querySelectorAll ? el.querySelectorAll('swiper-slide').length : 0;
-    if (slideCount <= 0) {
-      // Slides not yet rendered; skip this cycle and wait for next ngAfterViewChecked
-      return;
-    }
-    // Slides exist; mark as initialised to avoid duplicate work
-    this.hasInit[name] = true;
-    // Call central initializer that handles update vs initialise and safety checks
-    this.initIfPresent(viewRef, config, name);
+    const slideCount = (el.querySelectorAll && typeof el.querySelectorAll === 'function') ? el.querySelectorAll('swiper-slide').length : 0;
+    if (slideCount <= 0) return; // wait for next check
+
+    // Mark we are attempting initialisation so we don't re-enter too quickly
+    this.initAttempts[name] = (this.initAttempts[name] || 0) + 1;
+
+    // Attempt initialisation with robust error handling
+    this.initIfPresent(viewRef, config, name).catch(err => {
+      // Log error once per attempt and continue; if max attempts reached, we will stop trying
+      console.error(`HomePage: tryInitIfReady() caught error initialising ${name}`, err);
+      if (this.initAttempts[name] >= this.MAX_INIT_ATTEMPTS) {
+        console.warn(`HomePage: tryInitIfReady() — max attempts reached for ${name}, marking as init done to avoid spam`);
+        this.hasInit[name] = true;
+      } else {
+        // schedule another try after a short delay to allow DOM / HMR to settle
+        setTimeout(() => this.tryInitIfReady(name, viewRef, config), 120);
+      }
+    });
   }
 
   // Central initialisation logic that assigns config and calls update/initialize safely
-  private async initIfPresent(viewChildRef: ElementRef | undefined, config: any, name: string) {
+  private async initIfPresent(viewChildRef: ElementRef | undefined, config: any, name: string): Promise<void> {
     // Guard if view child is not present
     if (!viewChildRef || !viewChildRef.nativeElement) {
-      console.warn(`HomePage: initIfPresent() — ${name} swiper element not found`);
-      return;
+      throw new Error(`${name} viewRef missing`); // will be caught by caller
     }
     const el: any = viewChildRef.nativeElement; // Native custom element instance
 
+    // Defensive try/catch so internal errors do not bubble every frame
     try {
-      // If pagination is expected but missing, create a slot element so Swiper internals find it
-      if (config && config.pagination && !el.querySelector('[slot="pagination"]')) {
-        const pag = document.createElement('div'); // Create element for pagination slot
-        pag.setAttribute('slot', 'pagination'); // Give it the pagination slot
-        pag.className = 'swiper-pagination'; // Swiper expects this class for styling/behaviour
-        el.appendChild(pag); // Append into the custom element so swiper internals find it
-        console.log(`HomePage: initIfPresent() — ${name} pagination slot created`);
-      }
-
-      // Compute slides count and effective slidesPerView to prevent loop duplication issues
-      const slidesCount = el.querySelectorAll ? el.querySelectorAll('swiper-slide').length : 0;
+      // Note: we DO NOT create pagination slot elements here at runtime to avoid racing with Swiper internals
+      // Ensure loop is safe: if slides < effective slidesPerView, disable loop to avoid internal duplicate logic errors
+      const slidesCount = (el.querySelectorAll && typeof el.querySelectorAll === 'function') ? el.querySelectorAll('swiper-slide').length : 0;
       const slidesPerView = this.effectiveSlidesPerView(config);
       if (config && config.loop && slidesCount > 0 && slidesCount < Math.ceil(slidesPerView)) {
-        // Mutate a shallow copy of config so caller's object is not mutated unexpectedly
-        config = { ...config, loop: false };
+        config = { ...config, loop: false }; // shallow copy to not mutate original config
         console.warn(`HomePage: initIfPresent() — ${name} loop disabled because slides (${slidesCount}) < slidesPerView (${slidesPerView})`);
       }
 
       // Assign configuration onto the custom element so it picks options from properties
-      Object.assign(el, config);
-      console.log(`HomePage: initIfPresent() — ${name} config assigned`, config);
+      try {
+        Object.assign(el, config);
+      } catch (assignErr) {
+        // If assignment fails, log but continue (some builds may lock properties)
+        console.warn(`HomePage: initIfPresent() — ${name} Object.assign failed`, assignErr);
+      }
+      console.log(`HomePage: initIfPresent() — ${name} config assigned (attempt ${this.initAttempts[name]})`);
 
       // If the internal Swiper already exists, call update() to refresh slides; otherwise call initialize()
       if (el.swiper) {
         try {
-          el.swiper.update(); // Refresh slides and re-render
-          console.log(`HomePage: initIfPresent() — ${name} el.swiper.update() called`);
-        } catch (e) {
-          console.warn(`HomePage: initIfPresent() — ${name} update() failed, attempting initialize()`, e);
+          // Guard update with try/catch
+          if (typeof el.swiper.update === 'function') {
+            el.swiper.update();
+            console.log(`HomePage: initIfPresent() — ${name} el.swiper.update() called`);
+          } else {
+            console.log(`HomePage: initIfPresent() — ${name} internal swiper object has no update()`);
+          }
+        } catch (updateErr) {
+          // If update fails, try initialize as fallback
+          console.warn(`HomePage: initIfPresent() — ${name} update() failed, attempting initialize()`, updateErr);
           if (typeof el.initialize === 'function') { el.initialize(); console.log(`HomePage: initIfPresent() — ${name} initialize() called after failed update`); }
         }
       } else {
@@ -241,18 +262,24 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
         }
       }
 
-      // Attach debug event listener for slide changes
-      el.addEventListener('swiperslidechange', (ev: any) => {
+      // Attach debug event listener for slide changes (idempotent listener if same function)
+      const handler = (ev: any) => {
         console.log(`HomePage: ${name} swiperslidechange`, { event: ev, activeIndex: el.swiper ? el.swiper.activeIndex : null });
-      });
+      };
+      // We attach once — guard by setting a property to avoid multiple identical listeners
+      if (!el.__hasSlideChangeHandler) {
+        el.addEventListener('swiperslidechange', handler);
+        (el as any).__hasSlideChangeHandler = true;
+      }
 
-      // Small post-init log to show internal swiper object state
+      // Log internal swiper object shortly after init to help debug timing issues
       setTimeout(() => console.log(`HomePage: ${name} el.swiper =`, el.swiper), 150);
+
+      // Success: mark as initialised so we don't retry forever
+      this.hasInit[name] = true;
     } catch (err) {
-      // Detailed error log for debugging initialisation issues
-      console.error(`HomePage: initIfPresent() failed for ${name}`, err);
-      // Reset the guard so Angular can try again later if appropriate
-      this.hasInit[name] = false;
+      // Re-throw to allow caller to schedule retry logic and count attempts
+      throw err;
     }
   }
 
@@ -279,12 +306,12 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
     }
   }
 
-  // Toggle the theme (light/dark) and re-init Swipers after theme change to handle reflow
+  // Toggle the theme (light/dark) and keep initialisation conservative
   toggleTheme() {
     try {
       this.theme.toggle(); // Toggle using ThemeService
-      // After toggling theme, re-run initialisation guards in case DOM reflow replaced elements
-      setTimeout(() => this.tryInitAll(), 100);
+      console.log('HomePage: toggleTheme() called — theme toggled');
+      // Do NOT force re-initialisation here to avoid racing with Angular reflow/HMR
     } catch (err) {
       console.error('HomePage: toggleTheme() failed', err);
     }
