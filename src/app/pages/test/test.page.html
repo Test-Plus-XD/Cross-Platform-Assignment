@@ -1,22 +1,49 @@
+<!-- src/app/pages/test/test.page.html -->
 <ion-header>
   <ion-toolbar>
-    <ion-title>Plain-Text Carousel</ion-title>
+    <!-- Header: brand + nav (copied from Home) -->
+    <div slot="start" class="flex items-center gap-3">
+      <!-- Brand icon changes with theme via brandIcon$ -->
+      <img [src]="brandIcon$ | async" alt="Pour Rice" class="h-[40px] w-[40px] object-contain" decoding="async" />
+    </div>
+    <ion-title>Test Page</ion-title>
+    <div slot="end" class="flex items-center gap-2">
+      <!-- Login link -->
+      <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>
+      <!-- Search link -->
+      <a class="text-sm" routerLink="/search">{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</a>
+      <!-- Language toggle -->
+      <button (click)="setLang('EN')" class="ion-padding-start">🇬🇧</button>
+      <button (click)="setLang('TC')" class="ion-padding-end">🇭🇰</button>
+      <!-- Theme toggle -->
+      <ion-button fill="clear" (click)="toggleTheme()" aria-label="Toggle theme">
+        <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
+        <ng-template #sun>☀</ng-template>
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <!-- Swiper container custom element -->
-  <swiper-container #swiperEl class="demo-swiper" aria-label="Text slider">
-    <swiper-slide *ngFor="let text of slides">
-      <div class="slide-inner">{{ text }}</div>
-    </swiper-slide>
+  <!-- Short explanatory note for your debugging -->
+  <!-- Use the Test Page to reproduce theme toggle issues; console logs show lifecycle and toggles -->
+  <!-- Minimal demo Swiper element (requires Swiper registered and CUSTOM_ELEMENTS_SCHEMA present) -->
+  <section class="mb-4">
+    <swiper-container #swiperEl class="rounded-lg" css-mode="true">
+      <swiper-slide *ngFor="let s of slides">
+        <div style="height:140px;display:flex;align-items:center;justify-content:center">
+          {{ s }}
+        </div>
+      </swiper-slide>
+      <div class="swiper-pagination" slot="pagination"></div>
+    </swiper-container>
+    <div class="mt-2">
+      <ion-button (click)="nextSlide()">Next slide →</ion-button>
+    </div>
+  </section>
 
-    <!-- Add pagination slot so the dots show -->
-    <div class="swiper-pagination" slot="pagination"></div>
-  </swiper-container>
-
-  <!-- Controls -->
-  <div class="controls">
-    <ion-button expand="block" (click)="next()">Next slide →</ion-button>
-  </div>
+  <!-- Simple debug area that shows actions in the page (use DevTools console for logs) -->
+  <section>
+    <p>Open DevTools console and click the theme icon. Watch for logs prefixed with <code>TestPage:</code>.</p>
+  </section>
 </ion-content>

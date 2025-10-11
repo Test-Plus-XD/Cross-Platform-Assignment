@@ -1,4 +1,10 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+// src/app/pages/test/test.page.ts
+// TestPage with header copied from Home and a minimal Swiper demo for narrowing the theme issue
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-test',
@@ -6,53 +12,60 @@ import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angula
   styleUrls: ['./test.page.scss'],
   standalone: false,
 })
-export class TestPage implements AfterViewInit {
-  // Sample slides are plain text strings
+export class TestPage implements OnInit, OnDestroy {
+  // Language and theme streams exposed for template binding
+  lang$ = this.lang.lang$;
+  isDark$ = this.theme.isDark$;
+  // Brand icon that changes with theme
+  brandIcon$ = this.isDark$.pipe(map(d => d ? 'assets/icon/App-Dark.png?theme=dark' : 'assets/icon/App-Light.png?theme=light'));
+  // Minimal demo slides for the test swiper
   slides: string[] = ['Slide one — hello', 'Slide two — greetings', 'Slide three — farewell'];
-
-  // Minimal Swiper configuration; works with element API
-  swiperConfig: any = {
-    slidesPerView: 1,
-    spaceBetween: 12,
-    pagination: { clickable: true },
-    navigation: false, // We will use our own button for demo
-    loop: false
-  };
-
-  // Get a reference to the custom element <swiper-container>
+  // ViewChild reference to the demo swiper-element
   @ViewChild('swiperEl', { static: false }) swiperEl!: ElementRef;
+  // Subscriptions container so we can tear down listeners
+  private subs: Subscription[] = [];
 
-  // Nothing heavy in constructor for this minimal example
-  constructor() { }
-
-  // After view is ready, attach event listener and optionally access internal swiper
-  ngAfterViewInit(): void {
-    const el = this.swiperEl.nativeElement as any; // Native swiper element (custom element)
-
-    // Initialise configuration on the element and call initialise
-    // This helps ensure the config is applied even if Angular rendered asynchronously
-    Object.assign(el, this.swiperConfig);
-    if (typeof el.initialize === 'function') {
-      el.initialize();
-    }
-
-    // Listen to slide change events emitted by the Swiper element
-    el.addEventListener('swiperslidechange', (ev: any) => {
-      // Log active index for debugging
-      // Use el.swiper to access the internal Swiper instance if needed
-      console.log('Slide changed, activeIndex =', el.swiper ? el.swiper.activeIndex : 'unknown');
-    });
+  constructor(private lang: LanguageService, private theme: ThemeService) {
+    // Log construction for debug
+    console.log('TestPage: constructor()');
   }
 
-  // Called when the Next button is pressed; uses the internal swiper API
-  next(): void {
-    const el = this.swiperEl?.nativeElement as any;
-    // Guard against missing initialisation
+  ngOnInit(): void {
+    // Log initialisation and ensure theme service initialises if it exposes init()
+    console.log('TestPage: ngOnInit()');
+    this.theme.init?.();
+    // Subscribe to theme changes to log them (helps reproduce the error)
+    this.subs.push(this.isDark$.subscribe(d => console.log('TestPage: isDark$ ->', d)));
+  }
+
+  // Toggle theme via ThemeService with defensive logging
+  toggleTheme(): void {
+    try {
+      console.log('TestPage: toggleTheme() called');
+      this.theme.toggle();
+    } catch (err) {
+      console.error('TestPage: toggleTheme() error', err);
+    }
+  }
+
+  // Language setter to mirror Home behaviour
+  setLang(l: 'EN' | 'TC'): void {
+    this.lang.setLang(l);
+  }
+
+  // Minimal Next button for the demo swiper to confirm control after theme toggle
+  nextSlide(): void {
+    const el: any = this.swiperEl?.nativeElement;
     if (el && el.swiper && typeof el.swiper.slideNext === 'function') {
       el.swiper.slideNext();
+      console.log('TestPage: nextSlide() invoked');
     } else {
-      // Fallback: try to programmatically increment the internal index and update
-      console.warn('Swiper not ready yet.');
+      console.warn('TestPage: nextSlide() — swiper not ready', !!el, !!(el && el.swiper));
     }
+  }
+
+  // Clean up subscriptions on destroy
+  ngOnDestroy(): void {
+    this.subs.forEach(s => s.unsubscribe());
   }
 }

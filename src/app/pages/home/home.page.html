@@ -55,7 +55,7 @@
         <section class="relative mb-8">
           <!-- Swiper container (no template reference) -->
           <!-- Template ref name adsSwiper is used by the component class to control this instance -->
-          <swiper-container #adsSwiper class="rounded-lg section-swiper" loop="true" autoplay="{ delay: 4000 }" css-mode="true">
+          <swiper-container #adsSwiper class="section-swiper rounded-lg" loop="true" autoplay="{ delay: 4000 }" css-mode="true">
             <swiper-slide *ngFor="let a of (ads$ | async) || []" class="flex items-center justify-center">
               <a [href]="a.href" class="block w-full">
                 <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" class="h-44 w-full rounded-lg object-cover" />
