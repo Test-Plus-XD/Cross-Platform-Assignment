@@ -23,4 +23,10 @@ export class LanguageService {
     localStorage.setItem('lang', lang);
     this._lang.next(lang);
   }
+
+  // Initialise service and sync with DOM on app start
+  init() {
+    const currentLang = this.getSaved();
+    this._lang.next(currentLang); // Ensure BehaviourSubject emits current value
+  }
 }

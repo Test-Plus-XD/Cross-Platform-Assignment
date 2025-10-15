@@ -1,0 +1,41 @@
+/* Basic styling for shared footer layout */
+/* Start hidden (translateY) and slide into view when .visible is applied */
+.shared-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  transform: translateY(120%);
+  transition: transform 320ms cubic-bezier(.25,.8,.25,1), opacity 220ms ease;
+  opacity: 0;
+  pointer-events: none; // Disable while hidden
+  background: var(--ion-background-color, #fff);
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Visible state: slide up and accept pointer events */
+.shared-footer.visible {
+  transform: translateY(0%);
+  opacity: 0.9;
+  pointer-events: auto;
+}
+
+.footer-inner {
+  background: var(--ion-background-color, #fff);
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.footer-nav {
+  display: flex;
+  flex-direction: row-reverse;
+  gap: 0.5rem;
+  font-size: min(0.9rem, 3vw);
+}
+
+.footer-link {
+  color: var(--ion-text-color, #111);
+  text-decoration: none;
+}

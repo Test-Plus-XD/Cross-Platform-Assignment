@@ -1,0 +1,18 @@
+<!-- Shared footer with bilingual links -->
+<footer id="app-shared-footer" [class.visible]="isVisible" class="shared-footer mt-80 border-t border-slate-200 bg-white pt-80 dark:border-slate-700 dark:bg-slate-800">
+  <ion-footer [translucent]="true">
+    <ion-toolbar>
+      <div class="footer-inner mx-auto max-w-screen p-4">
+        <nav class="footer-nav flex flex-wrap gap-2 text-sm">
+          <a routerLink="/about" class="footer-link">{{ (lang$ | async) === 'TC' ? '關於我們' : 'About Us' }}</a>|
+          <a routerLink="/vegevents" class="footer-link">{{ (lang$ | async) === 'TC' ? '素食活動' : 'Veg Events' }}</a>|
+          <a routerLink="/faq" class="footer-link">{{ (lang$ | async) === 'TC' ? '常見問題' : 'FAQ' }}</a>|
+          <a routerLink="/terms" class="footer-link">{{ (lang$ | async) === 'TC' ? '條款與細則' : 'Terms' }}</a>|
+          <a routerLink="/community" class="footer-link">{{ (lang$ | async) === 'TC' ? '素食社群' : 'Community' }}</a>|
+          <a routerLink="/write-review" class="footer-link">{{ (lang$ | async) === 'TC' ? '撰寫食評' : 'Write a Review' }}</a>
+        </nav>
+        <div class="mt-1 text-xs text-slate-900 dark:text-slate-300">©{{ currentYear }} Pour Rice. All rights reserved.</div>
+      </div>
+    </ion-toolbar>
+  </ion-footer>
+</footer>

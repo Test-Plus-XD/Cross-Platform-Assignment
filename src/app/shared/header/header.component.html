@@ -1,0 +1,29 @@
+<!-- Shared header: brand, nav links, language and theme controls -->
+<header id="app-shared-header" class="shared-header">
+  <ion-header [translucent]="true">
+    <ion-toolbar>
+      <!-- Brand area with responsive inline sizing preserved -->
+      <ion-title slot="start" class="brand">
+        <img [src]="brandIcon$ | async" alt="Brand" style="height:10vw; width:10vw; max-height:67px; max-width:67px;" />
+      </ion-title>
+
+      <!-- Navigation and controls -->
+      <nav slot="end" class="header-nav flex items-center gap-3">
+        <!-- Login link -->
+        <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>
+        <!-- Search link -->
+        <a class="text-sm" routerLink="/search">{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</a>
+        <!-- Language toggle -->
+        <div class="lang-toggle">
+          <button (click)="setLang('EN')" class="lang-btn ion-padding-start">🇬🇧</button>|<button (click)="setLang('TC')" class="lang-btn ion-padding-end">🇭🇰</button>
+        </div>
+
+        <!-- Theme toggle calls ThemeService via component method -->
+        <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial" aria-label="Toggle theme">
+          <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
+          <ng-template #sun>☀</ng-template>
+        </button>
+      </nav>
+    </ion-toolbar>
+  </ion-header>
+</header>

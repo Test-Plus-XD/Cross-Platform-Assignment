@@ -19,7 +19,7 @@ export class RestaurantPage implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private mock: MockDataService,
-    private lang: LanguageService
+    readonly lang: LanguageService
   ) { }
 
   ngOnInit() {

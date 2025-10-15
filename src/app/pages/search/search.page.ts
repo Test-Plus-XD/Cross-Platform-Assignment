@@ -18,7 +18,7 @@ export class SearchPage {
 
   constructor(
     private mock: MockDataService,
-    private lang: LanguageService
+    readonly lang: LanguageService
   ) { }
 
   ngOnInit() {

@@ -1,7 +1,9 @@
 // Fallback for ionic components that don't map to CSS variables by Tailwindv4
 /* Light Theme*/
 :root {
-  --bg: #fbfcfa;
+  --ion-font-family: 'LXGW WenKai TC', sans-serif;
+  --footer-spacing: calc(144px + env(safe-area-inset-bottom));
+  --bg: #f2faf0;
   --text: #0f172a; /* primary page text */
   --muted: #64748b; /* secondary text */
   --card-bg: #ebfaf2;
@@ -16,7 +18,7 @@
 
 /* Dark Theme*/
 html.dark, .dark {
-  --bg: #3b4220;
+  --bg: #40593c;
   --text: #e6eef8;
   --muted: #94a3b8;
   --card-bg: #025402; /* dark card background */
@@ -30,7 +32,8 @@ html.dark, .dark {
 }
 
 /* Ensure body and core elements inherit the variable values */
-html, body, ion-app, ion-content, .ion-page {
+html, body, app-root, ion-app, .ion-page {
+  height: 100%;
   background-color: var(--bg);
   color: var(--text);
 }
@@ -72,6 +75,57 @@ ion-label, ion-title, ion-text {
 /* Fallback for plain elements (and tailwind-less parts) */
 p, h1, h2, h3, h4, h5, h6, a, li, span {
   color: var(--text)
+}
+
+/* Header should size naturally and not overlap content */
+#app-shared-header {
+  z-index: 10; // Keep header above content if any stacking occurs
+  top: 0;
+}
+#app-shared-footer {
+  z-index: 10; // Keep footer above content if any stacking occurs
+  bottom: 0;
+  align-self: baseline; // Align footer to the start of the cross axis (bottom of viewport)
+}
+
+/* Make the router outlet expand to consume available vertical space */
+ion-router-outlet {
+  margin-block-start: 5vh;
+  padding-inline: 5vw;
+}
+
+/* When .footer-fixed is present on ion-app, make footer fixed to viewport bottom */
+ion-app.footer-fixed app-shared-footer {
+  position: fixed;
+  bottom: 0 !important; // Ensures footer sticks to bottom of viewport
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+/* When not footer-fixed, footer is in normal flow */
+ion-app app-shared-footer {
+  position: relative;
+  margin-top: 20vh; // Reserve space below content when footer appears
+}
+
+/* Ensure ion-content inside pages uses its space correctly */
+ion-router-outlet ion-page, ion-router-outlet ion-content, ion-router-outlet .ion-page {
+  min-height: 0; // Allow inner content to be constrained by the flex container
+}
+
+ion-toolbar {
+  opacity: 0.667;
+}
+
+/* Hide scrollbar for the entire page */
+ion-content::part(scroll) {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+  &::-webkit-scrollbar {
+    display: none !important;
+    opacity: 0 !important;
+  }
 }
 
 /*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
@@ -828,7 +882,7 @@ p, h1, h2, h3, h4, h5, h6, a, li, span {
 
 *, :after, :before, ::backdrop {
   box-sizing: border-box;
-  border: 0 solid;
+  //border: 0 solid;
   margin: 0;
   padding: 0
 }

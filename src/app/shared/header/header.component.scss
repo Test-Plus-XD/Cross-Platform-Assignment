@@ -1,0 +1,50 @@
+/* Basic styling for shared header */
+.shared-header {
+  // Use flex to align brand and nav similar to your Home header
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  margin-bottom: 0.005vw;
+  padding: 0.05vw 0.1vh;
+}
+
+.brand {
+  // Keep brand visually stable
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-nav {
+  // Horizontal control row
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-link {
+  // Small link style
+  font-size: 1.1rem;
+  color: var(--ion-text-color, #111);
+  text-decoration: none;
+}
+
+.lang-btn {
+  // Compact language button
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.025vw;
+  margin-bottom: 0.5vh;
+  font-size: 1rem;
+}
+
+.theme-btn {
+  // Theme toggle slightly emphasised
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--ion-background-color, #fff);
+  cursor: pointer;
+}
