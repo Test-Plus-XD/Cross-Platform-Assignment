@@ -13,7 +13,7 @@ export class LayoutService {
   // Used to manipulate DOM safely
   private renderer: Renderer2;
   // Pixel threshold from bottom to show footer
-  private readonly THRESHOLD_PX = 80;
+  private readonly THRESHOLD_PX = 75;
   // Small debounce interval to avoid jitter (ms)
   private readonly DEBOUNCE_MS = 50;
   // Last time we emitted a change

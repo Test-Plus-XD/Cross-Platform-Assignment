@@ -32,10 +32,12 @@
           <button (click)="setLang('EN')" class="lang-btn ion-padding-start">🇬🇧</button>|<button (click)="setLang('TC')" class="lang-btn ion-padding-end">🇭🇰</button>
         </div>
         <!-- Theme toggle calls ThemeService via component method -->
-        <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial" aria-label="Toggle theme">
-          <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
-          <ng-template #sun>☀</ng-template>
-        </button>
+        <ng-container *ngIf="!(isMobile$ | async)">
+          <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: 'Arial Unicode MS' !important; min-width: 3rem" aria-label="Toggle theme">
+            <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
+            <ng-template #sun>☀️</ng-template>
+          </button>
+        </ng-container>
       </nav>
     </ion-toolbar>
   </ion-header>

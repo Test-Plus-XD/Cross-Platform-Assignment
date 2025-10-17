@@ -1,32 +1,32 @@
-// Component that renders bottom ion-tabs bar when UIService says to show
+// Bottom tabs component; template owns the routes and labels
 import { Component } from '@angular/core';
-import { UIService } from '../../services/UI.service';
 import { Observable } from 'rxjs';
-
-interface TabItem {
-  label: string;
-  tabRoute: string;
-  icon?: string;
-}
+import { PlatformService } from '../../services/platform.service';
+import { UIService } from '../../services/UI.service';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
-  selector: 'app-shared-tabs',
+  selector: 'app-shared-tab',
   templateUrl: './tab.component.html',
   styleUrls: ['./tab.component.scss'],
-  standalone: false,
+  standalone: false
 })
 export class TabComponent {
-  // Tabs data for the ion-tab-bar
-  tabItems: TabItem[] = [
-    { label: 'Home', tabRoute: '/home', icon: 'home' },
-    { label: 'Search', tabRoute: '/search', icon: 'search' },
-    { label: 'Account', tabRoute: '/account', icon: 'person' }
-  ];
-
+  // Observable boolean that is true when running on mobile
+  isMobile$: Observable<boolean>;
   // Observable controlling whether tab bar displays
   showTabs$: Observable<boolean>;
+  // Observable for bilingual labels
+  lang$ = this.language.lang$;
 
-  constructor(private uiService: UIService) {
-    this.showTabs$ = this.uiService.showTabs$;
+  constructor(
+    readonly platform: PlatformService,
+    readonly UI: UIService,
+    readonly language: LanguageService
+  ) {
+    // Assign platform-driven visibility observable from UIService
+    this.isMobile$ = this.platform.isMobile$;
+    this.showTabs$ = this.UI.showTabs$;
+    console.log('TabComponent initialised, showTabs$ assigned');
   }
 }

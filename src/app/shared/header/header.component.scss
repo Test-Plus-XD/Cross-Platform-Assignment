@@ -5,8 +5,8 @@
   align-items: center;
   justify-content: space-between;
   position: sticky;
-  margin-bottom: 0.005vw;
-  padding: 0.05vw 0.1vh;
+  margin-bottom: 0.05vw;
+  padding: 0.005vw 0.1vh;
 }
 
 .brand {
@@ -21,6 +21,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  margin-right: 0.5vw;
 }
 
 .header-link {

@@ -26,12 +26,14 @@
   background: var(--ion-background-color, #fff);
   border-radius: 8px;
   padding: 1rem;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 2rem) !important;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
 .footer-nav {
   display: flex;
   flex-direction: row-reverse;
+  gap: 0.5rem;
   font-size: min(0.9rem, 3vw);
 }
 

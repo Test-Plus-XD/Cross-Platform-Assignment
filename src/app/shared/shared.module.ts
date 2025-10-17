@@ -13,7 +13,7 @@ import { TabComponent } from './tab/tab.component';
   declarations: [HeaderComponent, FooterComponent, MenuComponent, TabComponent],
   // Import common building blocks and Ionic/Router for routerLink support
   imports: [CommonModule, IonicModule, RouterModule],
-  // Export so AppModule (or any feature module) can use <app-shared-header> / <app-shared-footer> and menu/tab
+  // Export so AppModule (or any feature module) can use <app-shared-header> / <app-shared-tab> and menu/tab
   exports: [HeaderComponent, FooterComponent, MenuComponent, TabComponent]
 })
 export class SharedModule { }

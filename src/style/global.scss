@@ -2,7 +2,7 @@
 /* Light Theme*/
 :root {
   --ion-font-family: 'LXGW WenKai TC', sans-serif;
-  --footer-spacing: calc(144px + env(safe-area-inset-bottom));
+  --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(72px + env(safe-area-inset-bottom));
   --bg: #f2faf0;
   --text: #0f172a; /* primary page text */
@@ -82,11 +82,30 @@ p, h1, h2, h3, h4, h5, h6, a, li, span {
 #app-shared-header {
   z-index: 10; // Keep header above content if any stacking occurs
   top: 0;
+  opacity: 0.667;
+  align-self: flex-start;
 }
 #app-shared-footer {
   z-index: 10; // Keep footer above content if any stacking occurs
   bottom: 0;
+  opacity: 0.67;
   align-self: baseline; // Align footer to the start of the cross axis (bottom of viewport)
+}
+#app-shared-menu {
+  z-index: 20; // Keep menu above content if any stacking occurs
+  bottom: 0;
+  align-self: flex-start; // Align menu to the start of the cross axis (top of viewport)
+}
+#app-shared-tab {
+  z-index: 20; // Keep tab above content if any stacking occurs
+  bottom: 0;
+  margin-top: 87.87878787878787vh;
+  align-self: flex-end; // Align tab to the start of the cross axis (bottom of viewport)
+}
+
+toolbar-container {
+  margin-left: 4vh;
+  margin-right: 4vh;
 }
 
 /* Make the router outlet expand to consume available vertical space */
@@ -113,10 +132,6 @@ ion-app app-shared-footer {
 /* Ensure ion-content inside pages uses its space correctly */
 ion-router-outlet ion-page, ion-router-outlet ion-content, ion-router-outlet .ion-page {
   min-height: 0; // Allow inner content to be constrained by the flex container
-}
-
-ion-toolbar {
-  opacity: 0.667;
 }
 
 /* Hide scrollbar for the entire page */

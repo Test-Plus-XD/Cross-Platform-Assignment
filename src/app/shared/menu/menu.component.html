@@ -1,15 +1,41 @@
 <!-- Ion menu content; type is set on ion-menu in shell (push style) -->
-<ion-header>
+<ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Menu</ion-title>
+    <ion-title>{{ (lang$ | async) === 'TC' ? '選單' : 'Menu' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="shared-menu">
   <ion-list>
-    <ion-item button *ngFor="let item of menuItems" (click)="onMenuItemSelected(item)">
-      <ion-icon [name]="item.icon" slot="start"></ion-icon>
-      <ion-label>{{ item.title }}</ion-label>
+    <!-- Edit these links and labels directly in HTML -->
+    <ion-item button routerLink="/home" (click)="closeMenu()">
+      <ion-icon name="home" slot="start"></ion-icon>
+      <ion-label>{{ (lang$ | async) === 'TC' ? ' 主頁 ' : 'Home' }}</ion-label>
+    </ion-item>
+
+    <ion-item button routerLink="/search" (click)="closeMenu()">
+      <ion-icon name="search" slot="start"></ion-icon>
+      <ion-label>{{ (lang$ | async) === 'TC' ? ' 搜尋 ' : 'Search' }}</ion-label>
+    </ion-item>
+
+    <ion-item button routerLink="/account" (click)="closeMenu()">
+      <ion-icon name="person" slot="start"></ion-icon>
+      <ion-label>{{ (lang$ | async) === 'TC' ? ' 帳戶 ' : 'Account' }}</ion-label>
+    </ion-item>
+
+    <ion-item button (click)="onMenuItemSelected('/settings')">
+      <ion-icon name="settings" slot="start"></ion-icon>
+      <ion-label>{{ (lang$ | async) === 'TC' ? '設定' : 'Settings' }}</ion-label>
     </ion-item>
   </ion-list>
+  <!-- Dark mode toggle area -->
+  <div class="ion-padding">
+    <ion-item lines="none">
+      <ion-label>{{ (lang$ | async) === 'TC' ? '深色模式' : 'Dark Mode' }}</ion-label>
+      <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial; min-width: 3rem" aria-label="Toggle theme">
+        <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
+        <ng-template #sun>☀</ng-template>
+      </button>
+    </ion-item>
+  </div>
 </ion-content>
