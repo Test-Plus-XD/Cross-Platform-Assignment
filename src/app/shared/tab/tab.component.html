@@ -1,0 +1,11 @@
+<!-- Ion-tabs rendered conditionally by UIService -->
+<ion-toolbar class="shared-footer">
+  <ion-tabs *ngIf="showTabs$ | async">
+    <ion-tab-bar slot="bottom">
+      <ion-tab-button *ngFor="let tab of tabItems" [routerLink]="tab.tabRoute">
+        <ion-icon [name]="tab.icon"></ion-icon>
+        <ion-label>{{ tab.label }}</ion-label>
+      </ion-tab-button>
+    </ion-tab-bar>
+  </ion-tabs>
+</ion-toolbar>

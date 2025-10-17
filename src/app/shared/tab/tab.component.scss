@@ -1,0 +1,19 @@
+.shared-footer {
+  position: fixed;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 50px !important;
+  z-index: 60;
+  background: var(#fff) !important;
+  background-color: rgba(255, 255, 255, 1) !important;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+.shared-footer .dark {
+  background: var(#111) !important;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}

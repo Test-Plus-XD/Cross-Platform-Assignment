@@ -2,22 +2,35 @@
 <header id="app-shared-header" class="shared-header">
   <ion-header [translucent]="true">
     <ion-toolbar>
-      <!-- Brand area with responsive inline sizing preserved -->
-      <ion-title slot="start" class="brand">
-        <img [src]="brandIcon$ | async" alt="Brand" style="height:10vw; width:10vw; max-height:67px; max-width:67px;" />
-      </ion-title>
+      <nav slot="start" class="header-nav flex items-center gap-3">
+        <!-- Menu Button -->
+        <ng-container *ngIf="(showHeaderMenu$ | async)">
+          <ion-button (click)="onMenuButtonClicked()" fill="clear"  size="small" color="medium" style="color: rgba(200,200,200,200);" aria-label="Toggle menu">
+            <ion-icon slot="icon-only" name="menu"></ion-icon>
+          </ion-button>
+        </ng-container>
+
+        <!-- Brand area with responsive inline sizing preserved -->
+        <ng-container *ngIf="!(isMobile$ | async)">
+          <ion-title slot="start" class="brand">
+            <img [src]="brandIcon$ | async" alt="Brand" style="height:10vw; width:10vw; max-height:67px; max-width:67px;" />
+          </ion-title>
+        </ng-container>
+      </nav>
 
       <!-- Navigation and controls -->
       <nav slot="end" class="header-nav flex items-center gap-3">
-        <!-- Login link -->
-        <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>
-        <!-- Search link -->
-        <a class="text-sm" routerLink="/search">{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</a>
+        <ng-container *ngIf="!(isMobile$ | async)">
+          <!-- Login link -->
+          <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>
+          <!-- Search link -->
+          <a class="text-sm" routerLink="/search">{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</a>
+        </ng-container>
+
         <!-- Language toggle -->
         <div class="lang-toggle">
           <button (click)="setLang('EN')" class="lang-btn ion-padding-start">🇬🇧</button>|<button (click)="setLang('TC')" class="lang-btn ion-padding-end">🇭🇰</button>
         </div>
-
         <!-- Theme toggle calls ThemeService via component method -->
         <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial" aria-label="Toggle theme">
           <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>

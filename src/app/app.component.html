@@ -1,8 +1,14 @@
 <ion-app>
+  <!-- Global Menu -->
+  <ion-menu side="start" menuId="main-menu" contentId="menu-content" type="push">
+    <app-shared-menu></app-shared-menu>
+  </ion-menu>
   <!-- Global header -->
   <app-shared-header></app-shared-header>
   <!-- Router outlet -->
   <ion-router-outlet></ion-router-outlet>
   <!-- Global footer -->
   <app-shared-footer></app-shared-footer>
+  <!-- Mobile tab bar -->
+  <app-shared-tabs></app-shared-tabs>
 </ion-app>

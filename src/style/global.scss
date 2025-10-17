@@ -3,6 +3,7 @@
 :root {
   --ion-font-family: 'LXGW WenKai TC', sans-serif;
   --footer-spacing: calc(144px + env(safe-area-inset-bottom));
+  --min-height: calc(72px + env(safe-area-inset-bottom));
   --bg: #f2faf0;
   --text: #0f172a; /* primary page text */
   --muted: #64748b; /* secondary text */
