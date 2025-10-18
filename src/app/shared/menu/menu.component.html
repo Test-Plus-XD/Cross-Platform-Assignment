@@ -1,12 +1,12 @@
 <!-- Ion menu content; type is set on ion-menu in shell (push style) -->
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>{{ (lang$ | async) === 'TC' ? '選單' : 'Menu' }}</ion-title>
+    <ion-title class="px-2">{{ (lang$ | async) === 'TC' ? '選單' : 'Menu' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="shared-menu">
-  <ion-list>
+  <ion-list class="px-2">
     <!-- Edit these links and labels directly in HTML -->
     <ion-item button routerLink="/test" (click)="closeMenu()">
       <ion-icon name="home" slot="start"></ion-icon>

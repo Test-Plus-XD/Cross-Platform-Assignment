@@ -100,7 +100,6 @@ p, h1, h2, h3, h4, h5, h6, a, li, span {
 #app-shared-tab {
   z-index: 20; // Keep tab above content if any stacking occurs
   bottom: 0;
-  margin-top: 87.87878787878787vh;
   align-self: flex-end; // Align tab to the start of the cross axis (bottom of viewport)
 }
 

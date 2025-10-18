@@ -1,5 +1,5 @@
 <!-- Ion-tabs rendered only when UIService says to show -->
-<ion-toolbar id="app-shared-tab" class="shared-tab" *ngIf="showTabs$ | async">
+<div id="app-shared-tab" class="shared-tab" *ngIf="showTabs$ | async">
   <ion-tabs>
     <ion-tab-bar slot="bottom">
       <ion-tab-button routerLink="/home">
@@ -18,4 +18,4 @@
       </ion-tab-button>
     </ion-tab-bar>
   </ion-tabs>
-</ion-toolbar>
+</div>
