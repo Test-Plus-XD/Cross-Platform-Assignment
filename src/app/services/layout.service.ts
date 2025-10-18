@@ -26,7 +26,7 @@ export class LayoutService {
   // Class name used for the spacer element appended to the scroll element
   private readonly spacerClass = 'spacer';
   // CSS variable used to size the spacer; default inlined fallback used if not set
-  private readonly footerCssVar = '--spacer';
+  private readonly footerCssVar = '--footer-spacing';
   // CSS variable used to add extra space below the header; default fallback 0px
   private readonly headerCssVar = '--header-spacing';
 

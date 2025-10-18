@@ -38,9 +38,9 @@ export class HeaderComponent implements OnInit {
 
   ngOnInit(): void {
     // Debug logs to verify what the platform service is emitting
-    this.platform.platform$.subscribe(p => console.debug('[Header] platform =>', p));
-    this.platform.isMobile$.subscribe(flag => console.debug('[Header] isMobile =>', flag));
-    this.UI.showHeaderMenu$.subscribe(flag => console.debug('[Header] showHeaderMenu =>', flag));
+    this.platform.platform$.subscribe(p => console.debug('HeaderComponent platform =>', p));
+    this.platform.isMobile$.subscribe(flag => console.debug('HeaderComponent isMobile =>', flag));
+    this.UI.showHeaderMenu$.subscribe(flag => console.debug('HeaderComponent showHeaderMenu =>', flag));
   }
 
   // Toggle theme via ThemeService

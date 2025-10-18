@@ -20,8 +20,8 @@ export class UIService implements OnDestroy {
   private subscription: Subscription | null = null;
 
   constructor(
-    private platformService: PlatformService,
-    private menuController: MenuController
+    private platform: PlatformService,
+    private menu: MenuController
   ) {
     // Constructor intentionally lightweight; call init() from AppComponent.ngOnInit()
   }
@@ -31,8 +31,8 @@ export class UIService implements OnDestroy {
     // If already initialised, do nothing
     if (this.subscription) return;
 
-    // Use platformService.isMobile$ and seed with synchronous value to avoid flicker
-    const platformObservable = this.platformService.isMobile$.pipe(startWith(this.platformService.isMobile));
+    // Use platform.isMobile$ and seed with synchronous value to avoid flicker
+    const platformObservable = this.platform.isMobile$.pipe(startWith(this.platform.isMobile));
 
     // Subscribe and update showTabsSubject based solely on platform (mobile => true)
     this.subscription = platformObservable.subscribe(isMobile => {
@@ -58,14 +58,15 @@ export class UIService implements OnDestroy {
   // Toggle menu using Ionic MenuController
   async toggleMenu(): Promise<void> {
     try {
-      const isOpen = await this.menuController.isOpen();
+      const isOpen = await this.menu.isOpen();
       if (isOpen) {
-        await this.menuController.close();
+        await this.menu.close();
         this.menuOpenSubject.next(false);
       } else {
-        await this.menuController.open();
+        await this.menu.open();
         this.menuOpenSubject.next(true);
       }
+      console.debug('UIService showTabs set =>', isOpen);
     } catch (error) {
       console.error('UIService.toggleMenu error', error);
     }
@@ -74,7 +75,7 @@ export class UIService implements OnDestroy {
   // Open menu programmatically
   async openMenu(): Promise<void> {
     try {
-      await this.menuController.open();
+      await this.menu.open();
       this.menuOpenSubject.next(true);
     } catch (error) {
       console.error('UIService.openMenu error', error);
@@ -84,7 +85,7 @@ export class UIService implements OnDestroy {
   // Close menu programmatically
   async closeMenu(): Promise<void> {
     try {
-      await this.menuController.close();
+      await this.menu.close();
       this.menuOpenSubject.next(false);
     } catch (error) {
       console.error('UIService.closeMenu error', error);

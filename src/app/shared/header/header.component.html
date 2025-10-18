@@ -20,6 +20,8 @@
 
       <!-- Navigation and controls -->
       <nav slot="end" class="header-nav flex items-center gap-3">
+        <!-- Test link
+        <a class="text-sm" routerLink="/test">{{ (lang$ | async) === 'TC' ? 'test' : 'Test' }}</a>-->
         <ng-container *ngIf="!(isMobile$ | async)">
           <!-- Login link -->
           <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>

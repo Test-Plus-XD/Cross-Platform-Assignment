@@ -2,9 +2,9 @@
 /* Light Theme*/
 :root {
   --ion-font-family: 'LXGW WenKai TC', sans-serif;
-  --header-spacing: calc(36px + env(safe-area-inset-bottom));
+  --header-spacing: calc(48px + env(safe-area-inset-bottom));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
-  --min-height: calc(72px + env(safe-area-inset-bottom));
+  --min-height: calc(144px + env(safe-area-inset-bottom));
   --bg: #f2faf0;
   --text: #0f172a; /* primary page text */
   --muted: #64748b; /* secondary text */
@@ -104,6 +104,11 @@ p, h1, h2, h3, h4, h5, h6, a, li, span {
   align-self: flex-end; // Align tab to the start of the cross axis (bottom of viewport)
 }
 
+/* Add bottom padding to main content container to avoid overlap */
+#menu-content .content-with-tabs {
+  padding-bottom: 56px; /* approximate height of tab bar */
+}
+
 toolbar-container {
   margin-left: 4vh;
   margin-right: 4vh;
@@ -111,7 +116,7 @@ toolbar-container {
 
 /* Make the router outlet expand to consume available vertical space */
 ion-router-outlet {
-  margin-block-start: 5vh;
+  margin-block-start: 0.5vh;
   padding-inline: 5vw;
 }
 

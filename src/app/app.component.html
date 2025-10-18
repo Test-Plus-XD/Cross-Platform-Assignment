@@ -3,12 +3,15 @@
   <ion-menu side="start" menuId="main-menu" contentId="menu-content" type="push">
     <app-shared-menu></app-shared-menu>
   </ion-menu>
-  <!-- Global header -->
-  <app-shared-header></app-shared-header>
-  <!-- Router outlet -->
-  <ion-router-outlet></ion-router-outlet>
-  <!-- Global footer -->
-  <app-shared-footer></app-shared-footer>
-  <!-- Mobile tab bar -->
-  <app-shared-tab></app-shared-tab>
+  <!-- Content that the menu will push; id must match menu contentId -->
+  <ion-content id="menu-content">
+    <!-- Global header -->
+    <app-shared-header></app-shared-header>
+    <!-- Router outlet -->
+    <ion-router-outlet></ion-router-outlet>
+    <!-- Global footer -->
+    <app-shared-footer></app-shared-footer>
+    <!-- Mobile tab bar -->
+    <app-shared-tab></app-shared-tab>
+  </ion-content>
 </ion-app>
