@@ -2,6 +2,7 @@
 /* Light Theme*/
 :root {
   --ion-font-family: 'LXGW WenKai TC', sans-serif;
+  --header-spacing: calc(36px + env(safe-area-inset-bottom));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(72px + env(safe-area-inset-bottom));
   --bg: #f2faf0;

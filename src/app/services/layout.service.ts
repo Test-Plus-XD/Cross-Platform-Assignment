@@ -1,4 +1,5 @@
 // LayoutService centralises footer visibility logic driven by ion-content scroll events
+// LayoutService centralises footer visibility logic driven by ion-content scroll events
 import { Injectable, NgZone, Renderer2, RendererFactory2 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { Router, NavigationEnd } from '@angular/router';
@@ -13,9 +14,9 @@ export class LayoutService {
   // Used to manipulate DOM safely
   private renderer: Renderer2;
   // Pixel threshold from bottom to show footer
-  private readonly THRESHOLD_PX = 75;
+  private readonly thresholdPx = 75;
   // Small debounce interval to avoid jitter (ms)
-  private readonly DEBOUNCE_MS = 50;
+  private readonly debounceMs = 50;
   // Last time we emitted a change
   private lastEmitTime = 0;
   // Last boolean value emitted
@@ -23,9 +24,11 @@ export class LayoutService {
   // Cached reference to the current scrollable element inside ion-content
   private cachedScrollElement: HTMLElement | null = null;
   // Class name used for the spacer element appended to the scroll element
-  private readonly SPACER_CLASS = 'footer-spacing';
+  private readonly spacerClass = 'spacer';
   // CSS variable used to size the spacer; default inlined fallback used if not set
-  private readonly SPACER_CSS_VAR = '--footer-spacing';
+  private readonly footerCssVar = '--spacer';
+  // CSS variable used to add extra space below the header; default fallback 0px
+  private readonly headerCssVar = '--header-spacing';
 
   constructor(
     private ngZone: NgZone,
@@ -102,21 +105,24 @@ export class LayoutService {
       }
 
       // Prevent duplicate spacer
-      if (scrollEl.querySelector(`.${this.SPACER_CLASS}`)) return;
+      if (scrollEl.querySelector(`.${this.spacerClass}`)) return;
 
       // Create spacer div and style it using a CSS variable so your theme can override it
       const spacer = this.renderer.createElement('div');
-      this.renderer.addClass(spacer, this.SPACER_CLASS);
+      this.renderer.addClass(spacer, this.spacerClass);
       // Mark spacer as presentational
       this.renderer.setAttribute(spacer, 'aria-hidden', 'true');
       // Set a reasonable default height and allow override from CSS variable
       // Use 'height' rather than many <br> elements for robust spacing
-      const cssValue = `var(${this.SPACER_CSS_VAR}, 64px)`;
+      const cssValue = `var(${this.footerCssVar}, 64px)`;
       this.renderer.setStyle(spacer, 'height', cssValue);
       this.renderer.setStyle(spacer, 'minHeight', cssValue);
       this.renderer.setStyle(spacer, 'display', 'block');
       this.renderer.setStyle(spacer, 'pointerEvents', 'none');
       this.renderer.appendChild(scrollEl, spacer);
+
+      // Ensure header spacing is applied to the scroll element as well
+      this.applyHeaderSpacing(scrollEl);
 
       // Debug info
       // eslint-disable-next-line no-console
@@ -134,7 +140,7 @@ export class LayoutService {
       // Try cached element first, otherwise search document
       const el = cached && document.contains(cached) ? cached : document.querySelector('ion-content') as HTMLElement | null;
       if (!el) return;
-      const spacer = el.querySelector(`.${this.SPACER_CLASS}`);
+      const spacer = el.querySelector(`.${this.spacerClass}`);
       if (spacer) {
         this.renderer.removeChild(el, spacer);
         // eslint-disable-next-line no-console
@@ -152,11 +158,11 @@ export class LayoutService {
     if (!scrollHeight || !clientHeight) return;
 
     // Compute whether near bottom
-    const isNearBottom = (scrollTop + clientHeight) >= (scrollHeight - this.THRESHOLD_PX);
+    const isNearBottom = (scrollTop + clientHeight) >= (scrollHeight - this.thresholdPx);
 
     // Debounce / throttle emissions a bit to avoid rapid toggles
     const now = Date.now();
-    if (isNearBottom !== this.lastEmitValue && (now - this.lastEmitTime) > this.DEBOUNCE_MS) {
+    if (isNearBottom !== this.lastEmitValue && (now - this.lastEmitTime) > this.debounceMs) {
       this.lastEmitValue = isNearBottom;
       this.lastEmitTime = now;
       // Emit via BehaviourSubject
@@ -172,6 +178,8 @@ export class LayoutService {
   private async getOrCreateScrollElement(ev?: CustomEvent): Promise<HTMLElement | null> {
     // If cached and still in DOM, return it
     if (this.cachedScrollElement && document.contains(this.cachedScrollElement)) {
+      // Ensure header spacing is applied to cached element
+      this.applyHeaderSpacing(this.cachedScrollElement);
       return this.cachedScrollElement;
     }
 
@@ -215,6 +223,8 @@ export class LayoutService {
         const scrollElem: HTMLElement = await ionContent.getScrollElement();
         if (scrollElem) {
           this.cachedScrollElement = scrollElem;
+          // Apply header spacing so user CSS variable --header-spacing is respected
+          this.applyHeaderSpacing(scrollElem);
           return scrollElem;
         }
       }
@@ -222,6 +232,8 @@ export class LayoutService {
       // If we cannot obtain the ionic internal scroll element, try to use the ion-content element itself as fallback
       if (ionContent && ionContent instanceof HTMLElement) {
         this.cachedScrollElement = ionContent as HTMLElement;
+        // Apply header spacing so user CSS variable --header-spacing is respected
+        this.applyHeaderSpacing(ionContent as HTMLElement);
         return ionContent as HTMLElement;
       }
     } catch (err) {
@@ -251,5 +263,19 @@ export class LayoutService {
     const clientHeight = scrollEl.clientHeight || scrollEl.offsetHeight || 0;
     const scrollHeight = scrollEl.scrollHeight || clientHeight;
     this.evaluateAndEmit(scrollTop, clientHeight, scrollHeight);
+  }
+
+  // Apply header spacing to the scroll element using CSS variable so theme can override it
+  private applyHeaderSpacing(scrollEl: HTMLElement): void {
+    try {
+      // Set padding-top to the CSS variable --header-spacing with a 0px fallback
+      const cssValue = `var(${this.headerCssVar}, 0px)`;
+      this.renderer.setStyle(scrollEl, 'paddingTop', cssValue);
+      // Ensure box-sizing includes padding so layout calculations remain consistent
+      this.renderer.setStyle(scrollEl, 'boxSizing', 'border-box');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[LayoutService] applyHeaderSpacing error', err);
+    }
   }
 }
