@@ -51,4 +51,9 @@ export class MenuComponent {
   toggleTheme(): void {
     this.theme.toggle(); // Toggle dark / light mode safely
   }
+
+  // Set language via LanguageService
+  toggleLanguage() {
+    this.language.toggleLanguage();// Update language globally
+  }
 }

@@ -27,14 +27,12 @@
           <a class="text-sm" routerLink="/login">{{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}</a>
           <!-- Search link -->
           <a class="text-sm" routerLink="/search">{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</a>
-        </ng-container>
 
-        <!-- Language toggle -->
-        <div class="lang-toggle">
-          <button (click)="setLang('EN')" class="lang-btn ion-padding-start">🇬🇧</button>|<button (click)="setLang('TC')" class="lang-btn ion-padding-end">🇭🇰</button>
-        </div>
-        <!-- Theme toggle calls ThemeService via component method -->
-        <ng-container *ngIf="!(isMobile$ | async)">
+          <!-- Language toggle -->
+          <div class="lang-toggle">
+            <button (click)="setLang('EN')" class="lang-btn ion-padding-start">🇬🇧</button>|<button (click)="setLang('TC')" class="lang-btn ion-padding-end">🇭🇰</button>
+          </div>
+          <!-- Theme toggle calls ThemeService via component method -->
           <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: 'Arial Unicode MS' !important; min-width: 3rem" aria-label="Toggle theme">
             <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
             <ng-template #sun>☀️</ng-template>

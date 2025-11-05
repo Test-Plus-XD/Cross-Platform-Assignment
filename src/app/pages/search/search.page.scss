@@ -1,0 +1,33 @@
+/* Styles for search page */
+ion-content, main {
+  --background: transparent !important;
+  padding-block-start: 1vh !important;
+  margin-block-start: 1vh !important;
+}
+
+.restaurant-item {
+  min-height: 12vh !important;
+  margin: 0.2vh 0.2vw;
+  padding: 0.2vh 0.2vw;
+  border-radius: 20px;
+}
+
+/* Muted small text */
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+/* Make restaurant item label use full width */
+.restaurant-item h2 {
+  margin: 0 0 4px 0;
+}
+
+.filter-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

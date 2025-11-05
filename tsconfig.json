@@ -19,6 +19,9 @@
     "skipLibCheck": true,
     "target": "es2022",
     "module": "es2020",
+    "types": [
+      "@types/leaflet"
+    ],
     "lib": [
       "es2018",
       "dom"

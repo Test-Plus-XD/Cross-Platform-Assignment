@@ -24,6 +24,11 @@ export class LanguageService {
     this._lang.next(language);
   }
 
+  toggleLanguage() {
+    const current = this._lang.value;
+    this.setLang(current === 'EN' ? 'TC' : 'EN');
+  }
+
   // Initialise service and sync with DOM on app start
   init() {
     const currentLang = this.getSaved();

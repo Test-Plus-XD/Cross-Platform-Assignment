@@ -1,12 +1,14 @@
 /* Basic styling for shared header */
 .shared-header {
-  // Use flex to align brand and nav similar to your Home header
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: sticky;
   margin-bottom: 0.05vw;
-  padding: 0.005vw 0.1vh;
+  padding: 0.005vw 0.1vh !important;
+  scroll-padding-top: 0px !important;
+  scroll-margin-top: 0px !important;
+  top: 1px !important;
+  z-index: 1 !important;
 }
 
 .brand {
@@ -39,6 +41,7 @@
   padding: 0.025vw;
   margin-bottom: 0.5vh;
   font-size: 1rem;
+  color: var(--ion-text-color, #111);
 }
 
 .theme-btn {

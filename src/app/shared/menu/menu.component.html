@@ -5,7 +5,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="shared-menu">
+<div class="shared-menu">
   <ion-list class="px-2">
     <!-- Edit these links and labels directly in HTML -->
     <ion-item button routerLink="/test" (click)="closeMenu()">
@@ -33,14 +33,21 @@
       <ion-label>{{ (lang$ | async) === 'TC' ? '設定' : 'Settings' }}</ion-label>
     </ion-item>
   </ion-list>
-  <!-- Dark mode toggle area -->
+  <!-- Toggle area -->
   <div class="ion-padding">
     <ion-item lines="none">
-      <ion-label>{{ (lang$ | async) === 'TC' ? '深色模式' : 'Dark Mode' }}</ion-label>
+      <ion-label>{{ (lang$ | async) === 'TC' ? 'Language' : '語言' }}</ion-label>
+      <button (click)="toggleLanguage()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial; min-width: 3rem" aria-label="Toggle language">
+      <ng-container *ngIf="(lang$ | async) === 'EN'; else HK">🇬🇧</ng-container>
+      <ng-template #HK>🇭🇰</ng-template>
+      </button>
+    </ion-item>
+    <ion-item lines="none">
+      <ion-label>{{ (lang$ | async) === 'TC' ? '顏色模式' : 'Colour Mode' }}</ion-label>
       <button (click)="toggleTheme()" class="theme-btn rounded border bg-white px-2 py-1" style="font-family: Arial; min-width: 3rem" aria-label="Toggle theme">
         <ng-container *ngIf="isDark$ | async; else sun">🌒</ng-container>
         <ng-template #sun>☀</ng-template>
       </button>
     </ion-item>
   </div>
-</ion-content>
+</div>

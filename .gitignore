@@ -4,6 +4,7 @@
 .vs/
 /.vs/Cross Platform Assignment/CopilotIndices
 .env
+serviceAccountKey.json
 
 *~
 *.sw[mnpcod]
@@ -34,7 +35,7 @@ log.txt
 /bazel-out
 
 # Node
-/node_modules
+node_modules
 npm-debug.log
 yarn-error.log
 

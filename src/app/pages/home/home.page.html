@@ -2,7 +2,6 @@
 <ion-content class="mx-auto min-h-screen w-full max-w-screen bg-slate-50 dark:bg-slate-900">
   <!-- Expose language and theme once for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
-    <ng-container *ngIf="isDark$ | async as isDark">
 
       <!-- Main container -->
       <!-- Add horizontal padding responsive: px-3 on mobile, px-6 on larger -->
@@ -206,5 +205,4 @@
         </section>
       </main>
     </ng-container>
-  </ng-container>
 </ion-content>
