@@ -81,6 +81,38 @@ ion-datetime {
   height: 50vh;
 }
 
+/* Booking stack styling for light theme */
+.booking-stack {
+  display: block;
+  padding: 0.25rem 0;
+  background: transparent;
+  border-radius: 6px;
+}
+
+/* Booking stack for dark theme */
+.booking-stack.dark {
+  background: rgba(10,12,14,0.016); // subtle dark background overlay
+  color: var(--ion-color-light); // text uses light colour variable
+  border-radius: 8px;
+}
+
+/* Ensure the datetime control respects contrast inside dark booking bar */
+.booking-stack.dark ion-datetime {
+  background: var(--bg);
+  color: var(--ion-color-primary);
+}
+
+/* Light theme booking style tweak */
+.booking-stack ion-datetime {
+  color: var(--ion-color-primary);
+}
+
+/* Small helper to keep button readable against dark background */
+.booking-stack.dark ion-button {
+  --background: var(--ion-color-primary-shade, #2d6cdf);
+  --color: #fff;
+}
+
 /* Make the datetime compact */
 .booking-datetime {
     width: 100%;

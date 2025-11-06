@@ -6,6 +6,7 @@ import { Observable, Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
 import * as Leaflet from 'leaflet';
@@ -19,6 +20,8 @@ import * as Leaflet from 'leaflet';
 export class RestaurantPage implements AfterViewInit, OnDestroy {
   // Bilingual language stream
   lang$ = this.language.lang$;
+  // Observable boolean that indicates whether dark theme is active
+  isDark$: Observable<boolean>;
   // Local restaurant model used by template
   restaurant: Restaurant | null = null;
   // Selected booking date string
@@ -38,9 +41,10 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly restaurantsService: RestaurantsService,
     private readonly language: LanguageService,
+    private readonly theme: ThemeService,
     private readonly modalController: ModalController,
     private readonly toastController: ToastController 
-  ) { }
+  ) { this.isDark$ = this.theme.isDark$; }
 
   // When view initialises, fetch restaurant id and load record
   ngAfterViewInit(): void {

@@ -86,16 +86,15 @@
           &nbsp;{{ (lang$ | async) === 'TC' ? '預約' : 'Booking' }}
         </div>
         <div class="cell-content small">
-          <div class="booking-stack">
-            <ion-item lines="none">
-              <ion-datetime display-format="YYYY-MM-DD HH:mm"
-                            picker-format="YYYY-MM-DD HH:mm"
-                            presentation="date-time"
-                            [(ngModel)]="bookingDateTime"
-                            class="booking-datetime"
-                            aria-label="Booking date and time">
-              </ion-datetime>
-            </ion-item>
+          <div class="booking-stack" [class.dark]="(isDark$ | async)">
+            <ion-datetime display-format="YYYY-MM-DD HH:mm"
+                          picker-format="YYYY-MM-DD HH:mm"
+                          presentation="date-time"
+                          [(ngModel)]="bookingDateTime"
+                          [color]="(isDark$ | async) ? 'dark' : 'primary'"
+                          class="booking-datetime"
+                          aria-label="Booking date and time">
+            </ion-datetime>
 
             <div class="mt-1">
               <ion-button fill="solid" size="small" (click)="onBook()" [disabled]="!bookingDateTime">

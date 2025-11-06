@@ -67,6 +67,7 @@ toolbar-container {
 /* Make the router outlet expand to consume available vertical space */
 ion-router-outlet, ion-content, main, section {
   margin: 2vw !important;
+  margin-block-end: 0.02vw !important;
   padding-inline: 2vw !important;
 }
 
