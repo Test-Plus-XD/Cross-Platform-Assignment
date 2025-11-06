@@ -81,7 +81,7 @@ export class SearchPage implements OnInit, OnDestroy {
     // Combine search text, district and language to trigger a fresh search
     const searchText$ = this.searchControl.valueChanges.pipe(
       startWith(this.searchControl.value || ''),
-      debounceTime(2500), // Debounce typing to reduce requests
+      debounceTime(500), // Debounce typing to reduce requests
       distinctUntilChanged()
     );
 

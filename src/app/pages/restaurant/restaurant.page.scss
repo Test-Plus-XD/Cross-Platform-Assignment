@@ -44,11 +44,10 @@
   min-height: 120px;
 }
 
-/* Remove default ion-item borders inside our cells */
-.cell ion-item {
+ion-datetime {
   --inner-padding-end: 0;
   --inner-padding-start: 0;
-  border: 0;
+  border-radius: 10px;
 }
 
 /* Titles */
@@ -62,12 +61,69 @@
   color: var(--muted);
 }
 
-/* Map container fixed height */
+/* Booking bar overlay just below the hero image */
+.booking-bar {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: -22px; /* overlap the image edge slightly */
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  background: rgba(255,255,255,0.95);
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  z-index: 30;
+  backdrop-filter: blur(4px);
+  width: 100%;
+  min-height: 150px;
+  max-height: 50vw;
+  height: 50vh;
+}
+
+/* Make the datetime compact */
+.booking-datetime {
+    width: 100%;
+    align-self: center;
+  --padding-start: 6px;
+  --padding-end: 6px;
+}
+
+/* Section header used for Menu and Review sections */
+.section-header {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  margin: 0.75rem 0;
+}
+
+/* Review spot styling */
+.review-spot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+/* Keep map height reasonable */
 .map-container {
   width: 100%;
-  height: 300px;
-  border-radius: 6px;
+  min-height: 150px;
+  max-height: 50vw;
+  height: 50vh;
+  border-radius: 5px;
   overflow: hidden;
+}
+
+/* Menu small hint */
+.hint {
+  margin-top: 6px;
+}
+
+/* Slight adjustment so booking bar doesn't overlap page content too much */
+.info-grid {
+  padding-top: 28px; /* allow space for the booking bar overlap */
 }
 
 /* Small spacing helper */

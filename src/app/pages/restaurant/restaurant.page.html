@@ -1,13 +1,8 @@
-<!-- Restaurant detail page (null-safe, bilingual, responsive)
-     Two grids: 1) hero image + title, 2) information cells (6 cells)
-     Responsive behaviour:
-       - mobile: 1 columns per row (ion-col size="12")
-       - non-mobile: 3 column per row (ion-col size="12" on md+)
--->
+<!-- Restaurant detail page: 6 equal cells -->
 <ion-header translucent><br>
-  <ion-toolbar>
+  <ion-toolbar style="position: sticky; padding-top: 20px;">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
+      <ion-back-button defaultHref="/search"></ion-back-button>
     </ion-buttons>
     <ion-title>
       {{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC ?? '-') : (restaurant?.Name_EN ?? '-') }}
@@ -16,7 +11,7 @@
 </ion-header>
 
 <ion-content fullscreen>
-  <!-- Grid 1: Hero image and centred name -->
+  <!-- Hero image and centred name -->
   <ion-grid class="hero-grid ion-no-padding">
     <ion-row class="image-row">
       <ion-col size="12" class="image-col">
@@ -30,24 +25,50 @@
     </ion-row>
   </ion-grid>
 
-  <!-- Grid 2: Six info cells (responsive) -->
+  <!-- Info grid: Six equal cells (responsive) -->
   <ion-grid class="info-grid ion-no-padding">
     <ion-row class="cells-row">
-      <!-- Location: Address then District -->
+      <!-- 1 Information: Address, District, Opening Hours, Seats -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '位置' : 'Location' }}</div>
+        <div class="cell-title">
+          <ion-icon name="information-circle-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '資訊' : 'Information' }}
+        </div>
         <div class="cell-content small">
+          <div class="muted">{{ (lang$ | async) === 'TC' ? '地址' : 'Address' }}</div>
           <div>{{ (lang$ | async) === 'TC' ? (restaurant?.Address_TC ?? '-') : (restaurant?.Address_EN ?? '-') }}</div>
-          <div class="muted">{{ (lang$ | async) === 'TC' ? (restaurant?.District_TC ?? '-') : (restaurant?.District_EN ?? '-') }}</div>
+          <div class="muted">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</div>
+          <div>{{ (lang$ | async) === 'TC' ? (restaurant?.District_TC ?? '-') : (restaurant?.District_EN ?? '-') }}</div>
+
+          <div class="mt-1 font-medium">{{ (lang$ | async) === 'TC' ? '開放時間' : 'Opening Hours' }}</div>
+          <div *ngIf="restaurant?.Opening_Hours; else noHours">
+            <div *ngFor="let pair of (restaurant?.Opening_Hours | keyvalue)">
+              {{ pair.key }}: {{ pair.value ?? '-' }}
+            </div>
+          </div>
+          <ng-template #noHours>-</ng-template>
+
+          <div class="mt-1 font-medium">{{ (lang$ | async) === 'TC' ? '座位' : 'Seats' }}</div>
+          <div>{{ restaurant?.Seats ?? '-' }}</div>
         </div>
       </ion-col>
 
-      <!-- Map: Leaflet or coordinates -->
+      <!-- 2 Map: double-click to open fullscreen -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '地圖' : 'Map' }}</div>
+        <div class="cell-title">
+          <ion-icon name="map-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '地圖' : 'Map' }}
+        </div>
         <div class="cell-content">
-          <div *ngIf="(restaurant?.Latitude != null) && (restaurant?.Longitude != null); else coordsOnly">
-            <div id="restaurant-map" class="map-container" aria-hidden="false"></div>
+          <div *ngIf="hasCoordinates(); else coordsOnly">
+            <div id="restaurant-map" class="map-container" (dblclick)="openMapModal()" tabindex="0" role="button" aria-label="Open map fullscreen"></div>
+            <div class="muted small mt-1">
+              <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
+                 [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant?.Latitude + ',' + restaurant?.Longitude">
+                {{ (lang$ | async) === 'TC' ? '在 Google 地圖開啟' : 'Open in Google Maps' }}
+              </a>
+            </div>
+            <div class="hint small muted">Double-click to view fullscreen</div>
           </div>
           <ng-template #coordsOnly>
             <div class="muted small">
@@ -58,63 +79,86 @@
         </div>
       </ion-col>
 
-      <!-- Contacts -->
+      <!-- 3 Booking: date + time selection -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '聯絡方式' : 'Contacts' }}</div>
+        <div class="cell-title">
+          <ion-icon name="calendar-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '預約' : 'Booking' }}
+        </div>
         <div class="cell-content small">
-          <div>Tel: {{ restaurant?.Contacts?.Phone ?? '-' }}</div>
-          <div>Email: {{ restaurant?.Contacts?.Email ?? '-' }}</div>
-          <div *ngIf="restaurant?.Contacts?.Website; else noWebsite">
-            <a target="_blank" rel="noopener noreferrer" [href]="restaurant?.Contacts?.Website">{{ restaurant?.Contacts?.Website }}</a>
+          <div class="booking-stack">
+            <ion-item lines="none">
+              <ion-datetime display-format="YYYY-MM-DD HH:mm"
+                            picker-format="YYYY-MM-DD HH:mm"
+                            presentation="date-time"
+                            [(ngModel)]="bookingDateTime"
+                            class="booking-datetime"
+                            aria-label="Booking date and time">
+              </ion-datetime>
+            </ion-item>
+
+            <div class="mt-1">
+              <ion-button fill="solid" size="small" (click)="onBook()" [disabled]="!bookingDateTime">
+                <ion-icon slot="start" name="calendar-number-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm' }}
+              </ion-button>
+            </div>
+            <div class="muted small mt-1">{{ bookingDateTime ? bookingDateTime : '-' }}</div>
           </div>
-          <ng-template #noWebsite>-</ng-template>
         </div>
       </ion-col>
-    </ion-row>
 
-    <ion-row class="cells-row">
-      <!-- Information: Opening Hours and Seats -->
+      <!-- 4 Contacts: use icons for phone, email, website -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '資訊' : 'Information' }}</div>
+        <div class="cell-title">
+          <ion-icon name="person-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '聯絡方式' : 'Contacts' }}
+        </div>
         <div class="cell-content small">
           <div>
-            <div class="font-medium">{{ (lang$ | async) === 'TC' ? '開放時間' : 'Opening Hours' }}</div>
-            <div *ngIf="restaurant?.Opening_Hours; else noHours">
-              <div *ngFor="let pair of (restaurant?.Opening_Hours | keyvalue)">
-                {{ pair.key }}: {{ pair.value ?? '-' }}
-              </div>
-            </div>
-            <ng-template #noHours>-</ng-template>
+            <ion-icon name="call-sharp"></ion-icon>
+            &nbsp;{{ restaurant?.Contacts?.Phone ?? '-' }}
           </div>
-          <div class="mt-1">
-            <div class="font-medium">{{ (lang$ | async) === 'TC' ? '座位' : 'Seats' }}</div>
-            <div>{{ restaurant?.Seats ?? '-' }}</div>
+          <div>
+            <ion-icon name="mail-outline"></ion-icon>
+            &nbsp;{{ restaurant?.Contacts?.Email ?? '-' }}
           </div>
+          <div *ngIf="restaurant?.Contacts?.Website; else noWebsiteSmall">
+            <ion-icon name="globe-outline"></ion-icon>
+            &nbsp;<a target="_blank" rel="noopener noreferrer" [href]="restaurant?.Contacts?.Website">{{ restaurant?.Contacts?.Website }}</a>
+          </div>
+          <ng-template #noWebsiteSmall>-</ng-template>
         </div>
       </ion-col>
 
-      <!-- Keywords -->
+      <!-- 5 Keywords -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '關鍵字' : 'Keywords' }}</div>
+        <div class="cell-title">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '關鍵字' : 'Keywords' }}
+        </div>
         <div class="cell-content small">
-          <ng-container *ngIf="(lang$ | async) === 'TC'; else enKeywords">
+          <ng-container *ngIf="(lang$ | async) === 'TC'; else enList">
             <div *ngFor="let k of (restaurant?.Keyword_TC ?? [])">{{ k }}</div>
             <div *ngIf="!(restaurant?.Keyword_TC?.length) && !(restaurant?.Keyword_EN?.length)">-</div>
           </ng-container>
-          <ng-template #enKeywords>
+          <ng-template #enList>
             <div *ngFor="let k of (restaurant?.Keyword_EN ?? [])">{{ k }}</div>
             <div *ngIf="!(restaurant?.Keyword_EN?.length) && !(restaurant?.Keyword_TC?.length)">-</div>
           </ng-template>
         </div>
       </ion-col>
 
-      <!-- Menu -->
+      <!-- 6 Menu: double-click to open fullscreen -->
       <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">{{ (lang$ | async) === 'TC' ? '餐牌' : 'Menu' }}</div>
+        <div class="cell-title">
+          <ion-icon name="restaurant-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '餐牌' : 'Menu' }}
+        </div>
         <div class="cell-content small">
-          <div *ngIf="(restaurant?.Menu ?? []).length > 0; else noMenu">
+          <div *ngIf="(restaurant?.Menu ?? []).length > 0; else noMenuSmall">
             <ion-list lines="none">
-              <ion-item *ngFor="let menuItem of (restaurant?.Menu ?? [])">
+              <ion-item *ngFor="let menuItem of (restaurant?.Menu ?? [])" (dblclick)="openMenuModal()">
                 <ion-label>
                   <div class="font-medium">
                     {{ (lang$ | async) === 'TC' ? (menuItem?.Name_TC ?? menuItem?.Name_EN ?? '-') : (menuItem?.Name_EN ?? menuItem?.Name_TC ?? '-') }}
@@ -123,14 +167,40 @@
                 </ion-label>
               </ion-item>
             </ion-list>
+            <div class="hint small muted">Double-click any item to view menu fullscreen</div>
           </div>
-          <ng-template #noMenu>-</ng-template>
+          <ng-template #noMenuSmall>-</ng-template>
         </div>
       </ion-col>
     </ion-row>
   </ion-grid>
 
-  <!-- Pull-to-refresh to reload the restaurant -->
+  <!-- Reserve review spot below -->
+  <ion-grid class="review-grid ion-no-padding">
+    <ion-row>
+      <ion-col size="12">
+        <div class="section-header">
+          <ion-icon name="create-outline"></ion-icon>
+          &nbsp;{{ (lang$ | async) === 'TC' ? '撰寫食評' : 'Write a Review' }}
+        </div>
+        <div class="review-spot">
+          <div class="small muted">{{ (lang$ | async) === 'TC' ? '預留一個空位以稍後撰寫食評。' : 'Reserve a spot to write a review later.' }}</div>
+          <div class="mt-1">
+            <ion-button fill="outline" size="small" (click)="reserveReviewSpot()">
+              <ion-icon slot="start" name="timer-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '預留' : 'Reserve' }}
+            </ion-button>
+            <ion-button fill="solid" size="small" (click)="startReviewNow()">
+              <ion-icon slot="start" name="chatbox-ellipses-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '立即撰寫' : 'Write Now' }}
+            </ion-button>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  <br>
+  <!-- Pull-to-refresh -->
   <ion-refresher slot="fixed" (ionRefresh)="ngAfterViewInit()" pullFactor="0.5">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
