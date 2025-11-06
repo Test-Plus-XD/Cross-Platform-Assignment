@@ -58,8 +58,8 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
   constructor(
     private readonly mock: MockDataService,
     private platform: Platform,
-    private lang: LanguageService,
-    private theme: ThemeService
+    readonly lang: LanguageService,
+    readonly theme: ThemeService
   ) {
     // Ensure Swiper custom elements are registered at runtime if not already registered
     try {

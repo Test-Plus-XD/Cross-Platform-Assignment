@@ -13,6 +13,7 @@ import { TestPage } from './test.page';
     TestPageRoutingModule
   ],
   declarations: [TestPage],
+  //providers: [LayoutService],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class TestPageModule {}

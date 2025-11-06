@@ -1,0 +1,23 @@
+.shared-tab {
+  padding-bottom: env(safe-area-inset-bottom);
+  left: 0;
+  right: 0;
+  bottom: 0 !important;
+  height: calc(50px + env(safe-area-inset-bottom)) !important;
+  z-index: 60 !important;
+  background: var(#fff) !important;
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+.shared-tab .dark {
+  background: var(#111) !important;
+  border-top: 1px solid rgba(25,25,25,0.25);
+}
+
+ion-tab-bar {
+  position: fixed;
+  bottom: 0 !important;
+  left: 0;
+  right: 0;
+  z-index: 60 !important;
+}

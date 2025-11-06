@@ -14,7 +14,7 @@ export class UserPage {
   lang$ = this.lang.lang$;
   constructor(
     private mock: MockDataService,
-    private lang: LanguageService
+    readonly lang: LanguageService
   ) { }
 
   ngOnInit() {

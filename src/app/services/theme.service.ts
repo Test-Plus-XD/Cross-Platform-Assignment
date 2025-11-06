@@ -1,14 +1,16 @@
 // Theme service to manage and persist light/dark theme
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class ThemeService {
   // BehaviourSubject that stores current theme state: true => dark, false => light
   private _isDark = new BehaviorSubject<boolean>(this.readSaved());
-
   // Public observable for components to subscribe to
   isDark$ = this._isDark.asObservable();
+  // Brand icon that changes with theme
+  brandIcon$ = this.isDark$.pipe(map(d => d ? 'assets/icon/App-Dark.png?theme=dark' : 'assets/icon/App-Light.png?theme=light'));
 
   // Read initial theme from localStorage or system preference
   private readSaved(): boolean {

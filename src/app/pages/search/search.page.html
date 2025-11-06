@@ -1,14 +1,59 @@
-<ion-content class="bg-slate-50 p-4 dark:bg-slate-900">
-  <!-- Search input -->
-  <div class="mb-4 flex gap-2">
-    <input [(ngModel)]="q" placeholder="Search..." class="flex-1 rounded border p-2 dark:bg-slate-700 dark:text-slate-100" />
-  </div>
+<!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
+<ion-content fullscreen><br><br>
+  <ion-list lines="none" class="ion-padding" style="position: sticky; top: 20px; z-index: 10; background: var(--ion-background-color)">
+    <ion-item>
+      <ion-input [formControl]="searchControl"
+                 placeholder="{{ (lang$ | async) === 'TC' ? '搜尋名稱、地址或關鍵字' : 'Search name, address or keywords' }}"></ion-input>
+      <ion-spinner *ngIf="isLoading" slot="end"></ion-spinner>
+    </ion-item>
 
-  <!-- Results filter locally in template for demo -->
-  <div *ngIf="restaurants$ | async as rests">
-    <div *ngFor="let r of rests" class="mb-3 rounded-md bg-white p-3 shadow dark:bg-slate-800">
-      <h4 class="font-semibold text-slate-900 dark:text-slate-50">{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}</h4>
-      <p class="text-sm text-slate-600 dark:text-slate-300">{{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}</p>
-    </div>
-  </div>
+    <!-- District select: value uses EN -->
+    <ion-item>
+      <ion-select [formControl]="districtControl" interface="popover">
+        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有地區' : 'All districts' }}</ion-select-option>
+        <ion-select-option *ngFor="let d of districts" [value]="d.District_EN">
+          {{ (lang$ | async) === 'TC' ? d.District_TC : d.District_EN }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Keyword select: value uses value_en -->
+    <ion-item>
+      <ion-select [formControl]="keywordControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇關鍵字' : 'Choose keyword' }}">
+        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有關鍵字' : 'All keywords' }}</ion-select-option>
+        <ion-select-option *ngFor="let k of keywordOptions" [value]="k.value_en">
+          {{ (lang$ | async) === 'TC' ? k.label_tc : k.label_en }}
+        </ion-select-option>
+      </ion-select>
+    </ion-item>
+</ion-list>
+
+  <ion-list>
+    <ion-item *ngIf="results.length === 0 && !isLoading">
+      <ion-label>
+        {{ (lang$ | async) === 'TC' ? '沒有找到符合的餐廳' : 'No matching restaurants found' }}
+      </ion-label>
+    </ion-item>
+
+    <ion-item *ngFor="let r of results">
+      <ion-label class="restaurant-item">
+        <h2>{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}</h2>
+        <p class="muted">{{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}</p>
+        <p class="muted small">
+          {{ (lang$ | async) === 'TC' ? r.District_TC : r.District_EN }}
+          <span *ngIf="(r.Keyword_EN || r.Keyword_TC)?.length">
+            •
+            {{ (lang$ | async) === 'TC' ? (r.Keyword_TC || []).join(', ') : (r.Keyword_EN || []).join(', ') }}
+          </span>
+        </p>
+      </ion-label>
+      <ion-button fill="outline" slot="end" [routerLink]="['/restaurant', r.id]">
+        {{ (lang$ | async) === 'TC' ? '查看' : 'View' }}
+      </ion-button>
+    </ion-item>
+
+    <ion-infinite-scroll threshold="100px" (ionInfinite)="loadMore($event)">
+      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="{{ (lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...' }}"></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+  </ion-list>
 </ion-content>

@@ -2,3 +2,4 @@
 @import "tailwindcss/preflight.css";
 @import "tailwindcss/utilities.css";
 @import 'swiper/swiper-bundle.css';
+@import "@ionic/angular/css/core.css";

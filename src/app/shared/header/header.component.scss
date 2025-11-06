@@ -1,0 +1,54 @@
+/* Basic styling for shared header */
+.shared-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.05vw;
+  padding: 0.005vw 0.1vh !important;
+  scroll-padding-top: 0px !important;
+  scroll-margin-top: 0px !important;
+  top: 1px !important;
+  z-index: 1 !important;
+}
+
+.brand {
+  // Keep brand visually stable
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-nav {
+  // Horizontal control row
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-right: 0.5vw;
+}
+
+.header-link {
+  // Small link style
+  font-size: 1.1rem;
+  color: var(--ion-text-color, #111);
+  text-decoration: none;
+}
+
+.lang-btn {
+  // Compact language button
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.025vw;
+  margin-bottom: 0.5vh;
+  font-size: 1rem;
+  color: var(--ion-text-color, #111);
+}
+
+.theme-btn {
+  // Theme toggle slightly emphasised
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--ion-background-color, #fff);
+  cursor: pointer;
+}
