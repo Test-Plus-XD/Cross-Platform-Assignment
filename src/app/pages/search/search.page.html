@@ -1,15 +1,16 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
 <ion-content fullscreen><br><br>
-  <ion-list lines="none" class="ion-padding" style="position: sticky; top: 20px; z-index: 10; background: var(--ion-background-color)">
+  <ion-list lines="none" class="ion-padding sticky-filters" [class.sticky-hidden]="!showFilters">
     <ion-item>
       <ion-input [formControl]="searchControl"
-                 placeholder="{{ (lang$ | async) === 'TC' ? '搜尋名稱、地址或關鍵字' : 'Search name, address or keywords' }}"></ion-input>
+                 placeholder="{{ (lang$ | async) === 'TC' ? '搜尋名稱、地址或關鍵字' : 'Search name, address or keywords' }}">
+      </ion-input>
       <ion-spinner *ngIf="isLoading" slot="end"></ion-spinner>
     </ion-item>
 
     <!-- District select: value uses EN -->
     <ion-item>
-      <ion-select [formControl]="districtControl" interface="popover">
+      <ion-select [formControl]="districtControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇地區' : 'Choose district' }}">
         <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有地區' : 'All districts' }}</ion-select-option>
         <ion-select-option *ngFor="let d of districts" [value]="d.District_EN">
           {{ (lang$ | async) === 'TC' ? d.District_TC : d.District_EN }}
@@ -19,14 +20,14 @@
 
     <!-- Keyword select: value uses value_en -->
     <ion-item>
-      <ion-select [formControl]="keywordControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇關鍵字' : 'Choose keyword' }}">
-        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有關鍵字' : 'All keywords' }}</ion-select-option>
+      <ion-select [formControl]="keywordControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇類型' : 'Choose keyword' }}">
+        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有類型' : 'All keywords' }}</ion-select-option>
         <ion-select-option *ngFor="let k of keywordOptions" [value]="k.value_en">
           {{ (lang$ | async) === 'TC' ? k.label_tc : k.label_en }}
         </ion-select-option>
       </ion-select>
     </ion-item>
-</ion-list>
+  </ion-list>
 
   <ion-list>
     <ion-item *ngIf="results.length === 0 && !isLoading">
@@ -35,22 +36,41 @@
       </ion-label>
     </ion-item>
 
-    <ion-item *ngFor="let r of results">
-      <ion-label class="restaurant-item">
-        <h2>{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}</h2>
-        <p class="muted">{{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}</p>
-        <p class="muted small">
-          {{ (lang$ | async) === 'TC' ? r.District_TC : r.District_EN }}
-          <span *ngIf="(r.Keyword_EN || r.Keyword_TC)?.length">
-            •
-            {{ (lang$ | async) === 'TC' ? (r.Keyword_TC || []).join(', ') : (r.Keyword_EN || []).join(', ') }}
-          </span>
-        </p>
-      </ion-label>
-      <ion-button fill="outline" slot="end" [routerLink]="['/restaurant', r.id]">
-        {{ (lang$ | async) === 'TC' ? '查看' : 'View' }}
-      </ion-button>
-    </ion-item>
+    <!-- Modern tappable card for each result -->
+    <ion-card class="restaurant-card"
+              button
+              [routerLink]="['/restaurant', r.id]"
+              *ngFor="let r of results"
+              role="link"
+              aria-label="{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}">
+      <ion-item lines="none" class="card-row">
+        <ion-thumbnail slot="start" class="card-thumbnail">
+          <img [src]="r.ImageUrl"
+               alt="{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}">
+        </ion-thumbnail>
+
+        <ion-label class="card-content">
+          <h2 class="card-title">
+            {{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}
+          </h2>
+
+          <p class="muted card-address">
+            {{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}
+          </p>
+
+          <p class="muted small card-meta">
+            {{ (lang$ | async) === 'TC' ? r.District_TC : r.District_EN }}
+            <span *ngIf="(r.Keyword_EN || r.Keyword_TC)?.length">
+              •
+              {{ (lang$ | async) === 'TC' ? (r.Keyword_TC || []).join(', ') : (r.Keyword_EN || []).join(', ') }}
+            </span>
+          </p>
+        </ion-label>
+
+        <!-- Lightweight affordance to indicate tappable card -->
+        <ion-icon name="chevron-forward" slot="end" class="card-chevron" aria-hidden="true"></ion-icon>
+      </ion-item>
+    </ion-card>
 
     <ion-infinite-scroll threshold="100px" (ionInfinite)="loadMore($event)">
       <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="{{ (lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...' }}"></ion-infinite-scroll-content>

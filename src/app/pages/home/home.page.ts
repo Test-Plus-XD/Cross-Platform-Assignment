@@ -6,7 +6,7 @@ import { take, map } from 'rxjs/operators';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
-import { register } from 'swiper/element/bundle'; // Register Swiper web components if not already registered
+import { register } from 'swiper/element/bundle';
 
 @Component({
   selector: 'app-home',
@@ -33,11 +33,11 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
   brandIcon$ = this.isDark$.pipe(map(d => d ? 'assets/icon/App-Dark.png?theme=dark' : 'assets/icon/App-Light.png?theme=light'));
 
   // Template references to each swiper-container so we can control them individually
-  @ViewChild('adsSwiper', { static: false }) adsSwiper!: ElementRef;
-  @ViewChild('offersSwiper', { static: false }) offersSwiper!: ElementRef;
-  @ViewChild('articlesSwiper', { static: false }) articlesSwiper!: ElementRef;
-  @ViewChild('reviewsSwiper', { static: false }) reviewsSwiper!: ElementRef;
-  @ViewChild('restaurantsSwiper', { static: false }) restaurantsSwiper!: ElementRef;
+  @ViewChild('adsSwiper') adsSwiper!: ElementRef;
+  @ViewChild('offersSwiper') offersSwiper!: ElementRef;
+  @ViewChild('articlesSwiper') articlesSwiper!: ElementRef;
+  @ViewChild('reviewsSwiper') reviewsSwiper!: ElementRef;
+  @ViewChild('restaurantsSwiper') restaurantsSwiper!: ElementRef;
 
   // Per-section Swiper configurations — tweak here to control each carousel independently
   adsSwiperConfig: any = { slidesPerView: 1, loop: true, autoplay: { delay: 4000 }, pagination: { clickable: true } };
@@ -47,9 +47,9 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
   restaurantsSwiperConfig: any = { slidesPerView: 1.2, spaceBetween: 12, breakpoints: { 640: { slidesPerView: 2 }, 1024: { slidesPerView: 3 } }, pagination: { clickable: true } };
 
   // Guard flags to ensure each swiper is initialised only once per page presentation
-  private hasInit: Record<string, boolean> = { ads: false, offers: false, articles: false, reviews: false, restaurants: false };
+  private hasInit: { [key: string]: boolean } = { ads: false, offers: false, articles: false, reviews: false, restaurants: false };
   // Limited retry counters to avoid infinite retries when something unexpected fails
-  private initAttempts: Record<string, number> = { ads: 0, offers: 0, articles: 0, reviews: 0, restaurants: 0 };
+  private initAttempts: { [key: string]: number } = { ads: 0, offers: 0, articles: 0, reviews: 0, restaurants: 0 };
   // Maximum number of times we will attempt to initialise a section before giving up
   private readonly MAX_INIT_ATTEMPTS = 3;
   // Subscriptions for data arrival to reinitialise swipers when async data arrives
@@ -121,37 +121,33 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
     this.subs.forEach(s => s.unsubscribe());
   }
 
+  // Helper to open URLs safely
+  openUrl(url: string): void {
+    if (url) {
+      window.open(url, '_blank');
+    }
+  }
+
   // Public Next method for UI buttons; uses the internal swiper API
-  async SwiperNext(section: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants' = 'ads') {
+  async SwiperNext(section: string = 'ads') {
     const el = this.getSwiperEl(section);
     if (el && el.swiper && typeof el.swiper.slideNext === 'function') {
       el.swiper.slideNext(); // Use internal API to advance
       console.log('HomePage: SwiperNext() invoked for', section);
-    } else {
-      console.warn('HomePage: SwiperNext() — swiper not ready for', section);
-      // Try safe initialize fallback if available
-      if (el && typeof el.initialize === 'function') {
-        try { el.initialize(); console.log(`HomePage: SwiperNext() fallback initialize() for ${section}`); } catch { /* ignore */ }
-      }
     }
   }
 
   // Public Prev method for UI buttons; uses the internal swiper API
-  async SwiperPrev(section: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants' = 'ads') {
+  async SwiperPrev(section: string = 'ads') {
     const el = this.getSwiperEl(section);
     if (el && el.swiper && typeof el.swiper.slidePrev === 'function') {
       el.swiper.slidePrev(); // Use internal API to go previous
       console.log('HomePage: SwiperPrev() invoked for', section);
-    } else {
-      console.warn('HomePage: SwiperPrev() — swiper not ready for', section);
-      if (el && typeof el.initialize === 'function') {
-        try { el.initialize(); console.log(`HomePage: SwiperPrev() fallback initialize() for ${section}`); } catch { /* ignore */ }
-      }
     }
   }
 
   // Trigger init attempt for a specific section (used when async data arrives)
-  private triggerInit(section: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants') {
+  private triggerInit(section: string) {
     // Reset guard so ngAfterViewChecked will attempt initialisation again
     this.hasInit[section] = false;
     // Reset attempts so we allow up to MAX_INIT_ATTEMPTS new tries
@@ -171,14 +167,14 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
 
   // Attempt to initialise a swiper only if it is present, has slides and has not been fully initialised yet
   private tryInitIfReady(
-    name: 'ads' | 'offers' | 'articles' | 'reviews' | 'restaurants',
+    name: string,
     viewRef: ElementRef | undefined,
     config: any
   ) {
     // If we've already initialised successfully or exhausted retries, skip
     if (this.hasInit[name]) return;
     if (this.initAttempts[name] >= this.MAX_INIT_ATTEMPTS) {
-      console.warn(`HomePage: tryInitIfReady() — giving up initialising ${name} after ${this.initAttempts[name]} attempts`);
+      console.warn(`HomePage: tryInitIfReady() — giving up initialising ${name}`);
       this.hasInit[name] = true; // mark as done to avoid repeated logs
       return;
     }

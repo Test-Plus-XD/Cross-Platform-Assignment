@@ -57,13 +57,13 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
 
     this.isLoading = true;
     this.restaurantsService.getRestaurantById(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: r => {
+      next: (r: Restaurant | null) => {
         this.restaurant = r;
         this.isLoading = false;
         // After restaurant loaded, initialises the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);
       },
-      error: err => {
+      error: (err: Error) => {
         console.error('RestaurantPage: failed to load restaurant', err);
         this.errorMessage = 'Failed to load restaurant';
         this.isLoading = false;

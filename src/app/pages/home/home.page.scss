@@ -1,23 +1,105 @@
-#container {
-  text-align: center;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+:host {
+  --swiper-theme-color: var(--ion-color-primary);
+  --swiper-pagination-bullet-inactive-color: var(--ion-color-medium);
+  --swiper-pagination-bullet-inactive-opacity: 0.5;
+  --swiper-pagination-bullet-size: 8px;
+  --swiper-pagination-bullet-horizontal-gap: 4px;
+
+  ion-content {
+    --background: var(--ion-background-color);
+  }
+
+  ion-grid {
+    padding: 16px;
+  }
+
+  // Card styles
+  ion-card {
+    margin: 8px 0;
+    box-shadow: var(--ion-shadow-2);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--ion-card-background);
+
+    &.hero-card {
+      margin-bottom: 24px;
+      ion-img {
+        height: 200px;
+        object-fit: cover;
+      }
+    }
+  }
+
+  // Swiper customization
+  swiper-container {
+    padding: 8px 0;
+
+    ::ng-deep .swiper-pagination {
+      bottom: 0;
+    }
+
+    &::part(bullet) {
+      background: var(--ion-color-medium);
+      opacity: 0.5;
+
+      &.swiper-pagination-bullet-active {
+        background: var(--ion-color-primary);
+        opacity: 1;
+      }
+    }
+  }
+
+  // Section headers
+  ion-item-divider {
+    --background: transparent;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 8px;
+
+    ion-label h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--ion-text-color);
+    }
+  }
+
+  // Reviews styling
+  ion-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  // Navigation buttons for swiper
+  .swiper-button-prev,
+  .swiper-button-next {
+    --background: var(--ion-background-color);
+    --color: var(--ion-color-primary);
+    --padding-start: 8px;
+    --padding-end: 8px;
+    --border-radius: 50%;
+    margin: 0 8px;
+    opacity: 0.8;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  // Mobile app promo section
+  ion-img[alt="App Store"],
+  ion-img[alt="Google Play"] {
+    max-height: 40px;
+    object-fit: contain;
+  }
 }
 
-#container strong {
-  font-size: 20px;
-  line-height: 26px;
-}
+// Dark mode specific adjustments
+:host-context(.dark) {
+  ion-card {
+    --background: var(--ion-color-dark);
+  }
 
-#container p {
-  font-size: 16px;
-  line-height: 22px;
-  margin: 0;
-}
-
-#container a {
-  text-decoration: none;
+  ion-item-divider {
+    --color: var(--ion-color-light);
+  }
 }

@@ -1,5 +1,5 @@
 // Search page with bilingual text search and district + keyword filters (EN primary)
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Observable, Subject, combineLatest, of, firstValueFrom } from 'rxjs';
@@ -33,7 +33,7 @@ interface SearchResponse {
   styleUrls: ['./search.page.scss'],
   standalone: false,
 })
-export class SearchPage implements OnInit, OnDestroy {
+export class SearchPage implements OnInit, AfterViewInit, OnDestroy {
   // Form controls for query, district and keyword (EN values stored)
   searchControl = new FormControl('');
   districtControl = new FormControl(''); // Should store District_EN value
@@ -67,6 +67,14 @@ export class SearchPage implements OnInit, OnDestroy {
 
   // Destroy subject for unsubscribing
   private destroy$ = new Subject<void>();
+
+  // Show or hide filters when scrolling
+  showFilters = true;
+
+  // Track last scroll position for direction detection
+  private lastScrollTop = 0;
+  private scrollElement: HTMLElement | null = null;
+  private scrollHandler = this.onScroll.bind(this);
 
   constructor(
     private readonly restaurantsService: RestaurantsService,
@@ -134,6 +142,47 @@ export class SearchPage implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  async ngAfterViewInit(): Promise<void> {
+    // Find the active ion-content scroll element
+    try {
+      const ionContent = document.querySelector('ion-router-outlet .ion-page ion-content') as any || document.querySelector('ion-content') as any;
+      if (ionContent && typeof ionContent.getScrollElement === 'function') {
+        this.scrollElement = await ionContent.getScrollElement();
+      } else if (ionContent instanceof HTMLElement) {
+        this.scrollElement = ionContent as HTMLElement;
+      }
+
+      if (!this.scrollElement) return;
+
+      // Initialize last position
+      this.lastScrollTop = this.scrollElement.scrollTop || 0;
+      this.scrollElement.addEventListener('scroll', this.scrollHandler, { passive: true });
+    } catch (err) {
+      console.warn('[SearchPage] ngAfterViewInit scroll init failed', err);
+    }
+  }
+
+  private onScroll(): void {
+    if (!this.scrollElement) return;
+    const st = this.scrollElement.scrollTop || 0;
+    const delta = st - this.lastScrollTop;
+
+    // Threshold to avoid jitter
+    const threshold = 12;
+
+    if (Math.abs(delta) < threshold) return;
+
+    if (delta > 0) {
+      // Scrolling down -> hide
+      this.showFilters = false;
+    } else {
+      // Scrolling up -> show
+      this.showFilters = true;
+    }
+
+    this.lastScrollTop = st;
   }
 
   // Load more results for infinite scroll
@@ -239,5 +288,8 @@ export class SearchPage implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.scrollElement) {
+      this.scrollElement.removeEventListener('scroll', this.scrollHandler);
+    }
   }
 }

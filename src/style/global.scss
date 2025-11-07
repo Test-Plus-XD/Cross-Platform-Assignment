@@ -1,62 +1,59 @@
 // Fallback for ionic components that don't map to CSS variables by Tailwindv4
 /* Dark Theme*/
 html.dark, .dark {
+  /* Base palette (semantic names) */
   --bg: #2b2d2c;
   --text: #e6eef8;
   --muted: #94a3b8;
-  --card-bg: #025402; /* dark card background */
+  --card-bg: #025402;
   --surface: #061026;
-  --accent: #818cf8; /* indigo-400-ish */
+  --accent: #818cf8;
   --border: #23303b;
-  --ion-background-color: #0b1220;
-  --ion-text-color: #e6eef8;
-  --ion-card-background: #0b1220;
-  --ion-toolbar-background: #071022
+  /* Ionic core variables mapped to the dark palette */
+  --ion-background-color: var(--bg);
+  --ion-text-color: var(--text);
+  --ion-card-background: var(--card-bg);
+  --ion-toolbar-background: var(--surface);
 }
 
 /* Ensure body and core elements inherit the variable values */
-html, body, app-root, ion-app, .ion-page {
-  background-color: var(--bg);
-  color: var(--text);
+ion-card,
+ion-item {
+  --background: var(--ion-card-background);
+  --color: var(--ion-text-color);
 }
 
-ion-app, ion-content {
-  --background: var(--bg);
-  --color: var(--text);
+/* Ensure basic text-based Ionic components use theme text colour */
+ion-label,
+ion-title,
+ion-text {
+  color: var(--ion-text-color);
+  --color: var(--ion-text-color);
 }
 
-/* Map variables into common ionic components — helps shadow DOM internals */
-ion-item, ion-card {
-  --background: var(--card-bg) !important;
-  --color: var(--text);
+/* Bare HTML element fallbacks (colour-only) — keeps non-Ionic fragments themed */
+p, h1, h2, h3, h4, h5, h6, a, li, span {
+  color: var(--ion-text-color);
 }
 
-ion-label, ion-title, ion-text {
-  color: var(--text);
-  --color: var(--text)
-}
-
-/* Utility: force theme-driven text on elements that need it */
+/* Force theme-driven text colour */
 .theme-text {
-  color: var(--text) !important;
+  color: var(--ion-text-color) !important;
 }
 
-/* Muted tone helper */
+/* Muted helper */
 .theme-muted {
   color: var(--muted) !important;
 }
 
+/* Card background helper */
 .theme-bg {
   background-color: var(--card-bg) !important;
 }
 
+/* Accent colour helper */
 .theme-accent {
   color: var(--accent) !important;
-}
-
-/* Fallback for plain elements (and tailwind-less parts) */
-p, h1, h2, h3, h4, h5, h6, a, li, span {
-  color: var(--text)
 }
 
 toolbar-container {
@@ -87,17 +84,19 @@ ion-content::part(scroll) {
   --header-spacing: calc(48px + env(safe-area-inset-top));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(144px + env(safe-area-inset-bottom));
+   /* Base palette (semantic names) */
   --bg: #f2faf0;
-  --text: #0f172a; /* primary page text */
-  --muted: #64748b; /* secondary text */
+  --text: #0f172a;
+  --muted: #64748b;
   --card-bg: #ebfaf2;
   --surface: #f8fafc;
-  --accent: #6366f1; /* indigo-600-ish */
+  --accent: #6366f1;
   --border: #e6eef8;
-  --ion-background-color: #fff;
-  --ion-text-color: #0f172a;
-  --ion-card-background: #fff;
-  --ion-toolbar-background: #fff;
+  /* Ionic core variables mapped to the light palette */
+  --ion-background-color: var(--bg);
+  --ion-text-color: var(--text);
+  --ion-card-background: var(--card-bg);
+  --ion-toolbar-background: var(--surface);
   /* Light Theme^*/
   --ion-color-primary: #0054e9;
   --ion-color-primary-rgb: 0, 84, 233;

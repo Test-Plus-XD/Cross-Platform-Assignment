@@ -1,208 +1,195 @@
 <!-- Page root: ion-content keeps Ionic behaviour and provides safe area / scrolling -->
-<ion-content class="mx-auto min-h-screen w-full max-w-screen bg-slate-50 dark:bg-slate-900">
+<ion-content>
   <!-- Expose language and theme once for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
 
       <!-- Main container -->
       <!-- Add horizontal padding responsive: px-3 on mobile, px-6 on larger -->
-      <main class="mx-auto p-4 px-3 sm:px-6">
-        <!-- Ads carousel: use Swiper -->
-        <!--
-          NOTE:
-          - This uses the Swiper web component (<swiper-container> / <swiper-slide>).
-          - The template reference #adsSwiper is required by the component class to control this instance.
-          - Ensure CUSTOM_ELEMENTS_SCHEMA is present in the module that declares this page, otherwise Angular will throw NG8001.
-          - Autoplay and loop behaviour are configured via the component's properties in the TS config, but here we provide attributes for defaults.
-          - Pagination markup is provided via a slot element with slot="pagination".
-        -->
-        <section class="relative mb-8">
-          <!-- Swiper container (no template reference) -->
-          <!-- Template ref name adsSwiper is used by the component class to control this instance -->
-          <swiper-container #adsSwiper class="section-swiper rounded-lg" loop="true" autoplay="{ delay: 4000 }" css-mode="true">
-            <swiper-slide *ngFor="let a of (ads$ | async) || []" class="flex items-center justify-center">
-              <a [href]="a.href" class="block w-full">
-                <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" class="h-44 w-full rounded-lg object-cover" />
-              </a>
-            </swiper-slide>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12">
+            <!-- Ads carousel -->
+            <ion-card>
+              <swiper-container #adsSwiper loop="true" autoplay="{ delay: 4000 }" css-mode="true">
+                <swiper-slide *ngFor="let a of (ads$ | async) || []">
+                  <ion-img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" (click)="openUrl(a.href)"></ion-img>
+                </swiper-slide>
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper-container>
 
-            <!-- Pagination slot so the dots show; Swiper expects slot="pagination" element -->
-            <div class="swiper-pagination" slot="pagination"></div>
-          </swiper-container>
+              <!-- Prev / Next controls for non-native platforms -->
+              <ion-buttons *ngIf="!isNative" slot="fixed">
+                <ion-button (click)="SwiperPrev('ads')" class="swiper-button-prev">
+                  <ion-icon name="chevron-back"></ion-icon>
+                </ion-button>
+                <ion-button (click)="SwiperNext('ads')" class="swiper-button-next">
+                  <ion-icon name="chevron-forward"></ion-icon>
+                </ion-button>
+              </ion-buttons>
+            </ion-card>
 
-          <!-- Prev / Next controls for non-native platforms -->
-          <!-- Buttons call SwiperPrev('ads') / SwiperNext('ads') to target this specific swiper -->
-          <button *ngIf="!isNative" (click)="SwiperPrev('ads')" aria-label="Previous ad"
-                  class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
-            <ion-icon name="arrow-back-outline"></ion-icon>
-          </button>
-          <button *ngIf="!isNative" (click)="SwiperNext('ads')" aria-label="Next ad"
-                  class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow sm:hidden md:block">
-            <ion-icon name="arrow-forward-outline"></ion-icon>
-          </button>
-        </section>
+            <!-- Featured hero image -->
+            <!--
+              This shows a hero image derived from the featuredImage property set in the component.
+              The image falls back to the first offer image if no explicit featuredImage is set.
+            -->
+            <ion-card class="hero-card">
+              <ion-img [src]="featuredImage || (offers$ | async)?.[0]?.image || 'assets/icon/Placeholder.png'" alt="featured"></ion-img>
+            </ion-card>
 
-        <!-- Featured hero image -->
-        <!--
-          This shows a hero image derived from the featuredImage property set in the component.
-          The image falls back to the first offer image if no explicit featuredImage is set.
-        -->
-        <section class="mb-8">
-          <div class="mt-4 overflow-hidden rounded-lg bg-white shadow dark:bg-slate-800">
-            <img [src]="featuredImage || (offers$ | async)?.[0]?.image || 'assets/icon/Placeholder.png'"
-                 alt="featured" class="h-52 w-full object-cover" />
-          </div>
-        </section>
+            <!-- Special offers -->
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>
+                  <h2>{{ curLang === 'TC' ? '甄選優惠' : 'Featured Offer' }}</h2>
+                </ion-label>
+                <ion-button slot="end" fill="clear" routerLink="/offers">
+                  {{ curLang === 'TC' ? '查看全部' : 'See all' }}
+                </ion-button>
+              </ion-item-divider>
 
-        <!-- Special offers: show 3 on browser, 2 on mobile, horizontal scroll for rest -->
-        <!--
-          Requirements (from your comment):
-          - Convert the offers list to a Swiper so each card becomes a slide.
-          - The component TS controls per-section Swiper options.
-          - Hovering/focusing an offer sets the featured image.
-        -->
-        <section class="mb-8">
-          <!-- Section header -->
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {{ curLang === 'TC' ? '甄選優惠' : 'Featured Offer' }}
-            </h3>
-            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/offers">See all</a>
-          </div>
+              <!-- Offers as a Swiper: each .swiper-slide is one offer card -->
+              <swiper-container #offersSwiper css-mode="true">
+                <swiper-slide *ngFor="let o of (offers$ | async) || []">
+                  <ion-card (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" button="true">
+                    <ion-card-header>
+                      <ion-card-title>{{ o.title }}</ion-card-title>
+                      <ion-card-subtitle>{{ o.restaurant }}</ion-card-subtitle>
+                    </ion-card-header>
+                  </ion-card>
+                </swiper-slide>
+                <!-- Pagination slot for offers if configured in TS -->
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper-container>
+            </ion-item-group>
 
-          <!-- Offers as a Swiper: each .swiper-slide is one offer card -->
-          <swiper-container #offersSwiper class="section-swiper" css-mode="true">
-            <swiper-slide *ngFor="let o of (offers$ | async) || []" class="p-3">
-              <div class="theme-bg rounded-lg bg-white p-3 shadow dark:bg-slate-800"
-                   (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" tabindex="0">
-                <ion-card class="!bg-transparent !shadow-none">
-                  <div class="text-sm font-semibold">{{ o.title }}</div>
-                  <div class="mt-1 text-xs">{{ o.restaurant }}</div>
-                </ion-card>
-              </div>
-            </swiper-slide>
+            <!-- Articles / Gourmet's note -->
+            <!--
+              Articles are now presented as Swiper slides to allow swipe gestures on small screens.
+              Language toggling uses curLang to select title and excerpt fields.
+            -->
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>
+                  <h2>{{ curLang === 'TC' ? '飲食札記' : "Gourmet's Note" }}</h2>
+                </ion-label>
+                <ion-button slot="end" fill="clear" routerLink="/articles">
+                  {{ curLang === 'TC' ? '查看全部' : 'See all' }}
+                </ion-button>
+              </ion-item-divider>
 
-            <!-- Pagination slot for offers if configured in TS -->
-            <div class="swiper-pagination" slot="pagination"></div>
-          </swiper-container>
+              <!-- Horizontal article cards: now as Swiper slides -->
+              <swiper-container #articlesSwiper>
+                <swiper-slide *ngFor="let a of (articles$ | async) || []">
+                  <ion-card>
+                    <ion-img [src]="a.image || 'assets/icon/Placeholder.png'" alt="article"></ion-img>
+                    <ion-card-header>
+                      <ion-card-title>{{ curLang === 'TC' ? a.title_TC : a.title_EN }}</ion-card-title>
+                    </ion-card-header>
+                    <ion-card-content>
+                      <p>{{ curLang === 'TC' ? a.excerpt_TC : a.excerpt_EN }}</p>
+                    </ion-card-content>
+                  </ion-card>
+                </swiper-slide>
 
-          <!-- Swipe hint arrows at ends -->
-          <div class="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-300">
-            <span class="flex items-center gap-1">
-              <ion-icon name="arrow-back-outline"></ion-icon>
-              {{ curLang === 'TC' ? '可滑動' : 'Swipe' }}
-            </span>
-            <span class="flex items-center gap-1">
-              {{ curLang === 'TC' ? '向右滑動查看更多' : 'Swipe right to see more' }}
-              <ion-icon name="arrow-forward-outline"></ion-icon>
-            </span>
-          </div>
-        </section>
+                <!-- Pagination slot for articles -->
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper-container>
+            </ion-item-group>
 
-        <!-- Articles / Gourmet's note -->
-        <!--
-          Articles are now presented as Swiper slides to allow swipe gestures on small screens.
-          Language toggling uses curLang to select title and excerpt fields.
-        -->
-        <section class="mb-8">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {{ curLang === 'TC' ? '飲食札記' : "Gourmet's Note" }}
-            </h3>
-            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/articles">See all</a>
-          </div>
+            <!-- Latest reviews -->
+            <!--
+              Reviews are shown as slides so mobile users can swipe through testimonials.
+              Each slide contains avatar, meta and rating.
+            -->
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>
+                  <h2>{{ curLang === 'TC' ? '最近評論' : 'Latest Review' }}</h2>
+                </ion-label>
+                <ion-button slot="end" fill="clear" routerLink="/reviews">
+                  {{ curLang === 'TC' ? '查看全部' : 'See all' }}
+                </ion-button>
+              </ion-item-divider>
 
-          <!-- Horizontal article cards: now as Swiper slides -->
-          <swiper-container #articlesSwiper class="section-swiper">
-            <swiper-slide *ngFor="let a of (articles$ | async) || []" class="p-3">
-              <article class="theme-bg rounded-lg bg-white p-3 shadow dark:bg-slate-800">
-                <img [src]="a.image || 'assets/icon/Placeholder.png'" alt="article" class="h-36 w-full rounded object-cover" />
-                <h4 class="mt-2 font-semibold text-slate-900 dark:text-slate-50">{{ curLang === 'TC' ? a.title_TC : a.title_EN }}</h4>
-                <p class="mt-1 line-clamp-3 text-sm">{{ curLang === 'TC' ? a.excerpt_TC : a.excerpt_EN }}</p>
-              </article>
-            </swiper-slide>
+              <swiper-container #reviewsSwiper>
+                <swiper-slide *ngFor="let r of (reviews$ | async) || []">
+                  <ion-card>
+                    <ion-item lines="none">
+                      <ion-avatar slot="start">
+                        <ion-img [src]="r.avatar || 'assets/icon/Placeholder.png'" alt="avatar"></ion-img>
+                      </ion-avatar>
+                      <ion-label>
+                        <h3>{{ r.name }}</h3>
+                        <p>{{ r.meta }}</p>
+                      </ion-label>
+                    </ion-item>
+                    <ion-card-content>
+                      <p>{{ r.text }}</p>
+                      <ion-text color="warning">
+                        <p>★ {{ r.rating }}</p>
+                      </ion-text>
+                    </ion-card-content>
+                  </ion-card>
+                </swiper-slide>
 
-            <!-- Pagination slot for articles -->
-            <div class="swiper-pagination" slot="pagination"></div>
-          </swiper-container>
-        </section>
+                <!-- Pagination for reviews, controlled by TS config -->
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper-container>
+            </ion-item-group>
 
-        <!-- Latest reviews -->
-        <!--
-          Reviews are shown as slides so mobile users can swipe through testimonials.
-          Each slide contains avatar, meta and rating.
-        -->
-        <section class="mb-8">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {{ curLang === 'TC' ? '最近評論' : 'Latest Review' }}
-            </h3>
-            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/reviews">See all</a>
-          </div>
+            <!-- Trending restaurants -->
+            <!--
+              Restaurants carousel uses per-section settings in the TS file to show multiple items per view on larger screens.
+              Each slide is a compact restaurant card with image, name and address.
+            -->
+            <ion-item-group>
+              <ion-item-divider>
+                <ion-label>
+                  <h2>{{ curLang === 'TC' ? '熱門餐廳' : 'Trending Restaurant' }}</h2>
+                </ion-label>
+                <ion-button slot="end" fill="clear" routerLink="/restaurants">
+                  {{ curLang === 'TC' ? '查看全部' : 'See all' }}
+                </ion-button>
+              </ion-item-divider>
 
-          <swiper-container #reviewsSwiper class="section-swiper">
-            <swiper-slide *ngFor="let r of (reviews$ | async) || []" class="p-3">
-              <div class="theme-bg rounded-lg bg-white p-3 shadow dark:bg-slate-800">
-                <div class="flex items-center gap-3">
-                  <img [src]="r.avatar || 'assets/icon/Placeholder.png'" alt="avatar" class="h-10 w-10 rounded-full object-cover" />
-                  <div>
-                    <p class="text-sm font-semibold">{{ r.name }}</p>
-                    <p class="text-xs">{{ r.meta }}</p>
-                  </div>
-                </div>
-                <p class="mt-2 line-clamp-4 text-sm">{{ r.text }}</p>
-                <p class="mt-2 text-xs">★ {{ r.rating }}</p>
-              </div>
-            </swiper-slide>
+              <swiper-container #restaurantsSwiper>
+                <swiper-slide *ngFor="let r of (restaurants$ | async) || []">
+                  <ion-card>
+                    <ion-img [src]="r.image || 'assets/icon/Placeholder.png'" alt="restaurant"></ion-img>
+                    <ion-card-header>
+                      <ion-card-title>{{ curLang === 'TC' ? r.Name_TC : r.Name_EN }}</ion-card-title>
+                      <ion-card-subtitle>{{ curLang === 'TC' ? r.Address_TC : r.Address_EN }}</ion-card-subtitle>
+                    </ion-card-header>
+                  </ion-card>
+                </swiper-slide>
 
-            <!-- Pagination for reviews, controlled by TS config -->
-            <div class="swiper-pagination" slot="pagination"></div>
-          </swiper-container>
-        </section>
+                <!-- Pagination slot for restaurants -->
+                <div class="swiper-pagination" slot="pagination"></div>
+              </swiper-container>
+            </ion-item-group>
 
-        <!-- Trending restaurants -->
-        <!--
-          Restaurants carousel uses per-section settings in the TS file to show multiple items per view on larger screens.
-          Each slide is a compact restaurant card with image, name and address.
-        -->
-        <section class="mb-8">
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">
-              {{ curLang === 'TC' ? '熱門餐廳' : 'Trending Restaurant' }}
-            </h3>
-            <a class="text-sm text-indigo-600 dark:text-indigo-400" routerLink="/restaurants">See all</a>
-          </div>
-
-          <swiper-container #restaurantsSwiper class="section-swiper">
-            <swiper-slide *ngFor="let r of (restaurants$ | async) || []" class="p-3">
-              <div class="theme-bg rounded-lg bg-white p-3 shadow dark:bg-slate-800">
-                <img [src]="r.image || 'assets/icon/Placeholder.png'" alt="rest" class="h-36 w-full rounded object-cover" />
-                <div class="mt-2">
-                  <h4 class="font-semibold text-slate-900 dark:text-slate-50">{{ curLang === 'TC' ? r.Name_TC : r.Name_EN }}</h4>
-                  <p class="mt-1 line-clamp-3 text-xs">{{ curLang === 'TC' ? r.Address_TC : r.Address_EN }}</p>
-                </div>
-              </div>
-            </swiper-slide>
-
-            <!-- Pagination slot for restaurants -->
-            <div class="swiper-pagination" slot="pagination"></div>
-          </swiper-container>
-        </section>
-
-        <!-- Mobile promo -->
-        <!--
-          Static promo area for mobile app downloads; not a Swiper.
-          Images are static assets for App Store and Google Play.
-        -->
-        <section class="mb-8">
-          <div class="mb-3 flex items-center justify-between">
-            <h4 class="font-semibold text-slate-900 dark:text-slate-100">{{ curLang === 'TC' ? '手機程式' : 'Mobile App' }}</h4>
-            <p class="text-sm">{{ curLang === 'TC' ? '下載應用程式以取得優惠與位置功能。' : 'Download for deals & location features.' }}</p>
-            <div class="mt-3 flex gap-2">
-              <img src="assets/icon/App_Store.png" alt="App Store" class="h-10" />
-              <img src="assets/icon/Google_Play.png" alt="Google Play" class="h-10" />
-            </div>
-          </div>
-        </section>
-      </main>
+            <!-- Mobile app promo -->
+            <ion-card>
+              <ion-card-header>
+                <ion-card-title>{{ curLang === 'TC' ? '手機程式' : 'Mobile App' }}</ion-card-title>
+                <ion-card-subtitle>{{ curLang === 'TC' ? '下載應用程式以取得優惠與位置功能。' : 'Download for deals & location features.' }}</ion-card-subtitle>
+              </ion-card-header>
+              <ion-card-content>
+                <ion-grid>
+                  <ion-row>
+                    <ion-col size="6">
+                      <ion-img src="assets/icon/App_Store.png" alt="App Store"></ion-img>
+                    </ion-col>
+                    <ion-col size="6">
+                      <ion-img src="assets/icon/Google_Play.png" alt="Google Play"></ion-img>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-card-content>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
     </ng-container>
 </ion-content>

@@ -1,3 +1,63 @@
-.shared-tab{
-    padding-left: 15vw;
+.shared-menu {
+  --ion-item-background: transparent;
+  padding-left: 1vw;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--ion-text-color);
+  background: transparent;
+}
+
+.settings-section {
+  margin-top: auto; /* push settings to bottom */
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--ion-color-light-shade);
+  background: transparent;
+}
+
+ion-item {
+  --padding-start: 1rem;
+  --ion-item-background: transparent;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+}
+
+/* Keep hover subtle, relies on theme color tokens */
+ion-item:hover {
+  --ion-item-background: var(--ion-color-light);
+}
+
+/* Modern toggle uses theme tokens so it looks correct in light/dark */
+.modern-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  background: transparent; /* use transparent so it blends with menu */
+  border: 1px solid var(--ion-color-light-shade);
+  color: var(--ion-text-color);
+  font-size: 0.9rem;
+  transition: all 0.15s ease-in-out;
+  -webkit-appearance: none;
+}
+
+.modern-toggle ion-icon {
+  font-size: 1rem;
+}
+
+.modern-toggle:hover {
+  background: var(--ion-color-light);
+}
+
+ion-list-header {
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ion-color-medium);
+}
+
+ion-icon {
+  font-size: 1.25rem;
+  color: var(--ion-text-color);
 }

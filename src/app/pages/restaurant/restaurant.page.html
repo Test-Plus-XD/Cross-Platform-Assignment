@@ -86,7 +86,7 @@
           &nbsp;{{ (lang$ | async) === 'TC' ? '預約' : 'Booking' }}
         </div>
         <div class="cell-content small">
-          <div class="booking-stack" [class.dark]="(isDark$ | async)">
+          <div class="booking-stack" [class.dark]="(isDark$ | async)" [class.force-calendar-light-in-dark]="(isDark$ | async)">
             <ion-datetime display-format="YYYY-MM-DD HH:mm"
                           picker-format="YYYY-MM-DD HH:mm"
                           presentation="date-time"
@@ -96,13 +96,15 @@
                           aria-label="Booking date and time">
             </ion-datetime>
 
-            <div class="mt-1">
-              <ion-button fill="solid" size="small" (click)="onBook()" [disabled]="!bookingDateTime">
-                <ion-icon slot="start" name="calendar-number-outline"></ion-icon>
-                {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm' }}
-              </ion-button>
+            <div class="mt-1 booking-actions">
+              <div class="datetime-row">
+                <span class="muted small">{{ bookingDateTime ? bookingDateTime : '-' }}</span>
+                <ion-button fill="solid" size="medium" style="margin-right: 2vw;" (click)="onBook()" [disabled]="!bookingDateTime">
+                  <ion-icon slot="start" name="calendar-number-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm' }}
+                </ion-button>
+              </div>
             </div>
-            <div class="muted small mt-1">{{ bookingDateTime ? bookingDateTime : '-' }}</div>
           </div>
         </div>
       </ion-col>

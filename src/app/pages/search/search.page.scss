@@ -31,3 +31,128 @@ ion-content, main {
   gap: 0.5rem;
   align-items: center;
 }
+
+/* Card container: simpler, theme-aware background and border */
+.restaurant-card {
+  background: var(--ion-card-background, var(--card-bg));
+  border-radius: 12px;
+  margin: 0.6rem 0.5rem;
+  /* lighter shadow for subtle elevation */
+  box-shadow: 0 2px 8px rgba(2,6,23,0.06);
+  overflow: hidden;
+  /* subtle border to separate cards */
+  border: 1px solid rgba(11,11,11,0.04);
+  position: relative;
+  --padding-start: 0;
+  --padding-end: 0;
+}
+
+/* small accent stripe on the left using primary colour (very subtle) */
+.restaurant-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, rgba(var(--ion-color-primary-rgb),0.12), rgba(var(--ion-color-primary-rgb),0.06));
+}
+
+/* Row inside the card to align thumbnail + text + chevron */
+.card-row {
+  align-items: center;
+  --inner-padding-start: 12px;
+  --inner-padding-end: 12px;
+}
+
+/* Thumbnail sizing and treatment */
+.card-thumbnail {
+  min-width: 84px;
+  max-width: 84px;
+  height: 84px;
+  margin-inline-end: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-thumbnail img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+}
+
+/* Text column: let it take remaining space */
+.card-content {
+  width: 100%;
+  padding-right: 0.4rem;
+}
+
+/* Title and text */
+.card-title {
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ion-text-color);
+}
+
+.card-address {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.card-meta {
+  margin: 4px 0 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+/* Chevron affordance at end */
+.card-chevron {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+/* Slightly larger tap target on mobile */
+@media (hover: none) {
+  .restaurant-card {
+    margin: 0.5rem 0.4rem;
+  }
+}
+
+/* Reduce the heavy default ion-card padding so row looks compact */
+.restaurant-card .card-row {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+/* Sticky filters at top of content */
+.sticky-filters {
+  position: sticky;
+  top: calc(var(--ion-safe-area-top, 0px) + 30px); /* leave space for header */
+  z-index: 30;
+  background: var(--ion-background-color, #ecf1ebef);
+  transition: transform 220ms cubic-bezier(.2,.9,.3,1), opacity 180ms ease-in-out;
+  will-change: transform, opacity;
+}
+
+/* Hidden state: slide up and hide pointer events */
+.sticky-filters.sticky-hidden {
+  transform: translateY(-110%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Small visual: add subtle shadow to separate from content when sticky */
+.sticky-filters:not(.sticky-hidden) {
+  box-shadow: 0 6px 18px rgba(10,10,10,0.06);
+}
+
+/* Ensure selects / inputs inside still behave */
+.sticky-filters ion-item {
+  --background: transparent;
+}
