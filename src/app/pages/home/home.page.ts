@@ -77,9 +77,6 @@ export class HomePage implements OnInit, AfterViewInit, AfterViewChecked, OnDest
 
   // Initialise observables and subscribe once to set featured image and trigger re-init after data arrival
   ngOnInit() {
-    setTimeout(() => {
-      (window as any).appSetPageTitle?.({ Header_EN: 'Home', Header_TC: '主頁' });
-    }, 1);
     // Detect native mobile platform (Android or iOS)
     this.isNative = this.platform.is('android') || this.platform.is('ios');
     // Initialise theme class early (ThemeService should apply .dark)

@@ -1,0 +1,31 @@
+<ion-content class="ion-padding">
+  <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+    <ion-item>
+      <ion-label position="floating">Name</ion-label>
+      <ion-input type="text" formControlName="name" required></ion-input>
+    </ion-item>
+    <div *ngIf="registerForm.get('name')?.invalid && registerForm.get('name')?.touched">
+      <small class="error">Name is required.</small>
+    </div>
+
+    <ion-item>
+      <ion-label position="floating">Email</ion-label>
+      <ion-input type="email" formControlName="email" required></ion-input>
+    </ion-item>
+    <div *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+      <small class="error">Valid email required.</small>
+    </div>
+
+    <ion-item>
+      <ion-label position="floating">Password</ion-label>
+      <ion-input type="password" formControlName="password" required minlength="6"></ion-input>
+    </ion-item>
+    <div *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+      <small class="error">Password (min 6 characters) required.</small>
+    </div>
+
+    <ion-button expand="full" type="submit" [disabled]="registerForm.invalid">Register</ion-button>
+  </form>
+
+  <ion-button fill="clear" routerLink="/login">Already have account? Login</ion-button>
+</ion-content>

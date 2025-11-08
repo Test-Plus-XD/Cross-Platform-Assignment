@@ -34,15 +34,20 @@ export class AppComponent {
         this.UI.init();
 
         // Listen to router events
-        this.router.events.pipe(
-            filter((event): event is NavigationEnd => event instanceof NavigationEnd)
-        ).subscribe(() => {
-            // Reset window.appSetPageTitle after each navigation
-            (window as any).appSetPageTitle = (title: { Header_EN: string; Header_TC: string }) => {
-                if (this.header) {
-                    this.header.emitPageTitle(title);
-                }
-            };
+      this.router.events
+        .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+        .subscribe(() => {
+          // Find the currently active child route
+          let current = this.router.routerState.root;
+          while (current.firstChild) {
+            current = current.firstChild;
+          }
+
+          // Read the 'title' data field if it exists
+          const titleData = current.snapshot.data['title'];
+          if (titleData && this.header) {
+            this.header.emitPageTitle(titleData);
+          }
         });
     }
 }

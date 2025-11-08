@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Login</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+    <ion-item>
+      <ion-label position="floating">Email</ion-label>
+      <ion-input type="email" formControlName="email" required></ion-input>
+    </ion-item>
+    <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+      <small class="error">Valid email required.</small>
+    </div>
+
+    <ion-item>
+      <ion-label position="floating">Password</ion-label>
+      <ion-input type="password" formControlName="password" required></ion-input>
+    </ion-item>
+    <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+      <small class="error">Password required.</small>
+    </div>
+
+    <ion-button expand="full" type="submit" [disabled]="loginForm.invalid">Login</ion-button>
+  </form>
+
+  <ion-button expand="full" (click)="onGoogleLogin()">Login with Google</ion-button>
+  <ion-button fill="clear" routerLink="/register">New user? Register</ion-button>
+</ion-content>

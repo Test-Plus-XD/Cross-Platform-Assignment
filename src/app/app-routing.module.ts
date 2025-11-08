@@ -9,23 +9,38 @@ const routes: Routes = [
   },
   {
     path: 'test',
+    data: { title: { Header_EN: 'Test', Header_TC: '測試' } },
     loadChildren: () => import('./pages/test/test.module').then(m => m.TestPageModule)
   },
   {
     path: 'home',
+    data: { title: { Header_EN: 'Home', Header_TC: '主頁' } },
     loadChildren: () => import('./pages/home/home.module').then(m => m.HomePageModule)
   },
   {
     path: 'search',
+    data: { title: { Header_EN: 'Search', Header_TC: '搜尋' } },
     loadChildren: () => import('./pages/search/search.module').then(m => m.SearchPageModule)
   },
   {
     path: 'restaurant/:id',
+    data: { title: { Header_EN: 'Restaurant', Header_TC: '餐廳' } },
     loadChildren: () => import('./pages/restaurant/restaurant.module').then(m => m.RestaurantPageModule)
   },
   {
     path: 'user',
+    data: { title: { Header_EN: 'Account', Header_TC: '帳戶' } },
     loadChildren: () => import('./pages/user/user.module').then(m => m.UserPageModule)
+  },
+  {
+    path: 'register',
+    data: { title: { Header_EN: 'Register', Header_TC: '登記' } },
+    loadChildren: () => import('./pages/register/register.module').then( m => m.RegisterPageModule)
+  },
+  {
+    path: 'login',
+    data: { title: { Header_EN: 'Login', Header_TC: '登入' } },
+    loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)
   },
 ];
 

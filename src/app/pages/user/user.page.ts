@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
+import { AuthService } from '../../services/auth.service';
+import { User } from 'firebase/auth';
 
 @Component({
   selector: 'app-user',
@@ -9,14 +10,22 @@ import { LanguageService } from '../../services/language.service';
   standalone: false,
 })
 export class UserPage {
-  // For demo, show recent reviews from mock service
-  reviews$ = this.mock.reviews$();
   lang$ = this.lang.lang$;
+  user: User | null = null;
+  defaultPhoto = 'assets/img/default-profile.png';
+
   constructor(
-    private mock: MockDataService,
-    readonly lang: LanguageService
+    readonly lang: LanguageService,
+    private authService: AuthService
   ) { }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> {
+    this.user = await this.authService.getCurrentUser();
+    // Optionally subscribe to user changes via onAuthStateChanged
+  }
+
+  async onLogout(): Promise<void> {
+    await this.authService.logout();
+    // Navigate back to login page
   }
 }

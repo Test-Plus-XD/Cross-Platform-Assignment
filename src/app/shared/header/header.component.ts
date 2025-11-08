@@ -1,5 +1,4 @@
 // Shared header component that exposes language & theme controls and brand icon
-// src/app/shared/header/header.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Observable, BehaviorSubject, combineLatest, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
