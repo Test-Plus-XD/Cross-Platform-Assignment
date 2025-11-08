@@ -1,5 +1,5 @@
 // Page that renders a single restaurant detail with bilingual support
-import { Component, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ModalController, ToastController } from '@ionic/angular';
 import { Observable, Subject } from 'rxjs';
@@ -34,7 +34,7 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
   readonly placeholderImage = '../assets/icon/Placeholder.png';
   // Subject used to unsubscribe on destroy
   private destroy$ = new Subject<void>();
-  // Reference to Leaflet map instance
+  // Reference to Leaflet map instancenpx
   private map: Leaflet.Map | null = null;
 
   constructor(
@@ -45,6 +45,15 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
     private readonly modalController: ModalController,
     private readonly toastController: ToastController 
   ) { this.isDark$ = this.theme.isDark$; }
+
+  ngOnInit() {
+    // Emit the event directly
+    const event = new CustomEvent('page-title', {
+      detail: { Header_EN: 'Restaurant', Header_TC: '餐廳' },
+      bubbles: true
+    });
+    window.dispatchEvent(event);
+  }
 
   // When view initialises, fetch restaurant id and load record
   ngAfterViewInit(): void {

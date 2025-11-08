@@ -2,7 +2,7 @@
 <ion-content>
   <!-- Expose language and theme once for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
-
+    <br>
       <!-- Main container -->
       <!-- Add horizontal padding responsive: px-3 on mobile, px-6 on larger -->
       <ion-grid>
@@ -49,9 +49,9 @@
               </ion-item-divider>
 
               <!-- Offers as a Swiper: each .swiper-slide is one offer card -->
-              <swiper-container #offersSwiper css-mode="true">
+              <swiper-container #offersSwiper css-mode="true" space-between="16">
                 <swiper-slide *ngFor="let o of (offers$ | async) || []">
-                  <ion-card (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" button="true">
+                  <ion-card class="themed-card" (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" button="true">
                     <ion-card-header>
                       <ion-card-title>{{ o.title }}</ion-card-title>
                       <ion-card-subtitle>{{ o.restaurant }}</ion-card-subtitle>
@@ -79,7 +79,7 @@
               </ion-item-divider>
 
               <!-- Horizontal article cards: now as Swiper slides -->
-              <swiper-container #articlesSwiper>
+              <swiper-container #articlesSwiper space-between="16">
                 <swiper-slide *ngFor="let a of (articles$ | async) || []">
                   <ion-card>
                     <ion-img [src]="a.image || 'assets/icon/Placeholder.png'" alt="article"></ion-img>
@@ -112,16 +112,16 @@
                 </ion-button>
               </ion-item-divider>
 
-              <swiper-container #reviewsSwiper>
+              <swiper-container #reviewsSwiper space-between="16">
                 <swiper-slide *ngFor="let r of (reviews$ | async) || []">
                   <ion-card>
                     <ion-item lines="none">
                       <ion-avatar slot="start">
                         <ion-img [src]="r.avatar || 'assets/icon/Placeholder.png'" alt="avatar"></ion-img>
                       </ion-avatar>
-                      <ion-label>
+                      <ion-label class="ion-text-color">
                         <h3>{{ r.name }}</h3>
-                        <p>{{ r.meta }}</p>
+                        <ion-text style="font-size: 0.63rem">{{ r.meta }}</ion-text>
                       </ion-label>
                     </ion-item>
                     <ion-card-content>
@@ -153,7 +153,7 @@
                 </ion-button>
               </ion-item-divider>
 
-              <swiper-container #restaurantsSwiper>
+              <swiper-container #restaurantsSwiper space-between="16">
                 <swiper-slide *ngFor="let r of (restaurants$ | async) || []">
                   <ion-card>
                     <ion-img [src]="r.image || 'assets/icon/Placeholder.png'" alt="restaurant"></ion-img>

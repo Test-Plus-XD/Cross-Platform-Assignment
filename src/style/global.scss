@@ -26,7 +26,9 @@ ion-item {
 /* Ensure basic text-based Ionic components use theme text colour */
 ion-label,
 ion-title,
-ion-text {
+ion-text,
+ion-card-title,
+ion-card-subtitle {
   color: var(--ion-text-color);
   --color: var(--ion-text-color);
 }
@@ -84,8 +86,8 @@ ion-content::part(scroll) {
   --header-spacing: calc(48px + env(safe-area-inset-top));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(144px + env(safe-area-inset-bottom));
-   /* Base palette (semantic names) */
-  --bg: #f2faf0;
+  /* Base palette (semantic names) */
+  --bg: #FFFFFE;
   --text: #0f172a;
   --muted: #64748b;
   --card-bg: #ebfaf2;

@@ -12,7 +12,6 @@
   ion-grid {
     padding: 16px;
   }
-
   // Card styles
   ion-card {
     margin: 8px 0;
@@ -23,6 +22,7 @@
 
     &.hero-card {
       margin-bottom: 24px;
+
       ion-img {
         height: 200px;
         object-fit: cover;
@@ -30,9 +30,29 @@
     }
   }
 
+  ion-card.themed-card {
+    margin: 1rem;
+    // Light theme styling
+    --background: var(--ion-card-background, var(--ion-background-color, #fff));
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+    .ion-text-color {
+      color: var(--ion-text-color);
+    }
+
+    ion-card-title.ion-text-color {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    ion-card-subtitle.ion-text-color {
+      opacity: 0.8;
+    }
+  }
   // Swiper customization
   swiper-container {
-    padding: 8px 0;
+    padding: 1rem 0;
+    width: 100%;
 
     ::ng-deep .swiper-pagination {
       bottom: 0;
@@ -49,6 +69,33 @@
     }
   }
 
+  swiper-slide {
+    display: flex;
+    width: auto; // Allow slides to size based on content
+
+    ion-card {
+      width: 100%;
+      margin: 0; // Remove default card margin since we're using space-between
+    }
+  }
+  // Specific sizing for different sections
+  #offersSwiper, #restaurantsSwiper {
+    swiper-slide {
+      width: 280px; // Fixed width for offer and restaurant cards
+    }
+  }
+
+  #articlesSwiper {
+    swiper-slide {
+      width: 320px; // Slightly wider for article cards
+    }
+  }
+
+  #reviewsSwiper {
+    swiper-slide {
+      width: 300px; // Medium width for review cards
+    }
+  }
   // Section headers
   ion-item-divider {
     --background: transparent;
@@ -62,13 +109,11 @@
       color: var(--ion-text-color);
     }
   }
-
   // Reviews styling
   ion-avatar {
     width: 48px;
     height: 48px;
   }
-
   // Navigation buttons for swiper
   .swiper-button-prev,
   .swiper-button-next {
@@ -84,11 +129,11 @@
       opacity: 1;
     }
   }
-
   // Mobile app promo section
   ion-img[alt="App Store"],
   ion-img[alt="Google Play"] {
     max-height: 40px;
+    max-width: 80px;
     object-fit: contain;
   }
 }
@@ -97,6 +142,10 @@
 :host-context(.dark) {
   ion-card {
     --background: var(--ion-color-dark);
+  }
+
+  ion-card.themed-card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   }
 
   ion-item-divider {

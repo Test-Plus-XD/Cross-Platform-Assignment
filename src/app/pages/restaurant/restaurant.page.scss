@@ -44,6 +44,12 @@
   min-height: 120px;
 }
 
+ion-toolbar {
+  --background: transparent;
+  box-shadow: none;
+  width: 100%;
+}
+
 ion-datetime {
   --inner-padding-end: 0;
   --inner-padding-start: 0;

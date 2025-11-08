@@ -31,7 +31,7 @@ app.use(cors());
 app.use(express.json());
 
 // Local placeholder path returned by API when image missing
-const PLACEHOLDER_PATH = './Placeholder.png';
+const PLACEHOLDER_PATH = path.join(path.dirname(import.meta.url), 'Placeholder.png');
 
 // Helper: sanitise value by replacing null/undefined with '—'
 const sanitiseValue = (value) => {
