@@ -1,19 +1,25 @@
-import { NgModule, isDevMode} from '@angular/core';
+import { NgModule, isDevMode, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 import { ServiceWorkerModule } from '@angular/service-worker';
+import { HttpClientModule } from '@angular/common/http';
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
+import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
+import { provideAuth, getAuth } from '@angular/fire/auth';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
-import { SharedModule } from './shared/shared.module'; // Import the SharedModule for header/footer
-import { HttpClientModule } from '@angular/common/http';
-// Use AngularFire NgModule API for NgModule-based apps
-import { AngularFireModule } from '@angular/fire/compat';
-import { AngularFireAuthModule } from '@angular/fire/compat/auth';
+import { SharedModule } from './shared/shared.module';
 import { environment } from '../environments/environment';
-// Register custom elements globally so <swiper-container> works
 import { register } from 'swiper/element/bundle';
+
 register();
+
+export function initializeFirebase() {
+  return () => {
+    initializeApp(environment.firebaseConfig);
+    getAuth();
+  };
+}
 
 @NgModule({
   declarations: [AppComponent],
@@ -23,15 +29,21 @@ register();
     AppRoutingModule,
     SharedModule,
     HttpClientModule,
-    AngularFireModule.initializeApp(environment.firebaseConfig),
-    AngularFireAuthModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: !isDevMode(),
-      // Register the ServiceWorker as soon as the application is stable or after 30 seconds (whichever comes first).
-      registrationStrategy: 'registerWhenStable:30000'}
-    )],
-  providers: [{ provide: RouteReuseStrategy, useClass: IonicRouteStrategy }],
+      registrationStrategy: 'registerWhenStable:30000'
+    })
+  ],
+  providers: [
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
+    provideAuth(() => getAuth()),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeFirebase,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent],
-  //schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class AppModule {}

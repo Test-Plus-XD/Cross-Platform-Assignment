@@ -1,42 +1,85 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/home"></ion-back-button>
-    </ion-buttons>
-    <ion-title>Login</ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content class="ion-padding">
-  <!-- Email/Password Form -->
-  <form (ngSubmit)="onSubmitEmail()" #emailForm="ngForm">
-    <ion-item>
-      <ion-label position="floating">Email</ion-label>
-      <ion-input type="email" required [(ngModel)]="email" name="email"></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="floating">Password</ion-label>
-      <ion-input type="password" required [(ngModel)]="password" name="password"></ion-input>
-    </ion-item>
-    <ion-button expand="block" type="submit">{{ isLoginMode ? 'Login' : 'Register' }}</ion-button>
-  </form>
+  <br><br><br><br><br>
+  <div style="margin: 5vw">
+    <!-- Email/Password Form -->
+    <form (ngSubmit)="onSubmitEmail()" #emailForm="ngForm">
 
-  <ion-item lines="none">
-    <ion-label>
-      <ion-toggle [(ngModel)]="isLoginMode" name="toggleMode"></ion-toggle>
-      <ion-text>{{ isLoginMode ? 'Switch to Register' : 'Switch to Login' }}</ion-text>
-    </ion-label>
-  </ion-item>
+      <!-- Display Name Field (only shown in registration mode) -->
+      <ion-item *ngIf="!isLoginMode">
+        <ion-label position="floating">Display Name (Optional)</ion-label>
+        <ion-input type="text"
+                    [(ngModel)]="displayName"
+                    name="displayName"
+                    autocomplete="name">
+        </ion-input>
+      </ion-item>
 
-  <ion-item lines="none" class="ion-margin-top">
-    <ion-button expand="block" color="tertiary" (click)="onGoogleSignIn()">
+      <!-- Email Field -->
+      <ion-item>
+        <ion-label position="floating">Email</ion-label>
+        <ion-input type="email"
+                    required
+                    [(ngModel)]="email"
+                    name="email"
+                    autocomplete="email">
+        </ion-input>
+      </ion-item>
+
+      <!-- Password Field -->
+      <ion-item>
+        <ion-label position="floating">Password</ion-label>
+        <ion-input type="password"
+                    required
+                    [(ngModel)]="password"
+                    name="password"
+                    autocomplete="current-password">
+        </ion-input>
+      </ion-item>
+
+      <!-- Submit Button -->
+      <ion-button expand="block"
+                  type="submit"
+                  class="ion-margin-top"
+                  style="background-color: var(--accent); color: palegreen">
+        {{ isLoginMode ? 'Login' : 'Create Account' }}
+      </ion-button>
+    </form>
+
+    <!-- Forgot Password Link (only in login mode) -->
+    <ion-item lines="none" class="ion-margin-top" *ngIf="isLoginMode">
+      <ion-label class="ion-text-center">
+        <ion-button fill="clear" size="small" (click)="forgotPassword()">
+          Forget Password?
+        </ion-button>
+      </ion-label>
+    </ion-item>
+
+    <!-- Toggle Mode Button -->
+    <ion-item lines="none" class="ion-margin-top">
+      <ion-label class="ion-text-center">
+        <ion-text color="medium">
+          {{ isLoginMode ? "Don't have an account?" : 'Already have an account?' }}
+        </ion-text>
+        <ion-button fill="clear" (click)="toggleMode()">
+          {{ isLoginMode ? 'Sign Up' : 'Login' }}
+        </ion-button>
+      </ion-label>
+    </ion-item>
+
+    <!-- Divider -->
+    <ion-item lines="none" class="ion-margin-top">
+      <ion-label class="ion-text-center" style="text-align: center">
+        <ion-text color="medium">OR</ion-text>
+      </ion-label>
+    </ion-item>
+
+    <!-- Google Sign-In Button -->
+    <ion-button expand="block"
+                color="light"
+                (click)="onGoogleSignIn()"
+                class="google-button">
       <ion-icon slot="start" name="logo-google"></ion-icon>
-      Sign in with Google
+      Continue with Google
     </ion-button>
-  </ion-item>
-
-  <ion-text color="danger" *ngIf="errorMessage">
-    <p class="ion-text-center">{{ errorMessage }}</p>
-  </ion-text>
-
+  </div>
 </ion-content>

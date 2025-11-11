@@ -1,28 +1,56 @@
-<ion-header>
-  <ion-toolbar>
-    <ion-title>User Profile</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="onLogout()">Logout</ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content class="ion-padding">
-  <ion-card *ngIf="user">
-    <ion-card-header>
-      <ion-item lines="none">
-        <ion-avatar slot="start">
-          <img [src]="user.photoURL || defaultPhoto">
-        </ion-avatar>
-        <ion-label>
-          <h2>{{ user.displayName }}</h2>
-          <p>{{ user.email }}</p>
-        </ion-label>
-      </ion-item>
-    </ion-card-header>
-    <ion-card-content>
-      <p>User ID: {{ user.uid }}</p>
-      <!-- Add more fields as needed -->
-    </ion-card-content>
-  </ion-card>
+  <br><br><br><br><br>
+    <ion-toolbar>
+      <ion-buttons slot="start">
+        <ion-back-button defaultHref="/home"></ion-back-button>
+      </ion-buttons>
+      <ion-title>Profile</ion-title>
+      <ion-buttons slot="end">
+        <ion-button (click)="onLogout()" color="danger">
+          <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+    <div style="margin: 5vw">
+      <ion-card *ngIf="user">
+        <ion-card-header>
+          <ion-item lines="none">
+            <ion-avatar slot="start">
+              <img [src]="photoURL" [alt]="displayName">
+            </ion-avatar>
+            <ion-label>
+              <h2>{{ displayName }}</h2>
+              <p>{{ user.email }}</p>
+              <ion-badge *ngIf="user.emailVerified" color="success">
+                <ion-icon name="checkmark-circle"></ion-icon>
+                Verified
+              </ion-badge>
+              <ion-badge *ngIf="!user.emailVerified" color="warning">
+                <ion-icon name="alert-circle"></ion-icon>
+                Not Verified
+              </ion-badge>
+            </ion-label>
+          </ion-item>
+        </ion-card-header>
+
+        <ion-card-content>
+          <ion-list>
+            <ion-item>
+              <ion-label>
+                <h3>User ID</h3>
+                <p>{{ user.uid }}</p>
+              </ion-label>
+            </ion-item>
+          </ion-list>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Loading State -->
+      <ion-card *ngIf="!user">
+        <ion-card-content class="ion-text-center">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Loading profile...</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
 </ion-content>

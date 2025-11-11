@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from './services/guard.service';
 
 const routes: Routes = [
   {
@@ -30,6 +31,7 @@ const routes: Routes = [
   {
     path: 'user',
     data: { title: { Header_EN: 'Account', Header_TC: '帳戶' } },
+    canActivate: [AuthGuard], // Protect this route
     loadChildren: () => import('./pages/user/user.module').then(m => m.UserPageModule)
   },
   {

@@ -1,0 +1,19 @@
+ion-content {
+  --background: var(--ion-background-color, #f5f5f5);
+}
+
+form {
+  max-width: 500px;
+  margin: 2rem auto 0;
+}
+
+.google-button {
+  margin-top: 1rem;
+  --border-width: 1px;
+  --border-color: var(--ion-color-medium);
+}
+
+ion-item {
+  --background: transparent;
+  margin-bottom: 0.5rem;
+}

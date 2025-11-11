@@ -1,6 +1,6 @@
 // Shared header component that exposes language & theme controls and brand icon
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Observable, BehaviorSubject, combineLatest, Subscription } from 'rxjs';
+import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
@@ -105,5 +105,4 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
     window.dispatchEvent(event);
   }
-
 }
