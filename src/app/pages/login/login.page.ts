@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { ToastController, LoadingController } from '@ionic/angular';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-login',
@@ -9,30 +10,41 @@ import { ToastController, LoadingController } from '@ionic/angular';
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage {
+export class LoginPage implements OnDestroy {
   // Form fields bound to template
   public email: string = '';
   public password: string = '';
-
-  // Toggle between login and registration modes
-  public isLoginMode: boolean = true;
-
-  // Display name field only shown in registration mode
   public displayName: string = '';
-
-  // Error message displayed in template
+  public isLoginMode: boolean = true;
   public errorMessage: string = '';
+
+  private authSubscription: Subscription | null = null;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private toastController: ToastController,
     private loadingController: LoadingController
-  ) { }
+  ) {
+    // Subscribe to auth state changes
+    this.authSubscription = this.authService.currentUser$.subscribe(user => {
+      // If user is already logged in, redirect to user page
+      if (user) {
+        this.router.navigate(['/user']);
+      }
+    });
+  }
 
-  // Handle email/password form submission, performs either login or registration based on current mode
+  ngOnDestroy(): void {
+    // Clean up subscription
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+  }
+
+  // Handle email/password form submission
   public async onSubmitEmail(): Promise<void> {
-    // Validate inputs before making API call
+    // Validate inputs
     if (!this.email || !this.password) {
       await this.showToast('Please enter both email and password', 'warning');
       return;
@@ -55,6 +67,7 @@ export class LoginPage {
         // Perform login
         await this.authService.loginWithEmail(this.email, this.password);
         await this.showToast('Welcome back!', 'success');
+        await this.router.navigate(['/user']);
       } else {
         // Perform registration
         await this.authService.registerWithEmail(
@@ -77,7 +90,7 @@ export class LoginPage {
     }
   }
 
-  // Handle Google sign-in button click, this method works for both new users (registration) and existing users (login)
+  // Handle Google sign-in
   public async onGoogleSignIn(): Promise<void> {
     const loading = await this.loadingController.create({
       message: 'Connecting to Google...',
@@ -88,9 +101,10 @@ export class LoginPage {
     try {
       await this.authService.signInWithGoogle();
       await this.showToast('Welcome!', 'success');
+      await this.router.navigate(['/user']);
     } catch (error: any) {
       // Only show error if user didn't cancel
-      if (!error.message.includes('cancelled')) {
+      if (!error.message.includes('cancelled') && !error.message.includes('closed')) {
         await this.showToast(error.message || 'Google sign-in failed', 'danger');
       }
     } finally {
@@ -104,7 +118,7 @@ export class LoginPage {
     this.clearForm();
   }
 
-  // Navigate to password reset page
+  // Handle password reset
   public async forgotPassword(): Promise<void> {
     if (!this.email) {
       await this.showToast('Please enter your email address first', 'warning');

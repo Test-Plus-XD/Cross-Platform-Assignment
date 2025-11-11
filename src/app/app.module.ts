@@ -1,4 +1,4 @@
-import { NgModule, isDevMode, APP_INITIALIZER } from '@angular/core';
+import { NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -13,13 +13,6 @@ import { environment } from '../environments/environment';
 import { register } from 'swiper/element/bundle';
 
 register();
-
-export function initializeFirebase() {
-  return () => {
-    initializeApp(environment.firebaseConfig);
-    getAuth();
-  };
-}
 
 @NgModule({
   declarations: [AppComponent],
@@ -36,14 +29,11 @@ export function initializeFirebase() {
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    // Provide Firebase app instance
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
-    provideAuth(() => getAuth()),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeFirebase,
-      multi: true
-    }
+    // Provide Auth instance
+    provideAuth(() => getAuth())
   ],
   bootstrap: [AppComponent],
 })
-export class AppModule {}
+export class AppModule { } {}
