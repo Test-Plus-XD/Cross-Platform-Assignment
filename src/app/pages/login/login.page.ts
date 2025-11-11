@@ -9,39 +9,35 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage implements OnInit {
-  loginForm!: FormGroup; // Use definite assignment operator since form is created in ngOnInit
+export class LoginPage {
+  public email: string = '';
+  public password: string = '';
+  public isLoginMode: boolean = true;
+  public errorMessage: string | null = null;
 
-  constructor(private formBuilder: FormBuilder, private authService: AuthService, private router: Router) { }
+  constructor(private authService: AuthService) { }
 
-  ngOnInit(): void {
-    // Initialise form with validators
-    this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
-    });
-  }
-
-  async onLogin(): Promise<void> {
-    if (this.loginForm.invalid) {
-      return;
-    }
-    // Extract values from form
-    const { email, password } = this.loginForm.value;
+  public async onSubmitEmail(): Promise<void> {
+    this.errorMessage = null;
     try {
-      await this.authService.loginWithEmail(email, password);
-      await this.router.navigate(['/home']);
-    } catch (error: any) {
-      console.error('Login error:', error);
+      if (this.isLoginMode) {
+        await this.authService.loginWithEmail(this.email, this.password);
+      } else {
+        await this.authService.registerWithEmail(this.email, this.password);
+      }
+      // Upon success navigate elsewhere (e.g., home/dashboard)
+    } catch (err: any) {
+      this.errorMessage = err.message || 'Unknown error';
     }
   }
 
-  async onGoogleLogin(): Promise<void> {
+  public async onGoogleSignIn(): Promise<void> {
+    this.errorMessage = null;
     try {
-      await this.authService.loginWithGoogle();
-      await this.router.navigate(['/home']);
-    } catch (error: any) {
-      console.error('Google login error:', error);
+      await this.authService.signInWithGoogle();
+      // Navigate on success
+    } catch (err: any) {
+      this.errorMessage = err.message || 'Google sign-in error';
     }
   }
 }

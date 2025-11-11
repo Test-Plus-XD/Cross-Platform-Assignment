@@ -20,7 +20,7 @@ export class UserPage {
   ) { }
 
   async ngOnInit(): Promise<void> {
-    this.user = await this.authService.getCurrentUser();
+    this.user = await this.authService.currentUser();
     // Optionally subscribe to user changes via onAuthStateChanged
   }
 
