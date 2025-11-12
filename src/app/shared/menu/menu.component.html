@@ -18,7 +18,7 @@
       <ion-label>{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</ion-label>
     </ion-item>
 
-    <ion-item button routerLink="/account" (click)="closeMenu()" lines="none" detail="false">
+    <ion-item button routerLink="/user" (click)="closeMenu()" lines="none" detail="false">
       <ion-icon name="person-outline" slot="start"></ion-icon>
       <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
     </ion-item>
