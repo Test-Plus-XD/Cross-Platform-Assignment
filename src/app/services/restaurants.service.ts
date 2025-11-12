@@ -48,7 +48,7 @@ export interface Restaurant {
 @Injectable({ providedIn: 'root' })
 export class RestaurantsService {
   // Base URL for your server-side CRUD API
-  private readonly apiUrl = environment.apiRestaurantsUrl;
+  private readonly apiUrl = `${environment.apiUrl}/API/Restaurants`;
   // Algolia index name
   private readonly algoliaIndexName = 'Restaurants';
   // Algolia client initialised with search-only key for client queries

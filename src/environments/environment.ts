@@ -23,5 +23,5 @@ export const environment = {
   },
   algoliaAppId: 'V9HMGL1VIZ',
   algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
-  apiRestaurantsUrl: 'http://localhost:3000/API/Restaurants' 
+  apiUrl: 'http://localhost:3000' 
 };

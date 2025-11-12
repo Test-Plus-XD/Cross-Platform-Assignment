@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
+import { LanguageService } from '../../services/language.service';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -17,11 +18,28 @@ export class UserPage implements OnInit, OnDestroy {
   // Default placeholder image
   public readonly defaultPhoto: string = 'assets/icon/Placeholder.png';
 
+  // Language observable
+  public lang$ = this.languageService.lang$;
+
+  // Translations
+  public translations = {
+    userID: { EN: 'User ID', TC: '用戶 ID' },
+    verified: { EN: 'Verified', TC: '已驗證' },
+    notVerified: { EN: 'Not Verified', TC: '未驗證' },
+    loadingProfile: { EN: 'Loading profile...', TC: '正在載入個人資料...' },
+    confirmLogout: { EN: 'Confirm Logout', TC: '確認登出' },
+    confirmLogoutMessage: { EN: 'Are you sure you want to log out?', TC: '您確定要登出嗎？' },
+    cancel: { EN: 'Cancel', TC: '取消' },
+    logout: { EN: 'Logout', TC: '登出' },
+    loggingOut: { EN: 'Logging out...', TC: '正在登出...' },
+  };
+
   // Subscription to auth state
   private authSubscription: Subscription | null = null;
 
   constructor(
     private authService: AuthService,
+    private languageService: LanguageService,
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController
@@ -46,21 +64,28 @@ export class UserPage implements OnInit, OnDestroy {
     }
   }
 
+  // Helper to get current language value
+  private getCurrentLanguage(): 'EN' | 'TC' {
+    const currentLang = (this.languageService as any)._lang.value;
+    return currentLang || 'EN';
+  }
+
   // Handle logout button click
   public async onLogout(): Promise<void> {
+    const lang = this.getCurrentLanguage();
     const alert = await this.alertController.create({
-      header: 'Confirm Logout',
-      message: 'Are you sure you want to log out?',
+      header: this.translations.confirmLogout[lang],
+      message: this.translations.confirmLogoutMessage[lang],
       buttons: [
         {
-          text: 'Cancel',
+          text: this.translations.cancel[lang],
           role: 'cancel'
         },
         {
-          text: 'Logout',
+          text: this.translations.logout[lang],
           handler: async () => {
             const loading = await this.loadingController.create({
-              message: 'Logging out...',
+              message: this.translations.loggingOut[lang],
               spinner: 'crescent'
             });
             await loading.present();

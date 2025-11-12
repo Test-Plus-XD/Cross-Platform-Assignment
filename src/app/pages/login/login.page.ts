@@ -1,6 +1,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { LanguageService } from '../../services/language.service';
 import { ToastController, LoadingController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -18,10 +19,41 @@ export class LoginPage implements OnDestroy {
   public isLoginMode: boolean = true;
   public errorMessage: string = '';
 
+  // Language observable
+  public lang$ = this.languageService.lang$;
+  // Translations
+  public translations = {
+    displayName: { EN: 'Display Name', TC: '顯示名稱' },
+    email: { EN: 'Email', TC: '電郵' },
+    password: { EN: 'Password', TC: '密碼' },
+    login: { EN: 'Login', TC: '登入' },
+    createAccount: { EN: 'Create Account', TC: '建立帳戶' },
+    forgetPassword: { EN: 'Forget Password?', TC: '忘記密碼？' },
+    dontHaveAccount: { EN: "Don't have an account?", TC: '沒有帳戶？' },
+    alreadyHaveAccount: { EN: 'Already have an account?', TC: '已有帳戶？' },
+    signup: { EN: 'Sign Up', TC: '註冊' },
+    or: { EN: 'OR', TC: '或' },
+    continueWithGoogle: { EN: 'Continue with Google', TC: '使用 Google 繼續' },
+    loggingIn: { EN: 'Logging in...', TC: '正在登入...' },
+    creatingAccount: { EN: 'Creating account...', TC: '建立帳戶中...' },
+    welcomeBack: { EN: 'Welcome back!', TC: '歡迎回來！' },
+    accountCreated: { EN: 'Account created! Please check your email to verify your account.', TC: '帳戶已建立！請檢查您的電郵以驗證帳戶。' },
+    connectingGoogle: { EN: 'Connecting to Google...', TC: '正在連接 Google...' },
+    welcome: { EN: 'Welcome!', TC: '歡迎！' },
+    googleSignInFailed: { EN: 'Google sign-in failed', TC: 'Google 登入失敗' },
+    pleaseEnterBoth: { EN: 'Please enter both email and password', TC: '請輸入電郵和密碼' },
+    passwordMinLength: { EN: 'Password must be at least 6 characters', TC: '密碼必須至少需6個字符' },
+    pleaseEnterEmail: { EN: 'Please enter your email address first', TC: '請先輸入您的電郵地址' },
+    sendingResetEmail: { EN: 'Sending reset email...', TC: '正在發送重設電郵...' },
+    resetEmailSent: { EN: 'Password reset email sent! Please check your inbox.', TC: '重設密碼電郵已發送！請檢查您的電郵收件箱。' },
+    resetEmailFailed: { EN: 'Failed to send reset email', TC: '發送重設電郵失敗' },
+  };
+
   private authSubscription: Subscription | null = null;
 
   constructor(
     private authService: AuthService,
+    private languageService: LanguageService,
     private router: Router,
     private toastController: ToastController,
     private loadingController: LoadingController
@@ -42,22 +74,31 @@ export class LoginPage implements OnDestroy {
     }
   }
 
+  // Helper to get current language value
+  private getCurrentLanguage(): 'EN' | 'TC' {
+    const currentLang = (this.languageService as any)._lang.value;
+    return currentLang || 'EN';
+  }
+
   // Handle email/password form submission
   public async onSubmitEmail(): Promise<void> {
     // Validate inputs
     if (!this.email || !this.password) {
-      await this.showToast('Please enter both email and password', 'warning');
+      const lang = this.getCurrentLanguage();
+      await this.showToast(this.translations.pleaseEnterBoth[lang], 'warning');
       return;
     }
 
     if (this.password.length < 6) {
-      await this.showToast('Password must be at least 6 characters', 'warning');
+      const lang = this.getCurrentLanguage();
+      await this.showToast(this.translations.passwordMinLength[lang], 'warning');
       return;
     }
 
     // Show loading indicator
+    const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
-      message: this.isLoginMode ? 'Logging in...' : 'Creating account...',
+      message: this.isLoginMode ? this.translations.loggingIn[lang] : this.translations.creatingAccount[lang],
       spinner: 'crescent'
     });
     await loading.present();
@@ -66,7 +107,8 @@ export class LoginPage implements OnDestroy {
       if (this.isLoginMode) {
         // Perform login
         await this.authService.loginWithEmail(this.email, this.password);
-        await this.showToast('Welcome back!', 'success');
+        const currentLang = this.getCurrentLanguage();
+        await this.showToast(this.translations.welcomeBack[currentLang], 'success');
         await this.router.navigate(['/user']);
       } else {
         // Perform registration
@@ -75,7 +117,8 @@ export class LoginPage implements OnDestroy {
           this.password,
           this.displayName || undefined
         );
-        await this.showToast('Account created! Please check your email to verify your account.', 'success');
+        const currentLang = this.getCurrentLanguage();
+        await this.showToast(this.translations.accountCreated[currentLang], 'success');
 
         // Switch to login mode after successful registration
         this.isLoginMode = true;
@@ -92,20 +135,23 @@ export class LoginPage implements OnDestroy {
 
   // Handle Google sign-in
   public async onGoogleSignIn(): Promise<void> {
+    const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
-      message: 'Connecting to Google...',
+      message: this.translations.connectingGoogle[lang],
       spinner: 'crescent'
     });
     await loading.present();
 
     try {
       await this.authService.signInWithGoogle();
-      await this.showToast('Welcome!', 'success');
+      const currentLang = this.getCurrentLanguage();
+      await this.showToast(this.translations.welcome[currentLang], 'success');
       await this.router.navigate(['/user']);
     } catch (error: any) {
       // Only show error if user didn't cancel
       if (!error.message.includes('cancelled') && !error.message.includes('closed')) {
-        await this.showToast(error.message || 'Google sign-in failed', 'danger');
+        const currentLang = this.getCurrentLanguage();
+        await this.showToast(error.message || this.translations.googleSignInFailed[currentLang], 'danger');
       }
     } finally {
       await loading.dismiss();
@@ -121,21 +167,25 @@ export class LoginPage implements OnDestroy {
   // Handle password reset
   public async forgotPassword(): Promise<void> {
     if (!this.email) {
-      await this.showToast('Please enter your email address first', 'warning');
+      const lang = this.getCurrentLanguage();
+      await this.showToast(this.translations.pleaseEnterEmail[lang], 'warning');
       return;
     }
 
+    const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
-      message: 'Sending reset email...',
+      message: this.translations.sendingResetEmail[lang],
       spinner: 'crescent'
     });
     await loading.present();
 
     try {
       await this.authService.sendPasswordResetEmail(this.email);
-      await this.showToast('Password reset email sent! Please check your inbox.', 'success');
+      const currentLang = this.getCurrentLanguage();
+      await this.showToast(this.translations.resetEmailSent[currentLang], 'success');
     } catch (error: any) {
-      await this.showToast(error.message || 'Failed to send reset email', 'danger');
+      const currentLang = this.getCurrentLanguage();
+      await this.showToast(error.message || this.translations.resetEmailFailed[currentLang], 'danger');
     } finally {
       await loading.dismiss();
     }

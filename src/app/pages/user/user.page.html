@@ -1,56 +1,57 @@
 <ion-content class="ion-padding">
   <br><br><br><br><br>
-    <ion-toolbar>
-      <ion-buttons slot="start">
-        <ion-back-button defaultHref="/home"></ion-back-button>
-      </ion-buttons>
-      <ion-title>Profile</ion-title>
-      <ion-buttons slot="end">
-        <ion-button (click)="onLogout()" color="danger">
-          <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-    <div style="margin: 5vw">
-      <ion-card *ngIf="user">
-        <ion-card-header>
-          <ion-item lines="none">
-            <ion-avatar slot="start">
-              <img [src]="photoURL" [alt]="displayName">
-            </ion-avatar>
+  <div style="margin: 5vw">
+    <ion-card *ngIf="user">
+      <ion-card-header>
+        <ion-item lines="none">
+          <ion-avatar slot="start">
+            <img [src]="photoURL" [alt]="displayName">
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ displayName }}</h2>
+            <p>{{ user.email }}</p>
+            <ion-badge *ngIf="user.emailVerified" color="success">
+              <ion-icon name="checkmark-circle"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.verified.TC : translations.verified.EN }}
+            </ion-badge>
+            <ion-badge *ngIf="!user.emailVerified" color="warning">
+              <ion-icon name="alert-circle"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.notVerified.TC : translations.notVerified.EN }}
+            </ion-badge>
+          </ion-label>
+        </ion-item>
+      </ion-card-header>
+
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
             <ion-label>
-              <h2>{{ displayName }}</h2>
-              <p>{{ user.email }}</p>
-              <ion-badge *ngIf="user.emailVerified" color="success">
-                <ion-icon name="checkmark-circle"></ion-icon>
-                Verified
-              </ion-badge>
-              <ion-badge *ngIf="!user.emailVerified" color="warning">
-                <ion-icon name="alert-circle"></ion-icon>
-                Not Verified
-              </ion-badge>
+              <h3>{{ (lang$ | async) === 'TC' ? translations.userID.TC : translations.userID.EN }}</h3>
+              <p>{{ user.uid }}</p>
             </ion-label>
           </ion-item>
-        </ion-card-header>
+        </ion-list>
+      </ion-card-content>
 
-        <ion-card-content>
-          <ion-list>
-            <ion-item>
-              <ion-label>
-                <h3>User ID</h3>
-                <p>{{ user.uid }}</p>
-              </ion-label>
-            </ion-item>
-          </ion-list>
-        </ion-card-content>
-      </ion-card>
+      <ion-card-content>
+        <ion-list>
+          <ion-item>
+            <ion-buttons slot="end" style="align-self: center">
+              <ion-button (click)="onLogout()" color="danger">
+                <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+              </ion-button>
+            </ion-buttons>
+          </ion-item>
+        </ion-list>
+      </ion-card-content>
+    </ion-card>
 
-      <!-- Loading State -->
-      <ion-card *ngIf="!user">
-        <ion-card-content class="ion-text-center">
-          <ion-spinner name="crescent"></ion-spinner>
-          <p>Loading profile...</p>
-        </ion-card-content>
-      </ion-card>
-    </div>
+    <!-- Loading State -->
+    <ion-card *ngIf="!user">
+      <ion-card-content class="ion-text-center">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>{{ (lang$ | async) === 'TC' ? translations.loadingProfile.TC : translations.loadingProfile.EN }}</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
 </ion-content>
