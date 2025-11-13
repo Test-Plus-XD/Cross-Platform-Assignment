@@ -1,10 +1,34 @@
-// Search page with bilingual text search and district + keyword filters (EN primary)
+// Search page component with multi-district and multi-keyword filtering (EN-primary).
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { Subscription, firstValueFrom, debounceTime, Subject } from 'rxjs';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
-import { Subscription } from 'rxjs';
+
+interface DistrictOption {
+  district_en: string;
+  district_tc: string;
+}
+
+interface KeywordOption {
+  value_en: string;
+  label_en: string;
+  label_tc: string;
+}
+
+interface Translations {
+  searchTitle: { EN: string; TC: string };
+  searchSubtitle: { EN: string; TC: string };
+  searchPlaceholder: { EN: string; TC: string };
+  allDistricts: { EN: string; TC: string };
+  allCategories: { EN: string; TC: string };
+  clearFilters: { EN: string; TC: string };
+  restaurantsFound: { EN: string; TC: string };
+  loading: { EN: string; TC: string };
+  noResults: { EN: string; TC: string };
+  tryDifferent: { EN: string; TC: string };
+  viewDetails: { EN: string; TC: string };
+}
 
 @Component({
   selector: 'app-search',
@@ -13,12 +37,12 @@ import { Subscription } from 'rxjs';
   standalone: false,
 })
 export class SearchPage implements OnInit, OnDestroy {
-  // Search state
-  public searchQuery: string = '';
-  public selectedDistrict: string = '';
-  public selectedKeyword: string = '';
+  // Search and filter state
+  public searchQuery: string = ''; // Free-text query (user input)
+  public selectedDistrictTokens: string[] = []; // EN tokens for districts (canonical)
+  public selectedKeywordTokens: string[] = []; // EN tokens for keywords (canonical)
 
-  // Results state
+  // Results
   public restaurants: Restaurant[] = [];
   public isLoading: boolean = false;
   public totalResults: number = 0;
@@ -26,238 +50,402 @@ export class SearchPage implements OnInit, OnDestroy {
   public totalPages: number = 0;
   public readonly resultsPerPage: number = 12;
 
-  // Available filter options
-  public availableDistricts: string[] = [];
-  public availableKeywords: string[] = [];
+  // Available options (store bilingual objects)
+  public availableDistricts: DistrictOption[] = [];
+  public availableKeywords: KeywordOption[] = [];
 
-  // Language observable
+  // Language observable and local cache
   public lang$ = this.languageService.lang$;
+  private currentLang: 'EN' | 'TC' = 'EN';
 
-  // Comprehensive translations
-  public translations = {
-    searchTitle: { EN: 'Discover Restaurants', TC: '探索餐廳' },
-    searchSubtitle: { EN: 'Find your perfect dining experience', TC: '尋找完美的用餐體驗' },
-    searchPlaceholder: { EN: 'Search restaurants...', TC: '搜尋餐廳...' },
+  // Subscriptions to clean up
+  private subscriptions: Subscription[] = [];
+  private searchSubject = new Subject<void>();
+  private optionsLoaded = false;
+
+  // Translations for all UI text
+  public translations: Translations = {
+    searchTitle: { EN: 'Search Restaurants', TC: '搜尋餐廳' },
+    searchSubtitle: { EN: 'Find your favourite vegetarian spot', TC: '尋找您喜愛的素食餐廳' },
+    searchPlaceholder: { EN: 'Search by name or keyword...', TC: '按名稱或分類搜尋...' },
     allDistricts: { EN: 'All Districts', TC: '所有地區' },
     allCategories: { EN: 'All Categories', TC: '所有分類' },
-    clearFilters: { EN: 'Clear All', TC: '清除全部' },
-    restaurantsFound: { EN: 'restaurants found', TC: '間餐廳' },
-    loading: { EN: 'Searching...', TC: '搜尋中...' },
-    noResults: { EN: 'No restaurants found', TC: '找不到餐廳' },
-    tryDifferent: { EN: 'Try adjusting your search filters', TC: '嘗試調整搜尋條件' },
-    viewDetails: { EN: 'View Details', TC: '查看詳情' },
-    selectDistrict: { EN: 'Select District', TC: '選擇地區' },
-    selectKeyword: { EN: 'Select Category', TC: '選擇分類' },
-    cancel: { EN: 'Cancel', TC: '取消' }
+    clearFilters: { EN: 'Clear All', TC: '清除所有' },
+    restaurantsFound: { EN: 'restaurants found', TC: '間餐廳符合' },
+    loading: { EN: 'Loading...', TC: '正在載入...' },
+    noResults: { EN: 'No Restaurants Found', TC: '沒有找到餐廳' },
+    tryDifferent: { EN: 'Try adjusting your search or filters', TC: '嘗試調整您的搜尋或篩選條件' },
+    viewDetails: { EN: 'View Details', TC: '查看詳情' }
   };
-
-  // Subscriptions for cleanup
-  private subscriptions: Subscription[] = [];
 
   constructor(
     private readonly restaurantsService: RestaurantsService,
     private readonly languageService: LanguageService,
-    private readonly router: Router,
     private readonly alertController: AlertController
   ) { }
 
-  ngOnInit(): void {
-    // Load initial data and set up language change listener
-    this.loadInitialData();
-
-    // Subscribe to language changes to refresh filters
-    const langSubscription = this.lang$.subscribe(() => {
-      // Reload filter options when language changes
+  // Component initialisation
+  public ngOnInit(): void {
+    // Subscribe to language to update labels
+    const langSub = this.lang$.subscribe(lang => {
+      this.currentLang = (lang === 'TC') ? 'TC' : 'EN';
+      // Reload options whenever language changes so labels are consistent
       this.loadFilterOptions();
     });
+    this.subscriptions.push(langSub);
 
-    this.subscriptions.push(langSubscription);
-  }
+    // Set up debounced search for input changes
+    const searchSub = this.searchSubject.pipe(
+      debounceTime(300)
+    ).subscribe(() => {
+      this.currentPage = 0;
+      this.performSearch();
+    });
+    this.subscriptions.push(searchSub);
 
-  ngOnDestroy(): void {
-    // Clean up subscriptions
-    this.subscriptions.forEach(subscription => subscription.unsubscribe());
-  }
-
-  // Load initial data on page load
-  private loadInitialData(): void {
+    // Load filters and initial search
     this.loadFilterOptions();
     this.performSearch();
   }
 
-  // Load available filter options (districts and keywords)
-  private loadFilterOptions(): void {
-    // Fetch all restaurants to extract unique districts and keywords
-    this.restaurantsService.getRestaurants().subscribe(
-      (restaurants: Restaurant[]) => {
-        // Extract unique districts
-        const districts = new Set<string>();
-        const keywords = new Set<string>();
-
-        restaurants.forEach(restaurant => {
-          // Add district based on current language
-          const currentLang = this.getCurrentLanguage();
-          if (currentLang === 'TC' && restaurant.District_TC) {
-            districts.add(restaurant.District_TC);
-          } else if (restaurant.District_EN) {
-            districts.add(restaurant.District_EN);
-          }
-
-          // Add keywords based on current language
-          if (currentLang === 'TC' && restaurant.Keyword_TC) {
-            restaurant.Keyword_TC.forEach(kw => keywords.add(kw));
-          } else if (restaurant.Keyword_EN) {
-            restaurant.Keyword_EN.forEach(kw => keywords.add(kw));
-          }
-        });
-
-        this.availableDistricts = Array.from(districts).sort();
-        this.availableKeywords = Array.from(keywords).sort();
-      },
-      error => {
-        console.error('SearchPage: Error loading filter options', error);
-      }
-    );
-  }
-
-  // Perform search with current filters
-  public performSearch(): void {
-    this.isLoading = true;
-    const currentLang = this.getCurrentLanguage();
-
-    // Get English versions of selected filters for API call
-    const districtEn = this.selectedDistrict;
-    const keywordEn = this.selectedKeyword;
-
-    this.restaurantsService.searchRestaurants(
-      this.searchQuery,
-      districtEn,
-      keywordEn,
-      currentLang,
-      this.currentPage,
-      this.resultsPerPage
-    ).subscribe(
-      response => {
-        this.restaurants = response.hits;
-        this.totalResults = response.nbHits;
-        this.totalPages = response.nbPages;
-        this.isLoading = false;
-      },
-      error => {
-        console.error('SearchPage: Search error', error);
-        this.isLoading = false;
-        this.restaurants = [];
-        this.totalResults = 0;
-      }
-    );
+  // Clean up subscriptions
+  public ngOnDestroy(): void {
+    this.subscriptions.forEach(s => s.unsubscribe());
+    this.searchSubject.complete();
   }
 
   // Handle search input with debounce
   public onSearchInput(): void {
-    this.currentPage = 0; // Reset to first page on new search
-    this.performSearch();
+    this.searchSubject.next();
   }
 
-  // Open district filter selector
+  // Load available districts and keywords from restaurants dataset
+  // and build canonical EN-keyed lists to use as radio/checkbox values.
+  private loadFilterOptions(): void {
+    // Only load once to avoid unnecessary network calls
+    if (this.optionsLoaded && this.availableDistricts.length > 0) {
+      return;
+    }
+
+    // Fetch all restaurants (small dataset assumed). If your dataset is large,
+    // consider a dedicated endpoint for just distinct districts/keywords.
+    const optionsSub = this.restaurantsService.getRestaurants().subscribe({
+      next: (restaurants: Restaurant[]) => {
+        // Use maps keyed by EN token to deduplicate and preserve EN canonical values.
+        const districtsByEn = new Map<string, DistrictOption>();
+        const keywordsByEn = new Map<string, KeywordOption>();
+
+        restaurants.forEach(r => {
+          // Add district by EN token
+          if (r.District_EN) {
+            districtsByEn.set(r.District_EN, {
+              district_en: r.District_EN,
+              district_tc: r.District_TC || r.District_EN
+            });
+          }
+
+          // Add keywords by EN token
+          (r.Keyword_EN || []).forEach((kEn: string, idx: number) => {
+            // Try to find matching TC token at same index as best-effort
+            const kTc = (r.Keyword_TC && r.Keyword_TC[idx]) ? r.Keyword_TC[idx] : kEn;
+            if (!keywordsByEn.has(kEn)) {
+              keywordsByEn.set(kEn, { value_en: kEn, label_en: kEn, label_tc: kTc });
+            }
+          });
+        });
+
+        // Convert maps to arrays and sort by label in current language
+        const districtArray = Array.from(districtsByEn.values());
+        const keywordArray = Array.from(keywordsByEn.values());
+
+        const labelKey = this.currentLang === 'TC' ? 'district_tc' : 'district_en';
+        districtArray.sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''));
+        keywordArray.sort((a, b) => (this.currentLang === 'TC' ? a.label_tc : a.label_en)
+          .localeCompare(this.currentLang === 'TC' ? b.label_tc : b.label_en));
+
+        this.availableDistricts = districtArray;
+        this.availableKeywords = keywordArray;
+        this.optionsLoaded = true;
+      },
+      error: (err: any) => {
+        console.error('SearchPage: loadFilterOptions failed', err);
+      }
+    });
+    this.subscriptions.push(optionsSub);
+  }
+
+  // Build an Algolia-style filter string from selected districts and keywords.
+  // Example output:
+  // District_EN:"Kowloon" OR District_EN:"Wan Chai" AND (Keyword_EN:"veggie" OR Keyword_EN:"vegan")
+  private buildAlgoliaFilter(selectedDistricts: string[], selectedKeywords: string[]): string | undefined {
+    // Normalise tokens and remove empties
+    const districts = (selectedDistricts || []).map(d => String(d || '').trim()).filter(Boolean);
+    const keywords = (selectedKeywords || []).map(k => String(k || '').trim()).filter(Boolean);
+
+    let districtClause = '';
+    let keywordClause = '';
+
+    if (districts.length > 0) {
+      // Build OR clause for districts
+      districtClause = districts.map(d => `District_EN:"${this.escapeFilterValue(d)}"`).join(' OR ');
+    }
+
+    if (keywords.length > 0) {
+      // Build OR clause for keywords
+      keywordClause = keywords.map(k => `Keyword_EN:"${this.escapeFilterValue(k)}"`).join(' OR ');
+      // Wrap keywords in parentheses to combine with other clauses correctly
+      if (keywordClause) keywordClause = `(${keywordClause})`;
+    }
+
+    if (districtClause && keywordClause) {
+      return `${districtClause} AND ${keywordClause}`;
+    } else if (districtClause) {
+      return districtClause;
+    } else if (keywordClause) {
+      return keywordClause;
+    } else {
+      return undefined; // No filters
+    }
+  }
+
+  // Escape double quotes inside filter values to avoid breaking the filter string.
+  private escapeFilterValue(value: string): string {
+    return value.replace(/"/g, '\\"');
+  }
+
+  // Main search call. This function supports extracting inline filters from the text query
+  // using the syntax: district:Kowloon,Wan Chai keyword:veggie,vegan
+  public async performSearch(): Promise<void> {
+    this.isLoading = true;
+
+    try {
+      // Parse inline filters from searchQuery if present.
+      // Remove extracted filters from the free-text query to avoid Algolia matching on them twice.
+      const { cleanedQuery, parsedDistricts, parsedKeywords } = this.parseFiltersFromQuery(this.searchQuery);
+
+      // Consolidate filters: union of UI-selected and inline-parsed filters (EN tokens).
+      const combinedDistricts = Array.from(new Set([...(this.selectedDistrictTokens || []), ...(parsedDistricts || [])]));
+      const combinedKeywords = Array.from(new Set([...(this.selectedKeywordTokens || []), ...(parsedKeywords || [])]));
+
+      // Build Algolia filters string
+      const algoliaFilters = this.buildAlgoliaFilter(combinedDistricts, combinedKeywords);
+
+      // Determine language for display; pass 'EN'|'TC' to service as required
+      const currentLang = this.currentLang;
+
+      // Call the restaurantsService with a filter string.
+      const response = await firstValueFrom(this.restaurantsService.searchRestaurantsWithFilters(
+        cleanedQuery || '',
+        algoliaFilters,
+        currentLang,
+        this.currentPage,
+        this.resultsPerPage
+      ));
+
+      // Update UI state
+      this.restaurants = response.hits || [];
+      this.totalResults = response.nbHits || 0;
+      this.totalPages = response.nbPages || 0;
+      this.isLoading = false;
+    } catch (err: any) {
+      console.error('SearchPage: performSearch failed', err);
+      this.isLoading = false;
+      this.restaurants = [];
+      this.totalResults = 0;
+    }
+  }
+
+  // Parse inline filter tokens from free-text query.
+  // Recognises patterns like:
+  // - district:Kowloon, Wan Chai
+  // - districts:(Kowloon|Wan Chai)
+  // - keyword:veggie,vegan
+  // Returns cleaned free-text query and arrays of parsed EN tokens.
+  private parseFiltersFromQuery(query: string): { cleanedQuery: string; parsedDistricts: string[]; parsedKeywords: string[] } {
+    if (!query) return { cleanedQuery: '', parsedDistricts: [], parsedKeywords: [] };
+
+    let working = query;
+    const parsedDistricts: string[] = [];
+    const parsedKeywords: string[] = [];
+
+    // Regex helpers
+    const districtRegex = /districts?\s*:\s*(\([^)]*\)|"[^"]*"|'[^']*'|[^\s]+)/i;
+    const keywordRegex = /keywords?\s*:\s*(\([^)]*\)|"[^"]*"|'[^']*'|[^\s]+)/i;
+
+    const extract = (regex: RegExp, targetArray: string[]) => {
+      const match = working.match(regex);
+      if (match && match[1]) {
+        let raw = match[1].trim();
+
+        // Remove surrounding parentheses or quotes
+        if ((raw.startsWith('(') && raw.endsWith(')')) || ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'")))) {
+          raw = raw.slice(1, -1);
+        }
+
+        // Split on comma or pipe or semicolon
+        const parts = raw.split(/[,|;]+/).map(p => p.trim()).filter(Boolean);
+        parts.forEach(p => {
+          // Keep as-is: we treat parsed tokens as EN tokens; user must use EN tokens in inline syntax
+          targetArray.push(p);
+        });
+
+        // Remove the matched token from the working query
+        working = working.replace(match[0], '').trim();
+      }
+    };
+
+    // Extract districts and keywords
+    extract(districtRegex, parsedDistricts);
+    extract(keywordRegex, parsedKeywords);
+
+    // Clean extra whitespace
+    const cleanedQuery = working.replace(/\s+/g, ' ').trim();
+
+    return { cleanedQuery, parsedDistricts, parsedKeywords };
+  }
+
+  // Get display-friendly district label (single selected district)
+  public get selectedDistrict(): string {
+    if (this.selectedDistrictTokens.length === 0) return '';
+    const token = this.selectedDistrictTokens[0];
+    const district = this.availableDistricts.find(d => d.district_en === token);
+    return this.currentLang === 'TC' ? (district?.district_tc || token) : (district?.district_en || token);
+  }
+
+  // Get display-friendly keyword label (single selected keyword)
+  public get selectedKeyword(): string {
+    if (this.selectedKeywordTokens.length === 0) return '';
+    const token = this.selectedKeywordTokens[0];
+    const keyword = this.availableKeywords.find(k => k.value_en === token);
+    return this.currentLang === 'TC' ? (keyword?.label_tc || token) : (keyword?.label_en || token);
+  }
+
+  // Open the district selector using checkboxes (multiple selection supported).
   public async openDistrictFilter(): Promise<void> {
-    const currentLang = this.getCurrentLanguage();
+    const currentLang = this.currentLang;
+
+    // Build inputs with label in UI language but value as EN token
+    const inputs = [
+      {
+        type: 'checkbox' as const,
+        label: currentLang === 'TC' ? '所有地區' : 'All Districts',
+        value: '',
+        checked: this.selectedDistrictTokens.length === 0
+      },
+      ...this.availableDistricts.map(d => ({
+        type: 'checkbox' as const,
+        label: currentLang === 'TC' ? d.district_tc : d.district_en,
+        value: d.district_en,
+        checked: this.selectedDistrictTokens.includes(d.district_en)
+      }))
+    ];
+
     const alert = await this.alertController.create({
-      header: this.translations.selectDistrict[currentLang],
-      inputs: [
-        {
-          type: 'radio',
-          label: this.translations.allDistricts[currentLang],
-          value: '',
-          checked: !this.selectedDistrict
-        },
-        ...this.availableDistricts.map(district => ({
-          type: 'radio' as const,
-          label: district,
-          value: district,
-          checked: this.selectedDistrict === district
-        }))
-      ],
+      header: currentLang === 'TC' ? '選擇地區' : 'Select District(s)',
+      inputs,
       buttons: [
-        {
-          text: this.translations.cancel[currentLang],
-          role: 'cancel'
-        },
+        { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
         {
           text: 'OK',
-          handler: (value: string) => {
-            this.selectedDistrict = value;
+          handler: (values: string[]) => {
+            // If the All option was checked (value ''), clear selection
+            if (values && values.includes('')) {
+              this.selectedDistrictTokens = [];
+            } else {
+              this.selectedDistrictTokens = Array.isArray(values) ? values.filter(Boolean) : [];
+            }
             this.currentPage = 0;
             this.performSearch();
           }
         }
       ]
     });
+
     await alert.present();
   }
 
-  // Open keyword filter selector
+  // Open the keyword selector using checkboxes (multiple selection supported).
   public async openKeywordFilter(): Promise<void> {
-    const currentLang = this.getCurrentLanguage();
+    const currentLang = this.currentLang;
+
+    const inputs = [
+      {
+        type: 'checkbox' as const,
+        label: currentLang === 'TC' ? '所有分類' : 'All Categories',
+        value: '',
+        checked: this.selectedKeywordTokens.length === 0
+      },
+      ...this.availableKeywords.map(k => ({
+        type: 'checkbox' as const,
+        label: currentLang === 'TC' ? k.label_tc : k.label_en,
+        value: k.value_en,
+        checked: this.selectedKeywordTokens.includes(k.value_en)
+      }))
+    ];
+
     const alert = await this.alertController.create({
-      header: this.translations.selectKeyword[currentLang],
-      inputs: [
-        {
-          type: 'radio',
-          label: this.translations.allCategories[currentLang],
-          value: '',
-          checked: !this.selectedKeyword
-        },
-        ...this.availableKeywords.map(keyword => ({
-          type: 'radio' as const,
-          label: keyword,
-          value: keyword,
-          checked: this.selectedKeyword === keyword
-        }))
-      ],
+      header: currentLang === 'TC' ? '選擇分類' : 'Select Category(ies)',
+      inputs,
       buttons: [
-        {
-          text: this.translations.cancel[currentLang],
-          role: 'cancel'
-        },
+        { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
         {
           text: 'OK',
-          handler: (value: string) => {
-            this.selectedKeyword = value;
+          handler: (values: string[]) => {
+            // If the All option was checked (value ''), clear selection
+            if (values && values.includes('')) {
+              this.selectedKeywordTokens = [];
+            } else {
+              this.selectedKeywordTokens = Array.isArray(values) ? values.filter(Boolean) : [];
+            }
             this.currentPage = 0;
             this.performSearch();
           }
         }
       ]
     });
+
     await alert.present();
   }
 
-  // Clear district filter
+  // Clear single district (from chip close button)
   public clearDistrict(event: Event): void {
-    event.stopPropagation(); // Prevent chip click from triggering
-    this.selectedDistrict = '';
+    event.stopPropagation();
+    this.selectedDistrictTokens = [];
     this.currentPage = 0;
     this.performSearch();
   }
 
-  // Clear keyword filter
+  // Clear single keyword (from chip close button)
   public clearKeyword(event: Event): void {
-    event.stopPropagation(); // Prevent chip click from triggering
-    this.selectedKeyword = '';
+    event.stopPropagation();
+    this.selectedKeywordTokens = [];
     this.currentPage = 0;
     this.performSearch();
   }
 
-  // Clear all filters and search query
+  // Clear all selected filters
   public clearAllFilters(): void {
+    this.selectedDistrictTokens = [];
+    this.selectedKeywordTokens = [];
     this.searchQuery = '';
-    this.selectedDistrict = '';
-    this.selectedKeyword = '';
     this.currentPage = 0;
     this.performSearch();
   }
 
-  // Navigate to next page
+  // Get keywords to display for a restaurant (limited to 2, with overflow indicator)
+  public getDisplayKeywords(restaurant: Restaurant): string[] {
+    const keywords = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+    if (!keywords || keywords.length === 0) return [];
+    return keywords.slice(0, 2);
+  }
+
+  // Get total keyword count for a restaurant
+  public getKeywordCount(restaurant: Restaurant): number {
+    const keywords = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+    return keywords ? keywords.length : 0;
+  }
+
+  // Pagination helpers
   public nextPage(): void {
     if (this.currentPage < this.totalPages - 1) {
       this.currentPage++;
@@ -266,7 +454,6 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
-  // Navigate to previous page
   public previousPage(): void {
     if (this.currentPage > 0) {
       this.currentPage--;
@@ -275,31 +462,10 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
-  // Scroll to top of page (useful after pagination)
   private scrollToTop(): void {
     const content = document.querySelector('ion-content');
-    if (content) {
-      content.scrollToTop(300); // Smooth scroll with 300ms duration
+    if (content && typeof (content as any).scrollToTop === 'function') {
+      (content as any).scrollToTop(300);
     }
-  }
-
-  // Get display keywords for a restaurant (limited to first 2)
-  public getDisplayKeywords(restaurant: Restaurant): string[] {
-    const currentLang = this.getCurrentLanguage();
-    const keywords = currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
-    return keywords || [];
-  }
-
-  // Get total keyword count for a restaurant
-  public getKeywordCount(restaurant: Restaurant): number {
-    const currentLang = this.getCurrentLanguage();
-    const keywords = currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
-    return keywords?.length || 0;
-  }
-
-  // Helper to get current language value
-  private getCurrentLanguage(): 'EN' | 'TC' {
-    const currentLang = (this.languageService as any)._lang.value;
-    return currentLang || 'EN';
   }
 }

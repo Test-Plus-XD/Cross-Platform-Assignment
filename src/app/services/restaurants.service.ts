@@ -153,6 +153,80 @@ export class RestaurantsService {
     });
   }
 
+  /**
+   * Search using Algolia with custom filter string and pagination.
+   * Supports multi-district and multi-keyword filters with EN-primary tokens.
+   */
+  searchRestaurantsWithFilters(
+    query: string,
+    filters: string | undefined,
+    lang: 'EN' | 'TC',
+    page = 0,
+    hitsPerPage = 10
+  ): Observable<{ hits: Restaurant[]; nbHits: number; page: number; nbPages: number }> {
+    // Build params object for Algolia search
+    const params: any = {
+      query: query ?? '',
+      page,
+      hitsPerPage
+    };
+    if (filters) params.filters = filters;
+
+    // Debug: log outgoing params to help troubleshooting
+    console.log('Algolia search params:', JSON.stringify(params));
+
+    // Use the array-request form which reliably returns results[0]
+    return new Observable(observer => {
+      this.algoliaClient.search([
+        {
+          indexName: this.algoliaIndexName,
+          params
+        }
+      ])
+        .then((result: any) => {
+          // Normalise result structure: expect result.results[0]
+          const searchResult = result && Array.isArray(result.results) ? result.results[0] : null;
+          if (!searchResult) {
+            observer.next({ hits: [], nbHits: 0, page: 0, nbPages: 0 });
+            observer.complete();
+            return;
+          }
+
+          // Map Algolia hits to Restaurant interface
+          const hits: Restaurant[] = (searchResult.hits || []).map((h: any) => ({
+            id: h.objectID,
+            Name_EN: h.Name_EN ?? h.name_en ?? null,
+            Name_TC: h.Name_TC ?? h.name_tc ?? null,
+            Address_EN: h.Address_EN ?? h.address_en ?? null,
+            Address_TC: h.Address_TC ?? h.address_tc ?? null,
+            District_EN: h.District_EN ?? h.district_en ?? null,
+            District_TC: h.District_TC ?? h.district_tc ?? null,
+            Latitude: (typeof h.Latitude !== 'undefined') ? h.Latitude : (h.latitude ?? null),
+            Longitude: (typeof h.Longitude !== 'undefined') ? h.Longitude : (h.longitude ?? null),
+            Keyword_EN: h.Keyword_EN ?? h.keyword_en ?? null,
+            Keyword_TC: h.Keyword_TC ?? h.keyword_tc ?? null,
+            Menu: h.Menu ?? h.menu ?? null,
+            Opening_Hours: h.Opening_Hours ?? h.openingHours ?? null,
+            Seats: (typeof h.Seats !== 'undefined') ? h.Seats : (h.seats ?? null),
+            Contacts: h.Contacts ?? h.contacts ?? null,
+            ImageUrl: h.ImageUrl ?? h.imageUrl ?? null
+          }));
+
+          observer.next({
+            hits,
+            nbHits: searchResult.nbHits ?? 0,
+            page: searchResult.page ?? 0,
+            nbPages: searchResult.nbPages ?? 0
+          });
+          observer.complete();
+        })
+        .catch((err: any) => {
+          console.error('Algolia search error:', err);
+          observer.error(err);
+        });
+    });
+  }
+
   // Get all restaurants from your API (fallback)
   getRestaurants(): Observable<Restaurant[]> {
     const cached = this.restaurantsCache.getValue();
