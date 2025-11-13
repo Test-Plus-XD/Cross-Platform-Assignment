@@ -1,0 +1,333 @@
+// Modern, aesthetic user profile page styling
+:host {
+  // Page content background
+  .user-page-content {
+    --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
+  }
+  // Main container with padding
+  .page-container {
+    min-height: 100%;
+    padding: 1rem;
+    padding-top: 5rem; // Space for header
+    padding-bottom: 5rem; // Space for bottom tabs on mobile
+  }
+  // Loading state centerd on screen
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
+
+    ion-spinner {
+      transform: scale(1.5);
+    }
+
+    p {
+      color: var(--ion-color-medium);
+      font-size: 1rem;
+    }
+  }
+  // Profile content wrapper
+  .profile-content {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  // Profile header card with gradient background
+  .profile-header-card {
+    margin: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+    .header-background {
+      height: 120px;
+      background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+    }
+
+    .profile-header-content {
+      padding: 0 1.5rem 1.5rem;
+      margin-top: -60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .avatar-container {
+      position: relative;
+      margin-bottom: 1rem;
+
+      .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid var(--ion-background-color);
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .user-type-badge {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .profile-info {
+      margin-bottom: 1rem;
+
+      .profile-name {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--ion-text-color);
+        margin: 0 0 0.25rem 0;
+      }
+
+      .profile-email {
+        font-size: 0.9375rem;
+        color: var(--ion-color-medium);
+        margin: 0 0 0.75rem 0;
+      }
+
+      .verification-badge {
+        display: inline-flex;
+
+        ion-badge {
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+          padding: 0.5rem 1rem;
+          border-radius: 12px;
+          font-size: 0.8125rem;
+
+          ion-icon {
+            font-size: 1rem;
+          }
+        }
+      }
+    }
+
+    .header-actions {
+      width: 100%;
+      max-width: 300px;
+
+      .edit-button {
+        --border-radius: 12px;
+        --border-width: 2px;
+        font-weight: 500;
+        text-transform: none;
+      }
+    }
+  }
+  // Information cards styling
+  .info-card {
+    margin: 0;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    ion-card-header {
+      padding-bottom: 0.5rem;
+
+      ion-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--ion-text-color);
+
+        ion-icon {
+          font-size: 1.5rem;
+          color: var(--ion-color-primary);
+        }
+      }
+    }
+
+    ion-card-content {
+      padding-top: 1rem;
+    }
+  }
+  // Bio text styling
+  .bio-text {
+    color: var(--ion-text-color);
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  // Information rows in cards
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--ion-color-light-shade);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ion-color-medium);
+
+      ion-icon {
+        font-size: 1.25rem;
+      }
+    }
+
+    .info-value {
+      font-size: 0.9375rem;
+      color: var(--ion-text-color);
+      font-weight: 500;
+      text-align: right;
+      max-width: 60%;
+      word-wrap: break-word;
+    }
+  }
+  // Statistics grid layout
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    .stat-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--ion-color-light);
+      border-radius: 12px;
+
+      .stat-icon {
+        font-size: 2rem;
+        color: var(--ion-color-primary);
+        flex-shrink: 0;
+      }
+
+      .stat-content {
+        flex: 1;
+
+        .stat-label {
+          font-size: 0.8125rem;
+          color: var(--ion-color-medium);
+          margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: var(--ion-text-color);
+        }
+      }
+    }
+  }
+  // Action buttons container
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+
+    .action-button {
+      --border-radius: 12px;
+      font-weight: 500;
+      text-transform: none;
+
+      &.delete-button {
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+  }
+  // Bottom spacer for mobile navigation
+  .bottom-spacer {
+    height: 2rem;
+  }
+  // Responsive adjustments for larger screens
+  @media (min-width: 768px) {
+    .page-container {
+      padding: 2rem;
+      padding-top: 6rem;
+    }
+
+    .profile-content {
+      gap: 2rem;
+    }
+
+    .profile-header-card {
+      .header-background {
+        height: 150px;
+      }
+
+      .profile-header-content {
+        padding: 0 2rem 2rem;
+        margin-top: -80px;
+      }
+
+      .avatar-container .profile-avatar {
+        width: 150px;
+        height: 150px;
+      }
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .action-buttons {
+      flex-direction: row;
+      justify-content: center;
+      gap: 1rem;
+
+      .action-button {
+        max-width: 300px;
+      }
+    }
+  }
+}
+
+// Dark mode adjustments
+:host-context(.dark) {
+  .user-page-content {
+    --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
+  }
+
+  .profile-header-card {
+    .header-background {
+      opacity: 0.9;
+    }
+  }
+
+  .info-card {
+    background: var(--ion-color-dark);
+  }
+
+  .stat-item {
+    background: rgba(var(--ion-color-light-rgb), 0.1) !important;
+  }
+}

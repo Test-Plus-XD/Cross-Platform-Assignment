@@ -100,12 +100,13 @@ ion-content::part(scroll) {
   --ion-card-background: var(--card-bg);
   --ion-toolbar-background: var(--surface);
   /* Light Theme^*/
-  --ion-color-primary: #0054e9;
-  --ion-color-primary-rgb: 0, 84, 233;
+  /* --ion-color-primary: #0054e9; */
+  --ion-color-primary: #a746f0;
+  --ion-color-primary-rgb: 201, 70, 239;
   --ion-color-primary-contrast: #fff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #004acd;
-  --ion-color-primary-tint: #1a65eb;
+  --ion-color-primary-shade: #b033d1;
+  --ion-color-primary-tint: #d161f5;
   --ion-color-secondary: #0163aa;
   --ion-color-secondary-rgb: 1, 99, 170;
   --ion-color-secondary-contrast: #fff;
@@ -1623,4 +1624,4 @@ button, input:where([type=button],[type=reset],[type=submit]) {
 @property --tw-drop-shadow-size {
   syntax: "*";
   inherits: false
-} */
+}*/

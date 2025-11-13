@@ -61,7 +61,7 @@
         </div>
         <div class="cell-content">
           <div *ngIf="hasCoordinates(); else coordsOnly">
-            <div id="restaurant-map" class="map-container" (dblclick)="openMapModal()" tabindex="0" role="button" aria-label="Open map fullscreen"></div>
+            <div id="restaurant-map" class="map-container" (dblclick)="openMapModal()" (touchend)="onMapTouchEnd()" tabindex="0" role="button" aria-label="Open map fullscreen"></div>
             <div class="muted small mt-1">
               <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
                  [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant?.Latitude + ',' + restaurant?.Longitude">
@@ -159,7 +159,7 @@
         <div class="cell-content small">
           <div *ngIf="(restaurant?.Menu ?? []).length > 0; else noMenuSmall">
             <ion-list lines="none">
-              <ion-item *ngFor="let menuItem of (restaurant?.Menu ?? [])" (dblclick)="openMenuModal()">
+              <ion-item *ngFor="let menuItem of (restaurant?.Menu ?? [])" (dblclick)="openMenuModal()" (touchend)="onMenuItemTouchEnd()">
                 <ion-label>
                   <div class="font-medium">
                     {{ (lang$ | async) === 'TC' ? (menuItem?.Name_TC ?? menuItem?.Name_EN ?? '-') : (menuItem?.Name_EN ?? menuItem?.Name_TC ?? '-') }}

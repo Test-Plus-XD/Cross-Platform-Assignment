@@ -1,57 +1,195 @@
-<ion-content class="ion-padding">
-  <br><br><br><br><br>
-  <div style="margin: 5vw">
-    <ion-card *ngIf="user">
-      <ion-card-header>
-        <ion-item lines="none">
-          <ion-avatar slot="start">
-            <img [src]="photoURL" [alt]="displayName">
-          </ion-avatar>
-          <ion-label>
-            <h2>{{ displayName }}</h2>
-            <p>{{ user.email }}</p>
-            <ion-badge *ngIf="user.emailVerified" color="success">
-              <ion-icon name="checkmark-circle"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.verified.TC : translations.verified.EN }}
-            </ion-badge>
-            <ion-badge *ngIf="!user.emailVerified" color="warning">
-              <ion-icon name="alert-circle"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.notVerified.TC : translations.notVerified.EN }}
-            </ion-badge>
-          </ion-label>
-        </ion-item>
-      </ion-card-header>
-
-      <ion-card-content>
-        <ion-list>
-          <ion-item>
-            <ion-label>
-              <h3>{{ (lang$ | async) === 'TC' ? translations.userID.TC : translations.userID.EN }}</h3>
-              <p>{{ user.uid }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </ion-card-content>
-
-      <ion-card-content>
-        <ion-list>
-          <ion-item>
-            <ion-buttons slot="end" style="align-self: center">
-              <ion-button (click)="onLogout()" color="danger">
-                <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-item>
-        </ion-list>
-      </ion-card-content>
-    </ion-card>
+<ion-content class="user-page-content">
+  <div class="page-container">
 
     <!-- Loading State -->
-    <ion-card *ngIf="!user">
-      <ion-card-content class="ion-text-center">
-        <ion-spinner name="crescent"></ion-spinner>
-        <p>{{ (lang$ | async) === 'TC' ? translations.loadingProfile.TC : translations.loadingProfile.EN }}</p>
-      </ion-card-content>
-    </ion-card>
+    <div class="loading-container" *ngIf="isLoading">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>{{ (lang$ | async) === 'TC' ? translations.loadingProfile.TC : translations.loadingProfile.EN }}</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content" *ngIf="!isLoading && user">
+
+      <!-- Profile Header Card -->
+      <ion-card class="profile-header-card">
+        <div class="header-background"></div>
+        <div class="profile-header-content">
+          <div class="avatar-container">
+            <img [src]="photoURL" [alt]="displayName" class="profile-avatar">
+            <ion-badge class="user-type-badge" *ngIf="profile?.type" color="primary">
+              {{ userTypeDisplay }}
+            </ion-badge>
+          </div>
+
+          <div class="profile-info">
+            <h1 class="profile-name">{{ displayName }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+
+            <div class="verification-badge">
+              <ion-badge *ngIf="user.emailVerified" color="success">
+                <ion-icon name="checkmark-circle"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.verified.TC : translations.verified.EN }}
+              </ion-badge>
+              <ion-badge *ngIf="!user.emailVerified" color="warning">
+                <ion-icon name="alert-circle"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.notVerified.TC : translations.notVerified.EN }}
+              </ion-badge>
+            </div>
+          </div>
+
+          <div class="header-actions">
+            <ion-button fill="outline" (click)="openProfileModal(false)" class="edit-button">
+              <ion-icon name="create-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.editProfile.TC : translations.editProfile.EN }}
+            </ion-button>
+          </div>
+        </div>
+      </ion-card>
+
+      <!-- Bio Section -->
+      <ion-card class="info-card" *ngIf="profile">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="document-text-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.bio.TC : translations.bio.EN }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p class="bio-text">
+            {{ profile.bio || ((lang$ | async) === 'TC' ? translations.noBio.TC : translations.noBio.EN) }}
+          </p>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Contact Information Card -->
+      <ion-card class="info-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="call-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.contactInfo.TC : translations.contactInfo.EN }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="info-row">
+            <div class="info-label">
+              <ion-icon name="mail-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.email.TC : translations.email.EN }}
+            </div>
+            <div class="info-value">{{ user.email }}</div>
+          </div>
+          <div class="info-row" *ngIf="profile">
+            <div class="info-label">
+              <ion-icon name="call-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.phone.TC : translations.phone.EN }}
+            </div>
+            <div class="info-value">
+              {{ profile.phoneNumber || ((lang$ | async) === 'TC' ? translations.noPhone.TC : translations.noPhone.EN) }}
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Statistics Card -->
+      <ion-card class="info-card" *ngIf="profile">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="stats-chart-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.statistics.TC : translations.statistics.EN }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <ion-icon name="calendar-outline" class="stat-icon"></ion-icon>
+              <div class="stat-content">
+                <div class="stat-label">
+                  {{ (lang$ | async) === 'TC' ? translations.memberSince.TC : translations.memberSince.EN }}
+                </div>
+                <div class="stat-value">{{ memberSince }}</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <ion-icon name="log-in-outline" class="stat-icon"></ion-icon>
+              <div class="stat-content">
+                <div class="stat-label">
+                  {{ (lang$ | async) === 'TC' ? translations.totalLogins.TC : translations.totalLogins.EN }}
+                </div>
+                <div class="stat-value">{{ profile.loginCount || 0 }}</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <ion-icon name="time-outline" class="stat-icon"></ion-icon>
+              <div class="stat-content">
+                <div class="stat-label">
+                  {{ (lang$ | async) === 'TC' ? translations.lastLogin.TC : translations.lastLogin.EN }}
+                </div>
+                <div class="stat-value">{{ lastLogin }}</div>
+              </div>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Preferences Card -->
+      <ion-card class="info-card" *ngIf="profile?.preferences">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="settings-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.preferences.TC : translations.preferences.EN }}
+          </ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="info-row">
+            <div class="info-label">
+              <ion-icon name="language-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.language.TC : translations.language.EN }}
+            </div>
+            <div class="info-value">
+              {{ profile?.preferences?.language === 'EN' ? 'English 🇬🇧' : '中文 🇭🇰' }}
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <ion-icon name="contrast-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.theme.TC : translations.theme.EN }}
+            </div>
+            <div class="info-value">
+              {{profile?.preferences?.theme === 'light'
+                ? ((lang$ | async) === 'TC' ? translations.light.TC : translations.light.EN)
+                : ((lang$ | async) === 'TC' ? translations.dark.TC : translations.dark.EN)
+              }}
+            </div>
+          </div>
+          <div class="info-row">
+            <div class="info-label">
+              <ion-icon name="notifications-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.notifications.TC : translations.notifications.EN }}
+            </div>
+            <div class="info-value">
+              {{profile?.preferences?.notifications
+                ? ((lang$ | async) === 'TC' ? translations.enabled.TC : translations.enabled.EN)
+                : ((lang$ | async) === 'TC' ? translations.disabled.TC : translations.disabled.EN)
+              }}
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <ion-button expand="block" color="danger" fill="outline" (click)="onLogout()" class="action-button">
+          <ion-icon name="log-out-outline" slot="start"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? translations.logout.TC : translations.logout.EN }}
+        </ion-button>
+
+        <ion-button expand="block" color="danger" fill="clear" (click)="onDeleteAccount()" class="action-button delete-button">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? translations.deleteAccount.TC : translations.deleteAccount.EN }}
+        </ion-button>
+      </div>
+
+      <!-- Bottom spacing for mobile tabs -->
+      <div class="bottom-spacer"></div>
+    </div>
   </div>
 </ion-content>

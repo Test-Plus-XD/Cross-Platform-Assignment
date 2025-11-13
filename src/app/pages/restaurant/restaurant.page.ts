@@ -36,6 +36,9 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
   private destroy$ = new Subject<void>();
   // Reference to Leaflet map instancenpx
   private map: Leaflet.Map | null = null;
+  // Touch tracking for double-tap detection
+  private lastTapTime: number = 0;
+  private readonly doubleTapThreshold: number = 300; // milliseconds
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -185,6 +188,26 @@ export class RestaurantPage implements AfterViewInit, OnDestroy {
     // Placeholder navigation or modal open; for now, just console log
     console.info('Start review for', this.restaurant?.id);
     // e.g. this.router.navigate(['/review', { id: this.restaurant?.id }]);
+  }
+
+  // Handle double-tap on map for mobile devices
+  onMapTouchEnd(): void {
+    const currentTime = Date.now();
+    if (currentTime - this.lastTapTime < this.doubleTapThreshold) {
+      // Double-tap detected
+      this.openMapModal();
+    }
+    this.lastTapTime = currentTime;
+  }
+
+  // Handle double-tap on menu items for mobile devices
+  onMenuItemTouchEnd(): void {
+    const currentTime = Date.now();
+    if (currentTime - this.lastTapTime < this.doubleTapThreshold) {
+      // Double-tap detected
+      this.openMenuModal();
+    }
+    this.lastTapTime = currentTime;
   }
 
   // Helper to display a fallback string for null-ish fields

@@ -141,21 +141,15 @@ async function authenticate(request, response, next) {
 app.get('/API/Restaurants', async (request, response) => {
   try {
     const snapshot = await database.collection('Restaurants').get();
-    const restaurantList = snapshot.docs.map(document => {
-      const raw = document.data();
-      const sanitised = sanitiseRecord(raw);
-      return {
-        id: document.id,
-        ...sanitised
-      };
-    });
-    response.json({
-      count: restaurantList.length,
-      data: restaurantList
-    });
+    const restaurantList = snapshot.docs.map(document => ({
+      id: document.id,
+      ...sanitiseRecord(document.data())
+    }));
+    console.log(`[GET] /API/Restaurants - Returned ${restaurantList.length} restaurants`);
+    response.json({ count: restaurantList.length, data: restaurantList });
   } catch (error) {
-    console.error("Error fetching restaurants:", error);
-    response.status(500).json({ error: "Failed to retrieve data." });
+    console.error('[ERROR] Failed to retrieve restaurants:', error);
+    response.status(500).json({ error: 'Failed to retrieve data.' });
   }
 });
 
@@ -165,13 +159,13 @@ app.get('/API/Restaurants/:id', async (request, response) => {
     const id = request.params.id;
     const document = await database.collection('Restaurants').doc(id).get();
     if (!document.exists) {
+      console.log(`[GET] /API/Restaurants/${id} - Not found`);
       return response.status(404).json({ error: 'Not found' });
     }
-    const raw = document.data();
-    const sanitised = sanitiseRecord(raw);
-    response.json({ id: document.id, ...sanitised });
+    console.log(`[GET] /API/Restaurants/${id} - Success`);
+    response.json({ id: document.id, ...sanitiseRecord(document.data()) });
   } catch (error) {
-    console.error('Error fetching restaurant:', error);
+    console.error('[ERROR] Failed to retrieve restaurant:', error);
     response.status(500).json({ error: 'Failed to retrieve restaurant.' });
   }
 });
@@ -181,13 +175,15 @@ app.post('/API/Restaurants', async (request, response) => {
   try {
     const payload = request.body || {};
     if (!payload.Name_EN && !payload.Name_TC) {
+      console.log('[POST] /API/Restaurants - Missing required name fields.');
       return response.status(400).json({ error: 'Name_EN or Name_TC is required.' });
     }
     payload.createdAt = admin.firestore.FieldValue.serverTimestamp();
     const documentRef = await database.collection('Restaurants').add(payload);
+    console.log(`[POST] /API/Restaurants - Created document with ID: ${documentRef.id}`);
     response.status(201).json({ id: documentRef.id });
   } catch (error) {
-    console.error('Error creating restaurant:', error);
+    console.error('[ERROR] Failed to create restaurant:', error);
     response.status(500).json({ error: 'Failed to create restaurant.' });
   }
 });
@@ -202,9 +198,10 @@ app.put('/API/Restaurants/:id', async (request, response) => {
     await database.collection('Restaurants').doc(id).update({
       modifiedAt: admin.firestore.FieldValue.serverTimestamp()
     });
+    console.log(`[PUT] /API/Restaurants/${id} - Updated`);
     response.status(204).send();
   } catch (error) {
-    console.error('Error updating restaurant:', error);
+    console.error('[ERROR] Failed to update restaurant:', error);
     response.status(500).json({ error: 'Failed to update restaurant.' });
   }
 });
@@ -214,189 +211,146 @@ app.delete('/API/Restaurants/:id', async (request, response) => {
   try {
     const id = request.params.id;
     await database.collection('Restaurants').doc(id).delete();
+    console.log(`[DELETE] /API/Restaurants/${id} - Deleted`);
     response.status(204).send();
   } catch (error) {
-    console.error('Error deleting restaurant:', error);
+    console.error('[ERROR] Failed to delete restaurant:', error);
     response.status(500).json({ error: 'Failed to delete restaurant.' });
   }
 });
 
 // --- User CRUD endpoints ---
 
-// Get all users (publicly accessible metadata only)
+// Get all users
 app.get('/API/Users', async (request, response) => {
   try {
     const snapshot = await database.collection('Users').get();
-    const users = snapshot.docs.map(document => {
-      const raw = document.data();
-      const sanitised = sanitiseRecord(raw);
-      return {
-        id: document.id,
-        ...sanitised
-      };
-    });
+    const users = snapshot.docs.map(document => ({
+      id: document.id,
+      ...sanitiseRecord(document.data())
+    }));
+    console.log(`[GET] /API/Users - Returned ${users.length} users`);
     response.json({ count: users.length, data: users });
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('[ERROR] Failed to retrieve users:', error);
     response.status(500).json({ error: 'Failed to retrieve users.' });
   }
 });
 
-// Get single user by uid (use uid as document ID)
+// Get single user by uid
 app.get('/API/Users/:uid', async (request, response) => {
   try {
     const uid = request.params.uid;
     const document = await database.collection('Users').doc(uid).get();
     if (!document.exists) {
+      console.log(`[GET] /API/Users/${uid} - Not found`);
       return response.status(404).json({ error: 'User not found' });
     }
-    const raw = document.data();
-    const sanitised = sanitiseRecord(raw);
-    response.json({ uid: document.id, ...sanitised });
+    console.log(`[GET] /API/Users/${uid} - Success`);
+    response.json({ uid: document.id, ...sanitiseRecord(document.data()) });
   } catch (error) {
-    console.error('Error fetching user:', error);
+    console.error('[ERROR] Failed to retrieve user:', error);
     response.status(500).json({ error: 'Failed to retrieve user.' });
   }
 });
 
-// Create a new user record (protected)
+// Create a new user record
 app.post('/API/Users', authenticate, async (request, response) => {
   try {
-    console.log('=== POST /API/Users - Start ===');
+    console.log('[POST] /API/Users - Start');
     const payload = request.body || {};
     const authenticatedUid = getAuthenticatedUid(request);
-    
-    console.log('Authenticated UID:', authenticatedUid);
-    console.log('Payload UID:', payload.uid);
-    console.log('Payload email:', payload.email);
-    console.log('Full payload:', JSON.stringify(payload, null, 2));
-    
-    // Require uid or email
+    console.log(`[POST] /API/Users - Authenticated UID: ${authenticatedUid}`);
+
     if (!payload.uid && !payload.email) {
-      console.log('Error: Missing uid and email');
+      console.log('[POST] /API/Users - Missing uid and email.');
       return response.status(400).json({ error: 'uid or email is required.' });
     }
-
-    // Security check: ensure authenticated user can only create their own record
     if (payload.uid && !verifyOwnership(authenticatedUid, payload.uid)) {
-      console.log('Error: Ownership verification failed');
-      return response.status(403).json({ 
-        error: 'Forbidden: You can only create your own user profile.' 
-      });
+      console.log('[POST] /API/Users - Forbidden: UID mismatch.');
+      return response.status(403).json({ error: 'Forbidden: You can only create your own user profile.' });
     }
 
-    // Use uid from payload, or fall back to authenticated uid
     const uid = payload.uid || authenticatedUid;
-    console.log('Using UID for document:', uid);
-    
-    // Check if user already exists
     const existingDocument = await database.collection('Users').doc(uid).get();
     if (existingDocument.exists) {
-      console.log('Error: User profile already exists');
+      console.log(`[POST] /API/Users - Profile already exists: ${uid}`);
       return response.status(409).json({ error: 'User profile already exists.' });
     }
-    
-    console.log('User profile does not exist, creating new document');
 
-    // Add timestamps
     payload.createdAt = admin.firestore.FieldValue.serverTimestamp();
     payload.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
-    
-    console.log('Writing to Firestore...');
-    // Create user document with uid as document ID
     await database.collection('Users').doc(uid).set(payload);
-    
-    console.log(`SUCCESS: User profile created with ID: ${uid}`);
-    console.log('=== POST /API/Users - Complete ===');
+    console.log(`[POST] /API/Users - Created user profile with ID: ${uid}`);
     response.status(201).json({ id: uid });
   } catch (error) {
-    console.error('=== POST /API/Users - Error ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    console.error('Full error object:', error);
+    console.error('[ERROR] Failed to create user:', error);
     response.status(500).json({ error: 'Failed to create user.' });
   }
 });
 
-// Update an existing user (protected)
+// Update an existing user
 app.put('/API/Users/:uid', authenticate, async (request, response) => {
   try {
     const uid = request.params.uid;
     const payload = request.body || {};
     const authenticatedUid = getAuthenticatedUid(request);
-    
-    // Remove fields that shouldn't be updated
     delete payload.createdAt;
     delete payload.uid;
-
-    // Fetch existing user document
     const documentRef = database.collection('Users').doc(uid);
     const documentSnapshot = await documentRef.get();
-    
+
     if (!documentSnapshot.exists) {
+      console.log(`[PUT] /API/Users/${uid} - Not found`);
       return response.status(404).json({ error: 'User profile not found' });
     }
-
     const existing = documentSnapshot.data() || {};
-
-    // Security check: enforce ownership
-    // Users can only modify their own profile
     if (existing.uid && !verifyOwnership(authenticatedUid, existing.uid)) {
-      return response.status(403).json({ 
-        error: 'Forbidden: You can only modify your own user profile.' 
-      });
+      console.log(`[PUT] /API/Users/${uid} - Forbidden: UID mismatch.`);
+      return response.status(403).json({ error: 'Forbidden: You can only modify your own user profile.' });
     }
 
-    // Add modified timestamp
     payload.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
-
-    // Update user document
     await documentRef.set(payload, { merge: true });
-    
-    console.log(`User profile updated: ${uid}`);
+    console.log(`[PUT] /API/Users/${uid} - Updated`);
     response.status(204).send();
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('[ERROR] Failed to update user:', error);
     response.status(500).json({ error: 'Failed to update user.' });
   }
 });
 
-// Delete a user (protected)
+// Delete a user
 app.delete('/API/Users/:uid', authenticate, async (request, response) => {
   try {
     const uid = request.params.uid;
     const authenticatedUid = getAuthenticatedUid(request);
     const documentRef = database.collection('Users').doc(uid);
     const documentSnapshot = await documentRef.get();
-    
+
     if (!documentSnapshot.exists) {
+      console.log(`[DELETE] /API/Users/${uid} - Not found`);
       return response.status(404).json({ error: 'User profile not found' });
     }
 
     const existing = documentSnapshot.data() || {};
-
-    // Security check: enforce ownership
-    // Users can only delete their own profile
     if (existing.uid && !verifyOwnership(authenticatedUid, existing.uid)) {
-      return response.status(403).json({ 
-        error: 'Forbidden: You can only delete your own user profile.' 
-      });
+      console.log(`[DELETE] /API/Users/${uid} - Forbidden: UID mismatch.`);
+      return response.status(403).json({ error: 'Forbidden: You can only delete your own user profile.' });
     }
 
     await documentRef.delete();
-    
-    console.log(`User profile deleted: ${uid}`);
+    console.log(`[DELETE] /API/Users/${uid} - Deleted`);
     response.status(204).send();
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error('[ERROR] Failed to delete user:', error);
     response.status(500).json({ error: 'Failed to delete user.' });
   }
 });
 
-// --- Start server ---
+// Start server
 app.listen(port, () => {
   console.log(`REST API Service running at http://localhost:${port}`);
   console.log(`Restaurant endpoint: http://localhost:${port}/API/Restaurants`);
   console.log(`User endpoint: http://localhost:${port}/API/Users`);
-}); 
+});

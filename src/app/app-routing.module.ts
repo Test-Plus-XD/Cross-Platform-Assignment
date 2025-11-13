@@ -35,11 +35,6 @@ const routes: Routes = [
     loadChildren: () => import('./pages/user/user.module').then(m => m.UserPageModule)
   },
   {
-    path: 'register',
-    data: { title: { Header_EN: 'Register', Header_TC: '登記' } },
-    loadChildren: () => import('./pages/register/register.module').then( m => m.RegisterPageModule)
-  },
-  {
     path: 'login',
     data: { title: { Header_EN: 'Login', Header_TC: '登入' } },
     loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)

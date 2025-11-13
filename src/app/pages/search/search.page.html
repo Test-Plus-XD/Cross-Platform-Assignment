@@ -1,79 +1,172 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
-<ion-content fullscreen><br><br>
-  <ion-list lines="none" class="ion-padding sticky-filters" [class.sticky-hidden]="!showFilters">
-    <ion-item>
-      <ion-input [formControl]="searchControl"
-                 placeholder="{{ (lang$ | async) === 'TC' ? '搜尋名稱、地址或關鍵字' : 'Search name, address or keywords' }}">
-      </ion-input>
-      <ion-spinner *ngIf="isLoading" slot="end"></ion-spinner>
-    </ion-item>
+<ion-content class="search-page-content">
+  <div class="page-container">
 
-    <!-- District select: value uses EN -->
-    <ion-item>
-      <ion-select [formControl]="districtControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇地區' : 'Choose district' }}">
-        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有地區' : 'All districts' }}</ion-select-option>
-        <ion-select-option *ngFor="let d of districts" [value]="d.District_EN">
-          {{ (lang$ | async) === 'TC' ? d.District_TC : d.District_EN }}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
+    <!-- Search Header Section -->
+    <div class="search-header">
+      <div class="search-title-container">
+        <h1 class="page-title">
+          {{ (lang$ | async) === 'TC' ? translations.searchTitle.TC : translations.searchTitle.EN }}
+        </h1>
+        <p class="page-subtitle">
+          {{ (lang$ | async) === 'TC' ? translations.searchSubtitle.TC : translations.searchSubtitle.EN }}
+        </p>
+      </div>
 
-    <!-- Keyword select: value uses value_en -->
-    <ion-item>
-      <ion-select [formControl]="keywordControl" interface="popover" placeholder="{{ (lang$ | async) === 'TC' ? '選擇類型' : 'Choose keyword' }}">
-        <ion-select-option value="">{{ (lang$ | async) === 'TC' ? '所有類型' : 'All keywords' }}</ion-select-option>
-        <ion-select-option *ngFor="let k of keywordOptions" [value]="k.value_en">
-          {{ (lang$ | async) === 'TC' ? k.label_tc : k.label_en }}
-        </ion-select-option>
-      </ion-select>
-    </ion-item>
-  </ion-list>
+      <!-- Search Bar -->
+      <div class="search-bar-container">
+        <ion-searchbar [(ngModel)]="searchQuery"
+                       (ionInput)="onSearchInput()"
+                       [placeholder]="(lang$ | async) === 'TC' ? translations.searchPlaceholder.TC : translations.searchPlaceholder.EN"
+                       [debounce]="300"
+                       animated
+                       class="modern-searchbar">
+        </ion-searchbar>
+      </div>
 
-  <ion-list>
-    <ion-item *ngIf="results.length === 0 && !isLoading">
-      <ion-label>
-        {{ (lang$ | async) === 'TC' ? '沒有找到符合的餐廳' : 'No matching restaurants found' }}
-      </ion-label>
-    </ion-item>
+      <!-- Filter Chips -->
+      <div class="filter-section">
+        <div class="filter-chips-container">
+          <!-- District Filter -->
+          <ion-chip [outline]="!selectedDistrict"
+                    [color]="selectedDistrict ? 'primary' : 'medium'"
+                    (click)="openDistrictFilter()"
+                    class="filter-chip">
+            <ion-icon name="location-outline"></ion-icon>
+            <ion-label>
+              {{ selectedDistrict || ((lang$ | async) === 'TC' ? translations.allDistricts.TC : translations.allDistricts.EN) }}
+            </ion-label>
+            <ion-icon name="close-circle" *ngIf="selectedDistrict" (click)="clearDistrict($event)"></ion-icon>
+          </ion-chip>
 
-    <!-- Modern tappable card for each result -->
-    <ion-card class="restaurant-card"
-              button
-              [routerLink]="['/restaurant', r.id]"
-              *ngFor="let r of results"
-              role="link"
-              aria-label="{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}">
-      <ion-item lines="none" class="card-row">
-        <ion-thumbnail slot="start" class="card-thumbnail">
-          <img [src]="r.ImageUrl"
-               alt="{{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}">
-        </ion-thumbnail>
+          <!-- Keyword Filter -->
+          <ion-chip [outline]="!selectedKeyword"
+                    [color]="selectedKeyword ? 'primary' : 'medium'"
+                    (click)="openKeywordFilter()"
+                    class="filter-chip">
+            <ion-icon name="pricetag-outline"></ion-icon>
+            <ion-label>
+              {{ selectedKeyword || ((lang$ | async) === 'TC' ? translations.allCategories.TC : translations.allCategories.EN) }}
+            </ion-label>
+            <ion-icon name="close-circle" *ngIf="selectedKeyword" (click)="clearKeyword($event)"></ion-icon>
+          </ion-chip>
 
-        <ion-label class="card-content">
-          <h2 class="card-title">
-            {{ (lang$ | async) === 'TC' ? r.Name_TC : r.Name_EN }}
-          </h2>
+          <!-- Clear All Filters Button -->
+          <ion-chip *ngIf="selectedDistrict || selectedKeyword"
+                    color="danger"
+                    (click)="clearAllFilters()"
+                    class="filter-chip clear-chip">
+            <ion-icon name="close-outline"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}</ion-label>
+          </ion-chip>
+        </div>
+      </div>
+    </div>
 
-          <p class="muted card-address">
-            {{ (lang$ | async) === 'TC' ? r.Address_TC : r.Address_EN }}
-          </p>
+    <!-- Results Summary -->
+    <div class="results-summary" *ngIf="!isLoading">
+      <p class="results-count">
+        <span class="count-number">{{ totalResults }}</span>
+        {{ (lang$ | async) === 'TC' ? translations.restaurantsFound.TC : translations.restaurantsFound.EN }}
+      </p>
+    </div>
 
-          <p class="muted small card-meta">
-            {{ (lang$ | async) === 'TC' ? r.District_TC : r.District_EN }}
-            <span *ngIf="(r.Keyword_EN || r.Keyword_TC)?.length">
-              •
-              {{ (lang$ | async) === 'TC' ? (r.Keyword_TC || []).join(', ') : (r.Keyword_EN || []).join(', ') }}
-            </span>
-          </p>
-        </ion-label>
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="isLoading">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <p>{{ (lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN }}</p>
+    </div>
 
-        <!-- Lightweight affordance to indicate tappable card -->
-        <ion-icon name="chevron-forward" slot="end" class="card-chevron" aria-hidden="true"></ion-icon>
-      </ion-item>
-    </ion-card>
+    <!-- No Results State -->
+    <div class="empty-state" *ngIf="!isLoading && restaurants.length === 0">
+      <ion-icon name="search-outline" class="empty-icon"></ion-icon>
+      <h2>{{ (lang$ | async) === 'TC' ? translations.noResults.TC : translations.noResults.EN }}</h2>
+      <p>{{ (lang$ | async) === 'TC' ? translations.tryDifferent.TC : translations.tryDifferent.EN }}</p>
+      <ion-button fill="outline" (click)="clearAllFilters()" *ngIf="selectedDistrict || selectedKeyword || searchQuery">
+        {{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}
+      </ion-button>
+    </div>
 
-    <ion-infinite-scroll threshold="100px" (ionInfinite)="loadMore($event)">
-      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="{{ (lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...' }}"></ion-infinite-scroll-content>
-    </ion-infinite-scroll>
-  </ion-list>
+    <!-- Restaurant Results Grid -->
+    <div class="results-grid" *ngIf="!isLoading && restaurants.length > 0">
+      <ion-card *ngFor="let restaurant of restaurants"
+                class="restaurant-card"
+                [routerLink]="['/restaurant', restaurant.id]"
+                button>
+
+        <!-- Restaurant Image -->
+        <div class="card-image-container">
+          <img [src]="restaurant.ImageUrl || 'assets/icon/Placeholder.png'"
+               [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
+               class="restaurant-image">
+          <div class="image-overlay"></div>
+        </div>
+
+        <!-- Restaurant Info -->
+        <ion-card-content class="card-content">
+          <h3 class="restaurant-name">
+            {{ (lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}
+          </h3>
+
+          <div class="restaurant-details">
+            <div class="detail-row" *ngIf="restaurant.District_EN || restaurant.District_TC">
+              <ion-icon name="location-outline" class="detail-icon"></ion-icon>
+              <span class="detail-text">
+                {{ (lang$ | async) === 'TC' ? restaurant.District_TC : restaurant.District_EN }}
+              </span>
+            </div>
+
+            <div class="detail-row" *ngIf="restaurant.Keyword_EN?.length || restaurant.Keyword_TC?.length">
+              <ion-icon name="pricetag-outline" class="detail-icon"></ion-icon>
+              <div class="keywords-container">
+                <ion-chip *ngFor="let keyword of getDisplayKeywords(restaurant); let i = index"
+                          class="keyword-chip"
+                          [class.hidden]="i >= 2">
+                  {{ keyword }}
+                </ion-chip>
+                <ion-chip *ngIf="getKeywordCount(restaurant) > 2"
+                          class="keyword-chip more-chip">
+                  +{{ getKeywordCount(restaurant) - 2 }}
+                </ion-chip>
+              </div>
+            </div>
+          </div>
+
+          <!-- View Details Link -->
+          <div class="card-action">
+            <ion-text color="primary" class="view-details">
+              {{ (lang$ | async) === 'TC' ? translations.viewDetails.TC : translations.viewDetails.EN }}
+              <ion-icon name="arrow-forward-outline"></ion-icon>
+            </ion-text>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="!isLoading && restaurants.length > 0 && totalPages > 1">
+      <ion-button fill="outline"
+                  [disabled]="currentPage === 0"
+                  (click)="previousPage()"
+                  class="pagination-button">
+        <ion-icon name="chevron-back-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+
+      <div class="page-info">
+        <span class="current-page">{{ currentPage + 1 }}</span>
+        <span class="page-separator">/</span>
+        <span class="total-pages">{{ totalPages }}</span>
+      </div>
+
+      <ion-button fill="outline"
+                  [disabled]="currentPage >= totalPages - 1"
+                  (click)="nextPage()"
+                  class="pagination-button">
+        <ion-icon name="chevron-forward-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </div>
+
+    <!-- Bottom Spacer -->
+    <div class="bottom-spacer"></div>
+  </div>
 </ion-content>

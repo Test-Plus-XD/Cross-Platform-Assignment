@@ -1,0 +1,204 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      {{ isFirstTime 
+         ? (lang$ | async) === 'TC' ? translations.completeProfile.TC : translations.completeProfile.EN
+         : (lang$ | async) === 'TC' ? translations.editProfile.TC : translations.editProfile.EN }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="closeModal()" *ngIf="!isFirstTime">
+        <ion-icon name="close" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  
+  <!-- Progress bar -->
+  <ion-progress-bar [value]="progressPercentage / 100" color="primary"></ion-progress-bar>
+  
+  <!-- Step indicator -->
+  <div class="step-indicator">
+    <p>{{ (lang$ | async) === 'TC' ? translations.step.TC : translations.step.EN }} 
+       {{ currentStep }} {{ (lang$ | async) === 'TC' ? translations.of.TC : translations.of.EN }} 
+       {{ totalSteps }}</p>
+  </div>
+</ion-header>
+
+<ion-content class="modal-content">
+  <form [formGroup]="profileForm" class="profile-form">
+    
+    <!-- Step 1: User Type Selection -->
+    <div class="step-container" *ngIf="currentStep === 1">
+      <div class="step-header">
+        <h2>{{ (lang$ | async) === 'TC' ? translations.userType.TC : translations.userType.EN }}</h2>
+        <p class="step-description">
+          {{ (lang$ | async) === 'TC' ? translations.selectType.TC : translations.selectType.EN }}
+        </p>
+      </div>
+
+      <div class="type-selection">
+        <ion-card 
+          class="type-card" 
+          [class.selected]="profileForm.get('type')?.value === 'Diner'"
+          (click)="selectUserType('Diner')"
+          button>
+          <ion-card-content>
+            <ion-icon name="restaurant-outline" class="type-icon"></ion-icon>
+            <h3>{{ (lang$ | async) === 'TC' ? translations.diner.TC : translations.diner.EN }}</h3>
+            <p>{{ (lang$ | async) === 'TC' ? translations.dinerDesc.TC : translations.dinerDesc.EN }}</p>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card 
+          class="type-card" 
+          [class.selected]="profileForm.get('type')?.value === 'Restaurant'"
+          (click)="selectUserType('Restaurant')"
+          button>
+          <ion-card-content>
+            <ion-icon name="storefront-outline" class="type-icon"></ion-icon>
+            <h3>{{ (lang$ | async) === 'TC' ? translations.restaurant.TC : translations.restaurant.EN }}</h3>
+            <p>{{ (lang$ | async) === 'TC' ? translations.restaurantDesc.TC : translations.restaurantDesc.EN }}</p>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Step 2: Basic Information -->
+    <div class="step-container" *ngIf="currentStep === 2">
+      <div class="step-header">
+        <h2>{{ (lang$ | async) === 'TC' ? translations.basicInfo.TC : translations.basicInfo.EN }}</h2>
+      </div>
+
+      <div class="form-fields">
+        <ion-item lines="full" class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? translations.displayName.TC : translations.displayName.EN }}
+            <span class="required-indicator">*</span>
+          </ion-label>
+          <ion-input 
+            type="text"
+            formControlName="displayName"
+            [placeholder]="(lang$ | async) === 'TC' ? translations.displayNamePlaceholder.TC : translations.displayNamePlaceholder.EN">
+          </ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="profileForm.get('displayName')?.invalid && profileForm.get('displayName')?.touched">
+          <ion-text color="danger">
+            <small>{{ (lang$ | async) === 'TC' ? translations.required.TC : translations.required.EN }}</small>
+          </ion-text>
+        </div>
+
+        <ion-item lines="full" class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? translations.phoneNumber.TC : translations.phoneNumber.EN }}
+          </ion-label>
+          <ion-input 
+            type="tel"
+            formControlName="phoneNumber"
+            [placeholder]="(lang$ | async) === 'TC' ? translations.phoneNumberPlaceholder.TC : translations.phoneNumberPlaceholder.EN">
+          </ion-input>
+        </ion-item>
+        <div class="error-message" *ngIf="profileForm.get('phoneNumber')?.invalid && profileForm.get('phoneNumber')?.touched">
+          <ion-text color="danger">
+            <small>{{ (lang$ | async) === 'TC' ? translations.invalidPhone.TC : translations.invalidPhone.EN }}</small>
+          </ion-text>
+        </div>
+
+        <ion-item lines="full" class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? translations.bio.TC : translations.bio.EN }}
+          </ion-label>
+          <ion-textarea 
+            formControlName="bio"
+            rows="4"
+            [placeholder]="(lang$ | async) === 'TC' ? translations.bioPlaceholder.TC : translations.bioPlaceholder.EN">
+          </ion-textarea>
+        </ion-item>
+      </div>
+    </div>
+
+    <!-- Step 3: Preferences -->
+    <div class="step-container" *ngIf="currentStep === 3" formGroupName="preferences">
+      <div class="step-header">
+        <h2>{{ (lang$ | async) === 'TC' ? translations.preferences.TC : translations.preferences.EN }}</h2>
+      </div>
+
+      <div class="form-fields">
+        <ion-item lines="full" class="form-item">
+          <ion-label>{{ (lang$ | async) === 'TC' ? translations.language.TC : translations.language.EN }}</ion-label>
+          <ion-select formControlName="language" interface="popover">
+            <ion-select-option value="EN">English 🇬🇧</ion-select-option>
+            <ion-select-option value="TC">中文 🇭🇰</ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item lines="full" class="form-item">
+          <ion-label>{{ (lang$ | async) === 'TC' ? translations.theme.TC : translations.theme.EN }}</ion-label>
+          <ion-select formControlName="theme" interface="popover">
+            <ion-select-option value="light">
+              {{ (lang$ | async) === 'TC' ? translations.light.TC : translations.light.EN }}
+            </ion-select-option>
+            <ion-select-option value="dark">
+              {{ (lang$ | async) === 'TC' ? translations.dark.TC : translations.dark.EN }}
+            </ion-select-option>
+          </ion-select>
+        </ion-item>
+
+        <ion-item lines="full" class="form-item">
+          <ion-label>{{ (lang$ | async) === 'TC' ? translations.enableNotifications.TC : translations.enableNotifications.EN }}</ion-label>
+          <ion-toggle formControlName="notifications" slot="end"></ion-toggle>
+        </ion-item>
+      </div>
+    </div>
+
+  </form>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <div class="button-container">
+      <!-- Previous button -->
+      <ion-button 
+        *ngIf="currentStep > 1"
+        fill="outline" 
+        (click)="previousStep()"
+        [disabled]="isSubmitting">
+        <ion-icon name="chevron-back" slot="start"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? translations.previous.TC : translations.previous.EN }}
+      </ion-button>
+
+      <!-- Skip button (only on optional steps) -->
+      <ion-button 
+        *ngIf="currentStep === 2 && isFirstTime"
+        fill="clear" 
+        (click)="skipStep()"
+        [disabled]="isSubmitting">
+        {{ (lang$ | async) === 'TC' ? translations.skip.TC : translations.skip.EN }}
+      </ion-button>
+
+      <!-- Spacer to push buttons to edges -->
+      <div class="button-spacer"></div>
+
+      <!-- Next button -->
+      <ion-button 
+        *ngIf="currentStep < totalSteps"
+        (click)="nextStep()"
+        [disabled]="!isCurrentStepValid || isSubmitting"
+        fill="solid"
+        color="success">
+        {{ (lang$ | async) === 'TC' ? translations.next.TC : translations.next.EN }}
+        <ion-icon name="chevron-forward" slot="end"></ion-icon>
+      </ion-button>
+
+      <!-- Save button (last step) -->
+      <ion-button 
+        *ngIf="currentStep === totalSteps"
+        color="success"
+        (click)="saveProfile()"
+        [disabled]="profileForm.invalid || isSubmitting">
+        <ion-spinner name="crescent" *ngIf="isSubmitting"></ion-spinner>
+        <span *ngIf="!isSubmitting">
+          {{ (lang$ | async) === 'TC' ? translations.save.TC : translations.save.EN }}
+        </span>
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

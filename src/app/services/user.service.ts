@@ -11,16 +11,19 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   emailVerified: boolean;
-  createdAt?: any;
-  modifiedAt?: any;
-  // Additional profile fields
   phoneNumber?: string | null;
+  // Additional profile fields
+  type?: string | null;
+  reviews?: string | null;
+  restaurant?: string | null;
   bio?: string | null;
   preferences?: {
     language?: 'EN' | 'TC';
     theme?: 'light' | 'dark';
     notifications?: boolean;
   };
+  createdAt?: any;
+  modifiedAt?: any;
   // Optional metadata
   lastLoginAt?: any;
   loginCount?: number;
@@ -137,7 +140,8 @@ export class UserService {
           bio: response.bio || null,
           preferences: response.preferences || {},
           lastLoginAt: response.lastLoginAt,
-          loginCount: response.loginCount || 0
+          loginCount: response.loginCount || 0,
+          type: response.type || null // Ensure 'type' is mapped correctly
         };
         this.currentProfileSubject.next(profile);
         return profile;
@@ -343,4 +347,4 @@ export class UserService {
     }
     return new Error(message);
   }
-} 
+}
