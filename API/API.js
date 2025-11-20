@@ -519,8 +519,9 @@ app.delete('/API/Bookings/:id', authenticate, async (request, response) => {
 });
 
 // Start server
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {  // Add '0.0.0.0' to bind to all interfaces
   console.log(`REST API Service running at http://localhost:${port}`);
+  console.log(`Also accessible at http://0.0.0.0:${port}`);
   console.log(`Restaurant endpoint: http://localhost:${port}/API/Restaurants`);
   console.log(`User endpoint: http://localhost:${port}/API/Users`);
   console.log(`Booking endpoint: http://localhost:${port}/API/Bookings`);
