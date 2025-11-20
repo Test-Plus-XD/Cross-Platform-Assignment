@@ -1,154 +1,449 @@
+// Home page styling with updated green theme and purple-blue gradient accents
 :host {
-  --swiper-theme-color: var(--ion-color-primary);
-  --swiper-pagination-bullet-inactive-color: var(--ion-color-medium);
-  --swiper-pagination-bullet-inactive-opacity: 0.5;
-  --swiper-pagination-bullet-size: 8px;
-  --swiper-pagination-bullet-horizontal-gap: 4px;
-
-  ion-content {
-    --background: var(--ion-background-color);
+  // Page content background uses light green gradient
+  .home-page-content {
+    --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
-
-  ion-grid {
-    padding: 16px;
+  // Main container with responsive padding
+  .page-container {
+    min-height: 100%;
+    padding-bottom: 5rem; // Space for bottom tabs on mobile
   }
-  // Card styles
-  ion-card {
-    margin: 8px 0;
-    box-shadow: var(--ion-shadow-2);
-    border-radius: 12px;
-    overflow: hidden;
-    background: var(--ion-card-background);
+  // Hero section with auto-rotating banner
+  .hero-section {
+    margin-bottom: 2rem;
+    position: relative;
 
-    &.hero-card {
-      margin-bottom: 24px;
-
-      ion-img {
-        height: 200px;
-        object-fit: cover;
-      }
-    }
-  }
-
-  ion-card.themed-card {
-    margin: 1rem;
-    // Light theme styling
-    --background: var(--ion-card-background, var(--ion-background-color, #fff));
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-    .ion-text-color {
-      color: var(--ion-text-color);
-    }
-
-    ion-card-title.ion-text-color {
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
-
-    ion-card-subtitle.ion-text-color {
-      opacity: 0.8;
-    }
-  }
-  // Swiper customization
-  swiper-container {
-    padding: 1rem 0;
-    width: 100%;
-
-    ::ng-deep .swiper-pagination {
-      bottom: 0;
-    }
-
-    &::part(bullet) {
-      background: var(--ion-color-medium);
-      opacity: 0.5;
-
-      &.swiper-pagination-bullet-active {
-        background: var(--ion-color-primary);
-        opacity: 1;
-      }
-    }
-  }
-
-  swiper-slide {
-    display: flex;
-    width: auto; // Allow slides to size based on content
-
-    ion-card {
+    .hero-swiper {
       width: 100%;
-      margin: 0; // Remove default card margin since we're using space-between
-    }
-  }
-  // Specific sizing for different sections
-  #offersSwiper, #restaurantsSwiper {
-    swiper-slide {
-      width: 280px; // Fixed width for offer and restaurant cards
-    }
-  }
+      height: 400px;
+      border-radius: 0; // Full width on mobile
 
-  #articlesSwiper {
-    swiper-slide {
-      width: 320px; // Slightly wider for article cards
+      .hero-slide {
+        position: relative;
+        width: 100%;
+        height: 100%;
+
+        .hero-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        // Gradient overlay for text readability
+        .hero-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.7) 100%);
+        }
+        // Hero content positioned over the image
+        .hero-content {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 2rem 1.5rem;
+          z-index: 10;
+          color: white;
+
+          .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            line-height: 1.2;
+          }
+
+          .hero-subtitle {
+            font-size: 1rem;
+            margin: 0 0 1.5rem 0;
+            opacity: 0.95;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+          }
+
+          .hero-button {
+            // Use the purple-blue gradient for prominent call-to-action
+            --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+            --border-radius: 12px;
+            --padding-start: 1.5rem;
+            --padding-end: 1.5rem;
+            font-weight: 600;
+            text-transform: none;
+            box-shadow: 0 4px 12px rgba(167, 70, 240, 0.3);
+
+            ion-icon {
+              margin-left: 0.5rem;
+            }
+          }
+        }
+      }
     }
   }
-
-  #reviewsSwiper {
-    swiper-slide {
-      width: 300px; // Medium width for review cards
-    }
+  // Content sections styling
+  .content-section {
+    padding: 0 1rem;
+    margin-bottom: 2.5rem;
   }
-  // Section headers
-  ion-item-divider {
-    --background: transparent;
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    margin-bottom: 8px;
+  // Section header with title and "See All" button
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
 
-    ion-label h2 {
-      font-size: 1.2rem;
-      font-weight: 600;
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
       color: var(--ion-text-color);
+      margin: 0;
+    }
+
+    .see-all-button {
+      --color: var(--ion-color-primary);
+      font-weight: 500;
+      text-transform: none;
+      font-size: 0.9375rem;
+
+      ion-icon {
+        margin-left: 0.25rem;
+        font-size: 1rem;
+      }
     }
   }
-  // Reviews styling
-  ion-avatar {
-    width: 48px;
-    height: 48px;
+  // Swiper containers for all sections
+  swiper-container {
+    width: 100%;
+    padding: 0.5rem 0;
   }
-  // Navigation buttons for swiper
-  .swiper-button-prev,
-  .swiper-button-next {
-    --background: var(--ion-background-color);
-    --color: var(--ion-color-primary);
-    --padding-start: 8px;
-    --padding-end: 8px;
-    --border-radius: 50%;
-    margin: 0 8px;
-    opacity: 0.8;
+  // Card styling shared across all sections
+  .offer-card,
+  .article-card,
+  .restaurant-card {
+    margin: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
 
     &:hover {
-      opacity: 1;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
+
+      .card-overlay {
+        opacity: 0.5;
+      }
+
+      .card-image {
+        transform: scale(1.05);
+      }
+
+      .action-link {
+        transform: translateX(4px);
+      }
+    }
+
+    .card-image-container {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+
+      .card-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+
+      .card-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+        opacity: 0.6;
+        transition: opacity 0.3s ease;
+      }
+    }
+
+    .card-content {
+      padding: 1.25rem;
+
+      .card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--ion-text-color);
+        margin: 0 0 0.5rem 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .card-subtitle {
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+        margin: 0 0 1rem 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .card-text {
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+        line-height: 1.5;
+        margin: 0 0 1rem 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .card-action {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--ion-color-light-shade);
+
+        .action-link {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 0.9375rem;
+          font-weight: 600;
+          transition: transform 0.3s ease;
+
+          ion-icon {
+            font-size: 1rem;
+          }
+        }
+      }
     }
   }
-  // Mobile app promo section
-  ion-img[alt="App Store"],
-  ion-img[alt="Google Play"] {
-    max-height: 40px;
-    max-width: 80px;
-    object-fit: contain;
+  // Review card specific styling
+  .review-card {
+    margin: 0;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    height: 100%;
+
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
+    }
+
+    .card-content {
+      padding: 1.25rem;
+
+      .review-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+
+        .review-avatar {
+          width: 48px;
+          height: 48px;
+          flex-shrink: 0;
+          border: 2px solid var(--ion-color-light-shade);
+        }
+
+        .review-meta {
+          flex: 1;
+
+          .review-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ion-text-color);
+            margin: 0 0 0.25rem 0;
+          }
+
+          .review-info {
+            font-size: 0.8125rem;
+            color: var(--ion-color-medium);
+            margin: 0;
+          }
+        }
+      }
+
+      .review-text {
+        font-size: 0.9375rem;
+        color: var(--ion-text-color);
+        line-height: 1.5;
+        margin: 0 0 1rem 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .review-rating {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+
+        ion-icon {
+          font-size: 1rem;
+          color: var(--ion-color-medium);
+
+          &.filled {
+            color: var(--ion-color-warning);
+          }
+        }
+
+        .rating-value {
+          margin-left: 0.5rem;
+          font-weight: 600;
+          color: var(--ion-text-color);
+        }
+      }
+    }
+  }
+  // Mobile app promotion section with gradient background
+  .app-promo-section {
+    .app-promo-card {
+      margin: 0;
+      border-radius: 20px;
+      // Updated to use purple-blue gradient
+      background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.2);
+
+      ion-card-content {
+        padding: 2rem 1.5rem;
+      }
+
+      .app-promo-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        align-items: center;
+        text-align: center;
+
+        .app-promo-text {
+          .app-promo-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: white;
+            margin: 0 0 0.5rem 0;
+          }
+
+          .app-promo-description {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            line-height: 1.5;
+          }
+        }
+
+        .app-promo-badges {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          flex-wrap: wrap;
+
+          .store-badge {
+            height: 48px;
+            width: auto;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+
+            &:hover {
+              transform: scale(1.05);
+            }
+          }
+        }
+      }
+    }
+  }
+  // Bottom spacer for mobile navigation
+  .bottom-spacer {
+    height: 2rem;
+  }
+  // Responsive adjustments for tablets and larger screens
+  @media (min-width: 768px) {
+    .page-container {
+      padding: 2rem;
+      padding-bottom: 3rem;
+    }
+
+    .hero-section {
+      margin-bottom: 3rem;
+
+      .hero-swiper {
+        height: 500px;
+        border-radius: 24px;
+        overflow: hidden;
+
+        .hero-slide .hero-content {
+          padding: 3rem;
+
+          .hero-title {
+            font-size: 3rem;
+          }
+
+          .hero-subtitle {
+            font-size: 1.25rem;
+          }
+        }
+      }
+    }
+
+    .content-section {
+      padding: 0 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .section-header .section-title {
+      font-size: 1.75rem;
+    }
+
+    .app-promo-section .app-promo-card .app-promo-content {
+      flex-direction: row;
+      text-align: left;
+      justify-content: space-between;
+
+      .app-promo-text {
+        flex: 1;
+      }
+
+      .app-promo-badges {
+        justify-content: flex-end;
+      }
+    }
+  }
+  // Desktop adjustments
+  @media (min-width: 1024px) {
+    .page-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .hero-section .hero-swiper {
+      height: 600px;
+    }
   }
 }
 
-// Dark mode specific adjustments
+// Dark mode adjustments with greyish-green palette
 :host-context(.dark) {
-  ion-card {
-    --background: var(--ion-color-dark);
+  .home-page-content {
+    --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
   }
 
-  ion-card.themed-card {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  .offer-card,
+  .article-card,
+  .restaurant-card,
+  .review-card {
+    background: var(--ion-card-background);
   }
 
-  ion-item-divider {
-    --color: var(--ion-color-light);
+  .app-promo-card {
+    opacity: 0.95;
   }
 }

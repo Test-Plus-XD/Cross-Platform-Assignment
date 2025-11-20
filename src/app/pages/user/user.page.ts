@@ -61,7 +61,8 @@ export class UserPage implements OnInit, OnDestroy {
     deleteAccount: { EN: 'Delete Account', TC: '刪除帳戶' },
     confirmDelete: { EN: 'Delete Account', TC: '刪除帳戶' },
     confirmDeleteMessage: { EN: 'Are you sure you want to delete your account? This action cannot be undone.', TC: '您確定要刪除帳戶嗎？此操作無法撤銷。' },
-    delete: { EN: 'Delete', TC: '刪除' }
+    delete: { EN: 'Delete', TC: '刪除' },
+    deletingMessage: { EN: 'Deleting your account', TC: '正在刪除您的帳戶' }
   };
 
   // Subscriptions for cleanup
@@ -223,8 +224,9 @@ export class UserPage implements OnInit, OnDestroy {
           handler: async () => {
             if (!this.user?.uid) return;
 
+            const loadingMessage = this.translations.deletingMessage[lang] || 'Deleting your account...'; // Fallback message
             const loading = await this.loadingController.create({
-              message: 'Deleting account...',
+              message: loadingMessage,
               spinner: 'crescent'
             });
             await loading.present();

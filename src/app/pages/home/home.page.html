@@ -3,192 +3,208 @@
   <!-- Expose language and theme once for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
   <!-- Main container -->
-    <!-- Add horizontal padding responsive: px-3 on mobile, px-6 on larger -->
-    <ion-grid>
-      <ion-row>
-        <ion-col size="12">
-          <!-- Ads carousel -->
-          <ion-card>
-            <swiper-container #adsSwiper loop="true" autoplay="{ delay: 4000 }" css-mode="true">
-              <swiper-slide *ngFor="let a of (ads$ | async) || []">
-                <ion-img [src]="a.image || 'assets/icon/Placeholder.png'" alt="ad" (click)="openUrl(a.href)"></ion-img>
-              </swiper-slide>
-              <div class="swiper-pagination" slot="pagination"></div>
-            </swiper-container>
+    <div class="page-container">
+      <!-- Hero Banner with Auto-rotating Ads -->
+      <div class="hero-section">
+        <swiper-container #heroSwiper
+                          class="hero-swiper"
+                          loop="true"
+                          autoplay-delay="5000"
+                          autoplay-disable-on-interaction="false"
+                          speed="800"
+                          effect="fade">
+          <swiper-slide *ngFor="let advertisement of (ads$ | async) || []">
+            <div class="hero-slide">
+              <img [src]="advertisement.image || 'assets/icon/Placeholder.png'"
+                   [alt]="'Advertisement'"
+                   class="hero-image">
+              <div class="hero-overlay"></div>
+              <div class="hero-content">
+                <h1 class="hero-title">{{ (lang$ | async) === 'TC' ? '限時優惠' : 'Special Discount' }}</h1>
+                <p class="hero-subtitle">{{ (lang$ | async) === 'TC' ? '探索精選餐廳優惠' : 'Discover exclusive restaurant deals' }}</p>
+                <ion-button *ngIf="advertisement.href"
+                            (click)="openUrl(advertisement.href)"
+                            class="hero-button"
+                            fill="solid"
+                            size="large">
+                  {{ (lang$ | async) === 'TC' ? '立即查看' : 'View Now' }}
+                  <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+                </ion-button>
+              </div>
+            </div>
+          </swiper-slide>
+        </swiper-container>
+      </div>
 
-            <!-- Prev / Next controls for non-native platforms -->
-            <ion-buttons *ngIf="!isNative" slot="fixed">
-              <ion-button (click)="SwiperPrev('ads')" class="swiper-button-prev">
-                <ion-icon name="chevron-back"></ion-icon>
-              </ion-button>
-              <ion-button (click)="SwiperNext('ads')" class="swiper-button-next">
-                <ion-icon name="chevron-forward"></ion-icon>
-              </ion-button>
-            </ion-buttons>
-          </ion-card>
+      <!-- Featured Offers Section -->
+      <section class="content-section offers-section">
+        <div class="section-header">
+          <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '甄選優惠' : 'Featured Offers' }}</h2>
+          <ion-button fill="clear" routerLink="/offers" class="see-all-button">
+            {{ (lang$ | async) === 'TC' ? '查看全部' : 'See All' }}
+            <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+          </ion-button>
+        </div>
 
-          <!-- Featured hero image -->
-          <!--
-            This shows a hero image derived from the featuredImage property set in the component.
-            The image falls back to the first offer image if no explicit featuredImage is set.
-          -->
-          <ion-card class="hero-card">
-            <ion-img [src]="featuredImage || (offers$ | async)?.[0]?.image || 'assets/icon/Placeholder.png'" alt="featured"></ion-img>
-          </ion-card>
+        <swiper-container #offersSwiper
+                          class="offers-swiper"
+                          slides-per-view="1.2"
+                          space-between="16"
+                          breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+          <swiper-slide *ngFor="let offer of (offers$ | async) || []">
+            <ion-card class="offer-card" (click)="setFeatured(offer.image)" button>
+              <div class="card-image-container">
+                <img [src]="offer.image || 'assets/icon/Placeholder.png'"
+                     [alt]="offer.title"
+                     class="card-image">
+                <div class="card-overlay"></div>
+              </div>
+              <ion-card-content class="card-content">
+                <h3 class="card-title">{{ offer.title }}</h3>
+                <p class="card-subtitle">{{ offer.restaurant }}</p>
+                <div class="card-action">
+                  <ion-text color="primary" class="action-link">
+                    {{ (lang$ | async) === 'TC' ? '查看詳情' : 'View Details' }}
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                  </ion-text>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </swiper-slide>
+        </swiper-container>
+      </section>
 
-          <!-- Special offers -->
-          <ion-item-group>
-            <ion-item-divider>
-              <ion-label>
-                <h2>{{ curLang === 'TC' ? '甄選優惠' : 'Featured Offer' }}</h2>
-              </ion-label>
-              <ion-button slot="end" fill="clear" routerLink="/offers">
-                {{ curLang === 'TC' ? '查看全部' : 'See all' }}
-              </ion-button>
-            </ion-item-divider>
+      <!-- Articles Section -->
+      <section class="content-section articles-section">
+        <div class="section-header">
+          <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '飲食札記' : "Gourmet's Note" }}</h2>
+          <ion-button fill="clear" routerLink="/articles" class="see-all-button">
+            {{ (lang$ | async) === 'TC' ? '查看全部' : 'See All' }}
+            <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+          </ion-button>
+        </div>
 
-            <!-- Offers as a Swiper: each .swiper-slide is one offer card -->
-            <swiper-container #offersSwiper css-mode="true" space-between="16">
-              <swiper-slide *ngFor="let o of (offers$ | async) || []">
-                <ion-card class="themed-card" (mouseenter)="setFeatured(o.image)" (focus)="setFeatured(o.image)" button="true">
-                  <ion-card-header>
-                    <ion-card-title>{{ o.title }}</ion-card-title>
-                    <ion-card-subtitle>{{ o.restaurant }}</ion-card-subtitle>
-                  </ion-card-header>
-                </ion-card>
-              </swiper-slide>
-              <!-- Pagination slot for offers if configured in TS -->
-              <div class="swiper-pagination" slot="pagination"></div>
-            </swiper-container>
-          </ion-item-group>
+        <swiper-container #articlesSwiper
+                          class="articles-swiper"
+                          slides-per-view="1.2"
+                          space-between="16"
+                          breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+          <swiper-slide *ngFor="let article of (articles$ | async) || []">
+            <ion-card class="article-card" button>
+              <div class="card-image-container">
+                <img [src]="article.image || 'assets/icon/Placeholder.png'"
+                     [alt]="(lang$ | async) === 'TC' ? article.title_TC : article.title_EN"
+                     class="card-image">
+                <div class="card-overlay"></div>
+              </div>
+              <ion-card-content class="card-content">
+                <h3 class="card-title">{{ (lang$ | async) === 'TC' ? article.title_TC : article.title_EN }}</h3>
+                <p class="card-text">{{ (lang$ | async) === 'TC' ? article.excerpt_TC : article.excerpt_EN }}</p>
+                <div class="card-action">
+                  <ion-text color="primary" class="action-link">
+                    {{ (lang$ | async) === 'TC' ? '閱讀更多' : 'Read More' }}
+                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                  </ion-text>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </swiper-slide>
+        </swiper-container>
+      </section>
 
-          <!-- Articles / Gourmet's note -->
-          <!--
-            Articles are now presented as Swiper slides to allow swipe gestures on small screens.
-            Language toggling uses curLang to select title and excerpt fields.
-          -->
-          <ion-item-group>
-            <ion-item-divider>
-              <ion-label>
-                <h2>{{ curLang === 'TC' ? '飲食札記' : "Gourmet's Note" }}</h2>
-              </ion-label>
-              <ion-button slot="end" fill="clear" routerLink="/articles">
-                {{ curLang === 'TC' ? '查看全部' : 'See all' }}
-              </ion-button>
-            </ion-item-divider>
+      <!-- Reviews Section -->
+      <section class="content-section reviews-section">
+        <div class="section-header">
+          <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '最近評論' : 'Latest Reviews' }}</h2>
+          <ion-button fill="clear" routerLink="/reviews" class="see-all-button">
+            {{ (lang$ | async) === 'TC' ? '查看全部' : 'See All' }}
+            <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+          </ion-button>
+        </div>
 
-            <!-- Horizontal article cards: now as Swiper slides -->
-            <swiper-container #articlesSwiper space-between="16">
-              <swiper-slide *ngFor="let a of (articles$ | async) || []">
-                <ion-card>
-                  <ion-img [src]="a.image || 'assets/icon/Placeholder.png'" alt="article"></ion-img>
-                  <ion-card-header>
-                    <ion-card-title>{{ curLang === 'TC' ? a.title_TC : a.title_EN }}</ion-card-title>
-                  </ion-card-header>
-                  <ion-card-content>
-                    <p>{{ curLang === 'TC' ? a.excerpt_TC : a.excerpt_EN }}</p>
-                  </ion-card-content>
-                </ion-card>
-              </swiper-slide>
+        <swiper-container #reviewsSwiper
+                          class="reviews-swiper"
+                          slides-per-view="1.2"
+                          space-between="16"
+                          breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+          <swiper-slide *ngFor="let review of (reviews$ | async) || []">
+            <ion-card class="review-card">
+              <ion-card-content class="card-content">
+                <div class="review-header">
+                  <ion-avatar class="review-avatar">
+                    <img [src]="review.avatar || 'assets/icon/Placeholder.png'" [alt]="review.name">
+                  </ion-avatar>
+                  <div class="review-meta">
+                    <h4 class="review-name">{{ review.name }}</h4>
+                    <p class="review-info">{{ review.meta }}</p>
+                  </div>
+                </div>
+                <p class="review-text">{{ review.text }}</p>
+                <div class="review-rating">
+                  <ion-icon name="star" *ngFor="let star of [1,2,3,4,5]"
+                            [class.filled]="star <= review.rating"></ion-icon>
+                  <span class="rating-value">{{ review.rating }}</span>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </swiper-slide>
+        </swiper-container>
+      </section>
 
-              <!-- Pagination slot for articles -->
-              <div class="swiper-pagination" slot="pagination"></div>
-            </swiper-container>
-          </ion-item-group>
+      <!-- Trending Restaurants Section -->
+      <section class="content-section restaurants-section">
+        <div class="section-header">
+          <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '熱門餐廳' : 'Trending Restaurants' }}</h2>
+          <ion-button fill="clear" routerLink="/restaurants" class="see-all-button">
+            {{ (lang$ | async) === 'TC' ? '查看全部' : 'See All' }}
+            <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+          </ion-button>
+        </div>
 
-          <!-- Latest reviews -->
-          <!--
-            Reviews are shown as slides so mobile users can swipe through testimonials.
-            Each slide contains avatar, meta and rating.
-          -->
-          <ion-item-group>
-            <ion-item-divider>
-              <ion-label>
-                <h2>{{ curLang === 'TC' ? '最近評論' : 'Latest Review' }}</h2>
-              </ion-label>
-              <ion-button slot="end" fill="clear" routerLink="/reviews">
-                {{ curLang === 'TC' ? '查看全部' : 'See all' }}
-              </ion-button>
-            </ion-item-divider>
+        <swiper-container #restaurantsSwiper
+                          class="restaurants-swiper"
+                          slides-per-view="1.2"
+                          space-between="16"
+                          breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+          <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
+            <ion-card class="restaurant-card" button>
+              <div class="card-image-container">
+                <img [src]="restaurant.image || 'assets/icon/Placeholder.png'"
+                     [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
+                     class="card-image">
+                <div class="card-overlay"></div>
+              </div>
+              <ion-card-content class="card-content">
+                <h3 class="card-title">{{ (lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}</h3>
+                <p class="card-subtitle">{{ (lang$ | async) === 'TC' ? restaurant.Address_TC : restaurant.Address_EN }}</p>
+              </ion-card-content>
+            </ion-card>
+          </swiper-slide>
+        </swiper-container>
+      </section>
 
-            <swiper-container #reviewsSwiper space-between="16">
-              <swiper-slide *ngFor="let r of (reviews$ | async) || []">
-                <ion-card>
-                  <ion-item lines="none">
-                    <ion-avatar slot="start">
-                      <ion-img [src]="r.avatar || 'assets/icon/Placeholder.png'" alt="avatar"></ion-img>
-                    </ion-avatar>
-                    <ion-label class="ion-text-color">
-                      <h3>{{ r.name }}</h3>
-                      <ion-text style="font-size: 0.63rem">{{ r.meta }}</ion-text>
-                    </ion-label>
-                  </ion-item>
-                  <ion-card-content>
-                    <p>{{ r.text }}</p>
-                    <ion-text color="warning">
-                      <p>★ {{ r.rating }}</p>
-                    </ion-text>
-                  </ion-card-content>
-                </ion-card>
-              </swiper-slide>
+      <!-- Mobile App Promotion -->
+      <section class="content-section app-promo-section">
+        <ion-card class="app-promo-card">
+          <ion-card-content>
+            <div class="app-promo-content">
+              <div class="app-promo-text">
+                <h2 class="app-promo-title">{{ (lang$ | async) === 'TC' ? '手機程式' : 'Mobile App' }}</h2>
+                <p class="app-promo-description">
+                  {{ (lang$ | async) === 'TC' ? '下載應用程式以取得優惠與位置功能。' : 'Download for deals & location features.' }}
+                </p>
+              </div>
+              <div class="app-promo-badges">
+                <img src="assets/icon/App_Store.png" alt="App Store" class="store-badge">
+                <img src="assets/icon/Google_Play.png" alt="Google Play" class="store-badge">
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </section>
 
-              <!-- Pagination for reviews, controlled by TS config -->
-              <div class="swiper-pagination" slot="pagination"></div>
-            </swiper-container>
-          </ion-item-group>
-
-          <!-- Trending restaurants -->
-          <!--
-            Restaurants carousel uses per-section settings in the TS file to show multiple items per view on larger screens.
-            Each slide is a compact restaurant card with image, name and address.
-          -->
-          <ion-item-group>
-            <ion-item-divider>
-              <ion-label>
-                <h2>{{ curLang === 'TC' ? '熱門餐廳' : 'Trending Restaurant' }}</h2>
-              </ion-label>
-              <ion-button slot="end" fill="clear" routerLink="/restaurants">
-                {{ curLang === 'TC' ? '查看全部' : 'See all' }}
-              </ion-button>
-            </ion-item-divider>
-
-            <swiper-container #restaurantsSwiper space-between="16">
-              <swiper-slide *ngFor="let r of (restaurants$ | async) || []">
-                <ion-card>
-                  <ion-img [src]="r.image || 'assets/icon/Placeholder.png'" alt="restaurant"></ion-img>
-                  <ion-card-header>
-                    <ion-card-title>{{ curLang === 'TC' ? r.Name_TC : r.Name_EN }}</ion-card-title>
-                    <ion-card-subtitle>{{ curLang === 'TC' ? r.Address_TC : r.Address_EN }}</ion-card-subtitle>
-                  </ion-card-header>
-                </ion-card>
-              </swiper-slide>
-
-              <!-- Pagination slot for restaurants -->
-              <div class="swiper-pagination" slot="pagination"></div>
-            </swiper-container>
-          </ion-item-group>
-
-          <!-- Mobile app promo -->
-          <ion-card>
-            <ion-card-header>
-              <ion-card-title>{{ curLang === 'TC' ? '手機程式' : 'Mobile App' }}</ion-card-title>
-              <ion-card-subtitle>{{ curLang === 'TC' ? '下載應用程式以取得優惠與位置功能。' : 'Download for deals & location features.' }}</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <ion-grid>
-                <ion-row>
-                  <ion-col size="6">
-                    <ion-img src="assets/icon/App_Store.png" alt="App Store"></ion-img>
-                  </ion-col>
-                  <ion-col size="6">
-                    <ion-img src="assets/icon/Google_Play.png" alt="Google Play"></ion-img>
-                  </ion-col>
-                </ion-row>
-              </ion-grid>
-            </ion-card-content>
-          </ion-card>
-        </ion-col>
-      </ion-row>
-    </ion-grid>
+      <!-- Bottom Spacer -->
+      <div class="bottom-spacer"></div>
+    </div>
   </ng-container>
 </ion-content>

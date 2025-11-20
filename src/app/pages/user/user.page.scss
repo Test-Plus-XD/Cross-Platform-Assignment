@@ -1,6 +1,6 @@
 // Modern, aesthetic user profile page styling
 :host {
-  // Page content background
+  // Page content background with green gradient
   .user-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
@@ -11,7 +11,7 @@
     padding-top: 5rem; // Space for header
     padding-bottom: 5rem; // Space for bottom tabs on mobile
   }
-  // Loading state centerd on screen
+  // Loading state centred on screen
   .loading-container {
     display: flex;
     flex-direction: column;
@@ -37,15 +37,16 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-  // Profile header card with gradient background
+  // Profile header card with purple-blue gradient background
   .profile-header-card {
     margin: 0;
     border-radius: 20px;
     overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
 
     .header-background {
       height: 120px;
+      // Updated to purple-blue gradient
       background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
     }
 
@@ -138,7 +139,7 @@
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 20px rgba(167, 70, 240, 0.15);
     }
 
     ion-card-header {
@@ -311,7 +312,7 @@
   }
 }
 
-// Dark mode adjustments
+// Dark mode adjustments for both pages
 :host-context(.dark) {
   .user-page-content {
     --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
@@ -324,7 +325,7 @@
   }
 
   .info-card {
-    background: var(--ion-color-dark);
+    background: var(--ion-card-background);
   }
 
   .stat-item {
