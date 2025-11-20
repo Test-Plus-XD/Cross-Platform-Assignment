@@ -348,9 +348,180 @@ app.delete('/API/Users/:uid', authenticate, async (request, response) => {
   }
 });
 
+// --- Booking CRUD endpoints ---
+
+// Get all bookings (optionally filtered by userId)
+app.get('/API/Bookings', authenticate, async (request, response) => {
+  try {
+    const authenticatedUid = getAuthenticatedUid(request);
+    const userId = request.query.userId;
+
+    // Security check: users can only view their own bookings
+    if (userId && userId !== authenticatedUid) {
+      console.log('[GET] /API/Bookings - Forbidden: User attempting to view another user\'s bookings');
+      return response.status(403).json({ error: 'Forbidden: You can only view your own bookings.' });
+    }
+
+    // Query bookings
+    let query = database.collection('Bookings');
+    if (userId) {
+      query = query.where('userId', '==', userId);
+    }
+
+    const snapshot = await query.get();
+    const bookings = snapshot.docs.map(document => ({
+      id: document.id,
+      ...sanitiseRecord(document.data())
+    }));
+
+    console.log(`[GET] /API/Bookings - Returned ${bookings.length} bookings`);
+    response.json({ count: bookings.length, data: bookings });
+  } catch (error) {
+    console.error('[ERROR] Failed to retrieve bookings:', error);
+    response.status(500).json({ error: 'Failed to retrieve bookings.' });
+  }
+});
+
+// Get single booking by ID
+app.get('/API/Bookings/:id', authenticate, async (request, response) => {
+  try {
+    const id = request.params.id;
+    const authenticatedUid = getAuthenticatedUid(request);
+    const document = await database.collection('Bookings').doc(id).get();
+
+    if (!document.exists) {
+      console.log(`[GET] /API/Bookings/${id} - Not found`);
+      return response.status(404).json({ error: 'Booking not found' });
+    }
+
+    const booking = document.data();
+
+    // Security check: users can only view their own bookings
+    if (booking.userId !== authenticatedUid) {
+      console.log(`[GET] /API/Bookings/${id} - Forbidden: User attempting to view another user's booking`);
+      return response.status(403).json({ error: 'Forbidden: You can only view your own bookings.' });
+    }
+
+    console.log(`[GET] /API/Bookings/${id} - Success`);
+    response.json({ id: document.id, ...sanitiseRecord(booking) });
+  } catch (error) {
+    console.error('[ERROR] Failed to retrieve booking:', error);
+    response.status(500).json({ error: 'Failed to retrieve booking.' });
+  }
+});
+
+// Create a new booking
+app.post('/API/Bookings', authenticate, async (request, response) => {
+  try {
+    const payload = request.body || {};
+    const authenticatedUid = getAuthenticatedUid(request);
+
+    // Validate required fields
+    if (!payload.restaurantId || !payload.dateTime || !payload.numberOfGuests) {
+      console.log('[POST] /API/Bookings - Missing required fields');
+      return response.status(400).json({ error: 'restaurantId, dateTime, and numberOfGuests are required.' });
+    }
+
+    // Security check: users can only create bookings for themselves
+    if (payload.userId && payload.userId !== authenticatedUid) {
+      console.log('[POST] /API/Bookings - Forbidden: User attempting to create booking for another user');
+      return response.status(403).json({ error: 'Forbidden: You can only create bookings for yourself.' });
+    }
+
+    // Set the userId to the authenticated user's ID
+    payload.userId = authenticatedUid;
+
+    // Set timestamps and default statuses
+    payload.createdAt = admin.firestore.FieldValue.serverTimestamp();
+    payload.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
+    if (!payload.status) payload.status = 'pending';
+    if (!payload.paymentStatus) payload.paymentStatus = 'unpaid';
+
+    const documentRef = await database.collection('Bookings').add(payload);
+    console.log(`[POST] /API/Bookings - Created booking with ID: ${documentRef.id}`);
+    response.status(201).json({ id: documentRef.id });
+  } catch (error) {
+    console.error('[ERROR] Failed to create booking:', error);
+    response.status(500).json({ error: 'Failed to create booking.' });
+  }
+});
+
+// Update an existing booking
+app.put('/API/Bookings/:id', authenticate, async (request, response) => {
+  try {
+    const id = request.params.id;
+    const payload = request.body || {};
+    const authenticatedUid = getAuthenticatedUid(request);
+
+    // Fetch existing booking
+    const documentRef = database.collection('Bookings').doc(id);
+    const documentSnapshot = await documentRef.get();
+
+    if (!documentSnapshot.exists) {
+      console.log(`[PUT] /API/Bookings/${id} - Not found`);
+      return response.status(404).json({ error: 'Booking not found' });
+    }
+
+    const existingBooking = documentSnapshot.data();
+
+    // Security check: users can only modify their own bookings
+    if (existingBooking.userId !== authenticatedUid) {
+      console.log(`[PUT] /API/Bookings/${id} - Forbidden: User attempting to modify another user's booking`);
+      return response.status(403).json({ error: 'Forbidden: You can only modify your own bookings.' });
+    }
+
+    // Remove fields that shouldn't be updated
+    delete payload.createdAt;
+    delete payload.userId;
+
+    // Update modifiedAt timestamp
+    payload.modifiedAt = admin.firestore.FieldValue.serverTimestamp();
+
+    await documentRef.set(payload, { merge: true });
+    console.log(`[PUT] /API/Bookings/${id} - Updated`);
+    response.status(204).send();
+  } catch (error) {
+    console.error('[ERROR] Failed to update booking:', error);
+    response.status(500).json({ error: 'Failed to update booking.' });
+  }
+});
+
+// Delete a booking
+app.delete('/API/Bookings/:id', authenticate, async (request, response) => {
+  try {
+    const id = request.params.id;
+    const authenticatedUid = getAuthenticatedUid(request);
+
+    // Fetch existing booking
+    const documentRef = database.collection('Bookings').doc(id);
+    const documentSnapshot = await documentRef.get();
+
+    if (!documentSnapshot.exists) {
+      console.log(`[DELETE] /API/Bookings/${id} - Not found`);
+      return response.status(404).json({ error: 'Booking not found' });
+    }
+
+    const existingBooking = documentSnapshot.data();
+
+    // Security check: users can only delete their own bookings
+    if (existingBooking.userId !== authenticatedUid) {
+      console.log(`[DELETE] /API/Bookings/${id} - Forbidden: User attempting to delete another user's booking`);
+      return response.status(403).json({ error: 'Forbidden: You can only delete your own bookings.' });
+    }
+
+    await documentRef.delete();
+    console.log(`[DELETE] /API/Bookings/${id} - Deleted`);
+    response.status(204).send();
+  } catch (error) {
+    console.error('[ERROR] Failed to delete booking:', error);
+    response.status(500).json({ error: 'Failed to delete booking.' });
+  }
+});
+
 // Start server
 app.listen(port, () => {
   console.log(`REST API Service running at http://localhost:${port}`);
   console.log(`Restaurant endpoint: http://localhost:${port}/API/Restaurants`);
   console.log(`User endpoint: http://localhost:${port}/API/Users`);
+  console.log(`Booking endpoint: http://localhost:${port}/API/Bookings`);
 });
