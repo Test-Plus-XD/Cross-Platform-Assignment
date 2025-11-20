@@ -1,5 +1,6 @@
+// Home page styling with updated green theme and purple-blue gradient accents
 :host {
-  // Page content background with gradient
+  // Page content background uses light green gradient
   .home-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
@@ -63,13 +64,14 @@
           }
 
           .hero-button {
-            --background: var(--ion-color-primary);
+            // Use the purple-blue gradient for prominent call-to-action
+            --background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
             --border-radius: 12px;
             --padding-start: 1.5rem;
             --padding-end: 1.5rem;
             font-weight: 600;
             text-transform: none;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 12px rgba(167, 70, 240, 0.3);
 
             ion-icon {
               margin-left: 0.5rem;
@@ -87,7 +89,7 @@
   // Section header with title and "See All" button
   .section-header {
     display: flex;
-    align-items: centre;
+    align-items: center;
     justify-content: space-between;
     margin-bottom: 1.25rem;
 
@@ -128,7 +130,7 @@
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
 
       .card-overlay {
         opacity: 0.5;
@@ -210,7 +212,7 @@
 
         .action-link {
           display: flex;
-          align-items: centre;
+          align-items: center;
           gap: 0.5rem;
           font-size: 0.9375rem;
           font-weight: 600;
@@ -233,7 +235,7 @@
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
     }
 
     .card-content {
@@ -241,7 +243,7 @@
 
       .review-header {
         display: flex;
-        align-items: centre;
+        align-items: center;
         gap: 1rem;
         margin-bottom: 1rem;
 
@@ -283,7 +285,7 @@
 
       .review-rating {
         display: flex;
-        align-items: centre;
+        align-items: center;
         gap: 0.25rem;
 
         ion-icon {
@@ -303,13 +305,14 @@
       }
     }
   }
-  // Mobile app promotion section
+  // Mobile app promotion section with gradient background
   .app-promo-section {
     .app-promo-card {
       margin: 0;
       border-radius: 20px;
+      // Updated to use purple-blue gradient
       background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.2);
 
       ion-card-content {
         padding: 2rem 1.5rem;
@@ -319,8 +322,8 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-        align-items: centre;
-        text-align: centre;
+        align-items: center;
+        text-align: center;
 
         .app-promo-text {
           .app-promo-title {
@@ -341,7 +344,7 @@
         .app-promo-badges {
           display: flex;
           gap: 1rem;
-          justify-content: centre;
+          justify-content: center;
           flex-wrap: wrap;
 
           .store-badge {
@@ -427,7 +430,7 @@
   }
 }
 
-// Dark mode adjustments
+// Dark mode adjustments with greyish-green palette
 :host-context(.dark) {
   .home-page-content {
     --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
@@ -437,7 +440,7 @@
   .article-card,
   .restaurant-card,
   .review-card {
-    background: var(--ion-color-dark);
+    background: var(--ion-card-background);
   }
 
   .app-promo-card {
