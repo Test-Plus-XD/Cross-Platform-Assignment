@@ -1,6 +1,6 @@
 // Service to fetch restaurants from backend and cache results
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of, BehaviorSubject, from } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -55,6 +55,11 @@ export class RestaurantsService {
   private readonly algoliaClient: SearchClient;
   // Local cache to reduce network calls
   private readonly restaurantsCache = new BehaviorSubject<Restaurant[] | null>(null);
+  // HTTP headers with API passcode
+  private readonly headers = new HttpHeaders({
+    'Content-Type': 'application/json',
+    'x-api-passcode': 'PourRice'
+  });
 
   constructor(private readonly http: HttpClient) {
     // Initialise Algolia client
@@ -233,7 +238,7 @@ export class RestaurantsService {
     if (cached && cached.length > 0) {
       return of(cached);
     }
-    return this.http.get<{ count: number; data: Restaurant[] }>(this.apiUrl).pipe(
+    return this.http.get<{ count: number; data: Restaurant[] }>(this.apiUrl, { headers: this.headers }).pipe(
       map(response => response.data || []),
       tap(list => this.restaurantsCache.next(list)),
       catchError(err => {
@@ -247,7 +252,7 @@ export class RestaurantsService {
   // Get a single restaurant from server API
   getRestaurantById(id: string): Observable<Restaurant | null> {
     if (!id) return of(null);
-    return this.http.get<Partial<Restaurant>>(`${this.apiUrl}/${encodeURIComponent(id)}`).pipe(
+    return this.http.get<Partial<Restaurant>>(`${this.apiUrl}/${encodeURIComponent(id)}`, { headers: this.headers }).pipe(
       map(response => {
         const r: Restaurant = {
           id: (response as any).id ?? id,
@@ -278,7 +283,7 @@ export class RestaurantsService {
 
   // Create a new restaurant (server writes to Firestore)
   createRestaurant(payload: Partial<Restaurant>): Observable<{ id: string }> {
-    return this.http.post<{ id: string }>(this.apiUrl, payload).pipe(
+    return this.http.post<{ id: string }>(this.apiUrl, payload, { headers: this.headers }).pipe(
       tap(() => this.restaurantsCache.next(null)),
       catchError((err: any) => {
         console.error('RestaurantsService.createRestaurant error', err);
@@ -289,7 +294,7 @@ export class RestaurantsService {
 
   // Update an existing restaurant
   updateRestaurant(id: string, payload: Partial<Restaurant>): Observable<void> {
-    return this.http.put<void>(`${this.apiUrl}/${encodeURIComponent(id)}`, payload).pipe(
+    return this.http.put<void>(`${this.apiUrl}/${encodeURIComponent(id)}`, payload, { headers: this.headers }).pipe(
       tap(() => this.restaurantsCache.next(null)),
       catchError((err: any) => {
         console.error('RestaurantsService.updateRestaurant error', err);
@@ -300,7 +305,7 @@ export class RestaurantsService {
 
   // Delete a restaurant
   deleteRestaurant(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(id)}`).pipe(
+    return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(id)}`, { headers: this.headers }).pipe(
       tap(() => this.restaurantsCache.next(null)),
       catchError((err: any) => {
         console.error('RestaurantsService.deleteRestaurant error', err);

@@ -102,7 +102,7 @@ export class BookingService {
   private getHeaders(): HttpHeaders {
     const headers: { [key: string]: string } = {
       'Content-Type': 'application/json',
-      'X-API-Passcode': 'PourRice'
+      'x-api-passcode': 'PourRice'
     };
     if (this.authToken) {
       headers['Authorization'] = `Bearer ${this.authToken}`;

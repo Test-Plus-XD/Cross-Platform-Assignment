@@ -1,0 +1,72 @@
+<!-- Floating chat button -->
+<div class="chat-fab" (click)="toggleChat()">
+  <ion-icon name="chatbubbles" class="chat-icon"></ion-icon>
+  <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+</div>
+
+<!-- Chat window -->
+<div class="chat-window" [class.open]="isOpen">
+  <!-- Chat header -->
+  <div class="chat-header">
+    <div class="chat-header-content">
+      <ion-icon name="restaurant" class="restaurant-icon"></ion-icon>
+      <div class="chat-header-text">
+        <h3>{{ restaurantName }}</h3>
+        <p class="connection-status">
+          <span class="status-dot" [class.connected]="isConnected"></span>
+          <ng-container *ngIf="lang$ | async as lang">
+            {{ isConnected ? (lang === 'TC' ? '線上' : 'Online') : (lang === 'TC' ? '離線' : 'Offline') }}
+          </ng-container>
+        </p>
+      </div>
+    </div>
+    <ion-icon name="close" class="close-icon" (click)="toggleChat()"></ion-icon>
+  </div>
+
+  <!-- Chat messages -->
+  <div class="chat-messages">
+    <div *ngIf="messages.length === 0" class="empty-state">
+      <ion-icon name="chatbubbles-outline" class="empty-icon"></ion-icon>
+      <p *ngIf="lang$ | async as lang">
+        {{ lang === 'TC' ? '開始對話' : 'Start a conversation' }}
+      </p>
+    </div>
+
+    <div
+      *ngFor="let message of messages"
+      class="message"
+      [class.own]="isOwnMessage(message)"
+    >
+      <div class="message-content">
+        <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
+        <p class="message-text">{{ message.message }}</p>
+        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+      </div>
+    </div>
+
+    <div *ngIf="isTyping" class="typing-indicator">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <!-- Chat input -->
+  <div class="chat-input">
+    <textarea
+      [(ngModel)]="newMessage"
+      (input)="onTyping()"
+      (keydown.enter)="$event.preventDefault(); sendMessage()"
+      [placeholder]="(lang$ | async) === 'TC' ? '輸入訊息...' : 'Type a message...'"
+      rows="1"
+      [disabled]="!isConnected"
+    ></textarea>
+    <button
+      (click)="sendMessage()"
+      [disabled]="!newMessage.trim() || !isConnected"
+      class="send-button"
+    >
+      <ion-icon name="send"></ion-icon>
+    </button>
+  </div>
+</div>

@@ -264,6 +264,111 @@ ion-content::part(scroll) {
   }
 }
 
+/* === MODERN AESTHETIC IMPROVEMENTS === */
+// Cards and containers
+ion-card {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Buttons
+ion-button {
+  --border-radius: 12px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  text-transform: none;
+
+  &:hover {
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Inputs
+ion-input, ion-textarea, ion-select, ion-datetime {
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+// Lists
+ion-item {
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  margin-bottom: 8px;
+
+  &:hover {
+    --background: var(--ion-color-light);
+  }
+}
+
+// Improved spacing and typography
+.ion-padding {
+  padding: 20px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+p {
+  line-height: 1.6;
+}
+
+// Smooth transitions for all elements
+* {
+  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+// Modern loading states
+.custom-loading {
+  --backdrop-opacity: 0.3;
+  --spinner-color: var(--ion-color-primary);
+}
+
+// Improved badges
+ion-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+// Modern chip styling
+ion-chip {
+  border-radius: 16px;
+  font-weight: 500;
+}
+
+// Gradient backgrounds for headers
+ion-toolbar {
+  --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  --color: white;
+}
+
+// Smooth scroll behavior
+html {
+  scroll-behavior: smooth;
+}
+
+// Modern focus states
+ion-button:focus,
+ion-input:focus,
+ion-select:focus,
+ion-datetime:focus {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
 /* === IONIC CORE IMPORTS === */
 // Core Ionic styles must be imported after theme variables
 @import "@ionic/angular/css/core.css";
