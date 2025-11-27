@@ -124,8 +124,9 @@
     min-height: 50vh;
     gap: 1rem;
 
-    ion-spinner {
-      transform: scale(1.5);
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
     }
 
     p {

@@ -446,3 +446,11 @@ ion-button .dark {
     --calendar-text: #0b0b0b !important;
   }
 }
+
+/* Refresher spinner styling */
+.refresher-spinner {
+  width: 40px;
+  height: 40px;
+  display: block;
+  margin: 0 auto;
+}

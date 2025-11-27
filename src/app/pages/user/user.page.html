@@ -3,7 +3,7 @@
 
     <!-- Loading State -->
     <div class="loading-container" *ngIf="isLoading">
-      <ion-spinner name="crescent" color="primary"></ion-spinner>
+      <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
       <p>{{ (lang$ | async) === 'TC' ? translations.loadingProfile.TC : translations.loadingProfile.EN }}</p>
     </div>
 
