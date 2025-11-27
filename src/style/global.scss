@@ -369,6 +369,142 @@ ion-datetime:focus {
   outline-offset: 2px;
 }
 
+/* === PAGE LAYOUT UTILITIES === */
+// Consistent page container with max width and centering
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  min-height: calc(100vh - var(--header-spacing) - var(--footer-spacing));
+}
+
+// Content grid for responsive layouts
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+// Section headers with consistent styling
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  .section-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ion-text-color);
+    margin: 0;
+  }
+}
+
+// Modern card variants
+.info-card {
+  background: var(--ion-card-background);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  h3, h4 {
+    margin-top: 0;
+    color: var(--ion-text-color);
+  }
+}
+
+.highlight-card {
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(167, 70, 240, 0.3);
+
+  * {
+    color: white !important;
+  }
+}
+
+// Loading states
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 40px;
+  text-align: center;
+
+  img.loading-spinner {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: var(--muted);
+    font-size: 16px;
+    margin: 8px 0;
+  }
+}
+
+.error-container {
+  .error-icon {
+    font-size: 64px;
+    color: var(--ion-color-danger);
+    margin-bottom: 16px;
+  }
+}
+
+// Spacer utilities
+.bottom-spacer {
+  height: 80px;
+}
+
+.top-spacer {
+  height: 40px;
+}
+
+// Modern scrollbar for webkit browsers (optional, overrides hidden scrollbar for specific elements)
+.styled-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 8px;
+  height: 8px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-track {
+  background: var(--ion-color-light);
+  border-radius: 4px;
+}
+
+.styled-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ion-color-medium);
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--ion-color-dark);
+  }
+}
+
+// Responsive utilities
+@media (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
 /* === IONIC CORE IMPORTS === */
 // Core Ionic styles must be imported after theme variables
 @import "@ionic/angular/css/core.css";

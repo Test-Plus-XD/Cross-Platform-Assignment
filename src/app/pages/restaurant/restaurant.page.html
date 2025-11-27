@@ -1,15 +1,4 @@
 <!-- Modern responsive restaurant detail page with comprehensive information display -->
-<ion-header translucent>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/search"></ion-back-button>
-    </ion-buttons>
-    <ion-title>
-      {{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN || '—') : (restaurant?.Name_EN || restaurant?.Name_TC || '—') }}
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
-
 <ion-content fullscreen>
   <!-- Loading State -->
   <div class="loading-container" *ngIf="isLoading">

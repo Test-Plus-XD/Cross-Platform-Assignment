@@ -2,7 +2,7 @@
 .gemini-fab {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -73,7 +73,7 @@
 .gemini-window {
   position: fixed;
   bottom: 20px;
-  right: 20px;
+  left: 20px;
   width: 400px;
   max-width: calc(100vw - 40px);
   height: 600px;
@@ -383,12 +383,12 @@
 @media (max-width: 768px) {
   .gemini-fab {
     bottom: 70px;
-    right: 16px;
+    left: 16px;
   }
 
   .gemini-window {
-    right: 16px;
     left: 16px;
+    right: 16px;
     bottom: 70px;
     width: auto;
     max-width: none;

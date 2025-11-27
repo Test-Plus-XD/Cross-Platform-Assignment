@@ -86,13 +86,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Emit the page title event directly
-    const event = new CustomEvent('page-title', {
-      detail: { Header_EN: 'Restaurant', Header_TC: '餐廳' },
-      bubbles: true
-    });
-    window.dispatchEvent(event);
-
     // Try to get user's location for distance calculation
     this.locationService.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
   }
@@ -124,6 +117,16 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
         this.restaurant = restaurant;
         this.isLoading = false;
+
+        // Emit dynamic restaurant name to header
+        const titleEvent = new CustomEvent('page-title', {
+          detail: {
+            Header_EN: restaurant.Name_EN || 'Restaurant',
+            Header_TC: restaurant.Name_TC || '餐廳'
+          },
+          bubbles: true
+        });
+        window.dispatchEvent(titleEvent);
 
         // After restaurant loaded, initialise the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);
