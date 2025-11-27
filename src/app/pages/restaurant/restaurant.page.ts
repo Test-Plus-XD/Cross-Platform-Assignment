@@ -9,6 +9,7 @@ import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaur
 import { ReviewsService, Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
+import { PlatformService } from '../../services/platform.service';
 import { AuthService } from '../../services/auth.service';
 import { BookingService, CreateBookingRequest } from '../../services/booking.service';
 import { LocationService, DistanceResult } from '../../services/location.service';
@@ -27,6 +28,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   lang$ = this.language.lang$;
   // Observable boolean that indicates whether dark theme is active
   isDark$: Observable<boolean>;
+  // Platform detection for responsive UI
+  isMobile$ = this.platform.isMobile$;
   // Local restaurant model used by template
   restaurant: Restaurant | null = null;
   // Menu items loaded separately from sub-collection
@@ -75,6 +78,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     private readonly reviewsService: ReviewsService,
     private readonly language: LanguageService,
     private readonly theme: ThemeService,
+    private readonly platform: PlatformService,
     private readonly authService: AuthService,
     private readonly bookingService: BookingService,
     private readonly locationService: LocationService,
@@ -86,13 +90,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
-    // Emit the page title event directly
-    const event = new CustomEvent('page-title', {
-      detail: { Header_EN: 'Restaurant', Header_TC: '餐廳' },
-      bubbles: true
-    });
-    window.dispatchEvent(event);
-
     // Try to get user's location for distance calculation
     this.locationService.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
   }
@@ -124,6 +121,16 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
         this.restaurant = restaurant;
         this.isLoading = false;
+
+        // Emit dynamic restaurant name to header
+        const titleEvent = new CustomEvent('page-title', {
+          detail: {
+            Header_EN: restaurant.Name_EN || 'Restaurant',
+            Header_TC: restaurant.Name_TC || '餐廳'
+          },
+          bubbles: true
+        });
+        window.dispatchEvent(titleEvent);
 
         // After restaurant loaded, initialise the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);

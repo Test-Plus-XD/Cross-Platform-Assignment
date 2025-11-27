@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-11-27
-> **Project Version:** 1.0.0
+> **Last Updated:** 2025-11-27 (Major Refactor)
+> **Project Version:** 1.1.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
 
@@ -196,6 +196,52 @@ Component ← Observable ← BehaviorSubject ← Service ← HTTP ← API ← Fi
 - **RxJS catchError:** HTTP errors handled with `catchError` operator
 - **User-Friendly Messages:** Firebase auth errors translated to readable text
 - **Console Logging:** Development debugging via `console.log/error`
+
+### 7. Centralized App State (NEW in v1.1.0)
+
+**Location:** `src/app/app.component.ts`
+
+The application now uses a centralized state management system through `AppComponent`:
+
+```typescript
+export interface AppState {
+  sessionId: string;        // Unique session identifier
+  isLoggedIn: boolean;      // Authentication status
+  uid: string | null;       // Firebase user ID
+  displayName: string | null;  // User display name
+  email: string | null;     // User email
+}
+```
+
+**Key Features:**
+- **Single Source of Truth:** All critical app state stored in `AppComponent`
+- **Observable Pattern:** Components subscribe to `appState$` observable
+- **Persistent Storage:** State saved to `localStorage` for session continuity
+- **Session Management:** Session ID stored in `sessionStorage` (clears on tab close)
+- **Auto-sync:** Automatically updates when auth state changes
+
+**Usage Example:**
+```typescript
+// In any component - inject AppComponent
+constructor(private app: AppComponent) {}
+
+ngOnInit() {
+  // Subscribe to app state changes
+  this.app.appState$.subscribe(state => {
+    console.log('User logged in:', state.isLoggedIn);
+    console.log('User ID:', state.uid);
+  });
+
+  // Get current state synchronously
+  const currentState = this.app.appState;
+}
+```
+
+**Benefits:**
+- Simplified authentication checks across components
+- Consistent state management
+- Easy access to session information
+- Reduced dependency on multiple service injections
 
 ---
 
@@ -885,18 +931,36 @@ export const environment = {
 **State:**
 - `platform$: Observable<string>` - Platform type stream
 
-### 8. DataService (`data.service.ts`)
-**Purpose:** HTTP client wrapper
+### 8. DataService (`data.service.ts`) - UPDATED in v1.1.0
+**Purpose:** Simple HTTP client wrapper (no longer manages auth internally)
+
 **Key Methods:**
-- `get<T>(endpoint)` - GET request
-- `post<T>(endpoint, body)` - POST request
-- `put<T>(endpoint, body)` - PUT request
-- `delete<T>(endpoint)` - DELETE request
+- `get<T>(endpoint, authToken?)` - GET request
+- `post<T>(endpoint, body, authToken?)` - POST request
+- `put<T>(endpoint, body, authToken?)` - PUT request
+- `delete<T>(endpoint, authToken?)` - DELETE request
 
 **Features:**
-- Auto-attaches auth token
+- Simple cURL-style HTTP helper
+- Auto-attaches API passcode (`x-api-passcode: PourRice`)
+- Optional auth token parameter (pass from caller)
 - Base URL from environment config
 - Error handling with catchError
+
+**Usage:**
+```typescript
+// Without auth
+this.dataService.get<Restaurant[]>('/API/Restaurants').subscribe(...);
+
+// With auth (get token from AuthService)
+const token = await this.authService.getIdToken();
+this.dataService.post('/API/Bookings', data, token).subscribe(...);
+```
+
+**Breaking Change from v1.0:**
+- No longer injects `AuthService`
+- Callers must pass auth token explicitly if needed
+- More flexible and decoupled architecture
 
 ### 9. LayoutService (`layout.service.ts`)
 **Purpose:** UI layout state management
@@ -1241,6 +1305,76 @@ const loading = await this.loadingController.create({
 - LoadingController instances set `spinner: null` to hide default spinners
 - Keep loading messages unchanged when replacing spinners
 - Consistent sizing: 60px for page loaders, 24px for button loaders, 40px for refreshers
+
+### 10. Modern UI/UX Utilities (NEW in v1.1.0)
+
+The global styles now include modern utility classes for consistent page layouts and components:
+
+**Page Layout:**
+```scss
+.page-container {
+  max-width: 1400px;        // Constrained width
+  margin: 0 auto;           // Centered
+  padding: 20px;            // Consistent spacing
+  min-height: calc(100vh - var(--header-spacing) - var(--footer-spacing));
+}
+```
+
+**Content Grid:**
+```scss
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+```
+
+**Section Headers:**
+```html
+<div class="section-header">
+  <h2 class="section-title">Title</h2>
+  <ion-button>See All</ion-button>
+</div>
+```
+
+**Card Variants:**
+```scss
+// Standard info card
+.info-card {
+  background: var(--ion-card-background);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+// Highlighted gradient card
+.highlight-card {
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  color: white;
+  // All child elements inherit white color
+}
+```
+
+**Spacers:**
+```scss
+.bottom-spacer { height: 80px; }
+.top-spacer { height: 40px; }
+```
+
+**Error States:**
+```html
+<div class="error-container">
+  <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
+  <h2>Error message</h2>
+  <ion-button>Retry</ion-button>
+</div>
+```
+
+**Responsive Behavior:**
+- All utilities adapt to mobile screens (< 768px)
+- Content grids collapse to single column
+- Section headers stack vertically
+- Padding reduces for smaller screens
 
 ---
 
@@ -1816,8 +1950,10 @@ For questions or updates to this guide, please file an issue in the GitHub repos
   - Context-aware responses
   - Helper methods for common queries
 
-**GeminiButton Component** (`src/app/shared/gemini-button/`)
-- Global AI assistant accessible from all pages (except login)
+**GeminiButton Component** (`src/app/shared/gemini-button/`) - UPDATED in v1.1.0
+- Global AI assistant accessible from all pages
+- **NEW:** Positioned at bottom-left corner (changed from bottom-right)
+- **NEW:** Only visible when user is logged in
 - Auto-dimming after 3 seconds of inactivity
 - Features:
   - Conversational chat interface
@@ -1826,7 +1962,7 @@ For questions or updates to this guide, please file an issue in the GitHub repos
   - Loading states with typing indicators
   - Modern gradient UI (purple-blue theme)
   - Bilingual support (EN/TC)
-- Usage: Appears as floating button on all pages after user logs in
+- Usage: Appears as floating button on all pages (except login) when authenticated
 
 #### 3. Enhanced Data Service
 **DataService** (`src/app/services/data.service.ts`)
@@ -2005,8 +2141,13 @@ This is automatically handled by:
 
 ---
 
-**Document Version:** 1.2
+**Document Version:** 1.3
 **Last Updated:** 2025-11-27
-**Changes:** Added Socket.IO chat integration, Google Gemini AI assistant, enhanced DataService, UI/UX modernization
-**Previous Version:** 1.1 (2025-11-27) - Updated loading states to use Eclipse.gif
+**Changes:** Major architectural refactor - centralized app state, simplified DataService, UI/UX overhaul, Gemini button repositioning
+
+**Changelog:**
+- v1.3 (2025-11-27): Centralized app state in AppComponent, refactored DataService to simple HTTP helper, removed individual page headers, dynamic restaurant titles, Gemini button moved to bottom-left and hidden when not logged in, added modern UI/UX utility classes
+- v1.2 (2025-11-27): Added Socket.IO chat integration, Google Gemini AI assistant, enhanced DataService, UI/UX modernization
+- v1.1 (2025-11-27): Updated loading states to use Eclipse.gif
+- v1.0 (2025-11-26): Initial comprehensive documentation
 

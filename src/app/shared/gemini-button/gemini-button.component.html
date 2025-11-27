@@ -1,6 +1,6 @@
 <!-- Floating AI assistant button -->
 <div
-  *ngIf="isVisible"
+  *ngIf="isVisible && isLoggedIn"
   class="gemini-fab"
   [class.dimmed]="isDimmed"
   [class.open]="isOpen"
@@ -13,7 +13,7 @@
 </div>
 
 <!-- Chat window -->
-<div *ngIf="isVisible" class="gemini-window" [class.open]="isOpen">
+<div *ngIf="isVisible && isLoggedIn" class="gemini-window" [class.open]="isOpen">
   <!-- Chat header -->
   <div class="gemini-header">
     <div class="gemini-header-content">
