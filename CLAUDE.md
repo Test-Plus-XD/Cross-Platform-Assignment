@@ -201,87 +201,414 @@ Component ← Observable ← BehaviorSubject ← Service ← HTTP ← API ← Fi
 
 ## API Documentation
 
-### Base URL
+### Base URLs
 - **Development:** `http://localhost:3000`
-- **Production:** Configure in `src/environments/environment.prod.ts`
+- **Production:** `https://vercel-express-api-alpha.vercel.app`
 
-### Authentication
-Protected endpoints require a Firebase ID token in the `Authorization` header:
+### Security Requirements
+
+**All endpoints require API passcode header:**
+```
+x-api-passcode: PourRice
+```
+
+**Protected endpoints additionally require Firebase authentication:**
 ```
 Authorization: Bearer <firebase-id-token>
 ```
 
-### Endpoints
+### Complete API Reference
 
-#### Restaurants (Public)
-| Method | Endpoint | Auth | Request Body | Response |
-|--------|----------|------|--------------|----------|
-| **GET** | `/API/Restaurants` | ❌ No | - | `{ count: number, data: Restaurant[] }` |
-| **GET** | `/API/Restaurants/:id` | ❌ No | - | `Restaurant` |
-| **POST** | `/API/Restaurants` | ❌ No | `{ Name_EN?, Name_TC?, Address_EN?, ... }` | `{ id: string }` |
-| **PUT** | `/API/Restaurants/:id` | ❌ No | `{ Name_EN?, ... }` | `204 No Content` |
-| **DELETE** | `/API/Restaurants/:id` | ❌ No | - | `204 No Content` |
+#### Authentication Routes (`/API/Auth`)
+| Method | Endpoint | Auth | Description | Request Body |
+|--------|----------|------|-------------|--------------|
+| POST | `/register` | ❌ | Create new user account | `{ email, password, displayName }` |
+| POST | `/login` | ❌ | Email/password login | `{ email, password }` |
+| POST | `/google` | ❌ | Google OAuth authentication | `{ idToken }` |
+| POST | `/verify` | ❌ | Verify Firebase ID token | `{ idToken }` |
+| POST | `/reset-password` | ❌ | Send password reset email | `{ email }` |
+| POST | `/logout` | ❌ | Revoke user refresh tokens | `{ uid }` |
+| DELETE | `/delete-account` | ❌ | Delete user account permanently | `{ uid }` |
 
-**Required Fields for POST:**
-- At least one of: `Name_EN` or `Name_TC`
+#### Restaurant Routes (`/API/Restaurants`)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | ❌ | List all restaurants |
+| GET | `/:id` | ❌ | Get single restaurant |
+| POST | `/` | ❌ | Create new restaurant |
+| PUT | `/:id` | ❌ | Update restaurant |
+| DELETE | `/:id` | ❌ | Delete restaurant |
+| POST | `/:id/image` | ✅ | Upload restaurant image |
 
-#### Users (Protected)
-| Method | Endpoint | Auth | Request Body | Response |
-|--------|----------|------|--------------|----------|
-| **GET** | `/API/Users` | ❌ No | - | `{ count: number, data: User[] }` |
-| **GET** | `/API/Users/:uid` | ❌ No | - | `User` |
-| **POST** | `/API/Users` | ✅ Yes | `{ uid, email?, displayName?, ... }` | `{ id: string }` |
-| **PUT** | `/API/Users/:uid` | ✅ Yes | `{ displayName?, preferences?, ... }` | `204 No Content` |
-| **DELETE** | `/API/Users/:uid` | ✅ Yes | - | `204 No Content` |
+**Restaurant Request Body Fields:**
+```typescript
+{
+  Name_EN?: string;
+  Name_TC?: string;
+  Address_EN?: string;
+  Address_TC?: string;
+  District_EN?: string;
+  District_TC?: string;
+  Latitude?: number;
+  Longitude?: number;
+  Keyword_EN?: string[];
+  Keyword_TC?: string[];
+  ImageUrl?: string;
+  Seats?: number;
+  Owner?: string;  // User UID
+  Contacts?: {
+    Phone?: string;
+    Email?: string;
+    Website?: string;
+  };
+  Opening_Hours?: {
+    [day: string]: string;
+  };
+}
+```
 
-**Security:**
-- Users can only create/update/delete their own profile
-- `uid` must match authenticated user's UID
+#### Menu Sub-collection (`/API/Restaurants/:restaurantId/menu`)
+**Important:** Menu items are stored as a **sub-collection**, not an array field.
 
-#### Bookings (Protected)
-| Method | Endpoint | Auth | Request Body | Response |
-|--------|----------|------|--------------|----------|
-| **GET** | `/API/Bookings?userId=<uid>` | ✅ Yes | - | `{ count: number, data: Booking[] }` |
-| **GET** | `/API/Bookings/:id` | ✅ Yes | - | `Booking` |
-| **POST** | `/API/Bookings` | ✅ Yes | `{ restaurantId, dateTime, numberOfGuests }` | `{ id: string }` |
-| **PUT** | `/API/Bookings/:id` | ✅ Yes | `{ status?, numberOfGuests?, ... }` | `204 No Content` |
-| **DELETE** | `/API/Bookings/:id` | ✅ Yes | - | `204 No Content` |
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/:restaurantId/menu` | ❌ | List menu items for restaurant |
+| GET | `/:restaurantId/menu/:menuItemId` | ❌ | Get single menu item |
+| POST | `/:restaurantId/menu` | ❌ | Create menu item |
+| PUT | `/:restaurantId/menu/:menuItemId` | ❌ | Update menu item |
+| DELETE | `/:restaurantId/menu/:menuItemId` | ❌ | Delete menu item |
 
-**Required Fields for POST:**
-- `restaurantId` (string)
-- `dateTime` (timestamp)
-- `numberOfGuests` (number)
+**Menu Item Request Body:**
+```typescript
+{
+  Name_EN?: string;
+  Name_TC?: string;
+  Description_EN?: string;
+  Description_TC?: string;
+  Price?: number;
+  ImageUrl?: string;
+}
+```
 
-**Security:**
-- Users can only view/create/update/delete their own bookings
-- `userId` automatically set to authenticated user's UID
-- Query parameter filtering enforced: cannot view other users' bookings
+#### User Routes (`/API/Users`)
+| Method | Endpoint | Auth | Description | Ownership |
+|--------|----------|------|-------------|-----------|
+| GET | `/` | ❌ | List all users | Public |
+| GET | `/:uid` | ❌ | Get single user profile | Public |
+| POST | `/` | ✅ | Create user profile | UID must match token |
+| PUT | `/:uid` | ✅ | Update user profile | UID must match token |
+| DELETE | `/:uid` | ✅ | Delete user profile | UID must match token |
 
-### Error Responses
+**User Request Body:**
+```typescript
+{
+  uid: string;  // Firebase Auth UID
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  emailVerified?: boolean;
+  phoneNumber?: string;
+  type?: 'customer' | 'admin';
+  restaurantId?: string;
+  bio?: string;
+  preferences?: {
+    language?: 'EN' | 'TC';
+    theme?: 'light' | 'dark';
+    notifications?: boolean;
+  };
+}
+```
+
+#### Booking Routes (`/API/Bookings`)
+| Method | Endpoint | Auth | Description | Ownership |
+|--------|----------|------|-------------|-----------|
+| GET | `/` | ✅ | List bookings (auto-filtered by userId) | Own bookings only |
+| GET | `/:id` | ✅ | Get single booking | Own booking only |
+| POST | `/` | ✅ | Create new booking | userId auto-set from token |
+| PUT | `/:id` | ✅ | Update booking | Own booking only |
+| DELETE | `/:id` | ✅ | Delete booking | Own booking only |
+
+**Booking Request Body (POST):**
+```typescript
+{
+  restaurantId: string;       // Required
+  restaurantName: string;     // Required (denormalized)
+  dateTime: string;           // Required (ISO 8601)
+  numberOfGuests: number;     // Required
+  specialRequests?: string;
+  // userId automatically set from auth token
+  // status defaults to 'pending'
+  // paymentStatus defaults to 'paid' (development)
+}
+```
+
+**Booking Request Body (PUT):**
+```typescript
+{
+  dateTime?: string;
+  numberOfGuests?: number;
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  paymentStatus?: 'unpaid' | 'paid' | 'refunded';
+  specialRequests?: string;
+}
+```
+
+#### Review Routes (`/API/Reviews`)
+| Method | Endpoint | Auth | Description | Filters |
+|--------|----------|------|-------------|---------|
+| GET | `/` | ❌ | List all reviews | `?restaurantId=X` or `?userId=X` |
+| GET | `/:id` | ❌ | Get single review | - |
+| POST | `/` | ✅ | Create new review | userId auto-set from token |
+| PUT | `/:id` | ✅ | Update review | Own review only |
+| DELETE | `/:id` | ✅ | Delete review | Own review only |
+| GET | `/Restaurant/:restaurantId/stats` | ❌ | Get review statistics | Aggregate data |
+
+**Review Request Body (POST):**
+```typescript
+{
+  restaurantId: string;    // Required
+  rating: number;          // Required (typically 1-5)
+  comment?: string;
+  // userId automatically set from auth token
+  // dateTime automatically set to current time
+}
+```
+
+**Review Statistics Response:**
+```typescript
+{
+  restaurantId: string;
+  totalReviews: number;
+  averageRating: number;
+  ratingDistribution: {
+    1: number;
+    2: number;
+    3: number;
+    4: number;
+    5: number;
+  };
+}
+```
+
+#### Image Routes (`/API/Images`)
+| Method | Endpoint | Auth | Description | Content-Type |
+|--------|----------|------|-------------|--------------|
+| POST | `/upload` | ✅ | Upload image to Firebase Storage | `multipart/form-data` |
+| DELETE | `/delete` | ✅ | Delete image from Firebase Storage | `application/json` |
+| GET | `/metadata` | ❌ | Get image metadata | - |
+
+**Upload Request:**
+- Form field name: `image`
+- Max file size: 10MB
+- Supported formats: JPEG, PNG, GIF, WebP
+
+**Upload Response:**
+```typescript
+{
+  imageUrl: string;  // Signed URL (expires 2500-03-01)
+}
+```
+
+#### Search Routes (`/API/Algolia`)
+| Method | Endpoint | Auth | Description | Query Params |
+|--------|----------|------|-------------|--------------|
+| GET | `/Restaurants` | ❌ | Search restaurants | `?query=X&district=Y&keywords=Z` |
+| GET | `/Restaurants/facets/:facetName` | ❌ | Get facet values | - |
+| POST | `/Restaurants/advanced` | ❌ | Advanced search | Custom filters in body |
+
+**Search Query Parameters:**
+```typescript
+{
+  query?: string;           // Full-text search (searches both EN and TC)
+  district?: string;        // Filter by District_EN or District_TC
+  keywords?: string[];      // Filter by Keyword_EN or Keyword_TC
+  page?: number;            // Pagination (default: 0)
+  hitsPerPage?: number;     // Results per page (default: 20)
+}
+```
+
+**Facet Names:**
+- `District_EN` / `District_TC`
+- `Keyword_EN` / `Keyword_TC`
+
+#### AI Routes (`/API/Gemini`)
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/generate` | ❌ | Generate text content |
+| POST | `/chat` | ❌ | Chat with AI (conversation history supported) |
+| POST | `/restaurant-description` | ❌ | Generate restaurant description |
+
+**Generate Request:**
+```typescript
+{
+  prompt: string;
+}
+```
+
+**Chat Request:**
+```typescript
+{
+  message: string;
+  history?: Array<{
+    role: 'user' | 'model';
+    parts: string;
+  }>;
+}
+```
+
+**Restaurant Description Request:**
+```typescript
+{
+  restaurantName: string;
+  cuisine?: string;
+  specialties?: string[];
+  atmosphere?: string;
+}
+```
+
+#### Chat Routes (`/API/Chat`)
+| Method | Endpoint | Auth | Description | Notes |
+|--------|----------|------|-------------|-------|
+| GET | `/Rooms` | ✅ | List all chat rooms | Filtered by participant |
+| GET | `/Rooms/:roomId` | ✅ | Get single chat room | Participant verification |
+| POST | `/Rooms` | ✅ | Create new chat room | - |
+| GET | `/Rooms/:roomId/Messages` | ✅ | List messages | Pagination supported |
+| POST | `/Rooms/:roomId/Messages` | ✅ | Save message | - |
+| PUT | `/Rooms/:roomId/Messages/:messageId` | ✅ | Edit message | Own message only |
+| DELETE | `/Rooms/:roomId/Messages/:messageId` | ✅ | Delete message | Soft delete, own message only |
+| GET | `/Stats` | ✅ | Get chat statistics | User-specific stats |
+
+**Create Room Request:**
+```typescript
+{
+  name?: string;
+  participants: string[];  // Array of user UIDs
+  type?: 'direct' | 'group';
+}
+```
+
+**Send Message Request:**
+```typescript
+{
+  content: string;
+  type?: 'text' | 'image' | 'file';
+  // senderId automatically set from auth token
+  // timestamp automatically set to current time
+}
+```
+
+**List Messages Query Parameters:**
+```typescript
+{
+  limit?: number;      // Default: 50
+  before?: string;     // Message ID for pagination (older messages)
+  after?: string;      // Message ID for pagination (newer messages)
+}
+```
+
+### HTTP Status Codes
+
+| Code | Meaning | Usage |
+|------|---------|-------|
+| 200 | OK | Successful GET, POST with response body |
+| 201 | Created | Successful resource creation |
+| 204 | No Content | Successful PUT, DELETE (no response body) |
+| 400 | Bad Request | Missing required fields, invalid data |
+| 401 | Unauthorized | Missing/invalid auth token |
+| 403 | Forbidden | Ownership violation, insufficient permissions |
+| 404 | Not Found | Resource doesn't exist |
+| 409 | Conflict | Resource already exists (e.g., duplicate user) |
+| 500 | Internal Server Error | Unexpected server error |
+
+### Error Response Format
+
+All errors follow this structure:
 ```json
 {
   "error": "Human-readable error message"
 }
 ```
 
-**Common Status Codes:**
-- `400` - Bad Request (missing required fields)
-- `401` - Unauthorized (missing/invalid token)
-- `403` - Forbidden (ownership violation)
-- `404` - Not Found
-- `409` - Conflict (e.g., user already exists)
-- `500` - Internal Server Error
-
 ### Data Sanitization
-- All responses sanitize `null`/`undefined` values to `'—'`
-- Missing `ImageUrl` replaced with placeholder path
+
+The backend automatically sanitizes all responses:
+- `null` / `undefined` → `'—'` (em dash)
+- Missing `ImageUrl` → Placeholder URL from environment
 - Recursive sanitization for nested objects and arrays
+- Firestore timestamps → ISO 8601 strings
+
+### Frontend Integration Patterns
+
+#### Using DataService (Recommended)
+```typescript
+// In component
+constructor(private dataService: DataService) {}
+
+async loadRestaurants() {
+  this.restaurants$ = this.dataService.get<{ count: number; data: Restaurant[] }>(
+    '/API/Restaurants'
+  );
+}
+
+async createBooking(bookingData: Partial<Booking>) {
+  const result = await this.dataService.post<{ id: string }>(
+    '/API/Bookings',
+    bookingData
+  ).toPromise();
+  
+  console.log('Created booking:', result.id);
+}
+```
+
+#### Authentication Token Handling
+The `DataService` automatically attaches the Firebase ID token to all requests. Ensure the user is authenticated before calling protected endpoints:
+```typescript
+// In service
+async function protectedOperation() {
+  const user = await this.authService.getCurrentUser().pipe(first()).toPromise();
+  
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+  
+  // Token automatically attached by DataService
+  return this.dataService.post('/API/Bookings', data);
+}
+```
+
+### Testing API Endpoints
+
+#### Using cURL
+```bash
+# Public endpoint
+curl -X GET https://vercel-express-api-alpha.vercel.app/API/Restaurants \
+  -H "x-api-passcode: PourRice"
+
+# Protected endpoint
+curl -X POST https://vercel-express-api-alpha.vercel.app/API/Bookings \
+  -H "x-api-passcode: PourRice" \
+  -H "Authorization: Bearer <firebase-id-token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "restaurantId": "rest123",
+    "restaurantName": "Dragon Palace",
+    "dateTime": "2025-12-25T19:00:00Z",
+    "numberOfGuests": 4
+  }'
+```
+
+#### Using Postman
+1. Set base URL: `https://vercel-express-api-alpha.vercel.app`
+2. Add header: `x-api-passcode: PourRice`
+3. For protected routes, add header: `Authorization: Bearer <token>`
+4. Set `Content-Type: application/json` for POST/PUT requests
 
 ---
 
 ## Data Models
 
 ### Firestore Collections
+**Refer to the API for the most accurate fields.**
 
 #### 1. Restaurants
 **Collection:** `Restaurants`
