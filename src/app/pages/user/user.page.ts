@@ -189,7 +189,7 @@ export class UserPage implements OnInit, OnDestroy {
           handler: async () => {
             const loading = await this.loadingController.create({
               message: this.translations.loggingOut[lang],
-              spinner: 'crescent'
+              spinner: null
             });
             await loading.present();
 
@@ -227,7 +227,7 @@ export class UserPage implements OnInit, OnDestroy {
             const loadingMessage = this.translations.deletingMessage[lang] || 'Deleting your account...'; // Fallback message
             const loading = await this.loadingController.create({
               message: loadingMessage,
-              spinner: 'crescent'
+              spinner: null
             });
             await loading.present();
 

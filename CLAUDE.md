@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-11-26
+> **Last Updated:** 2025-11-27
 > **Project Version:** 1.0.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
@@ -850,6 +850,71 @@ Prefer Ionic components over custom HTML:
 - **BEM** methodology optional but recommended
 - Prefix custom classes to avoid conflicts: `.app-*`
 
+### 9. Loading States & Spinners
+**Custom Loading Indicator:**
+- **Asset:** `src/assets/icon/Eclipse.gif`
+- **Usage:** All loading states use Eclipse.gif instead of default Ionic spinners
+
+**Implementation Patterns:**
+
+**HTML Loading Containers:**
+```html
+<div class="loading-container" *ngIf="isLoading">
+  <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+  <p>Loading message here</p>
+</div>
+```
+
+**SCSS Styling:**
+```scss
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+  }
+}
+```
+
+**Button Spinners:**
+```html
+<ion-button [disabled]="isSubmitting">
+  <img src="assets/icon/Eclipse.gif" alt="Saving" class="button-spinner" *ngIf="isSubmitting">
+  <span *ngIf="!isSubmitting">Save</span>
+</ion-button>
+```
+
+**LoadingController (TypeScript):**
+```typescript
+const loading = await this.loadingController.create({
+  message: 'Loading...',
+  spinner: null  // Hide default spinner, message only
+});
+```
+
+**Pull-to-Refresh:**
+```html
+<ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+  <ion-refresher-content
+    pullingIcon="assets/icon/Eclipse.gif"
+    refreshingSpinner="none">
+    <img src="assets/icon/Eclipse.gif" alt="Refreshing" class="refresher-spinner">
+  </ion-refresher-content>
+</ion-refresher>
+```
+
+**Important:**
+- Never use `ion-spinner` components - always use Eclipse.gif
+- LoadingController instances set `spinner: null` to hide default spinners
+- Keep loading messages unchanged when replacing spinners
+- Consistent sizing: 60px for page loaders, 24px for button loaders, 40px for refreshers
+
 ---
 
 ## Testing Strategy
@@ -1269,6 +1334,7 @@ When adding new features:
 6. **Don't use `any` type in TypeScript**
 7. **Don't expose sensitive data in logs**
 8. **Don't skip ownership checks on protected routes**
+9. **Don't use `ion-spinner` - always use Eclipse.gif for loading states**
 
 ### ✅ When Making Changes
 **Frontend:**
@@ -1372,9 +1438,12 @@ npx cap sync             # Sync to native
 
 ---
 
-**Document Version:** 1.0
-**Last Updated:** 2025-11-26
+**Document Version:** 1.1
+**Last Updated:** 2025-11-27
 **Maintainer:** AI Assistant
 **Contact:** See README.md for project contacts
+**Changelog:**
+- v1.1 (2025-11-27): Updated loading states to use Eclipse.gif, removed all ion-spinner usage
+- v1.0 (2025-11-26): Initial comprehensive documentation
 
 For questions or updates to this guide, please file an issue in the GitHub repository.

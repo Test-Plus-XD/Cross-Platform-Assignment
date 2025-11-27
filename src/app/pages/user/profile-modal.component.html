@@ -189,12 +189,12 @@
       </ion-button>
 
       <!-- Save button (last step) -->
-      <ion-button 
+      <ion-button
         *ngIf="currentStep === totalSteps"
         color="success"
         (click)="saveProfile()"
         [disabled]="profileForm.invalid || isSubmitting">
-        <ion-spinner name="crescent" *ngIf="isSubmitting"></ion-spinner>
+        <img src="assets/icon/Eclipse.gif" alt="Saving" class="button-spinner" *ngIf="isSubmitting">
         <span *ngIf="!isSubmitting">
           {{ (lang$ | async) === 'TC' ? translations.save.TC : translations.save.EN }}
         </span>

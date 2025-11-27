@@ -179,7 +179,7 @@
       --color: var(--profile-button-text);
       --border-radius: 8px;
       font-weight: 500;
-      
+
       &[disabled] {
         opacity: 0.5;
       }
@@ -191,6 +191,12 @@
       &[fill="outline"] {
         --border-color: var(--profile-button-bg);
         color: var(--profile-button-bg);
+      }
+
+      .button-spinner {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
       }
     }
   }

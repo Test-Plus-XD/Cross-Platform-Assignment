@@ -238,10 +238,14 @@
   <br>
   <!-- Pull-to-refresh -->
   <ion-refresher slot="fixed" (ionRefresh)="ngAfterViewInit()" pullFactor="0.5">
-    <ion-refresher-content></ion-refresher-content>
+    <ion-refresher-content
+      pullingIcon="assets/icon/Eclipse.gif"
+      refreshingSpinner="none">
+      <img src="assets/icon/Eclipse.gif" alt="Refreshing" class="refresher-spinner">
+    </ion-refresher-content>
   </ion-refresher>
 
   <!-- Loading and error states -->
-  <ion-loading [isOpen]="isLoading" message="Loading..."></ion-loading>
+  <ion-loading [isOpen]="isLoading" message="Loading..." spinner="null"></ion-loading>
   <ion-toast *ngIf="errorMessage" [message]="errorMessage" duration="3000"></ion-toast>
 </ion-content>

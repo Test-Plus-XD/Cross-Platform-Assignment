@@ -99,7 +99,7 @@ export class LoginPage implements OnDestroy {
     const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
       message: this.isLoginMode ? this.translations.loggingIn[lang] : this.translations.creatingAccount[lang],
-      spinner: 'crescent'
+      spinner: null
     });
     await loading.present();
 
@@ -138,7 +138,7 @@ export class LoginPage implements OnDestroy {
     const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
       message: this.translations.connectingGoogle[lang],
-      spinner: 'crescent'
+      spinner: null
     });
     await loading.present();
 
@@ -175,7 +175,7 @@ export class LoginPage implements OnDestroy {
     const lang = this.getCurrentLanguage();
     const loading = await this.loadingController.create({
       message: this.translations.sendingResetEmail[lang],
-      spinner: 'crescent'
+      spinner: null
     });
     await loading.present();
 
