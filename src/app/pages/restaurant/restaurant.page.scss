@@ -34,6 +34,30 @@
   font-size: 1.25rem;
 }
 
+
+/* Refresher spinner styling */
+.refresher-spinner {
+  width: 100px;
+  height: 100px;
+  display: block;
+  margin: 0 auto;
+}
+
+.custom-loading .loading-spinner {
+  display: none;
+}
+
+.custom-loading .loading-wrapper::before {
+  content: "";
+  display: block;
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 12px auto;
+  background-image: url("../../../assets/icon/Eclipse.gif");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
 /* Distance badge styling on hero image */
 .distance-badge {
   display: inline-flex;
@@ -517,12 +541,4 @@ ion-button .dark {
     --calendar-bg: #ffffff !important;
     --calendar-text: #0b0b0b !important;
   }
-}
-
-/* Refresher spinner styling */
-.refresher-spinner {
-  width: 40px;
-  height: 40px;
-  display: block;
-  margin: 0 auto;
 }

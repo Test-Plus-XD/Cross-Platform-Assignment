@@ -246,6 +246,6 @@
   </ion-refresher>
 
   <!-- Loading and error states -->
-  <ion-loading [isOpen]="isLoading" message="Loading..." spinner="null"></ion-loading>
+  <ion-loading [isOpen]="isLoading" message="Loading..." spinner="circular" class="custom-loading"></ion-loading>
   <ion-toast *ngIf="errorMessage" [message]="errorMessage" duration="3000"></ion-toast>
 </ion-content>
