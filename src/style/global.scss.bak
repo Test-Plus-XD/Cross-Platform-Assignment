@@ -1,0 +1,1458 @@
+// Global theme overrides with light green base and purple-blue gradient accents
+/* === LIGHT MODE (Default) === */
+:root {
+  /* Original Ionic defaults - commented for reference
+  --ion-color-primary: #0054e9;
+  --ion-color-primary-rgb: 0, 84, 233;
+  --ion-color-secondary: #0163aa;
+  --ion-color-secondary-rgb: 1, 99, 170;
+  */
+  /* Brand colour palette - Light green base with purple-blue gradient accents */
+  // Primary colour: Vibrant purple (start of gradient)
+  --ion-color-primary: #a746f0;
+  --ion-color-primary-rgb: 167, 70, 240;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #9333d1;
+  --ion-color-primary-tint: #b361f5;
+  // Secondary colour: Sky blue (end of gradient)
+  --ion-color-secondary: #4ca5ff;
+  --ion-color-secondary-rgb: 76, 165, 255;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #4391e0;
+  --ion-color-secondary-tint: #5eaeff;
+  // Tertiary colour: Mid-gradient purple-blue
+  --ion-color-tertiary: #7c5aff;
+  --ion-color-tertiary-rgb: 124, 90, 255;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #6d4fe0;
+  --ion-color-tertiary-tint: #896bff;
+  /* Semantic colours remain unchanged for accessibility */
+  --ion-color-success: #2dd55b;
+  --ion-color-success-rgb: 45, 213, 91;
+  --ion-color-success-contrast: #000000;
+  --ion-color-success-contrast-rgb: 0, 0, 0;
+  --ion-color-success-shade: #28bb50;
+  --ion-color-success-tint: #42d96b;
+  --ion-color-warning: #ffc409;
+  --ion-color-warning-rgb: 255, 196, 9;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e0ac08;
+  --ion-color-warning-tint: #ffca22;
+  --ion-color-danger: #c5000f;
+  --ion-color-danger-rgb: 197, 0, 15;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #ad000d;
+  --ion-color-danger-tint: #cb1a27;
+  // Neutral colours: Light green tinted greys for backgrounds
+  --ion-color-light: #f4f8f5;
+  --ion-color-light-rgb: 244, 248, 245;
+  --ion-color-light-contrast: #000000;
+  --ion-color-light-contrast-rgb: 0, 0, 0;
+  --ion-color-light-shade: #d7dbd8;
+  --ion-color-light-tint: #f5f9f6;
+  --ion-color-medium: #5d6b60;
+  --ion-color-medium-rgb: 93, 107, 96;
+  --ion-color-medium-contrast: #ffffff;
+  --ion-color-medium-contrast-rgb: 255, 255, 255;
+  --ion-color-medium-shade: #525e55;
+  --ion-color-medium-tint: #6d7a70;
+  --ion-color-dark: #1a2e1f;
+  --ion-color-dark-rgb: 26, 46, 31;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #17281b;
+  --ion-color-dark-tint: #314335;
+  /* Base semantic palette for custom theming */
+  // Background: Very light green with subtle warmth
+  --bg: #f9fef9;
+  // Text: Dark green-tinted grey for comfortable reading
+  --text: #1a2e1f;
+  // Muted text: Medium green-grey for secondary content
+  --muted: #5d6b60;
+  // Card background: Soft mint green
+  --card-bg: #e8f5ea;
+  // Surface: Clean white with hint of green
+  --surface: #fafefb;
+  // Accent: Primary purple for highlights
+  --accent: #a746f0;
+  // Border: Light green-tinted border
+  --border: #d4e5d7;
+  /* Apply semantic palette to Ionic core variables */
+  --ion-background-color: var(--bg);
+  --ion-text-color: var(--text);
+  --ion-card-background: var(--card-bg);
+  --ion-toolbar-background: var(--surface);
+  /* Typography and spacing remain consistent */
+  --ion-font-family: 'LXGW WenKai TC', sans-serif;
+  --header-spacing: calc(48px + env(safe-area-inset-top));
+  --footer-spacing: calc(108px + env(safe-area-inset-bottom));
+  --min-height: calc(144px + env(safe-area-inset-bottom));
+}
+
+/* === DARK MODE === */
+html.dark,
+.dark {
+  /* Dark mode palette - Greyish-green with reduced saturation */
+  // Primary colour: Slightly desaturated purple for dark backgrounds
+  --ion-color-primary: #9f5ce8;
+  --ion-color-primary-rgb: 159, 92, 232;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #8c51cc;
+  --ion-color-primary-tint: #a96dea;
+  // Secondary colour: Softer blue for dark mode
+  --ion-color-secondary: #5ba3e0;
+  --ion-color-secondary-rgb: 91, 163, 224;
+  --ion-color-secondary-contrast: #000000;
+  --ion-color-secondary-contrast-rgb: 0, 0, 0;
+  --ion-color-secondary-shade: #508fc5;
+  --ion-color-secondary-tint: #6bace3;
+  // Tertiary colour: Mid-tone purple-blue
+  --ion-color-tertiary: #8570e8;
+  --ion-color-tertiary-rgb: 133, 112, 232;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #7563cc;
+  --ion-color-tertiary-tint: #9180ea;
+  /* Semantic colours adjusted for dark mode visibility */
+  --ion-color-success: #3ae268;
+  --ion-color-success-rgb: 58, 226, 104;
+  --ion-color-success-contrast: #000000;
+  --ion-color-success-contrast-rgb: 0, 0, 0;
+  --ion-color-success-shade: #33c75b;
+  --ion-color-success-tint: #4ee577;
+  --ion-color-warning: #ffd033;
+  --ion-color-warning-rgb: 255, 208, 51;
+  --ion-color-warning-contrast: #000000;
+  --ion-color-warning-contrast-rgb: 0, 0, 0;
+  --ion-color-warning-shade: #e0b72d;
+  --ion-color-warning-tint: #ffd547;
+  --ion-color-danger: #ef4444;
+  --ion-color-danger-rgb: 239, 68, 68;
+  --ion-color-danger-contrast: #ffffff;
+  --ion-color-danger-contrast-rgb: 255, 255, 255;
+  --ion-color-danger-shade: #d23c3c;
+  --ion-color-danger-tint: #f15757;
+  // Neutral colours: Dark greyish-green backgrounds
+  --ion-color-light: #2a3d2e;
+  --ion-color-light-rgb: 42, 61, 46;
+  --ion-color-light-contrast: #ffffff;
+  --ion-color-light-contrast-rgb: 255, 255, 255;
+  --ion-color-light-shade: #253528;
+  --ion-color-light-tint: #3f5143;
+  --ion-color-medium: #7a8b7e;
+  --ion-color-medium-rgb: 122, 139, 126;
+  --ion-color-medium-contrast: #000000;
+  --ion-color-medium-contrast-rgb: 0, 0, 0;
+  --ion-color-medium-shade: #6b7a6f;
+  --ion-color-medium-tint: #87978b;
+  --ion-color-dark: #1a2e1f;
+  --ion-color-dark-rgb: 26, 46, 31;
+  --ion-color-dark-contrast: #ffffff;
+  --ion-color-dark-contrast-rgb: 255, 255, 255;
+  --ion-color-dark-shade: #17281b;
+  --ion-color-dark-tint: #314335;
+  /* Dark mode semantic palette */
+  // Background: Deep greyish-green
+  --bg: #1a2820;
+  // Text: Light green-tinted white for readability
+  --text: #e8f2ea;
+  // Muted text: Medium grey-green
+  --muted: #9eada2;
+  // Card background: Slightly lighter greyish-green
+  --card-bg: #243329;
+  // Surface: Mid-tone greyish-green
+  --surface: #1f2e25;
+  // Accent: Bright purple for visibility
+  --accent: #9f5ce8;
+  // Border: Subtle green-tinted border
+  --border: #364a3a;
+  /* Apply dark semantic palette to Ionic core variables */
+  --ion-background-color: var(--bg);
+  --ion-text-color: var(--text);
+  --ion-card-background: var(--card-bg);
+  --ion-toolbar-background: var(--surface);
+}
+
+/* === COMPONENT-LEVEL THEMING === */
+// Ensure all Ionic components inherit the theme colours
+ion-card,
+ion-item {
+  --background: var(--ion-card-background);
+  --color: var(--ion-text-color);
+}
+
+// Text-based components use theme text colour
+ion-label,
+ion-title,
+ion-text,
+ion-card-title,
+ion-card-subtitle {
+  color: var(--ion-text-color);
+  --color: var(--ion-text-color);
+}
+
+// Base HTML elements inherit theme colours
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+a,
+li,
+span {
+  color: var(--ion-text-color);
+}
+
+/* === UTILITY CLASSES === */
+// Force theme-driven text colour
+.theme-text {
+  color: var(--ion-text-color) !important;
+}
+
+// Muted helper for secondary text
+.theme-muted {
+  color: var(--muted) !important;
+}
+
+// Card background helper
+.theme-bg {
+  background-color: var(--card-bg) !important;
+}
+
+// Accent colour helper for highlights
+.theme-accent {
+  color: var(--accent) !important;
+}
+
+// Gradient background utility for featured elements
+.theme-gradient {
+  background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%) !important;
+}
+
+/* === LAYOUT ADJUSTMENTS === */
+toolbar-container {
+  margin-left: 4vh !important;
+  margin-right: 4vh !important;
+}
+
+// Router outlet and main content areas
+ion-router-outlet,
+ion-content,
+main,
+section {
+  margin: 2vw !important;
+  margin-block-end: 0.02vw !important;
+  padding-inline: 2vw !important;
+}
+
+/* Hide scrollbar for the entire page */
+ion-content::part(scroll) {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+
+  &::-webkit-scrollbar {
+    display: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* === IONIC CORE IMPORTS === */
+// Core Ionic styles must be imported after theme variables
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+/*sourceMappingURL=core.css.map */
+
+
+/*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com 
+@layer properties {
+  @supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))) {
+    *, :before, :after, ::backdrop {
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+      --tw-border-style: solid;
+      --tw-font-weight: initial;
+      --tw-shadow: 0 0 #0000;
+      --tw-shadow-color: initial;
+      --tw-shadow-alpha: 100%;
+      --tw-inset-shadow: 0 0 #0000;
+      --tw-inset-shadow-color: initial;
+      --tw-inset-shadow-alpha: 100%;
+      --tw-ring-color: initial;
+      --tw-ring-shadow: 0 0 #0000;
+      --tw-inset-ring-color: initial;
+      --tw-inset-ring-shadow: 0 0 #0000;
+      --tw-ring-inset: initial;
+      --tw-ring-offset-width: 0px;
+      --tw-ring-offset-color: #fff;
+      --tw-ring-offset-shadow: 0 0 #0000;
+      --tw-blur: initial;
+      --tw-brightness: initial;
+      --tw-contrast: initial;
+      --tw-grayscale: initial;
+      --tw-hue-rotate: initial;
+      --tw-invert: initial;
+      --tw-opacity: initial;
+      --tw-saturate: initial;
+      --tw-sepia: initial;
+      --tw-drop-shadow: initial;
+      --tw-drop-shadow-color: initial;
+      --tw-drop-shadow-alpha: 100%;
+      --tw-drop-shadow-size: initial
+    }
+  }
+}
+
+@layer theme {
+  :root, :host {
+    --font-sans: ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+    --font-mono: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    --color-blue-600: oklch(54.6% .245 262.881);
+    --color-indigo-600: oklch(51.1% .262 276.966);
+    --color-slate-50: oklch(98.4% .003 247.858);
+    --color-slate-100: oklch(96.8% .007 247.896);
+    --color-slate-300: oklch(86.9% .022 252.894);
+    --color-slate-600: oklch(44.6% .043 257.281);
+    --color-slate-700: oklch(37.2% .044 257.287);
+    --color-slate-800: oklch(27.9% .041 260.031);
+    --color-slate-900: oklch(20.8% .042 265.755);
+    --color-gray-500: oklch(55.1% .027 264.364);
+    --color-gray-600: oklch(44.6% .03 256.802);
+    --color-black: #000;
+    --color-white: #fff;
+    --spacing: .25rem;
+    --container-3xl: 48rem;
+    --container-6xl: 72rem;
+    --text-sm: .875rem;
+    --text-sm--line-height: calc(1.25/.875);
+    --text-lg: 1.125rem;
+    --text-lg--line-height: calc(1.75/1.125);
+    --text-xl: 1.25rem;
+    --text-xl--line-height: calc(1.75/1.25);
+    --text-2xl: 1.5rem;
+    --text-2xl--line-height: calc(2/1.5);
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --radius-md: .375rem;
+    --radius-lg: .5rem;
+    --default-font-family: var(--font-sans);
+    --default-mono-font-family: var(--font-mono)
+  }
+}
+
+@layer base {
+  *, :after, :before, ::backdrop {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0
+  }
+
+  ::file-selector-button {
+    box-sizing: border-box;
+    border: 0 solid;
+    margin: 0;
+    padding: 0
+  }
+
+  html, :host {
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    line-height: 1.5;
+    font-family: var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings,normal);
+    font-variation-settings: var(--default-font-variation-settings,normal);
+    -webkit-tap-highlight-color: transparent
+  }
+
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px
+  }
+
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit
+  }
+
+  a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit
+  }
+
+  b, strong {
+    font-weight: bolder
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings,normal);
+    font-variation-settings: var(--default-mono-font-variation-settings,normal);
+    font-size: 1em
+  }
+
+  small {
+    font-size: 80%
+  }
+
+  sub, sup {
+    vertical-align: baseline;
+    font-size: 75%;
+    line-height: 0;
+    position: relative
+  }
+
+  sub {
+    bottom: -.25em
+  }
+
+  sup {
+    top: -.5em
+  }
+
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse
+  }
+
+  :-moz-focusring {
+    outline: auto
+  }
+
+  progress {
+    vertical-align: baseline
+  }
+
+  summary {
+    display: list-item
+  }
+
+  ol, ul, menu {
+    list-style: none
+  }
+
+  img, svg, video, canvas, audio, iframe, embed, object {
+    vertical-align: middle;
+    display: block
+  }
+
+  img, video {
+    max-width: 100%;
+    height: auto
+  }
+
+  button, input, select, optgroup, textarea {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0
+  }
+
+  ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    opacity: 1;
+    background-color: #0000;
+    border-radius: 0
+  }
+
+  :where(select:is([multiple],[size])) optgroup {
+    font-weight: bolder
+  }
+
+  :where(select:is([multiple],[size])) optgroup option {
+    padding-inline-start: 20px
+  }
+
+  ::file-selector-button {
+    margin-inline-end: 4px
+  }
+
+  ::placeholder {
+    opacity: 1
+  }
+
+  @supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px) {
+    ::placeholder {
+      color: currentColor
+    }
+
+    @supports (color:color-mix(in lab, red, red)) {
+      ::placeholder {
+        color: color-mix(in oklab,currentcolor 50%,transparent)
+      }
+    }
+  }
+
+  textarea {
+    resize: vertical
+  }
+
+  ::-webkit-search-decoration {
+    -webkit-appearance: none
+  }
+
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit
+  }
+
+  ::-webkit-datetime-edit {
+    display: inline-flex
+  }
+
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0
+  }
+
+  ::-webkit-datetime-edit {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-year-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-month-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-day-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-hour-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-minute-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-second-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-millisecond-field {
+    padding-block: 0
+  }
+
+  ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    line-height: 1
+  }
+
+  :-moz-ui-invalid {
+    box-shadow: none
+  }
+
+  button, input:where([type=button],[type=reset],[type=submit]) {
+    appearance: button
+  }
+
+  ::file-selector-button {
+    appearance: button
+  }
+
+  ::-webkit-inner-spin-button {
+    height: auto
+  }
+
+  ::-webkit-outer-spin-button {
+    height: auto
+  }
+
+  [hidden]:where(:not([hidden=until-found])) {
+    display: none !important
+  }
+}
+
+@layer components;
+
+@layer utilities {
+  .collapse {
+    visibility: collapse
+  }
+
+  .visible {
+    visibility: visible
+  }
+
+  .absolute {
+    position: absolute
+  }
+
+  .fixed {
+    position: fixed
+  }
+
+  .relative {
+    position: relative
+  }
+
+  .static {
+    position: static
+  }
+
+  .start-0 {
+    inset-inline-start: calc(var(--spacing)*0)
+  }
+
+  .start-100 {
+    inset-inline-start: calc(var(--spacing)*100)
+  }
+
+  .end-0 {
+    inset-inline-end: calc(var(--spacing)*0)
+  }
+
+  .top-0 {
+    top: calc(var(--spacing)*0)
+  }
+
+  .top-1 {
+    top: calc(var(--spacing)*1)
+  }
+
+  .bottom-0 {
+    bottom: calc(var(--spacing)*0)
+  }
+
+  .container {
+    width: 100%
+  }
+
+  @media (min-width:40rem) {
+    .container {
+      max-width: 40rem
+    }
+  }
+
+  @media (min-width:48rem) {
+    .container {
+      max-width: 48rem
+    }
+  }
+
+  @media (min-width:64rem) {
+    .container {
+      max-width: 64rem
+    }
+  }
+
+  @media (min-width:80rem) {
+    .container {
+      max-width: 80rem
+    }
+  }
+
+  @media (min-width:96rem) {
+    .container {
+      max-width: 96rem
+    }
+  }
+
+  .mx-auto {
+    margin-inline: auto
+  }
+
+  .my-2 {
+    margin-block: calc(var(--spacing)*2)
+  }
+
+  .my-4 {
+    margin-block: calc(var(--spacing)*4)
+  }
+
+  .ms-auto {
+    margin-inline-start: auto
+  }
+
+  .mt-2 {
+    margin-top: calc(var(--spacing)*2)
+  }
+
+  .mt-3 {
+    margin-top: calc(var(--spacing)*3)
+  }
+
+  .mt-8 {
+    margin-top: calc(var(--spacing)*8)
+  }
+
+  .mb-0 {
+    margin-bottom: calc(var(--spacing)*0)
+  }
+
+  .mb-1 {
+    margin-bottom: calc(var(--spacing)*1)
+  }
+
+  .mb-2 {
+    margin-bottom: calc(var(--spacing)*2)
+  }
+
+  .mb-3 {
+    margin-bottom: calc(var(--spacing)*3)
+  }
+
+  .mb-4 {
+    margin-bottom: calc(var(--spacing)*4)
+  }
+
+  .mb-6 {
+    margin-bottom: calc(var(--spacing)*6)
+  }
+
+  .ml-2 {
+    margin-left: calc(var(--spacing)*2)
+  }
+
+  .contents {
+    display: contents
+  }
+
+  .flex {
+    display: flex
+  }
+
+  .grid {
+    display: grid
+  }
+
+  .table {
+    display: table
+  }
+
+  .h-10 {
+    height: calc(var(--spacing)*10)
+  }
+
+  .h-40 {
+    height: calc(var(--spacing)*40)
+  }
+
+  .min-h-screen {
+    min-height: 100vh
+  }
+
+  .w-full {
+    width: 100%
+  }
+
+  .max-w-3xl {
+    max-width: var(--container-3xl)
+  }
+
+  .max-w-6xl {
+    max-width: var(--container-6xl)
+  }
+
+  .flex-1 {
+    flex: 1
+  }
+
+  .transform {
+    transform: var(--tw-rotate-x,)var(--tw-rotate-y,)var(--tw-rotate-z,)var(--tw-skew-x,)var(--tw-skew-y,)
+  }
+
+  .grid-cols-1 {
+    grid-template-columns: repeat(1,minmax(0,1fr))
+  }
+
+  .items-center {
+    align-items: center
+  }
+
+  .justify-between {
+    justify-content: space-between
+  }
+
+  .gap-2 {
+    gap: calc(var(--spacing)*2)
+  }
+
+  .gap-3 {
+    gap: calc(var(--spacing)*3)
+  }
+
+  .gap-6 {
+    gap: calc(var(--spacing)*6)
+  }
+
+  .overflow-hidden {
+    overflow: hidden
+  }
+
+  .rounded {
+    border-radius: .25rem
+  }
+
+  .rounded-lg {
+    border-radius: var(--radius-lg)
+  }
+
+  .rounded-md {
+    border-radius: var(--radius-md)
+  }
+
+  .border {
+    border-style: var(--tw-border-style);
+    border-width: 1px
+  }
+
+  .bg-black {
+    background-color: var(--color-black)
+  }
+
+  .bg-blue-600 {
+    background-color: var(--color-blue-600)
+  }
+
+  .bg-indigo-600 {
+    background-color: var(--color-indigo-600)
+  }
+
+  .bg-slate-50 {
+    background-color: var(--color-slate-50)
+  }
+
+  .bg-white {
+    background-color: var(--color-white)
+  }
+
+  .object-cover {
+    object-fit: cover
+  }
+
+  .p-2 {
+    padding: calc(var(--spacing)*2)
+  }
+
+  .p-3 {
+    padding: calc(var(--spacing)*3)
+  }
+
+  .p-4 {
+    padding: calc(var(--spacing)*4)
+  }
+
+  .p-6 {
+    padding: calc(var(--spacing)*6)
+  }
+
+  .px-2 {
+    padding-inline: calc(var(--spacing)*2)
+  }
+
+  .px-4 {
+    padding-inline: calc(var(--spacing)*4)
+  }
+
+  .py-1 {
+    padding-block: calc(var(--spacing)*1)
+  }
+
+  .py-3 {
+    padding-block: calc(var(--spacing)*3)
+  }
+
+  .pe-1 {
+    padding-inline-end: calc(var(--spacing)*1)
+  }
+
+  .text-center {
+    text-align: center
+  }
+
+  .text-2xl {
+    font-size: var(--text-2xl);
+    line-height: var(--tw-leading,var(--text-2xl--line-height))
+  }
+
+  .text-lg {
+    font-size: var(--text-lg);
+    line-height: var(--tw-leading,var(--text-lg--line-height))
+  }
+
+  .text-sm {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading,var(--text-sm--line-height))
+  }
+
+  .text-xl {
+    font-size: var(--text-xl);
+    line-height: var(--tw-leading,var(--text-xl--line-height))
+  }
+
+  .font-bold {
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold)
+  }
+
+  .font-semibold {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold)
+  }
+
+  .text-gray-500 {
+    color: var(--color-gray-500)
+  }
+
+  .text-gray-600 {
+    color: var(--color-gray-600)
+  }
+
+  .text-indigo-600 {
+    color: var(--color-indigo-600)
+  }
+
+  .text-slate-600 {
+    color: var(--color-slate-600)
+  }
+
+  .text-slate-700 {
+    color: var(--color-slate-700)
+  }
+
+  .text-slate-800 {
+    color: var(--color-slate-800)
+  }
+
+  .text-slate-900 {
+    color: var(--color-slate-900)
+  }
+
+  .text-white {
+    color: var(--color-white)
+  }
+
+  .lowercase {
+    text-transform: lowercase
+  }
+
+  .uppercase {
+    text-transform: uppercase
+  }
+
+  .shadow {
+    --tw-shadow: 0 1px 3px 0 var(--tw-shadow-color,#0000001a),0 1px 2px -1px var(--tw-shadow-color,#0000001a);
+    box-shadow: var(--tw-inset-shadow),var(--tw-inset-ring-shadow),var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow)
+  }
+
+  .filter {
+    filter: var(--tw-blur,)var(--tw-brightness,)var(--tw-contrast,)var(--tw-grayscale,)var(--tw-hue-rotate,)var(--tw-invert,)var(--tw-saturate,)var(--tw-sepia,)var(--tw-drop-shadow,)
+  }
+
+  .\[project\:\%s\] {
+    project: %s
+  }
+
+  @media (hover:hover) {
+    .hover\:underline:hover {
+      text-decoration-line: underline
+    }
+  }
+
+  @media (min-width:40rem) {
+    .sm\:grid-cols-2 {
+      grid-template-columns: repeat(2,minmax(0,1fr))
+    }
+  }
+
+  @media (min-width:64rem) {
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3,minmax(0,1fr))
+    }
+  }
+
+  @media (prefers-color-scheme:dark) {
+    .dark\:bg-slate-700 {
+      background-color: var(--color-slate-700)
+    }
+
+    .dark\:bg-slate-800 {
+      background-color: var(--color-slate-800)
+    }
+
+    .dark\:bg-slate-900 {
+      background-color: var(--color-slate-900)
+    }
+
+    .dark\:text-slate-50 {
+      color: var(--color-slate-50)
+    }
+
+    .dark\:text-slate-100 {
+      color: var(--color-slate-100)
+    }
+
+    .dark\:text-slate-300 {
+      color: var(--color-slate-300)
+    }
+  }
+}
+
+*, :after, :before, ::backdrop {
+  box-sizing: border-box;
+  //border: 0 solid;
+  margin: 0;
+  padding: 0
+}
+
+::file-selector-button {
+  box-sizing: border-box;
+  border: 0 solid;
+  margin: 0;
+  padding: 0
+}
+
+html, :host {
+  -webkit-text-size-adjust: 100%;
+  tab-size: 4;
+  line-height: 1.5;
+  font-family: var(--default-font-family,ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji");
+  font-feature-settings: var(--default-font-feature-settings,normal);
+  font-variation-settings: var(--default-font-variation-settings,normal);
+  -webkit-tap-highlight-color: transparent
+}
+
+hr {
+  height: 0;
+  color: inherit;
+  border-top-width: 1px
+}
+
+abbr:where([title]) {
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-size: inherit;
+  font-weight: inherit
+}
+
+a {
+  color: inherit;
+  -webkit-text-decoration: inherit;
+  -webkit-text-decoration: inherit;
+  -webkit-text-decoration: inherit;
+  text-decoration: inherit
+}
+
+b, strong {
+  font-weight: bolder
+}
+
+code, kbd, samp, pre {
+  font-family: var(--default-mono-font-family,ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace);
+  font-feature-settings: var(--default-mono-font-feature-settings,normal);
+  font-variation-settings: var(--default-mono-font-variation-settings,normal);
+  font-size: 1em
+}
+
+small {
+  font-size: 80%
+}
+
+sub, sup {
+  vertical-align: baseline;
+  font-size: 75%;
+  line-height: 0;
+  position: relative
+}
+
+sub {
+  bottom: -.25em
+}
+
+sup {
+  top: -.5em
+}
+
+table {
+  text-indent: 0;
+  border-color: inherit;
+  border-collapse: collapse
+}
+
+:-moz-focusring {
+  outline: auto
+}
+
+progress {
+  vertical-align: baseline
+}
+
+summary {
+  display: list-item
+}
+
+ol, ul, menu {
+  list-style: none
+}
+
+img, svg, video, canvas, audio, iframe, embed, object {
+  vertical-align: middle;
+  display: block
+}
+
+img, video {
+  max-width: 100%;
+  height: auto
+}
+
+button, input, select, optgroup, textarea {
+  font: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  opacity: 1;
+  background-color: #0000;
+  border-radius: 0
+}
+
+::file-selector-button {
+  font: inherit;
+  font-feature-settings: inherit;
+  font-variation-settings: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  opacity: 1;
+  background-color: #0000;
+  border-radius: 0
+}
+
+:where(select:is([multiple],[size])) optgroup {
+  font-weight: bolder
+}
+
+:where(select:is([multiple],[size])) optgroup option {
+  padding-inline-start: 20px
+}
+
+::file-selector-button {
+  margin-inline-end: 4px
+}
+
+::placeholder {
+  opacity: 1
+}
+
+@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px) {
+  ::placeholder {
+    color: currentColor
+  }
+
+  @supports (color:color-mix(in lab, red, red)) {
+    ::placeholder {
+      color: color-mix(in oklab,currentcolor 50%,transparent)
+    }
+  }
+}
+
+textarea {
+  resize: vertical
+}
+
+::-webkit-search-decoration {
+  -webkit-appearance: none
+}
+
+::-webkit-date-and-time-value {
+  min-height: 1lh;
+  text-align: inherit
+}
+
+::-webkit-datetime-edit {
+  display: inline-flex
+}
+
+::-webkit-datetime-edit-fields-wrapper {
+  padding: 0
+}
+
+::-webkit-datetime-edit {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-year-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-month-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-day-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-hour-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-minute-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-second-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-millisecond-field {
+  padding-block: 0
+}
+
+::-webkit-datetime-edit-meridiem-field {
+  padding-block: 0
+}
+
+::-webkit-calendar-picker-indicator {
+  line-height: 1
+}
+
+:-moz-ui-invalid {
+  box-shadow: none
+}
+
+button, input:where([type=button],[type=reset],[type=submit]) {
+  appearance: button
+}
+
+::file-selector-button {
+  appearance: button
+}
+
+::-webkit-inner-spin-button {
+  height: auto
+}
+
+::-webkit-outer-spin-button {
+  height: auto
+}
+
+[hidden]:where(:not([hidden=until-found])) {
+  display: none !important
+}
+
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-border-style {
+  syntax: "*";
+  inherits: false;
+  initial-value: solid
+}
+
+@property --tw-font-weight {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000
+}
+
+@property --tw-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%
+}
+
+@property --tw-inset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000
+}
+
+@property --tw-inset-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%
+}
+
+@property --tw-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000
+}
+
+@property --tw-inset-ring-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-inset-ring-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000
+}
+
+@property --tw-ring-inset {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-ring-offset-width {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0
+}
+
+@property --tw-ring-offset-color {
+  syntax: "*";
+  inherits: false;
+  initial-value: #fff
+}
+
+@property --tw-ring-offset-shadow {
+  syntax: "*";
+  inherits: false;
+  initial-value: 0 0 #0000
+}
+
+@property --tw-blur {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-brightness {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-contrast {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-grayscale {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-hue-rotate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-invert {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-opacity {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-saturate {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-sepia {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-color {
+  syntax: "*";
+  inherits: false
+}
+
+@property --tw-drop-shadow-alpha {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 100%
+}
+
+@property --tw-drop-shadow-size {
+  syntax: "*";
+  inherits: false
+}*/

@@ -1,0 +1,262 @@
+// Store management page styling
+:host {
+  .management-container {
+    padding: 0 1rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  // Restaurant header card
+  .restaurant-header-card {
+    margin: 1rem 0;
+    border-radius: 16px;
+
+    .restaurant-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .restaurant-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .restaurant-address {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--ion-color-medium);
+      font-size: 0.9rem;
+      margin: 0;
+
+      ion-icon {
+        font-size: 1rem;
+      }
+    }
+
+    .restaurant-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      ion-button {
+        --border-radius: 8px;
+        text-transform: none;
+      }
+    }
+  }
+  // Statistics grid
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: 600px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .stat-card {
+    margin: 0;
+    border-radius: 12px;
+    text-align: center;
+
+    ion-card-content {
+      padding: 1rem;
+    }
+
+    ion-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--ion-text-color);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+      margin-top: 0.25rem;
+    }
+  }
+  // Section header
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 1.5rem 0 1rem;
+
+    ion-icon {
+      font-size: 1.25rem;
+      color: var(--ion-color-primary);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+  }
+  // Filter segment
+  .filter-segment {
+    margin-bottom: 1rem;
+    --background: var(--ion-color-light);
+    border-radius: 10px;
+
+    ion-segment-button {
+      --indicator-color: var(--ion-color-primary);
+      --color-checked: var(--ion-color-primary);
+      min-height: 40px;
+      font-size: 0.85rem;
+
+      ion-label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+
+        ion-badge {
+          font-size: 0.7rem;
+          padding: 2px 5px;
+          border-radius: 8px;
+        }
+      }
+    }
+  }
+  // Loading and error states
+  .loading-state, .error-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 150px;
+    text-align: center;
+
+    ion-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+  }
+  // Empty states
+  .empty-state, .empty-bookings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    text-align: center;
+    padding: 2rem;
+
+    .empty-icon, ion-icon {
+      font-size: 3.5rem;
+      color: var(--ion-color-medium);
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: 1.125rem;
+      margin: 0 0 0.5rem;
+    }
+
+    p {
+      color: var(--ion-color-medium);
+      margin: 0;
+    }
+  }
+  // Bookings list
+  .bookings-list {
+    background: transparent;
+    padding: 0;
+  }
+  // Booking card
+  .booking-card {
+    margin: 0 0 0.75rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    .booking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .booking-datetime {
+      .booking-date {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .booking-time {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--ion-color-primary);
+      }
+    }
+
+    .booking-detail {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+
+      ion-icon {
+        font-size: 1.1rem;
+        color: var(--ion-color-medium);
+      }
+
+      &.special-requests {
+        background: var(--ion-color-light);
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        align-items: flex-start;
+
+        span {
+          font-size: 0.85rem;
+          color: var(--ion-color-medium);
+        }
+      }
+    }
+
+    .booking-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--ion-color-light-shade);
+
+      ion-button {
+        --border-radius: 8px;
+        text-transform: none;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .bottom-spacer {
+    height: 100px;
+  }
+}
+
+// Dark mode
+:host-context(.dark) {
+  .stat-card, .booking-card, .restaurant-header-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .filter-segment {
+    --background: var(--ion-color-dark);
+  }
+
+  .booking-detail.special-requests {
+    background: rgba(var(--ion-color-light-rgb), 0.1);
+  }
+}

@@ -11,7 +11,7 @@ import { SharedModule } from '../../shared/shared.module';
 @NgModule({
   imports: [
     CommonModule,
-    FormsModule,
+    FormsModule, // Required for ngModel binding in booking form
     IonicModule,
     RestaurantPageRoutingModule,
     SharedModule
@@ -19,4 +19,4 @@ import { SharedModule } from '../../shared/shared.module';
   declarations: [RestaurantPage, MapModalComponent, MenuModalComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class RestaurantPageModule {}
+export class RestaurantPageModule { }
