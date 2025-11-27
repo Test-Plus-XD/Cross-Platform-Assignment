@@ -1,19 +1,36 @@
 // SharedModule exports header and footer components for use across the app
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
 import { MenuComponent } from './menu/menu.component';
 import { TabComponent } from './tab/tab.component';
+import { ChatButtonComponent } from './chat-button/chat-button.component';
+import { GeminiButtonComponent } from './gemini-button/gemini-button.component';
 
 @NgModule({
   // Declare the header and footer components in this module
-  declarations: [HeaderComponent, FooterComponent, MenuComponent, TabComponent],
+  declarations: [
+    HeaderComponent,
+    FooterComponent,
+    MenuComponent,
+    TabComponent,
+    ChatButtonComponent,
+    GeminiButtonComponent
+  ],
   // Import common building blocks and Ionic/Router for routerLink support
-  imports: [CommonModule, IonicModule, RouterModule],
+  imports: [CommonModule, FormsModule, IonicModule, RouterModule],
   // Export so AppModule (or any feature module) can use <app-shared-header> / <app-shared-tab> and menu/tab
-  exports: [HeaderComponent, FooterComponent, MenuComponent, TabComponent]
+  exports: [
+    HeaderComponent,
+    FooterComponent,
+    MenuComponent,
+    TabComponent,
+    ChatButtonComponent,
+    GeminiButtonComponent
+  ]
 })
 export class SharedModule { }

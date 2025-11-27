@@ -59,17 +59,18 @@ export class UserService {
 
   // Get HTTP headers with authentication
   private getHeaders(): HttpHeaders {
-    const headers: { [key: string]: string } = {
-      'Content-Type': 'application/json'
+    const headers: { [key: string]: string} = {
+      'Content-Type': 'application/json',
+      'x-api-passcode': 'PourRice'
     };
-    
+
     if (this.authToken) {
       headers['Authorization'] = `Bearer ${this.authToken}`;
       console.log('UserService: Headers prepared with auth token');
     } else {
       console.warn('UserService: No auth token available for request headers');
     }
-    
+
     return new HttpHeaders(headers);
   }
 

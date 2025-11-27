@@ -1774,3 +1774,239 @@ npx cap sync             # Sync to native
 - v1.0 (2025-11-26): Initial comprehensive documentation
 
 For questions or updates to this guide, please file an issue in the GitHub repository.
+
+---
+
+## Recent Updates (2025-11-27)
+
+### New Features Added
+
+#### 1. Real-Time Chat Integration (Socket.IO)
+**ChatService** (`src/app/services/chat.service.ts`)
+- Real-time bidirectional communication using Socket.IO
+- Connects to backend Socket.IO server
+- Features:
+  - User registration and presence tracking
+  - Room-based messaging (join/leave rooms)
+  - Private direct messaging
+  - Typing indicators
+  - Online/offline status tracking
+  - Auto-reconnection with exponential backoff
+
+**ChatButton Component** (`src/app/shared/chat-button/`)
+- Floating chat button on restaurant pages
+- Allows diners to communicate with restaurant owners
+- Features:
+  - Real-time message display
+  - Typing indicators
+  - Unread message badges
+  - Responsive design (mobile/desktop)
+  - Bilingual support (EN/TC)
+- Usage: Automatically appears on restaurant detail pages
+
+#### 2. AI Assistant Integration (Google Gemini)
+**GeminiService** (`src/app/services/gemini.service.ts`)
+- AI-powered assistant using Google Gemini API
+- Endpoints used:
+  - `/API/Gemini/chat` - Conversational AI with history
+  - `/API/Gemini/generate` - Text generation
+  - `/API/Gemini/restaurant-description` - Restaurant content generation
+- Features:
+  - Conversation history management
+  - Context-aware responses
+  - Helper methods for common queries
+
+**GeminiButton Component** (`src/app/shared/gemini-button/`)
+- Global AI assistant accessible from all pages (except login)
+- Auto-dimming after 3 seconds of inactivity
+- Features:
+  - Conversational chat interface
+  - Quick suggestion chips
+  - Chat history persistence
+  - Loading states with typing indicators
+  - Modern gradient UI (purple-blue theme)
+  - Bilingual support (EN/TC)
+- Usage: Appears as floating button on all pages after user logs in
+
+#### 3. Enhanced Data Service
+**DataService** (`src/app/services/data.service.ts`)
+- Centralized HTTP client wrapper
+- Automatically attaches API passcode (`x-api-passcode: PourRice`)
+- Automatically attaches Firebase authentication token when required
+- Methods: `get()`, `post()`, `put()`, `delete()`
+- Comprehensive error handling with user-friendly messages
+- All existing services updated to include API passcode header
+
+#### 4. UI/UX Modernization
+**Global Styles** (`src/style/global.scss`)
+- Modern card styling with hover effects
+- Rounded corners (16px radius) for cards, 12px for buttons
+- Enhanced button styles with shadows
+- Improved form input styling
+- Modern badge and chip designs
+- Gradient toolbar backgrounds
+- Smooth transitions for all interactive elements
+- Better typography (improved font weights and letter spacing)
+- Enhanced focus states for accessibility
+- Responsive hover effects
+
+### Updated Services
+
+All HTTP services now include the required `x-api-passcode` header:
+- **RestaurantsService**: Added API passcode to all requests
+- **BookingService**: API passcode header standardized
+- **UserService**: Added API passcode to all requests
+
+### Dependencies Added
+
+**socket.io-client** (latest version)
+- Required for real-time chat functionality
+- Installed with `npm install socket.io-client --legacy-peer-deps`
+
+### Architecture Updates
+
+#### Shared Module
+**SharedModule** (`src/app/shared/shared.module.ts`)
+- Now exports ChatButtonComponent
+- Now exports GeminiButtonComponent
+- Imports FormsModule for ngModel support in new components
+
+#### Component Placement
+- **GeminiButton**: Added to `app.component.html` (global availability)
+- **ChatButton**: Added to restaurant detail page (`restaurant.page.html`)
+
+### Socket.IO Integration Guide
+
+#### Client Events (Emit)
+```typescript
+socket.emit('register', { userId, displayName });
+socket.emit('join-room', { roomId, userId });
+socket.emit('leave-room', { roomId, userId });
+socket.emit('send-message', { roomId, userId, displayName, message });
+socket.emit('private-message', { toUserId, fromUserId, fromDisplayName, message });
+socket.emit('typing', { roomId, userId, displayName, isTyping });
+```
+
+#### Server Events (Listen)
+```typescript
+socket.on('registered', (data) => { /* { success, userId, socketId } */ });
+socket.on('joined-room', (data) => { /* { roomId, success } */ });
+socket.on('new-message', (message) => { /* ChatMessage */ });
+socket.on('private-message', (message) => { /* Private message */ });
+socket.on('user-typing', (data) => { /* TypingIndicator */ });
+socket.on('user-online', (data) => { /* { userId, displayName, timestamp } */ });
+socket.on('user-offline', (data) => { /* { userId, displayName, lastSeen } */ });
+```
+
+### Usage Examples
+
+#### Using ChatService
+```typescript
+// Inject service
+constructor(private chatService: ChatService) {}
+
+// Join a room
+this.chatService.joinRoom('restaurant-ABC123');
+
+// Send message
+this.chatService.sendMessage('restaurant-ABC123', 'Hello!');
+
+// Listen for messages
+this.chatService.messages$.subscribe(message => {
+  console.log('New message:', message);
+});
+
+// Send typing indicator
+this.chatService.sendTypingIndicator('restaurant-ABC123', true);
+```
+
+#### Using GeminiService
+```typescript
+// Inject service
+constructor(private geminiService: GeminiService) {}
+
+// Simple chat
+this.geminiService.chat('What are your opening hours?').subscribe(response => {
+  console.log('AI Response:', response);
+});
+
+// Restaurant-specific question
+this.geminiService.askAboutRestaurant(
+  'What are the popular dishes?',
+  'Dragon Palace'
+).subscribe(response => {
+  console.log('Response:', response);
+});
+
+// Get recommendations
+this.geminiService.getDiningRecommendation({
+  cuisine: 'Italian',
+  location: 'Central',
+  occasion: 'romantic dinner'
+}).subscribe(response => {
+  console.log('Recommendations:', response);
+});
+```
+
+### API Passcode Configuration
+
+**All API requests now require the passcode header:**
+```http
+x-api-passcode: PourRice
+```
+
+This is automatically handled by:
+- DataService (centralized)
+- RestaurantsService (direct implementation)
+- BookingService (direct implementation)
+- UserService (direct implementation)
+
+### Styling Guidelines
+
+#### Modern Component Patterns
+```scss
+// Card with hover effect
+.card {
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Button with gradient
+.gradient-button {
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  border-radius: 12px;
+  color: white;
+  font-weight: 600;
+}
+```
+
+### Known Considerations
+
+1. **Socket.IO Server**: The backend Socket.IO server must be running for chat functionality to work
+2. **Gemini API**: Requires valid Google Gemini API key configured in backend
+3. **API Passcode**: All API endpoints require the `x-api-passcode: PourRice` header
+4. **Authentication**: Chat and Gemini services require user to be logged in
+5. **Mobile**: Both chat and Gemini buttons are fully responsive and mobile-friendly
+
+### Future Enhancements
+
+- Persist chat messages to Firestore
+- Add file/image sharing in chat
+- Add voice input for Gemini assistant
+- Add chat notifications
+- Add message read receipts
+- Add chat room persistence across sessions
+
+---
+
+**Document Version:** 1.2
+**Last Updated:** 2025-11-27
+**Changes:** Added Socket.IO chat integration, Google Gemini AI assistant, enhanced DataService, UI/UX modernization
+**Previous Version:** 1.1 (2025-11-27) - Updated loading states to use Eclipse.gif
+

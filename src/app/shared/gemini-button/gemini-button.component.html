@@ -1,0 +1,108 @@
+<!-- Floating AI assistant button -->
+<div
+  *ngIf="isVisible"
+  class="gemini-fab"
+  [class.dimmed]="isDimmed"
+  [class.open]="isOpen"
+  (click)="toggleChat()"
+>
+  <div class="gemini-icon">
+    <ion-icon name="sparkles"></ion-icon>
+  </div>
+  <span class="gemini-label" *ngIf="!isDimmed">AI</span>
+</div>
+
+<!-- Chat window -->
+<div *ngIf="isVisible" class="gemini-window" [class.open]="isOpen">
+  <!-- Chat header -->
+  <div class="gemini-header">
+    <div class="gemini-header-content">
+      <div class="gemini-avatar">
+        <ion-icon name="sparkles"></ion-icon>
+      </div>
+      <div class="gemini-header-text">
+        <h3 *ngIf="lang$ | async as lang">
+          {{ lang === 'TC' ? 'PourRice AI 助理' : 'PourRice AI Assistant' }}
+        </h3>
+        <p *ngIf="lang$ | async as lang">
+          {{ lang === 'TC' ? '隨時為您服務' : 'Always here to help' }}
+        </p>
+      </div>
+    </div>
+    <div class="gemini-header-actions">
+      <ion-icon name="trash-outline" class="action-icon" (click)="clearChat(); $event.stopPropagation()"></ion-icon>
+      <ion-icon name="close" class="action-icon" (click)="toggleChat(); $event.stopPropagation()"></ion-icon>
+    </div>
+  </div>
+
+  <!-- Quick suggestions (show if no messages from user yet) -->
+  <div *ngIf="messages.length <= 1" class="quick-suggestions">
+    <p class="suggestions-title" *ngIf="lang$ | async as lang">
+      {{ lang === 'TC' ? '快速問題：' : 'Quick questions:' }}
+    </p>
+    <button
+      *ngFor="let suggestion of suggestions"
+      class="suggestion-chip"
+      (click)="sendSuggestion(suggestion)"
+    >
+      {{ (lang$ | async) === 'TC' ? suggestion.tc : suggestion.en }}
+    </button>
+  </div>
+
+  <!-- Chat messages -->
+  <div class="gemini-messages">
+    <div
+      *ngFor="let message of messages"
+      class="message"
+      [class.user]="message.role === 'user'"
+      [class.assistant]="message.role === 'assistant'"
+    >
+      <div class="message-avatar" *ngIf="message.role === 'assistant'">
+        <ion-icon name="sparkles"></ion-icon>
+      </div>
+      <div class="message-content">
+        <p class="message-text">{{ message.content }}</p>
+        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+      </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div *ngIf="isLoading" class="message assistant">
+      <div class="message-avatar">
+        <ion-icon name="sparkles"></ion-icon>
+      </div>
+      <div class="message-content loading">
+        <div class="typing-indicator">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat input -->
+  <div class="gemini-input">
+    <textarea
+      [(ngModel)]="newMessage"
+      (keydown.enter)="$event.preventDefault(); sendMessage()"
+      [placeholder]="(lang$ | async) === 'TC' ? '詢問任何問題...' : 'Ask me anything...'"
+      rows="1"
+      [disabled]="isLoading"
+    ></textarea>
+    <button
+      (click)="sendMessage()"
+      [disabled]="!newMessage.trim() || isLoading"
+      class="send-button"
+    >
+      <ion-icon name="send"></ion-icon>
+    </button>
+  </div>
+
+  <!-- Powered by notice -->
+  <div class="powered-by">
+    <span *ngIf="lang$ | async as lang">
+      {{ lang === 'TC' ? '由 Google Gemini 驅動' : 'Powered by Google Gemini' }}
+    </span>
+  </div>
+</div>

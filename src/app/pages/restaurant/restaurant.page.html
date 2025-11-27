@@ -248,4 +248,11 @@
   <!-- Loading and error states -->
   <ion-loading [isOpen]="isLoading" message="Loading..." spinner="circular" class="custom-loading"></ion-loading>
   <ion-toast *ngIf="errorMessage" [message]="errorMessage" duration="3000"></ion-toast>
+
+  <!-- Chat Button for Restaurant Owner Communication -->
+  <app-chat-button
+    *ngIf="restaurant"
+    [restaurantId]="restaurant.id"
+    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
+  ></app-chat-button>
 </ion-content>
