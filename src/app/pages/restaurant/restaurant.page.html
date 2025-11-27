@@ -1,258 +1,396 @@
-<!-- Restaurant detail page: 6 equal cells -->
+<!-- Modern responsive restaurant detail page with comprehensive information display -->
 <ion-header translucent>
-  <br>
-  <ion-toolbar style="position: sticky; padding-top: 20px;">
+  <ion-toolbar>
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/search"></ion-back-button>
     </ion-buttons>
     <ion-title>
-      {{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC ?? '-') : (restaurant?.Name_EN ?? '-') }}
+      {{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN || '—') : (restaurant?.Name_EN || restaurant?.Name_TC || '—') }}
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content fullscreen>
-  <!-- Hero image and centred name -->
-  <ion-grid class="hero-grid ion-no-padding">
-    <ion-row class="image-row">
-      <ion-col size="12" class="image-col">
-        <img [src]="imageUrlOrPlaceholder()"
-             alt="{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC ?? '-') : (restaurant?.Name_EN ?? '-') }}"
-             class="restaurant-image" />
-        <div class="name-overlay">
-          <h1>{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC ?? '-') : (restaurant?.Name_EN ?? '-') }}</h1>
-          <!-- Distance badge shown on hero image -->
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+    <p>{{ (lang$ | async) === 'TC' ? '載入中...' : 'Loading...' }}</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-container" *ngIf="!isLoading && errorMessage">
+    <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
+    <h2>{{ errorMessage }}</h2>
+    <ion-button fill="outline" (click)="ngAfterViewInit()">
+      <ion-icon slot="start" name="refresh-outline"></ion-icon>
+      {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
+    </ion-button>
+  </div>
+
+  <!-- Restaurant Content -->
+  <div class="restaurant-container" *ngIf="!isLoading && !errorMessage && restaurant">
+    <!-- Hero Section with Image -->
+    <div class="hero-section">
+      <img [src]="imageUrlOrPlaceholder()"
+           [alt]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
+           class="hero-image" />
+      <div class="hero-overlay">
+        <h1 class="restaurant-name">
+          {{ (lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '—') : (restaurant.Name_EN || restaurant.Name_TC || '—') }}
+        </h1>
+        <div class="hero-badges">
           <ion-badge *ngIf="distanceResult" [color]="getDistanceColour()" class="distance-badge">
             <ion-icon name="location-outline"></ion-icon>
             {{ distanceResult.displayText }}
           </ion-badge>
+          <ion-badge *ngIf="reviewStats && reviewStats.totalReviews > 0" [color]="getRatingColour(reviewStats.averageRating)" class="rating-badge">
+            <ion-icon name="star"></ion-icon>
+            {{ reviewStats.averageRating.toFixed(1) }} ({{ reviewStats.totalReviews }})
+          </ion-badge>
         </div>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+      </div>
+    </div>
 
-  <!-- Info grid: Six equal cells (responsive) -->
-  <ion-grid class="info-grid ion-no-padding">
-    <ion-row class="cells-row">
-      <!-- 1 Information: Address, District, Opening Hours, Seats -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="information-circle-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '資訊' : 'Information' }}
+    <!-- Quick Info Bar -->
+    <div class="quick-info-bar">
+      <div class="info-item">
+        <ion-icon name="location-outline"></ion-icon>
+        <div class="info-text">
+          <span class="label">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</span>
+          <span class="value">{{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '—') : (restaurant.District_EN || restaurant.District_TC || '—') }}</span>
         </div>
-        <div class="cell-content small">
-          <div class="muted">{{ (lang$ | async) === 'TC' ? '地址' : 'Address' }}</div>
-          <div>{{ (lang$ | async) === 'TC' ? (restaurant?.Address_TC ?? '-') : (restaurant?.Address_EN ?? '-') }}</div>
-          <div class="muted">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</div>
-          <div>{{ (lang$ | async) === 'TC' ? (restaurant?.District_TC ?? '-') : (restaurant?.District_EN ?? '-') }}</div>
+      </div>
+      <div class="info-item">
+        <ion-icon name="people-outline"></ion-icon>
+        <div class="info-text">
+          <span class="label">{{ (lang$ | async) === 'TC' ? '座位' : 'Seats' }}</span>
+          <span class="value">{{ restaurant.Seats || '—' }}</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <ion-icon name="time-outline"></ion-icon>
+        <div class="info-text">
+          <span class="label">{{ (lang$ | async) === 'TC' ? '營業中' : 'Open' }}</span>
+          <span class="value">{{ (lang$ | async) === 'TC' ? '查看時間' : 'View Hours' }}</span>
+        </div>
+      </div>
+    </div>
 
-          <div class="mt-1 font-medium">{{ (lang$ | async) === 'TC' ? '開放時間' : 'Opening Hours' }}</div>
-          <div *ngIf="restaurant?.Opening_Hours; else noHours">
-            <div *ngFor="let pair of (restaurant?.Opening_Hours | keyvalue)">
-              {{ pair.key }}: {{ pair.value ?? '-' }}
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+      <!-- Left Column: Details & Map -->
+      <div class="left-column">
+        <!-- Address Card -->
+        <ion-card class="info-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="location-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '地址' : 'Address' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p class="address-text">
+              {{ (lang$ | async) === 'TC' ? (restaurant.Address_TC || restaurant.Address_EN || '—') : (restaurant.Address_EN || restaurant.Address_TC || '—') }}
+            </p>
+            <a *ngIf="hasCoordinates()"
+               target="_blank"
+               rel="noopener noreferrer"
+               [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant.Latitude + ',' + restaurant.Longitude"
+               class="map-link">
+              <ion-icon name="navigate-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '在 Google 地圖開啟' : 'Open in Google Maps' }}
+            </a>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Map Card -->
+        <ion-card class="map-card" *ngIf="hasCoordinates()">
+          <ion-card-content class="map-card-content">
+            <div id="restaurant-map"
+                 class="map-container"
+                 (dblclick)="openMapModal()"
+                 (touchend)="onMapTouchEnd()"></div>
+            <p class="map-hint">{{ (lang$ | async) === 'TC' ? '雙擊查看大圖' : 'Double-click for fullscreen' }}</p>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Opening Hours Card -->
+        <ion-card class="info-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="time-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '營業時間' : 'Opening Hours' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div *ngIf="restaurant.Opening_Hours; else noHours" class="hours-list">
+              <div *ngFor="let pair of (restaurant.Opening_Hours | keyvalue)" class="hours-item">
+                <span class="day">{{ pair.key }}</span>
+                <span class="time">{{ pair.value || '—' }}</span>
+              </div>
             </div>
-          </div>
-          <ng-template #noHours>-</ng-template>
+            <ng-template #noHours>
+              <p class="no-data">{{ (lang$ | async) === 'TC' ? '未提供營業時間' : 'Hours not available' }}</p>
+            </ng-template>
+          </ion-card-content>
+        </ion-card>
 
-          <div class="mt-1 font-medium">{{ (lang$ | async) === 'TC' ? '座位' : 'Seats' }}</div>
-          <div>{{ restaurant?.Seats ?? '-' }}</div>
-        </div>
-      </ion-col>
-
-      <!-- 2 Map: double-click to open fullscreen -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="map-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '地圖' : 'Map' }}
-        </div>
-        <div class="cell-content">
-          <div *ngIf="hasCoordinates(); else coordsOnly">
-            <div id="restaurant-map" class="map-container" (dblclick)="openMapModal()" (touchend)="onMapTouchEnd()" tabindex="0" role="button" aria-label="Open map fullscreen"></div>
-            <div class="muted small mt-1">
-              <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
-                 [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant?.Latitude + ',' + restaurant?.Longitude">
-                {{ (lang$ | async) === 'TC' ? '在 Google 地圖開啟' : 'Open in Google Maps' }}
-              </a>
+        <!-- Contact Card -->
+        <ion-card class="info-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="call-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '聯絡方式' : 'Contact' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="contact-list">
+              <div class="contact-item" *ngIf="restaurant.Contacts?.Phone">
+                <ion-icon name="call-outline"></ion-icon>
+                <a *ngIf="restaurant?.Contacts?.Phone as phone" [href]="'tel:' + phone">{{ phone }}</a>
+              </div>
+              <div class="contact-item" *ngIf="restaurant.Contacts?.Email">
+                <ion-icon name="mail-outline"></ion-icon>
+                <a *ngIf="restaurant?.Contacts?.Email as email" [href]="'mailto:' + email">{{ email }}</a>
+              </div>
+              <div class="contact-item" *ngIf="restaurant.Contacts?.Website">
+                <ion-icon name="globe-outline"></ion-icon>
+                <a *ngIf="restaurant?.Contacts?.Website as website" [href]="website" target="_blank" rel="noopener noreferrer">{{ (lang$ | async) === 'TC' ? '網站' : 'Website' }}</a>
+              </div>
             </div>
-            <div class="hint small muted">Double-click to view fullscreen</div>
-          </div>
-          <ng-template #coordsOnly>
-            <div class="muted small">
-              {{ restaurant ? (restaurant.Latitude != null ? restaurant.Latitude : '-') : '-' }},
-              {{ restaurant ? (restaurant.Longitude != null ? restaurant.Longitude : '-') : '-' }}
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Keywords Card -->
+        <ion-card class="info-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="pricetag-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '分類' : 'Categories' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="keywords-container">
+              <ion-chip *ngFor="let keyword of ((lang$ | async) === 'TC' ? (restaurant.Keyword_TC || []) : (restaurant.Keyword_EN || []))"
+                        class="keyword-chip">
+                {{ keyword }}
+              </ion-chip>
+              <p *ngIf="!(restaurant.Keyword_EN?.length) && !(restaurant.Keyword_TC?.length)" class="no-data">
+                {{ (lang$ | async) === 'TC' ? '未提供分類' : 'No categories available' }}
+              </p>
             </div>
-          </ng-template>
-        </div>
-      </ion-col>
+          </ion-card-content>
+        </ion-card>
 
-      <!-- 3 Booking: date + time + guests + special requests -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="calendar-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '預約' : 'Booking' }}
-        </div>
-        <div class="cell-content small">
-          <div class="booking-stack" [class.dark]="(isDark$ | async)" [class.force-calendar-light-in-dark]="(isDark$ | async)">
-            <!-- Date and time picker -->
-            <ion-datetime display-format="YYYY-MM-DD HH:mm"
-                          picker-format="YYYY-MM-DD HH:mm"
-                          presentation="date-time"
-                          [(ngModel)]="bookingDateTime"
-                          [color]="(isDark$ | async) ? 'dark' : 'primary'"
-                          class="booking-datetime"
-                          [min]="minBookingDate"
-                          aria-label="Booking date and time">
-            </ion-datetime>
+      </div>
 
-            <!-- Guest number selection -->
-            <div class="guest-selection mt-1">
+      <!-- Right Column: Menu & Booking -->
+      <div class="right-column">
+
+        <!-- Booking Card -->
+        <ion-card class="booking-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '預約' : 'Make a Reservation' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="booking-form">
+              <!-- Date Time Picker -->
+              <ion-datetime display-format="YYYY-MM-DD HH:mm"
+                            presentation="date-time"
+                            [(ngModel)]="bookingDateTime"
+                            [min]="minBookingDate"
+                            class="booking-datetime">
+              </ion-datetime>
+
+              <!-- Guest Selection -->
               <ion-item lines="none" class="guest-item">
                 <ion-icon name="people-outline" slot="start"></ion-icon>
                 <ion-label>{{ (lang$ | async) === 'TC' ? '人數' : 'Guests' }}</ion-label>
-                <ion-select [(ngModel)]="numberOfGuests" interface="popover" class="guest-select">
+                <ion-select [(ngModel)]="numberOfGuests" interface="popover">
                   <ion-select-option *ngFor="let num of guestOptions" [value]="num">
-                    {{ num }} {{ (lang$ | async) === 'TC' ? '位' : (num === 1 ? 'guest' : 'guests') }}
+                    {{ num }}
                   </ion-select-option>
                 </ion-select>
               </ion-item>
-            </div>
 
-            <!-- Special requests input -->
-            <div class="special-requests mt-1">
+              <!-- Special Requests -->
               <ion-item lines="none" class="requests-item">
-                <ion-icon name="chatbubble-outline" slot="start"></ion-icon>
                 <ion-textarea [(ngModel)]="specialRequests"
                               [placeholder]="(lang$ | async) === 'TC' ? '特別要求（可選）' : 'Special requests (optional)'"
-                              rows="2"
-                              class="requests-textarea">
+                              rows="3">
                 </ion-textarea>
               </ion-item>
-            </div>
 
-            <!-- Booking actions -->
-            <div class="booking-actions mt-1">
-              <div class="datetime-row">
-                <span class="muted small">{{ bookingDateTime ? bookingDateTime : ((lang$ | async) === 'TC' ? '請選擇日期時間' : 'Select date & time') }}</span>
-                <ion-button fill="solid" size="medium" style="margin-right: 2vw;" (click)="onBook()" [disabled]="!bookingDateTime || isBookingLoading">
-                  <ion-spinner name="crescent" *ngIf="isBookingLoading" slot="start"></ion-spinner>
-                  <ion-icon slot="start" name="calendar-number-outline" *ngIf="!isBookingLoading"></ion-icon>
-                  {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm' }}
-                </ion-button>
+              <!-- Booking Button -->
+              <ion-button expand="block"
+                          (click)="onBook()"
+                          [disabled]="!bookingDateTime || isBookingLoading"
+                          class="booking-button">
+                <ion-spinner *ngIf="isBookingLoading" slot="start"></ion-spinner>
+                <ion-icon *ngIf="!isBookingLoading" slot="start" name="calendar-number-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm Reservation' }}
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+
+        <!-- Menu Card -->
+        <ion-card class="menu-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="restaurant-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '餐牌' : 'Menu' }}
+            </ion-card-title>
+            <ion-button fill="clear" size="small" (click)="openMenuModal()" *ngIf="menuItems.length > 0">
+              <ion-icon slot="icon-only" name="expand-outline"></ion-icon>
+            </ion-button>
+          </ion-card-header>
+          <ion-card-content>
+            <div *ngIf="isMenuLoading" class="menu-loading">
+              <img src="assets/icon/Eclipse.gif" alt="Loading" class="small-spinner">
+            </div>
+            <div *ngIf="!isMenuLoading && menuItems.length > 0" class="menu-list">
+              <div *ngFor="let item of menuItems.slice(0, 5)" class="menu-item" (dblclick)="openMenuModal()" (touchend)="onMenuItemTouchEnd()">
+                <div class="menu-item-info">
+                  <h4>{{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC || '—') }}</h4>
+                  <p *ngIf="item.Description_EN || item.Description_TC">
+                    {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') : (item.Description_EN || item.Description_TC || '') }}
+                  </p>
+                </div>
+                <div class="menu-item-price">
+                  <span *ngIf="item.Price">${{ item.Price }}</span>
+                  <span *ngIf="!item.Price">—</span>
+                </div>
+              </div>
+              <p *ngIf="menuItems.length > 5" class="view-all-hint">
+                {{ (lang$ | async) === 'TC' ? '雙擊查看完整餐牌' : 'Double-click to view full menu' }}
+              </p>
+            </div>
+            <p *ngIf="!isMenuLoading && menuItems.length === 0" class="no-data">
+              {{ (lang$ | async) === 'TC' ? '未提供餐牌' : 'Menu not available' }}
+            </p>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Reviews Section (Full Width) -->
+    <div class="reviews-section">
+      <ion-card class="reviews-card">
+        <ion-card-header>
+          <ion-card-title>
+            <ion-icon name="star-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '評論' : 'Reviews' }}
+            <span *ngIf="reviewStats" class="review-count">({{ reviewStats.totalReviews }})</span>
+          </ion-card-title>
+          <ion-button fill="clear" size="small" (click)="toggleReviewForm()" *ngIf="!isWritingReview">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '撰寫評論' : 'Write Review' }}
+          </ion-button>
+        </ion-card-header>
+
+        <!-- Review Stats -->
+        <ion-card-content *ngIf="reviewStats && reviewStats.totalReviews > 0" class="review-stats">
+          <div class="stats-summary">
+            <div class="average-rating">
+              <h2>{{ reviewStats.averageRating.toFixed(1) }}</h2>
+              <div class="stars">{{ formatRatingStars(reviewStats.averageRating) }}</div>
+              <p>{{ reviewStats.totalReviews }} {{ (lang$ | async) === 'TC' ? '則評論' : 'reviews' }}</p>
+            </div>
+            <div class="rating-distribution">
+              <div *ngFor="let star of [5, 4, 3, 2, 1]" class="distribution-row">
+                <span class="star-label">{{ star }} <ion-icon name="star"></ion-icon></span>
+                <div class="bar-container">
+                  <div class="bar" [style.width.%]="GetRatingPercentage(star)"></div>
+                </div>
+                <span class="count">{{ GetRatingCount(star) }}</span>
               </div>
             </div>
           </div>
-        </div>
-      </ion-col>
+        </ion-card-content>
 
-      <!-- 4 Contacts: use icons for phone, email, website -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="person-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '聯絡方式' : 'Contacts' }}
-        </div>
-        <div class="cell-content small">
-          <div>
-            <ion-icon name="call-sharp"></ion-icon>
-            &nbsp;{{ restaurant?.Contacts?.Phone ?? '-' }}
-          </div>
-          <div>
-            <ion-icon name="mail-outline"></ion-icon>
-            &nbsp;{{ restaurant?.Contacts?.Email ?? '-' }}
-          </div>
-          <div *ngIf="restaurant?.Contacts?.Website; else noWebsiteSmall">
-            <ion-icon name="globe-outline"></ion-icon>
-            &nbsp;<a target="_blank" rel="noopener noreferrer" [href]="restaurant?.Contacts?.Website">{{ restaurant?.Contacts?.Website }}</a>
-          </div>
-          <ng-template #noWebsiteSmall>-</ng-template>
-        </div>
-      </ion-col>
+        <!-- Write Review Form -->
+        <ion-card-content *ngIf="isWritingReview" class="review-form">
+          <h3>{{ (lang$ | async) === 'TC' ? '撰寫評論' : 'Write Your Review' }}</h3>
 
-      <!-- 5 Keywords -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="pricetag-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '關鍵字' : 'Keywords' }}
-        </div>
-        <div class="cell-content small">
-          <ng-container *ngIf="(lang$ | async) === 'TC'; else enList">
-            <div *ngFor="let k of (restaurant?.Keyword_TC ?? [])">{{ k }}</div>
-            <div *ngIf="!(restaurant?.Keyword_TC?.length) && !(restaurant?.Keyword_EN?.length)">-</div>
-          </ng-container>
-          <ng-template #enList>
-            <div *ngFor="let k of (restaurant?.Keyword_EN ?? [])">{{ k }}</div>
-            <div *ngIf="!(restaurant?.Keyword_EN?.length) && !(restaurant?.Keyword_TC?.length)">-</div>
-          </ng-template>
-        </div>
-      </ion-col>
-
-      <!-- 6 Menu: double-click to open fullscreen -->
-      <ion-col class="cell no-border" size="12" size-md="4">
-        <div class="cell-title">
-          <ion-icon name="restaurant-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '餐牌' : 'Menu' }}
-        </div>
-        <div class="cell-content small">
-          <div *ngIf="(restaurant?.Menu ?? []).length > 0; else noMenuSmall">
-            <ion-list lines="none">
-              <ion-item *ngFor="let menuItem of (restaurant?.Menu ?? [])" (dblclick)="openMenuModal()" (touchend)="onMenuItemTouchEnd()">
-                <ion-label>
-                  <div class="font-medium">
-                    {{ (lang$ | async) === 'TC' ? (menuItem?.Name_TC ?? menuItem?.Name_EN ?? '-') : (menuItem?.Name_EN ?? menuItem?.Name_TC ?? '-') }}
-                  </div>
-                  <div class="muted small">{{ (menuItem?.Price != null) ? ('$' + menuItem.Price) : '-' }}</div>
-                </ion-label>
-              </ion-item>
-            </ion-list>
-            <div class="hint small muted">Double-click any item to view menu fullscreen</div>
+          <!-- Rating Selector -->
+          <div class="rating-selector">
+            <ion-label>{{ (lang$ | async) === 'TC' ? '評分' : 'Rating' }}</ion-label>
+            <div class="star-buttons">
+              <ion-button *ngFor="let star of [1, 2, 3, 4, 5]"
+                          fill="clear"
+                          [class.selected]="newReviewRating >= star"
+                          (click)="newReviewRating = star">
+                <ion-icon [name]="newReviewRating >= star ? 'star' : 'star-outline'"></ion-icon>
+              </ion-button>
+            </div>
           </div>
-          <ng-template #noMenuSmall>-</ng-template>
-        </div>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
 
-  <!-- Reserve review spot below -->
-  <ion-grid class="review-grid ion-no-padding">
-    <ion-row>
-      <ion-col size="12">
-        <div class="section-header">
-          <ion-icon name="create-outline"></ion-icon>
-          &nbsp;{{ (lang$ | async) === 'TC' ? '撰寫食評' : 'Write a Review' }}
-        </div>
-        <div class="review-spot">
-          <div class="small muted">{{ (lang$ | async) === 'TC' ? '預留一個空位以稍後撰寫食評。' : 'Reserve a spot to write a review later.' }}</div>
-          <div class="mt-1">
-            <ion-button fill="outline" size="small" (click)="reserveReviewSpot()">
-              <ion-icon slot="start" name="timer-outline"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? '預留' : 'Reserve' }}
+          <!-- Comment Input -->
+          <ion-item lines="none">
+            <ion-textarea [(ngModel)]="newReviewComment"
+                          [placeholder]="(lang$ | async) === 'TC' ? '分享您的用餐體驗...' : 'Share your experience...'"
+                          rows="4">
+            </ion-textarea>
+          </ion-item>
+
+          <!-- Action Buttons -->
+          <div class="form-actions">
+            <ion-button fill="outline" (click)="toggleReviewForm()">
+              {{ (lang$ | async) === 'TC' ? '取消' : 'Cancel' }}
             </ion-button>
-            <ion-button fill="solid" size="small" (click)="startReviewNow()">
-              <ion-icon slot="start" name="chatbox-ellipses-outline"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? '立即撰寫' : 'Write Now' }}
+            <ion-button (click)="submitReview()">
+              {{ (lang$ | async) === 'TC' ? '提交' : 'Submit' }}
             </ion-button>
           </div>
-        </div>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
-  <br>
-  <!-- Pull-to-refresh -->
+        </ion-card-content>
+
+        <!-- Reviews List -->
+        <ion-card-content *ngIf="!isReviewsLoading && reviews.length > 0" class="reviews-list">
+          <div *ngFor="let review of reviews" class="review-item">
+            <div class="review-header">
+              <div class="reviewer-info">
+                <ion-icon name="person-circle-outline" class="avatar-icon"></ion-icon>
+                <span class="reviewer-id">{{ review.userId.substring(0, 8) }}...</span>
+              </div>
+              <div class="review-rating" [attr.data-rating]="review.rating">
+                {{ formatRatingStars(review.rating) }}
+              </div>
+            </div>
+            <p class="review-comment" *ngIf="review.comment">{{ review.comment }}</p>
+            <p class="review-date">{{ review.dateTime | date:'mediumDate' }}</p>
+          </div>
+        </ion-card-content>
+
+        <ion-card-content *ngIf="isReviewsLoading" class="reviews-loading">
+          <img src="assets/icon/Eclipse.gif" alt="Loading" class="small-spinner">
+        </ion-card-content>
+
+        <ion-card-content *ngIf="!isReviewsLoading && reviews.length === 0 && !isWritingReview" class="no-reviews">
+          <ion-icon name="chatbox-outline" class="empty-icon"></ion-icon>
+          <p>{{ (lang$ | async) === 'TC' ? '尚無評論' : 'No reviews yet' }}</p>
+          <ion-button fill="outline" size="small" (click)="toggleReviewForm()">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '成為第一位評論者' : 'Be the first to review' }}
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Pull to Refresh -->
   <ion-refresher slot="fixed" (ionRefresh)="ngAfterViewInit()" pullFactor="0.5">
-    <ion-refresher-content
-      pullingIcon="assets/icon/Eclipse.gif"
-      refreshingSpinner="none">
+    <ion-refresher-content pullingIcon="assets/icon/Eclipse.gif"
+                           refreshingSpinner="none">
       <img src="assets/icon/Eclipse.gif" alt="Refreshing" class="refresher-spinner">
     </ion-refresher-content>
   </ion-refresher>
 
-  <!-- Loading and error states -->
-  <ion-loading [isOpen]="isLoading" message="Loading..." spinner="circular" class="custom-loading"></ion-loading>
-  <ion-toast *ngIf="errorMessage" [message]="errorMessage" duration="3000"></ion-toast>
-
-  <!-- Chat Button for Restaurant Owner Communication -->
-  <app-chat-button
-    *ngIf="restaurant"
-    [restaurantId]="restaurant.id"
-    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
-  ></app-chat-button>
+  <!-- Chat Button -->
+  <app-chat-button *ngIf="restaurant"
+                   [restaurantId]="restaurant.id"
+                   [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
 </ion-content>

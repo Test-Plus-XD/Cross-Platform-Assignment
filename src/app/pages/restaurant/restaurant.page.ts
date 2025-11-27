@@ -1,11 +1,12 @@
-// Page that renders a single restaurant detail with bilingual support
-// Integrates booking service for reservations and location service for distance calculations
+// Restaurant detail page component with modern responsive design
+// Displays comprehensive restaurant information including menu, reviews, and booking functionality
 import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
-import { Observable, Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
-import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
+import { Observable, Subject, combineLatest } from 'rxjs';
+import { take, takeUntil, tap } from 'rxjs/operators';
+import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
+import { ReviewsService, Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { AuthService } from '../../services/auth.service';
@@ -28,15 +29,22 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isDark$: Observable<boolean>;
   // Local restaurant model used by template
   restaurant: Restaurant | null = null;
+  // Menu items loaded separately from sub-collection
+  menuItems: MenuItem[] = [];
+  // Reviews for this restaurant
+  reviews: Review[] = [];
+  // Review statistics
+  reviewStats: ReviewStats | null = null;
   // Selected booking date string
   bookingDateTime: string | null = null;
-  // Number of guests for booking (default: 2)
-  numberOfGuests: number = 2;
+  // Number of guests for booking (default 1)
+  numberOfGuests: number = 1;
   // Special requests for booking
   specialRequests: string = '';
-  // Loading flag for UI
+  // Loading flags for UI
   isLoading = true;
-  // Booking loading flag
+  isMenuLoading = false;
+  isReviewsLoading = false;
   isBookingLoading = false;
   // Error message for UI
   errorMessage: string | null = null;
@@ -50,16 +58,21 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   private map: Leaflet.Map | null = null;
   // Touch tracking for double-tap detection
   private lastTapTime: number = 0;
-  private readonly doubleTapThreshold: number = 300; // milliseconds
+  private readonly doubleTapThreshold: number = 300; // Milliseconds
   // Guest number options for booking
   readonly guestOptions: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-  // Declare the property and optionally initialise it
-  readonly minBookingDate: string = '';
-
+  // Minimum booking date (current date)
+  readonly minBookingDate: string = new Date().toISOString();
+  // Review form data
+  newReviewRating: number = 5;
+  newReviewComment: string = '';
+  isWritingReview: boolean = false;
+  
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly restaurantsService: RestaurantsService,
+    private readonly reviewsService: ReviewsService,
     private readonly language: LanguageService,
     private readonly theme: ThemeService,
     private readonly authService: AuthService,
@@ -68,10 +81,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     private readonly modalController: ModalController,
     private readonly toastController: ToastController,
     private readonly alertController: AlertController
-  ) { this.isDark$ = this.theme.isDark$; }
+  ) {
+    this.isDark$ = this.theme.isDark$;
+  }
 
   ngOnInit() {
-    // Emit the event directly
+    // Emit the page title event directly
     const event = new CustomEvent('page-title', {
       detail: { Header_EN: 'Restaurant', Header_TC: '餐廳' },
       bubbles: true
@@ -82,31 +97,104 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.locationService.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
   }
 
-  // When view initialises, fetch restaurant id and load record
+  // When view initialises, fetch restaurant ID and load all data
   ngAfterViewInit(): void {
     const id = this.route.snapshot.paramMap.get('id') || '';
     if (!id) {
-      this.errorMessage = 'Missing restaurant id';
+      this.errorMessage = 'Missing restaurant ID';
       this.isLoading = false;
       return;
     }
 
+    this.loadRestaurantData(id);
+  }
+
+  /// Load all restaurant data including basic info, menu, and reviews
+  private loadRestaurantData(id: string): void {
     this.isLoading = true;
+
+    // Fetch restaurant basic information
     this.restaurantsService.getRestaurantById(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (r: Restaurant | null) => {
-        this.restaurant = r;
+      next: (restaurant: Restaurant | null) => {
+        if (!restaurant) {
+          this.errorMessage = 'Restaurant not found';
+          this.isLoading = false;
+          return;
+        }
+
+        this.restaurant = restaurant;
         this.isLoading = false;
-        // After restaurant loaded, initialises the map if coordinates exist
+
+        // After restaurant loaded, initialise the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);
+
         // Calculate distance from user's location
         this.calculateDistance();
+
+        // Load menu items from sub-collection
+        this.loadMenuItems(id);
+
+        // Load reviews
+        this.loadReviews(id);
       },
       error: (err: Error) => {
-        console.error('RestaurantPage: failed to load restaurant', err);
+        console.error('RestaurantPage: Failed to load restaurant', err);
         this.errorMessage = 'Failed to load restaurant';
         this.isLoading = false;
       }
     });
+  }
+
+  /// Load menu items for the restaurant from API sub-collection
+  private loadMenuItems(restaurantId: string): void {
+    this.isMenuLoading = true;
+    this.restaurantsService.getMenuItems(restaurantId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (items: MenuItem[]) => {
+        this.menuItems = items;
+        this.isMenuLoading = false;
+        console.log('RestaurantPage: Loaded', items.length, 'menu items');
+      },
+      error: (err: Error) => {
+        console.error('RestaurantPage: Failed to load menu items', err);
+        this.menuItems = [];
+        this.isMenuLoading = false;
+      }
+    });
+  }
+
+  /// Load reviews for the restaurant
+  private loadReviews(restaurantId: string): void {
+    this.isReviewsLoading = true;
+
+    // Load reviews and stats in parallel
+    combineLatest([
+      this.reviewsService.getReviews(restaurantId),
+      this.reviewsService.getRestaurantStats(restaurantId)
+    ]).pipe(takeUntil(this.destroy$)).subscribe({
+      next: ([reviews, stats]) => {
+        this.reviews = reviews;
+        this.reviewStats = stats;
+        this.isReviewsLoading = false;
+        console.log('RestaurantPage: Loaded', reviews.length, 'reviews');
+      },
+      error: (err: Error) => {
+        console.error('RestaurantPage: Failed to load reviews', err);
+        this.reviews = [];
+        this.reviewStats = null;
+        this.isReviewsLoading = false;
+      }
+    });
+  }
+
+  // Retrieves the count for a specific rating from the distribution
+  public GetRatingCount(Rating: number): number {
+    return (this.reviewStats?.ratingDistribution as any)?.[Rating] ?? 0;
+  }
+
+  // Calculates the percentage width for a rating bar
+  public GetRatingPercentage(Rating: number): number {
+    if (!this.reviewStats?.totalReviews) return 0;
+    return (this.GetRatingCount(Rating) / this.reviewStats.totalReviews) * 100;
   }
 
   // Calculate distance from user's location to restaurant
@@ -165,7 +253,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Booking handler invoked by Book button
+  /// Booking handler invoked by Book button
   async onBook(): Promise<void> {
     try {
       if (!this.bookingDateTime) {
@@ -180,7 +268,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         const shouldLogin = await this.showLoginPrompt(lang === 'TC');
         if (shouldLogin) {
           // Navigate to login page with return URL
-          this.router.navigate(['/login'], { 
+          this.router.navigate(['/login'], {
             queryParams: { returnUrl: `/restaurant/${this.restaurant?.id}` }
           });
         }
@@ -197,8 +285,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       // Create booking request
       const bookingRequest: CreateBookingRequest = {
         restaurantId: this.restaurant?.id || '',
-        restaurantName: lang === 'TC' 
-          ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '') 
+        restaurantName: lang === 'TC'
+          ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
           : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || ''),
         dateTime: new Date(this.bookingDateTime).toISOString(),
         numberOfGuests: this.numberOfGuests,
@@ -212,8 +300,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
           this.isBookingLoading = false;
 
           // Show success message
-          const successMessage = lang === 'TC' 
-            ? `已成功預約！預約編號: ${response.id.substring(0, 8)}` 
+          const successMessage = lang === 'TC'
+            ? `已成功預約！預約編號: ${response.id.substring(0, 8)}`
             : `Booking confirmed! Booking ID: ${response.id.substring(0, 8)}`;
           await this.showToast(successMessage, 'success');
 
@@ -235,7 +323,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // Show login prompt alert
+  /// Show login prompt alert
   private async showLoginPrompt(isTC: boolean): Promise<boolean> {
     return new Promise(async (resolve) => {
       const alert = await this.alertController.create({
@@ -257,7 +345,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Confirm booking details before submission
+  /// Confirm booking details before submission
   private async confirmBooking(isTC: boolean): Promise<boolean> {
     return new Promise(async (resolve) => {
       const formattedDate = new Date(this.bookingDateTime!).toLocaleString(isTC ? 'zh-HK' : 'en-GB', {
@@ -268,8 +356,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         minute: '2-digit'
       });
 
-      const restaurantName = isTC 
-        ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '') 
+      const restaurantName = isTC
+        ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
         : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || '');
 
       const message = isTC
@@ -295,7 +383,76 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // Show toast message helper
+  /// Submit new review
+  async submitReview(): Promise<void> {
+    try {
+      // Check if user is logged in
+      if (!this.authService.isLoggedIn) {
+        const lang = await this.language.lang$.pipe(take(1)).toPromise();
+        const shouldLogin = await this.showLoginPrompt(lang === 'TC');
+        if (shouldLogin) {
+          this.router.navigate(['/login'], {
+            queryParams: { returnUrl: `/restaurant/${this.restaurant?.id}` }
+          });
+        }
+        return;
+      }
+
+      const lang = await this.language.lang$.pipe(take(1)).toPromise();
+
+      // Validate rating
+      if (this.newReviewRating < 1 || this.newReviewRating > 5) {
+        await this.showToast(lang === 'TC' ? '請選擇評分' : 'Please select a rating', 'warning');
+        return;
+      }
+
+      const reviewRequest: CreateReviewRequest = {
+        restaurantId: this.restaurant?.id || '',
+        rating: this.newReviewRating,
+        comment: this.newReviewComment || undefined
+      };
+
+      // Call reviews service
+      this.reviewsService.createReview(reviewRequest).pipe(takeUntil(this.destroy$)).subscribe({
+        next: async (response) => {
+          console.info('Review created successfully:', response.id);
+
+          // Show success message
+          const successMessage = lang === 'TC' ? '已成功提交評論！' : 'Review submitted successfully!';
+          await this.showToast(successMessage, 'success');
+
+          // Reset form
+          this.newReviewRating = 5;
+          this.newReviewComment = '';
+          this.isWritingReview = false;
+
+          // Reload reviews
+          if (this.restaurant?.id) {
+            this.loadReviews(this.restaurant.id);
+          }
+        },
+        error: async (err: Error) => {
+          console.error('Review submission failed:', err);
+          await this.showToast(err.message || (lang === 'TC' ? '提交評論失敗，請重試' : 'Review submission failed, please try again'), 'danger');
+        }
+      });
+
+    } catch (err) {
+      console.error('submitReview error', err);
+    }
+  }
+
+  /// Toggle review writing form
+  toggleReviewForm(): void {
+    this.isWritingReview = !this.isWritingReview;
+    if (!this.isWritingReview) {
+      // Reset form when closing
+      this.newReviewRating = 5;
+      this.newReviewComment = '';
+    }
+  }
+
+  /// Show toast message helper
   private async showToast(message: string, color: 'success' | 'warning' | 'danger' = 'success'): Promise<void> {
     const toast = await this.toastController.create({
       message: message,
@@ -306,15 +463,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     await toast.present();
   }
 
-  // Open fullscreen map modal and pass coordinates
+  /// Open fullscreen map modal and pass coordinates
   async openMapModal(): Promise<void> {
     if (!this.hasCoordinates()) return;
     const modal = await this.modalController.create({
       component: MapModalComponent,
       componentProps: {
         latitude: this.restaurant?.Latitude,
-        longitude: this.restaurant?.Longitude,
-        title: (this.lang$ ? undefined : undefined) // keep for potential use
+        longitude: this.restaurant?.Longitude
       },
       cssClass: 'fullscreen-modal'
     });
@@ -322,12 +478,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     await modal.onDidDismiss();
   }
 
-  // Open fullscreen menu modal and pass menu array
+  /// Open fullscreen menu modal and pass menu array
   async openMenuModal(): Promise<void> {
     const modal = await this.modalController.create({
       component: MenuModalComponent,
       componentProps: {
-        menu: this.restaurant?.Menu ?? [],
+        menu: this.menuItems,
         langStream: this.language.lang$
       },
       cssClass: 'fullscreen-modal'
@@ -336,23 +492,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     await modal.onDidDismiss();
   }
 
-  // Reserve review spot (placeholder action)
-  async reserveReviewSpot(): Promise<void> {
-    const toast = await this.toastController.create({
-      message: (await this.language.lang$.pipe(take(1)).toPromise()) === 'TC' ? '已預留食評位置' : 'Review spot reserved',
-      duration: 1600
-    });
-    await toast.present();
-  }
-
-  // Start writing review now (placeholder action)
-  startReviewNow(): void {
-    // Placeholder navigation or modal open; for now, just console log
-    console.info('Start review for', this.restaurant?.id);
-    // e.g. this.router.navigate(['/review', { id: this.restaurant?.id }]);
-  }
-
-  // Handle double-tap on map for mobile devices
+  /// Handle double-tap on map for mobile devices
   onMapTouchEnd(): void {
     const currentTime = Date.now();
     if (currentTime - this.lastTapTime < this.doubleTapThreshold) {
@@ -362,7 +502,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.lastTapTime = currentTime;
   }
 
-  // Handle double-tap on menu items for mobile devices
+  /// Handle double-tap on menu items for mobile devices
   onMenuItemTouchEnd(): void {
     const currentTime = Date.now();
     if (currentTime - this.lastTapTime < this.doubleTapThreshold) {
@@ -372,24 +512,34 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.lastTapTime = currentTime;
   }
 
-  // Helper to display a fallback string for null-ish fields
+  /// Helper to display a fallback string for null-ish fields
   displayText(value: string | number | null | undefined): string {
-    if (value === null || typeof value === 'undefined' || value === '') return '-';
+    if (value === null || typeof value === 'undefined' || value === '') return '—';
     return String(value);
   }
 
-  // Helper to choose image url or placeholder
+  /// Helper to choose image URL or placeholder
   imageUrlOrPlaceholder(): string {
     if (!this.restaurant) return this.placeholderImage;
     return (this.restaurant.ImageUrl && this.restaurant.ImageUrl.trim() !== '') ? this.restaurant.ImageUrl : this.placeholderImage;
   }
 
-  // Helper to return true if we have numeric coordinates
+  /// Helper to return true if we have numeric coordinates
   hasCoordinates(): boolean {
     return !!(this.restaurant && typeof this.restaurant.Latitude === 'number' && typeof this.restaurant.Longitude === 'number');
   }
 
-  // Clean up on destroy
+  /// Format rating as stars for display
+  formatRatingStars(rating: number): string {
+    return this.reviewsService.formatRatingStars(rating);
+  }
+
+  /// Get rating colour
+  getRatingColour(rating: number): string {
+    return this.reviewsService.getRatingColour(rating);
+  }
+
+  /// Clean up on destroy
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();

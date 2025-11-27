@@ -49,7 +49,6 @@
     "@augmentcode/auggie": "^0.5.7",
     "@capacitor/android": "^7.4.3",
     "@capacitor/ios": "^7.4.3",
-    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
     "@ionic/angular": "^8.7.9",
     "@ionic/angular-server": "^8.7.5",
     "algoliasearch": "^5.42.0",
