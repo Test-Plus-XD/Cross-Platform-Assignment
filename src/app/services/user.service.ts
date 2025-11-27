@@ -11,20 +11,21 @@ export interface UserProfile {
   displayName: string | null;
   photoURL: string | null;
   emailVerified: boolean;
-  phoneNumber?: string | null;
   // Additional profile fields
+  phoneNumber?: string | null;
   type?: string | null;
   reviews?: string | null;
   restaurant?: string | null;
+  restaurantId?: string | null;
   bio?: string | null;
   preferences?: {
     language?: 'EN' | 'TC';
     theme?: 'light' | 'dark';
     notifications?: boolean;
   };
+  // Metadata
   createdAt?: any;
   modifiedAt?: any;
-  // Optional metadata
   lastLoginAt?: any;
   loginCount?: number;
 }

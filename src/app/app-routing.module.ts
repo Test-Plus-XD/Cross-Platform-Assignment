@@ -39,6 +39,14 @@ const routes: Routes = [
     data: { title: { Header_EN: 'Login', Header_TC: '登入' } },
     loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)
   },
+  {
+    path: 'bookings',
+    loadChildren: () => import('./pages/bookings/bookings.module').then( m => m.BookingsPageModule)
+  },
+  {
+    path: 'store',
+    loadChildren: () => import('./pages/store/store.module').then( m => m.StorePageModule)
+  },
 ];
 
 @NgModule({

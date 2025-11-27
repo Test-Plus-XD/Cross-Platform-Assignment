@@ -1,5 +1,6 @@
 <!-- Restaurant detail page: 6 equal cells -->
-<ion-header translucent><br>
+<ion-header translucent>
+  <br>
   <ion-toolbar style="position: sticky; padding-top: 20px;">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/search"></ion-back-button>
@@ -20,6 +21,11 @@
              class="restaurant-image" />
         <div class="name-overlay">
           <h1>{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC ?? '-') : (restaurant?.Name_EN ?? '-') }}</h1>
+          <!-- Distance badge shown on hero image -->
+          <ion-badge *ngIf="distanceResult" [color]="getDistanceColour()" class="distance-badge">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ distanceResult.displayText }}
+          </ion-badge>
         </div>
       </ion-col>
     </ion-row>
@@ -79,7 +85,7 @@
         </div>
       </ion-col>
 
-      <!-- 3 Booking: date + time selection -->
+      <!-- 3 Booking: date + time + guests + special requests -->
       <ion-col class="cell no-border" size="12" size-md="4">
         <div class="cell-title">
           <ion-icon name="calendar-outline"></ion-icon>
@@ -87,20 +93,49 @@
         </div>
         <div class="cell-content small">
           <div class="booking-stack" [class.dark]="(isDark$ | async)" [class.force-calendar-light-in-dark]="(isDark$ | async)">
+            <!-- Date and time picker -->
             <ion-datetime display-format="YYYY-MM-DD HH:mm"
                           picker-format="YYYY-MM-DD HH:mm"
                           presentation="date-time"
                           [(ngModel)]="bookingDateTime"
                           [color]="(isDark$ | async) ? 'dark' : 'primary'"
                           class="booking-datetime"
+                          [min]="minBookingDate"
                           aria-label="Booking date and time">
             </ion-datetime>
 
+            <!-- Guest number selection -->
+            <div class="guest-selection mt-1">
+              <ion-item lines="none" class="guest-item">
+                <ion-icon name="people-outline" slot="start"></ion-icon>
+                <ion-label>{{ (lang$ | async) === 'TC' ? '人數' : 'Guests' }}</ion-label>
+                <ion-select [(ngModel)]="numberOfGuests" interface="popover" class="guest-select">
+                  <ion-select-option *ngFor="let num of guestOptions" [value]="num">
+                    {{ num }} {{ (lang$ | async) === 'TC' ? '位' : (num === 1 ? 'guest' : 'guests') }}
+                  </ion-select-option>
+                </ion-select>
+              </ion-item>
+            </div>
+
+            <!-- Special requests input -->
+            <div class="special-requests mt-1">
+              <ion-item lines="none" class="requests-item">
+                <ion-icon name="chatbubble-outline" slot="start"></ion-icon>
+                <ion-textarea [(ngModel)]="specialRequests"
+                              [placeholder]="(lang$ | async) === 'TC' ? '特別要求（可選）' : 'Special requests (optional)'"
+                              rows="2"
+                              class="requests-textarea">
+                </ion-textarea>
+              </ion-item>
+            </div>
+
+            <!-- Booking actions -->
             <div class="booking-actions mt-1">
               <div class="datetime-row">
-                <span class="muted small">{{ bookingDateTime ? bookingDateTime : '-' }}</span>
-                <ion-button fill="solid" size="medium" style="margin-right: 2vw;" (click)="onBook()" [disabled]="!bookingDateTime">
-                  <ion-icon slot="start" name="calendar-number-outline"></ion-icon>
+                <span class="muted small">{{ bookingDateTime ? bookingDateTime : ((lang$ | async) === 'TC' ? '請選擇日期時間' : 'Select date & time') }}</span>
+                <ion-button fill="solid" size="medium" style="margin-right: 2vw;" (click)="onBook()" [disabled]="!bookingDateTime || isBookingLoading">
+                  <ion-spinner name="crescent" *ngIf="isBookingLoading" slot="start"></ion-spinner>
+                  <ion-icon slot="start" name="calendar-number-outline" *ngIf="!isBookingLoading"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? '確定預約' : 'Confirm' }}
                 </ion-button>
               </div>

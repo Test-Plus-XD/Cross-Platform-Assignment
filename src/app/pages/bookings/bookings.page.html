@@ -1,0 +1,140 @@
+<!-- Bookings page: displays user's reservations with filter tabs -->
+<br><br>
+<ion-content fullscreen>
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Not logged in state -->
+  <div class="empty-state" *ngIf="!isLoggedIn">
+    <ion-icon name="lock-closed-outline" class="empty-icon"></ion-icon>
+    <h2>{{ (lang$ | async) === 'TC' ? translations.loginRequired.TC : translations.loginRequired.EN }}</h2>
+    <ion-button fill="solid" (click)="goToLogin()">
+      <ion-icon name="log-in-outline" slot="start"></ion-icon>
+      {{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}
+    </ion-button>
+  </div>
+
+  <!-- Logged in content -->
+  <div *ngIf="isLoggedIn" class="bookings-container">
+    <!-- Filter segment tabs -->
+    <ion-segment [value]="currentFilter" (ionChange)="onFilterChange($any($event).detail.value)" class="filter-segment">
+      <ion-segment-button value="upcoming">
+        <ion-label>
+          {{ (lang$ | async) === 'TC' ? translations.upcoming.TC : translations.upcoming.EN }}
+          <ion-badge color="primary" *ngIf="getFilterCount('upcoming') > 0">{{ getFilterCount('upcoming') }}</ion-badge>
+        </ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="past">
+        <ion-label>
+          {{ (lang$ | async) === 'TC' ? translations.past.TC : translations.past.EN }}
+          <ion-badge color="medium" *ngIf="getFilterCount('past') > 0">{{ getFilterCount('past') }}</ion-badge>
+        </ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="cancelled">
+        <ion-label>
+          {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
+          <ion-badge color="danger" *ngIf="getFilterCount('cancelled') > 0">{{ getFilterCount('cancelled') }}</ion-badge>
+        </ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Loading state -->
+    <div class="loading-state" *ngIf="isLoading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+
+    <!-- Error state -->
+    <div class="error-state" *ngIf="errorMessage && !isLoading">
+      <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
+      <p>{{ errorMessage }}</p>
+      <ion-button fill="outline" (click)="loadBookings(true)">
+        {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
+      </ion-button>
+    </div>
+
+    <!-- Empty state for current filter -->
+    <div class="empty-state" *ngIf="!isLoading && !errorMessage && filteredBookings.length === 0">
+      <ion-icon name="calendar-outline" class="empty-icon"></ion-icon>
+      <h2 *ngIf="currentFilter === 'upcoming'">
+        {{ (lang$ | async) === 'TC' ? translations.noUpcoming.TC : translations.noUpcoming.EN }}
+      </h2>
+      <h2 *ngIf="currentFilter === 'past'">
+        {{ (lang$ | async) === 'TC' ? translations.noPast.TC : translations.noPast.EN }}
+      </h2>
+      <h2 *ngIf="currentFilter === 'cancelled'">
+        {{ (lang$ | async) === 'TC' ? translations.noCancelled.TC : translations.noCancelled.EN }}
+      </h2>
+      <ion-button fill="solid" (click)="goToSearch()" *ngIf="currentFilter === 'upcoming'">
+        <ion-icon name="search-outline" slot="start"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? translations.searchRestaurants.TC : translations.searchRestaurants.EN }}
+      </ion-button>
+    </div>
+
+    <!-- Booking cards -->
+    <ion-list lines="none" *ngIf="!isLoading && filteredBookings.length > 0" class="bookings-list">
+      <ion-card *ngFor="let booking of filteredBookings" class="booking-card">
+        <ion-card-header>
+          <div class="booking-header">
+            <ion-card-title class="restaurant-name">{{ booking.restaurantName }}</ion-card-title>
+            <ion-badge [color]="getStatusColour(booking.status)" class="status-badge">
+              {{ getStatusText(booking.status, (lang$ | async) === 'TC') }}
+            </ion-badge>
+          </div>
+        </ion-card-header>
+
+        <ion-card-content>
+          <!-- Date and time -->
+          <div class="booking-detail">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <span>{{ formatDate(booking.dateTime, (lang$ | async) === 'TC') }}</span>
+          </div>
+          <div class="booking-detail">
+            <ion-icon name="time-outline"></ion-icon>
+            <span>{{ formatTime(booking.dateTime, (lang$ | async) === 'TC') }}</span>
+          </div>
+
+          <!-- Number of guests -->
+          <div class="booking-detail">
+            <ion-icon name="people-outline"></ion-icon>
+            <span>
+              {{ booking.numberOfGuests }}
+              {{ booking.numberOfGuests === 1
+                 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN)
+                 : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN)
+              }}
+            </span>
+          </div>
+
+          <!-- Special requests if any -->
+          <div class="booking-detail special-requests" *ngIf="booking.specialRequests">
+            <ion-icon name="chatbubble-outline"></ion-icon>
+            <span>{{ booking.specialRequests }}</span>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="booking-actions">
+            <ion-button fill="outline" size="small" (click)="viewRestaurant(booking.restaurantId)">
+              <ion-icon name="restaurant-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.viewRestaurant.TC : translations.viewRestaurant.EN }}
+            </ion-button>
+
+            <!-- Cancel button only for upcoming bookings -->
+            <ion-button fill="outline"
+                        size="small"
+                        color="danger"
+                        *ngIf="currentFilter === 'upcoming' && (booking.status === 'pending' || booking.status === 'confirmed')"
+                        (click)="cancelBooking(booking)">
+              <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.cancelBooking.TC : translations.cancelBooking.EN }}
+            </ion-button>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </ion-list>
+
+    <!-- Bottom spacer for mobile tabs -->
+    <div class="bottom-spacer"></div>
+  </div>
+</ion-content>

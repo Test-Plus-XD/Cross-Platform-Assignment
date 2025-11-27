@@ -26,6 +26,23 @@ export interface User {
   displayName: string | null;
   photoURL: string | null;
   emailVerified: boolean;
+  // Additional profile fields
+  phoneNumber?: string | null;
+  type?: string | null;
+  reviews?: string | null;
+  restaurant?: string | null;
+  restaurantId?: string | null;
+  bio?: string | null;
+  preferences?: {
+    language?: 'EN' | 'TC';
+    theme?: 'light' | 'dark';
+    notifications?: boolean;
+  };
+  // Metadata
+  createdAt?: any;
+  modifiedAt?: any;
+  lastLoginAt?: any;
+  loginCount?: number;
 }
 
 @Injectable({
