@@ -1,15 +1,16 @@
 <!-- Page root: ion-content keeps Ionic behaviour and provides safe area / scrolling -->
 <ion-content>
-  <!-- Expose language and theme once for template convenience -->
+  <!-- Expose language and platform for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
-  <!-- Main container -->
-    <div class="page-container">
+  <ng-container *ngIf="isMobile$ | async as isMobile">
+  <!-- Main container with platform-aware class -->
+    <div class="page-container" [class.mobile-spacing]="isMobile" [class.web-spacing]="!isMobile">
       <!-- Hero Banner with Auto-rotating Ads -->
       <div class="hero-section">
         <swiper-container #heroSwiper
                           class="hero-swiper"
                           loop="true"
-                          autoplay-delay="5000"
+                          [autoplay-delay]="isMobile ? 5000 : 7000"
                           autoplay-disable-on-interaction="false"
                           speed="800"
                           effect="fade">
@@ -206,5 +207,6 @@
       <!-- Bottom Spacer -->
       <div class="bottom-spacer"></div>
     </div>
+  </ng-container>
   </ng-container>
 </ion-content>

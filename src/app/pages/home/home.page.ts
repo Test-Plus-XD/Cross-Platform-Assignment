@@ -4,6 +4,7 @@ import { Platform } from '@ionic/angular';
 import { Observable, of } from 'rxjs';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
+import { PlatformService } from '../../services/platform.service';
 
 @Component({
   selector: 'app-home',
@@ -20,12 +21,15 @@ export class HomePage implements OnInit {
   public ads$: Observable<any[]> = of([]);
   // Expose language stream for template
   public lang$ = this.languageService.lang$;
+  // Expose platform detection for template
+  public isMobile$ = this.platformService.isMobile$;
   // Featured image for offers (optional enhancement)
   public featuredImage: string | null = null;
 
   constructor(
     private readonly mockDataService: MockDataService,
-    private readonly languageService: LanguageService
+    private readonly languageService: LanguageService,
+    private readonly platformService: PlatformService
   ) { }
 
   ngOnInit(): void {
