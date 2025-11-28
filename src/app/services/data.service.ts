@@ -28,7 +28,6 @@ export class DataService {
     if (authToken) {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
-
     return new HttpHeaders(headers);
   }
 
@@ -138,7 +137,6 @@ export class DataService {
         message = 'Server error: Please try again later.';
         break;
     }
-
     return throwError(() => new Error(message));
   }
 }

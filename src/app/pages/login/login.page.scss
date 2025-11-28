@@ -9,8 +9,13 @@ form {
 
 .google-button {
   margin-top: 1rem;
+  padding-left: 0vw;
+  padding-right: 0vw;
   --border-width: 1px;
   --border-color: var(--ion-color-medium);
+  justify-self: center;
+  width: 100%;
+  max-width: 500px;
 }
 
 .google-icon {

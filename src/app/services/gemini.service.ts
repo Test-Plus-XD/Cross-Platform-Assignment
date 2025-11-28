@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 
-// Chat history entry
+// Chat history entry interface
 export interface ChatHistoryEntry {
   role: 'user' | 'model';
   parts: string;
@@ -20,37 +21,39 @@ export interface GeminiResponse {
 })
 export class GeminiService {
   // Chat history for maintaining conversation context
-  private chatHistory = new BehaviorSubject<ChatHistoryEntry[]>([]);
+  private readonly chatHistory = new BehaviorSubject<ChatHistoryEntry[]>([]);
   public chatHistory$ = this.chatHistory.asObservable();
 
   // Loading state
-  private isLoading = new BehaviorSubject<boolean>(false);
+  private readonly isLoading = new BehaviorSubject<boolean>(false);
   public isLoading$ = this.isLoading.asObservable();
 
-  constructor(private readonly dataService: DataService) {
+  constructor(
+    private readonly dataService: DataService,
+    private readonly authService: AuthService // Inject authentication service
+  ) {
     console.log('GeminiService: Initialised');
   }
 
   /**
    * Send a chat message to Gemini AI
-   * @param message - User message
+   * @param message - User message text
    * @param includeHistory - Whether to include conversation history
    */
   chat(message: string, includeHistory: boolean = true): Observable<string> {
     this.isLoading.next(true);
-
     const body: any = { message };
 
     if (includeHistory) {
       body.history = this.chatHistory.value;
     }
-
     console.log('GeminiService: Sending chat request', { message, historyLength: body.history?.length || 0 });
 
-    return this.dataService.post<GeminiResponse>('/API/Gemini/chat', body, false).pipe(
+    // Pass null since no authentication is required
+    return this.dataService.post<GeminiResponse>('/API/Gemini/chat', body, null).pipe(
       map(response => response.response),
       tap(response => {
-        // Add user message and model response to history
+        // Add user message and model response to chat history
         const history = this.chatHistory.value;
         history.push({ role: 'user', parts: message });
         history.push({ role: 'model', parts: response });
@@ -67,10 +70,9 @@ export class GeminiService {
    */
   generate(prompt: string): Observable<string> {
     this.isLoading.next(true);
-
     console.log('GeminiService: Generating text from prompt');
 
-    return this.dataService.post<GeminiResponse>('/API/Gemini/generate', { prompt }, false).pipe(
+    return this.dataService.post<GeminiResponse>('/API/Gemini/generate', { prompt }, null).pipe(
       map(response => response.response),
       tap(() => {
         this.isLoading.next(false);
@@ -100,10 +102,9 @@ export class GeminiService {
       specialties,
       atmosphere
     };
-
     console.log('GeminiService: Generating restaurant description');
 
-    return this.dataService.post<GeminiResponse>('/API/Gemini/restaurant-description', body, false).pipe(
+    return this.dataService.post<GeminiResponse>('/API/Gemini/restaurant-description', body, null).pipe(
       map(response => response.response),
       tap(() => {
         this.isLoading.next(false);
@@ -112,25 +113,18 @@ export class GeminiService {
     );
   }
 
-  /**
-   * Clear chat history
-   */
+  // Clear chat history
   clearHistory(): void {
     this.chatHistory.next([]);
     console.log('GeminiService: Chat history cleared');
   }
 
-  /**
-   * Get current chat history
-   */
+  // Get current chat history
   getHistory(): ChatHistoryEntry[] {
     return this.chatHistory.value;
   }
 
-  /**
-   * Get simple restaurant information
-   * Quick helper for common restaurant-related questions
-   */
+  // Quick helper for common restaurant-related questions
   askAboutRestaurant(question: string, restaurantName?: string): Observable<string> {
     const prompt = restaurantName
       ? `Question about ${restaurantName}: ${question}`
@@ -139,9 +133,7 @@ export class GeminiService {
     return this.chat(prompt, true);
   }
 
-  /**
-   * Get dining recommendations
-   */
+  // Get dining recommendations
   getDiningRecommendation(preferences: {
     cuisine?: string;
     location?: string;
@@ -159,17 +151,13 @@ export class GeminiService {
     return this.chat(prompt, false);
   }
 
-  /**
-   * Ask about booking or reservation
-   */
+  // Ask about booking or reservation
   askAboutBooking(question: string): Observable<string> {
     const prompt = `Question about restaurant booking: ${question}`;
     return this.chat(prompt, true);
   }
 
-  /**
-   * Get menu suggestions
-   */
+  //` Get menu suggestions
   getMenuSuggestions(dietaryRestrictions?: string[]): Observable<string> {
     const prompt = dietaryRestrictions && dietaryRestrictions.length > 0
       ? `I have the following dietary restrictions: ${dietaryRestrictions.join(', ')}. What menu items would you recommend?`

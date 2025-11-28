@@ -1,7 +1,8 @@
 // Reviews service handles all review-related operations through the API
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, from, of } from 'rxjs';
+import { map, catchError, switchMap } from 'rxjs/operators';
+import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 
 // Interface representing a restaurant review
@@ -45,17 +46,33 @@ export class ReviewsService {
   // Base endpoint for review operations
   private readonly reviewsEndpoint = '/API/Reviews';
 
-  constructor(private readonly dataService: DataService) {
-    console.log('ReviewsService: Initialised');
+  constructor(
+    private readonly dataService: DataService,
+    private readonly authService: AuthService // Inject authentication service
+  ) { console.log('ReviewsService: Initialised'); }
+
+  /**
+   * Helper method to get the current user's authentication token
+   * Returns null if user is not authenticated
+   */
+  private async getAuthToken(): Promise<string | null> {
+    return await this.authService.getIdToken();
   }
 
-  // Create a new review for a restaurant (requires authentication), the userId is automatically set from the authentication token
+  // Create a new review for a restaurant (requires authentication)
+  // The userId is automatically extracted from the authentication token on the backend
   createReview(reviewData: CreateReviewRequest): Observable<{ id: string }> {
     console.log('ReviewsService: Creating review for restaurant:', reviewData.restaurantId);
-    return this.dataService.post<{ id: string }>(
-      this.reviewsEndpoint,
-      reviewData,
-      true // Requires authentication
+    
+    // Get auth token first, then make the request
+    return from(this.getAuthToken()).pipe(
+      switchMap(token => 
+        this.dataService.post<{ id: string }>(
+          this.reviewsEndpoint,
+          reviewData,
+          token // Pass the actual token instead of boolean true
+        )
+      )
     );
   }
 
@@ -65,12 +82,8 @@ export class ReviewsService {
     const params: string[] = [];
     
     // Build query parameters for filtering
-    if (restaurantId) {
-      params.push(`restaurantId=${encodeURIComponent(restaurantId)}`);
-    }
-    if (userId) {
-      params.push(`userId=${encodeURIComponent(userId)}`);
-    }
+    if (restaurantId) params.push(`restaurantId=${encodeURIComponent(restaurantId)}`);
+    if (userId) params.push(`userId=${encodeURIComponent(userId)}`);
     
     // Append query parameters if any exist
     if (params.length > 0) {
@@ -78,6 +91,7 @@ export class ReviewsService {
     }
     
     console.log('ReviewsService: Fetching reviews from:', endpoint);
+    // No authentication required for reading reviews
     return this.dataService.get<{ count: number; data: Review[] }>(endpoint).pipe(
       map(response => response.data || [])
     );
@@ -92,19 +106,31 @@ export class ReviewsService {
   // Update an existing review (requires authentication and ownership)
   updateReview(reviewId: string, updates: UpdateReviewRequest): Observable<void> {
     console.log('ReviewsService: Updating review:', reviewId);
-    return this.dataService.put<void>(
-      `${this.reviewsEndpoint}/${reviewId}`,
-      updates,
-      true // Requires authentication
+
+    // Get auth token first, then make the request
+    return from(this.getAuthToken()).pipe(
+      switchMap(token =>
+        this.dataService.put<void>(
+          `${this.reviewsEndpoint}/${reviewId}`,
+          updates,
+          token // Pass the toke
+        )
+      )
     );
   }
 
   // Delete a review (requires authentication and ownership)
   deleteReview(reviewId: string): Observable<void> {
     console.log('ReviewsService: Deleting review:', reviewId);
-    return this.dataService.delete<void>(
-      `${this.reviewsEndpoint}/${reviewId}`,
-      true // Requires authentication
+
+    // Get auth token first, then make the request
+    return from(this.getAuthToken()).pipe(
+      switchMap(token =>
+        this.dataService.delete<void>(
+          `${this.reviewsEndpoint}/${reviewId}`,
+          token // Pass the token
+        )
+      )
     );
   }
 
@@ -126,7 +152,6 @@ export class ReviewsService {
     let stars = '★'.repeat(fullStars);
     if (hasHalfStar) stars += '½';
     stars += '☆'.repeat(emptyStars);
-    
     return stars;
   }
 
