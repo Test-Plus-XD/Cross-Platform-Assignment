@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { GeminiService } from '../../services/gemini.service';
@@ -69,7 +70,8 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     private readonly geminiService: GeminiService,
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -265,8 +267,8 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
    * Convert markdown-like formatting to HTML
    * Supports: line breaks, bold, headers, bullet points
    */
-  formatMarkdown(content: string): string {
-    if (!content) return '';
+  formatMarkdown(content: string): SafeHtml {
+    if (!content) return this.sanitizer.bypassSecurityTrustHtml('');
 
     let formatted = content;
 
@@ -291,6 +293,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     // Convert single line breaks to <br/>
     formatted = formatted.replace(/\n/g, '<br/>');
 
-    return formatted;
+    // Bypass security to allow HTML rendering
+    return this.sanitizer.bypassSecurityTrustHtml(formatted);
   }
 }
