@@ -215,8 +215,11 @@ export class SearchPage implements OnInit, OnDestroy {
 
   // Main search call. This function supports extracting inline filters from the text query
   // using the syntax: district:Kowloon,Wan Chai keyword:veggie,vegan
-  public async performSearch(): Promise<void> {
-    this.isLoading = true;
+  public async performSearch(append: boolean = false): Promise<void> {
+    // Don't set loading if we're appending (for infinite scroll)
+    if (!append) {
+      this.isLoading = true;
+    }
 
     try {
       // Parse inline filters from searchQuery if present.
@@ -243,15 +246,23 @@ export class SearchPage implements OnInit, OnDestroy {
       ));
 
       // Update UI state
-      this.restaurants = response.hits || [];
+      if (append) {
+        // Append new results for infinite scroll
+        this.restaurants = [...this.restaurants, ...(response.hits || [])];
+      } else {
+        // Replace results for new search
+        this.restaurants = response.hits || [];
+      }
       this.totalResults = response.nbHits || 0;
       this.totalPages = response.nbPages || 0;
       this.isLoading = false;
     } catch (err: any) {
       console.error('SearchPage: performSearch failed', err);
       this.isLoading = false;
-      this.restaurants = [];
-      this.totalResults = 0;
+      if (!append) {
+        this.restaurants = [];
+        this.totalResults = 0;
+      }
     }
   }
 
@@ -445,27 +456,17 @@ export class SearchPage implements OnInit, OnDestroy {
     return keywords ? keywords.length : 0;
   }
 
-  // Pagination helpers
-  public nextPage(): void {
+  // Infinite scroll handler
+  public async loadMore(event: any): Promise<void> {
+    // Check if there are more pages to load
     if (this.currentPage < this.totalPages - 1) {
       this.currentPage++;
-      this.performSearch();
-      this.scrollToTop();
-    }
-  }
-
-  public previousPage(): void {
-    if (this.currentPage > 0) {
-      this.currentPage--;
-      this.performSearch();
-      this.scrollToTop();
-    }
-  }
-
-  private scrollToTop(): void {
-    const content = document.querySelector('ion-content');
-    if (content && typeof (content as any).scrollToTop === 'function') {
-      (content as any).scrollToTop(300);
+      await this.performSearch(true); // Append mode
+      event.target.complete();
+    } else {
+      // No more data to load
+      event.target.complete();
+      event.target.disabled = true;
     }
   }
 }

@@ -32,6 +32,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
 
   // Language
   lang$ = this.languageService.lang$;
+  currentLang: 'EN' | 'TC' = 'EN';
 
   // Auto-dim
   private dimTimeout: any;
@@ -48,6 +49,22 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     { key: 'location', en: 'How do I find restaurants near me?', tc: '如何找到附近的餐廳？' }
   ];
 
+  // Translations
+  translations = {
+    welcome: {
+      EN: 'Hello! I\'m your PourRice AI assistant. How can I help you today?',
+      TC: '你好！我是 PourRice AI 助理。今天我能為您提供什麼幫助？'
+    },
+    cleared: {
+      EN: 'Chat cleared. How can I help you?',
+      TC: '對話已清除。我能為您提供什麼幫助？'
+    },
+    error: {
+      EN: 'Sorry, I encountered an error. Please try again.',
+      TC: '抱歉，發生錯誤。請重試。'
+    }
+  };
+
   constructor(
     private readonly geminiService: GeminiService,
     private readonly authService: AuthService,
@@ -56,6 +73,16 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Subscribe to language changes
+    this.lang$.pipe(takeUntil(this.destroy$)).subscribe(lang => {
+      this.currentLang = lang === 'TC' ? 'TC' : 'EN';
+
+      // Update welcome message if it's the only message
+      if (this.messages.length === 1 && this.messages[0].role === 'assistant') {
+        this.messages[0].content = this.translations.welcome[this.currentLang];
+      }
+    });
+
     // Subscribe to auth state
     this.authService.currentUser$.pipe(takeUntil(this.destroy$)).subscribe(user => {
       this.isLoggedIn = !!user;
@@ -82,10 +109,11 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     // Start auto-dim timer
     this.startDimTimer();
 
-    // Add welcome message
+    // Add welcome message based on current language
+    const initialLang = this.currentLang;
     this.messages.push({
       role: 'assistant',
-      content: 'Hello! I\'m your PourRice AI assistant. How can I help you today?',
+      content: this.translations.welcome[initialLang],
       timestamp: new Date()
     });
   }
@@ -185,7 +213,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
         console.error('GeminiButton: Error getting response', error);
         this.messages.push({
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: this.translations.error[this.currentLang],
           timestamp: new Date()
         });
       }
@@ -208,7 +236,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     this.messages = [
       {
         role: 'assistant',
-        content: 'Chat cleared. How can I help you?',
+        content: this.translations.cleared[this.currentLang],
         timestamp: new Date()
       }
     ];
@@ -226,9 +254,43 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Format timestamp
+   * Format timestamp based on language
    */
   formatTime(timestamp: Date): string {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const locale = this.currentLang === 'TC' ? 'zh-HK' : 'en-US';
+    return timestamp.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /**
+   * Convert markdown-like formatting to HTML
+   * Supports: line breaks, bold, headers, bullet points
+   */
+  formatMarkdown(content: string): string {
+    if (!content) return '';
+
+    let formatted = content;
+
+    // Convert ## headers to bold text
+    formatted = formatted.replace(/^## (.+)$/gm, '<strong>$1</strong>');
+    formatted = formatted.replace(/^### (.+)$/gm, '<strong>$1</strong>');
+
+    // Convert **bold** to <strong>
+    formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Convert bullet points (* or -) to proper list items
+    formatted = formatted.replace(/^[\*\-] (.+)$/gm, '• $1');
+
+    // Convert numbered lists
+    formatted = formatted.replace(/^\d+\.\s+(.+)$/gm, (match, p1) => {
+      return match.replace(p1, p1);
+    });
+
+    // Convert double line breaks to paragraphs
+    formatted = formatted.replace(/\n\n/g, '<br/><br/>');
+
+    // Convert single line breaks to <br/>
+    formatted = formatted.replace(/\n/g, '<br/>');
+
+    return formatted;
   }
 }

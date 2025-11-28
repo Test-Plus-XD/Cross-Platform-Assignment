@@ -191,10 +191,6 @@
       .image-overlay {
         opacity: 0.5;
       }
-
-      .view-details {
-        transform: translateX(4px);
-      }
     }
     // Card image container with overlay
     .card-image-container {
@@ -292,69 +288,33 @@
           }
         }
       }
-
-      .card-action {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--ion-color-light-shade);
-
-        .view-details {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.9375rem;
-          font-weight: 600;
-          transition: transform 0.3s ease;
-
-          ion-icon {
-            font-size: 1rem;
-          }
-        }
-      }
     }
   }
-  // Pagination container styling
-  .pagination-container {
+  // Infinite scroll loading indicator
+  .infinite-scroll-loading {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    margin: 2rem 0;
+    padding: 1.5rem;
+    gap: 0.75rem;
 
-    .pagination-button {
-      --border-radius: 12px;
-      --border-width: 2px;
-      --padding-start: 1rem;
-      --padding-end: 1rem;
-
-      ion-icon {
-        font-size: 1.25rem;
-      }
+    .loading-spinner-small {
+      width: 40px;
+      height: 40px;
     }
 
-    .page-info {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 1rem;
-      color: var(--ion-text-color);
-      min-width: 80px;
-      justify-content: center;
+    span {
+      font-size: 0.875rem;
+      color: var(--ion-color-medium);
+      font-weight: 500;
+    }
+  }
 
-      .current-page {
-        font-weight: 700;
-        font-size: 1.25rem;
-        color: var(--ion-color-primary);
-      }
-
-      .page-separator {
-        color: var(--ion-color-medium);
-      }
-
-      .total-pages {
-        font-weight: 500;
-        color: var(--ion-color-medium);
-      }
+  // Hide default infinite scroll content
+  ion-infinite-scroll-content {
+    ::ng-deep .infinite-loading-text {
+      display: none;
     }
   }
   // Bottom spacer for mobile navigation
@@ -422,6 +382,30 @@
 
     .keyword-chip {
       --background: rgba(var(--ion-color-light-rgb), 0.1) !important;
+      color: var(--ion-text-color) !important;
+
+      ion-label {
+        color: var(--ion-text-color) !important;
+      }
+
+      &.more-chip {
+        --background: var(--ion-color-primary) !important;
+        --color: white !important;
+        color: white !important;
+
+        ion-label {
+          color: white !important;
+        }
+      }
+    }
+  }
+
+  // Force white text for filter chips in dark mode
+  .filter-chip {
+    color: var(--ion-text-color) !important;
+
+    ion-label {
+      color: var(--ion-text-color) !important;
     }
   }
 }

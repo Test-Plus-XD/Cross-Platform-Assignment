@@ -633,6 +633,64 @@ ion-datetime:focus {
   }
 }
 
+/* === DARK MODE COMPONENT FIXES === */
+// Fix alert controller text colors in dark mode
+html.dark,
+.dark {
+  ion-alert {
+    --background: var(--ion-card-background);
+
+    .alert-wrapper {
+      background: var(--ion-card-background);
+
+      .alert-head {
+        h2 {
+          color: var(--ion-text-color);
+        }
+      }
+
+      .alert-message {
+        color: var(--ion-text-color);
+      }
+
+      .alert-radio-group,
+      .alert-checkbox-group {
+        button {
+          color: var(--ion-text-color) !important;
+
+          .alert-radio-label,
+          .alert-checkbox-label {
+            color: var(--ion-text-color) !important;
+          }
+        }
+      }
+
+      .alert-button-group {
+        button {
+          color: var(--ion-color-primary);
+        }
+      }
+    }
+  }
+
+  // Fix chip text colors in dark mode
+  ion-chip {
+    color: var(--ion-text-color) !important;
+
+    ion-label {
+      color: var(--ion-text-color) !important;
+    }
+
+    &[outline] {
+      color: var(--ion-text-color) !important;
+
+      ion-label {
+        color: var(--ion-text-color) !important;
+      }
+    }
+  }
+}
+
 /* === IONIC CORE IMPORTS === */
 // Core Ionic styles must be imported after theme variables
 @import "@ionic/angular/css/core.css";

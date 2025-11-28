@@ -61,7 +61,7 @@
         <ion-icon name="sparkles"></ion-icon>
       </div>
       <div class="message-content">
-        <p class="message-text">{{ message.content }}</p>
+        <p class="message-text" [innerHTML]="formatMarkdown(message.content)"></p>
         <span class="message-time">{{ formatTime(message.timestamp) }}</span>
       </div>
     </div>
