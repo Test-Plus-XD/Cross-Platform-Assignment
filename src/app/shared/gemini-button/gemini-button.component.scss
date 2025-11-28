@@ -253,8 +253,21 @@
       .message-text {
         margin: 0;
         font-size: 14px;
-        line-height: 1.5;
-        white-space: pre-wrap;
+        line-height: 1.6;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+
+        // Markdown formatting styles
+        ::ng-deep strong {
+          font-weight: 600;
+          color: inherit;
+        }
+
+        ::ng-deep br {
+          display: block;
+          content: "";
+          margin: 0.25em 0;
+        }
       }
 
       .message-time {
@@ -376,6 +389,29 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
+  }
+}
+
+// Desktop/Web platform optimizations
+@media (min-width: 769px) {
+  .gemini-fab {
+    // Ensure proper layering on desktop
+    z-index: 998;
+
+    // Add hover effect for desktop
+    &:not(.dimmed):not(.open):hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.6);
+    }
+  }
+
+  .gemini-window {
+    // Ensure proper layering on desktop
+    z-index: 997;
+
+    // Better positioning for desktop
+    max-height: 700px;
+    height: 600px;
   }
 }
 
