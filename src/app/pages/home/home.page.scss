@@ -86,6 +86,25 @@
     padding: 0 1rem;
     margin-bottom: 2.5rem;
   }
+
+  // Remove left/right padding on mobile for full-width swiper
+  @media (max-width: 768px) {
+    .content-section {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    // Re-add padding to section headers and hero content on mobile
+    .section-header {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .hero-section .hero-swiper .hero-slide .hero-content {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
   // Section header with title and "See All" button
   .section-header {
     display: flex;

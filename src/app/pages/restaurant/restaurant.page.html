@@ -176,6 +176,32 @@
       <!-- Right Column: Menu & Booking -->
       <div class="right-column">
 
+        <!-- Claim Restaurant Card (only if eligible) -->
+        <ion-card class="claim-card" *ngIf="canClaimRestaurant">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="business-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '認領餐廳' : 'Claim Restaurant' }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p class="claim-description">
+              {{ (lang$ | async) === 'TC'
+                ? '此餐廳目前沒有擁有者。作為餐廳經營者，您可以認領此餐廳以管理其資訊。'
+                : 'This restaurant currently has no owner. As a restaurant operator, you can claim this restaurant to manage its information.' }}
+            </p>
+            <ion-button
+              expand="block"
+              (click)="claimRestaurant()"
+              [disabled]="isClaimingRestaurant"
+              class="claim-button">
+              <ion-spinner *ngIf="isClaimingRestaurant" slot="start"></ion-spinner>
+              <ion-icon *ngIf="!isClaimingRestaurant" slot="start" name="checkmark-circle-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '認領餐廳' : 'Claim Ownership' }}
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+
         <!-- Booking Card -->
         <ion-card class="booking-card">
           <ion-card-header>

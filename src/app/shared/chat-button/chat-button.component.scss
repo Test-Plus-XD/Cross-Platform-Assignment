@@ -1,28 +1,49 @@
-// Floating action button
+// Floating action button - matching Gemini button style
 .chat-fab {
   position: fixed;
   bottom: 80px;
   right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
 
   &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   }
 
-  .chat-icon {
-    font-size: 28px;
+  &.open {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .chat-icon-wrapper {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .chat-icon {
+      font-size: 24px;
+      color: white;
+    }
+  }
+
+  .chat-label {
     color: white;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
 
   .unread-badge {
@@ -43,18 +64,18 @@
   }
 }
 
-// Chat window
+// Chat window - matching Gemini window size and position
 .chat-window {
   position: fixed;
-  bottom: 80px;
+  bottom: 20px;
   right: 20px;
-  width: 360px;
+  width: 400px;
   max-width: calc(100vw - 40px);
-  height: 500px;
-  max-height: calc(100vh - 200px);
+  height: 600px;
+  max-height: calc(100vh - 140px);
   background: var(--ion-background-color);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -316,6 +337,29 @@
   }
 }
 
+// Desktop/Web platform optimizations
+@media (min-width: 769px) {
+  .chat-fab {
+    // Ensure proper layering on desktop
+    z-index: 1000;
+
+    // Add hover effect for desktop
+    &:not(.open):hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  .chat-window {
+    // Ensure proper layering on desktop
+    z-index: 999;
+
+    // Better positioning for desktop
+    max-height: 700px;
+    height: 600px;
+  }
+}
+
 // Mobile responsiveness
 @media (max-width: 768px) {
   .chat-fab {
@@ -324,9 +368,11 @@
   }
 
   .chat-window {
-    right: 16px;
     left: 16px;
+    right: 16px;
+    bottom: 70px;
     width: auto;
     max-width: none;
+    height: calc(100vh - 160px);
   }
 }

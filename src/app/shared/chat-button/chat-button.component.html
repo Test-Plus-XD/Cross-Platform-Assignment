@@ -1,7 +1,10 @@
 <!-- Floating chat button -->
-<div class="chat-fab" (click)="toggleChat()">
-  <ion-icon name="chatbubbles" class="chat-icon"></ion-icon>
-  <span class="unread-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+<div class="chat-fab" [class.open]="isOpen" (click)="toggleChat()">
+  <div class="chat-icon-wrapper">
+    <ion-icon name="chatbubbles" class="chat-icon"></ion-icon>
+  </div>
+  <span class="chat-label" *ngIf="!isOpen">Chat</span>
+  <span class="unread-badge" *ngIf="unreadCount > 0 && !isOpen">{{ unreadCount }}</span>
 </div>
 
 <!-- Chat window -->
