@@ -1,5 +1,7 @@
 <!-- src/app/pages/test/test.page.html -->
-<ion-content [scrollEvents]="true" scrollEvents="true"  class="ion-padding">
+<ion-content [scrollEvents]="true" scrollEvents="true">
+  <ng-container *ngIf="isMobile$ | async as isMobile">
+  <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
   <!-- Short explanatory note for your debugging -->
   <!-- Use the Test Page to reproduce theme toggle issues; console logs show lifecycle and toggles -->
   <!-- Minimal demo Swiper element (requires Swiper registered and CUSTOM_ELEMENTS_SCHEMA present) -->
@@ -46,9 +48,11 @@
 
       ---
 
-      The beauty of transparent nonsense lies in its freedom—it doesn’t pretend to be right, it only insists on existing loudly. The absurd, handled earnestly, reminds us that the boundary between profundity and rubbish is sometimes just a matter of tone.
+      The beauty of transparent nonsense lies in its freedom—it doesn't pretend to be right, it only insists on existing loudly. The absurd, handled earnestly, reminds us that the boundary between profundity and rubbish is sometimes just a matter of tone.
     </p>
   </section>
+  </div>
+  </ng-container>
 </ion-content><!--
 <ion-content scrollEvents="true" (ionScroll)="onScroll($event)">
   <div style="height:200vh; padding:1rem;">

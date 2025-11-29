@@ -1,6 +1,7 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
 <ion-content class="search-page-content">
-  <div class="page-container">
+  <ng-container *ngIf="isMobile$ | async as isMobile">
+  <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
 
     <!-- Search Header Section -->
     <div class="search-header">
@@ -160,4 +161,5 @@
     <!-- Bottom Spacer -->
     <div class="bottom-spacer"></div>
   </div>
+  </ng-container>
 </ion-content>

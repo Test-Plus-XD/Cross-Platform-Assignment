@@ -1,5 +1,6 @@
 <!-- Modern responsive restaurant detail page with comprehensive information display -->
 <ion-content fullscreen>
+  <ng-container *ngIf="isMobile$ | async as isMobile">
   <!-- Loading State -->
   <div class="loading-container" *ngIf="isLoading">
     <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
@@ -17,7 +18,7 @@
   </div>
 
   <!-- Restaurant Content -->
-  <div class="restaurant-container" *ngIf="!isLoading && !errorMessage && restaurant">
+  <div class="restaurant-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile" *ngIf="!isLoading && !errorMessage && restaurant">
     <!-- Hero Section with Image -->
     <div class="hero-section">
       <img [src]="imageUrlOrPlaceholder()"
@@ -408,4 +409,5 @@
   <app-chat-button *ngIf="restaurant"
                    [restaurantId]="restaurant.id"
                    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
+  </ng-container>
 </ion-content>

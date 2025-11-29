@@ -378,6 +378,128 @@ ion-datetime:focus {
   min-height: calc(100vh - var(--header-spacing) - var(--footer-spacing));
 }
 
+/* === NEW RESPONSIVE LAYOUT SYSTEM === */
+// Mobile-first layout (default)
+.page-container {
+  &.mobile-layout {
+    padding: 0; // Minimal spacing to screen edges on mobile
+
+    // Hero sections should be full-width on mobile
+    .hero-section {
+      margin: 0;
+      padding: 0;
+
+      .hero-swiper,
+      swiper-container {
+        border-radius: 0; // No border radius on mobile for full-width effect
+        margin: 0;
+        padding: 0;
+      }
+
+      .hero-image,
+      img {
+        border-radius: 0;
+      }
+    }
+
+    // Content sections with minimal horizontal padding
+    .content-section {
+      padding-left: 0;
+      padding-right: 0;
+
+      // Section headers and non-swiper content get small padding
+      .section-header,
+      .section-title,
+      .results-summary,
+      .search-header,
+      > p,
+      > h1,
+      > h2,
+      > h3 {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+    }
+
+    // Swiper containers optimized for mobile
+    swiper-container {
+      padding: 0 !important;
+      margin: 0;
+      width: 100%;
+
+      // Show 5-10% of next card by using slides-per-view and spacing
+      &.mobile-peek {
+        --swiper-slides-per-view: 1.08; // Shows ~8% of next card
+
+        swiper-slide {
+          width: auto !important;
+        }
+      }
+    }
+  }
+
+  // Web/tablet layout
+  &.web-layout {
+    max-width: none;
+    padding-left: 15vw; // 15% left margin
+    padding-right: 15vw; // 15% right margin
+    padding-top: 20px;
+    padding-bottom: 20px;
+
+    // Hero sections constrained on web
+    .hero-section {
+      margin-bottom: 2rem;
+
+      .hero-swiper,
+      swiper-container {
+        border-radius: 16px;
+        overflow: hidden;
+      }
+
+      // Hero images max 1/3 of screen height
+      .hero-image,
+      img {
+        max-height: 33.33vh; // 1/3 of viewport height
+        object-fit: cover;
+      }
+
+      // Ensure swiper height is also constrained
+      &.hero-swiper,
+      swiper-container {
+        max-height: 33.33vh;
+      }
+    }
+
+    // Content sections with standard padding on web
+    .content-section {
+      padding-left: 0;
+      padding-right: 0;
+      margin-bottom: 2rem;
+    }
+
+    // Swiper containers with comfortable spacing on web
+    swiper-container {
+      padding: 0.5rem 0;
+    }
+  }
+
+  // Tablet breakpoint (768px - 1024px): 15% margins
+  @media (min-width: 768px) and (max-width: 1023px) {
+    &.web-layout {
+      padding-left: 15vw;
+      padding-right: 15vw;
+    }
+  }
+
+  // Desktop breakpoint (1024px+): 20% margins
+  @media (min-width: 1024px) {
+    &.web-layout {
+      padding-left: 20vw;
+      padding-right: 20vw;
+    }
+  }
+}
+
 // Content grid for responsive layouts
 .content-grid {
   display: grid;

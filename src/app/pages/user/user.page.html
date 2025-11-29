@@ -1,5 +1,6 @@
 <ion-content class="user-page-content">
-  <div class="page-container">
+  <ng-container *ngIf="isMobile$ | async as isMobile">
+  <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
 
     <!-- Loading State -->
     <div class="loading-container" *ngIf="isLoading">
@@ -192,4 +193,5 @@
       <div class="bottom-spacer"></div>
     </div>
   </div>
+  </ng-container>
 </ion-content>

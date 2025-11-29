@@ -1,9 +1,10 @@
 // Search page component with multi-district and multi-keyword filtering (EN-primary).
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
-import { Subscription, firstValueFrom, debounceTime, Subject } from 'rxjs';
+import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 'rxjs';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
+import { PlatformService } from '../../services/platform.service';
 
 interface DistrictOption {
   district_en: string;
@@ -54,8 +55,9 @@ export class SearchPage implements OnInit, OnDestroy {
   public availableDistricts: DistrictOption[] = [];
   public availableKeywords: KeywordOption[] = [];
 
-  // Language observable and local cache
+  // Language and platform observables
   public lang$ = this.languageService.lang$;
+  public isMobile$: Observable<boolean>;
   private currentLang: 'EN' | 'TC' = 'EN';
 
   // Subscriptions to clean up
@@ -81,8 +83,11 @@ export class SearchPage implements OnInit, OnDestroy {
   constructor(
     private readonly restaurantsService: RestaurantsService,
     private readonly languageService: LanguageService,
-    private readonly alertController: AlertController
-  ) { }
+    private readonly alertController: AlertController,
+    private readonly platformService: PlatformService
+  ) {
+    this.isMobile$ = this.platformService.isMobile$;
+  }
 
   // Component initialisation
   public ngOnInit(): void {

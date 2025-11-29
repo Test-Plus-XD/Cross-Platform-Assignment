@@ -3,8 +3,9 @@ import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { UserService, UserProfile } from '../../services/user.service';
 import { LanguageService } from '../../services/language.service';
+import { PlatformService } from '../../services/platform.service';
 import { AlertController, LoadingController, ModalController, ToastController } from '@ionic/angular';
-import { Subscription, combineLatest } from 'rxjs';
+import { Subscription, combineLatest, Observable } from 'rxjs';
 import { ProfileModalComponent } from './profile-modal.component';
 
 @Component({
@@ -22,8 +23,9 @@ export class UserPage implements OnInit, OnDestroy {
   public isLoading: boolean = true;
   // Default placeholder image
   public readonly defaultPhoto: string = 'assets/icon/Placeholder.png';
-  // Language observable for bilingual content
+  // Language and platform observables
   public lang$ = this.languageService.lang$;
+  public isMobile$: Observable<boolean>;
 
   // Comprehensive translations
   public translations = {
@@ -75,12 +77,15 @@ export class UserPage implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly userService: UserService,
     private readonly languageService: LanguageService,
+    private readonly platformService: PlatformService,
     private readonly router: Router,
     private readonly alertController: AlertController,
     private readonly loadingController: LoadingController,
     private readonly modalController: ModalController,
     private readonly toastController: ToastController
-  ) { }
+  ) {
+    this.isMobile$ = this.platformService.isMobile$;
+  }
 
   ngOnInit(): void {
     // Subscribe to both authentication and profile data
