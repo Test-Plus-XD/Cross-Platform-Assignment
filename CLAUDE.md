@@ -1,9 +1,10 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-11-27 (Major Refactor)
-> **Project Version:** 1.1.0
+> **Last Updated:** 2025-11-29 (Layout System & API Migration)
+> **Project Version:** 1.4.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
+> **API Backend:** Vercel (External Deployment)
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -26,7 +27,7 @@
 
 ## Project Overview
 
-**Cross-Platform-Assignment** is a full-stack restaurant discovery and booking application built with Angular/Ionic for the frontend and Node.js/Express for the backend. The application supports:
+**Cross-Platform-Assignment** is a full-stack restaurant discovery and booking application built with Angular/Ionic for the frontend and Node.js/Express for the backend (deployed on Vercel). The application supports:
 
 - **Multi-platform deployment:** Web (PWA), iOS, and Android via Capacitor
 - **Bilingual support:** English and Traditional Chinese (EN/TC)
@@ -35,13 +36,18 @@
 - **Booking management:** Create, view, and manage restaurant reservations
 - **Interactive maps:** Leaflet integration for restaurant locations
 - **Theming:** Light/dark mode with system preference detection
+- **Real-time chat:** Socket.IO integration for restaurant-customer communication
+- **AI Assistant:** Google Gemini integration for intelligent assistance
 
 **Key Features:**
 - Progressive Web App (PWA) with service worker
 - Real-time data sync via Firebase Firestore
-- Responsive design with Ionic components
+- Responsive design with Ionic components and adaptive layouts
 - Lazy-loaded routes for optimal performance
 - JWT-based API authentication
+- Socket.IO real-time chat system
+- Google Gemini AI assistant integration
+- Adaptive mobile/web layout system with automatic platform detection
 
 ---
 
@@ -54,14 +60,21 @@ Cross-Platform-Assignment/
 │   │   ├── pages/               # Feature modules (lazy-loaded)
 │   │   │   ├── home/           # Home page with featured content
 │   │   │   ├── search/         # Restaurant search with Algolia
-│   │   │   ├── restaurant/     # Restaurant detail view + map
+│   │   │   ├── restaurant/     # Restaurant detail view + map + chat
 │   │   │   ├── user/           # User profile (auth-protected)
+│   │   │   ├── bookings/       # Booking management page
+│   │   │   ├── store/          # Restaurant management (admin)
 │   │   │   ├── login/          # Authentication page
 │   │   │   └── test/           # Testing/development page
-│   │   ├── services/           # Core business logic (12 services)
+│   │   ├── services/           # Core business logic (17 services)
 │   │   │   ├── auth.service.ts           # Firebase authentication
 │   │   │   ├── restaurants.service.ts    # Restaurant CRUD
 │   │   │   ├── user.service.ts           # User profile management
+│   │   │   ├── booking.service.ts        # Booking management
+│   │   │   ├── reviews.service.ts        # Review CRUD operations
+│   │   │   ├── location.service.ts       # GPS & distance calculations
+│   │   │   ├── chat.service.ts           # Socket.IO real-time chat (NEW)
+│   │   │   ├── gemini.service.ts         # Google Gemini AI assistant (NEW)
 │   │   │   ├── guard.service.ts          # Route protection
 │   │   │   ├── theme.service.ts          # Dark/light mode
 │   │   │   ├── language.service.ts       # EN/TC switching
@@ -75,7 +88,9 @@ Cross-Platform-Assignment/
 │   │   │   ├── header/         # App header
 │   │   │   ├── footer/         # App footer
 │   │   │   ├── menu/           # Side menu
-│   │   │   └── tab/            # Tab navigation
+│   │   │   ├── tab/            # Tab navigation
+│   │   │   ├── chat-button/    # Floating chat button (NEW)
+│   │   │   └── gemini-button/  # AI assistant button (NEW)
 │   │   ├── app.module.ts       # Root module
 │   │   ├── app.component.ts    # Root component
 │   │   └── app-routing.module.ts # Route configuration
@@ -91,10 +106,10 @@ Cross-Platform-Assignment/
 │   ├── theme/                  # Ionic theming
 │   │   └── variables.scss     # CSS variables
 │   └── index.html              # HTML entry point
-├── API/                         # Backend REST API
-│   ├── API.js                  # Express server (528 lines)
-│   ├── package.json            # Backend dependencies
-│   └── serviceAccountKey.json  # Firebase Admin credentials
+├── API/                         # Backend REST API (DEPLOYED ON VERCEL)
+│   # NOTE: API is deployed externally, not in local repository
+│   # Backend URL: https://vercel-express-api-alpha.vercel.app
+│   # API source code is maintained separately and deployed to Vercel
 ├── PHP/                         # PHP error tracking
 │   └── composer.json           # Sentry integration
 ├── www/                         # Build output (Angular)
@@ -126,15 +141,19 @@ Cross-Platform-Assignment/
 | **Native** | Capacitor | 7.4.3 | iOS/Android bridge |
 | **Auth** | Firebase Auth | 12.5.0 | User authentication |
 | **Database** | Firestore | 12.5.0 | NoSQL cloud database |
+| **Real-time** | Socket.IO Client | 4.8.1 | Real-time chat communication |
+| **AI** | Google Gemini | - | AI assistant integration |
 
 ### Backend
 | Category | Technology | Version | Purpose |
 |----------|-----------|---------|---------|
+| **Deployment** | Vercel | - | External API hosting |
 | **Runtime** | Node.js | - | JavaScript runtime |
 | **Framework** | Express | 5.1.0 | REST API server |
 | **Auth** | Firebase Admin | 13.5.0 | JWT verification |
 | **Middleware** | CORS | 2.8.5 | Cross-origin requests |
 | **Module System** | ES Modules | - | `import`/`export` syntax |
+| **Real-time** | Socket.IO Server | - | WebSocket server |
 
 ### DevOps & Tools
 | Category | Technology | Version | Purpose |
@@ -248,8 +267,10 @@ ngOnInit() {
 ## API Documentation
 
 ### Base URLs
-- **Development:** `http://localhost:3000`
-- **Production:** `https://vercel-express-api-alpha.vercel.app`
+- **Production (Primary):** `https://vercel-express-api-alpha.vercel.app`
+- **Development (Optional):** `http://localhost:3000` (requires local API setup)
+
+**Note:** The API backend is deployed on Vercel. Local development uses the production API by default. To run a local API server, you would need to set up the backend separately (not included in this repository).
 
 ### Security Requirements
 
@@ -987,6 +1008,78 @@ this.dataService.post('/API/Bookings', data, token).subscribe(...);
 - Loading spinners
 - Alert dialogs
 
+### 13. BookingService (`booking.service.ts`)
+**Purpose:** Booking/reservation management
+**Key Methods:**
+- `getBookings()` - Fetch user's bookings
+- `getBooking(id)` - Fetch single booking
+- `createBooking(data)` - Create new reservation
+- `updateBooking(id, data)` - Update booking
+- `deleteBooking(id)` - Cancel booking
+
+**Uses:** DataService for HTTP calls with API passcode
+
+### 14. ReviewsService (`reviews.service.ts`)
+**Purpose:** Restaurant review management
+**Key Methods:**
+- `getReviews(restaurantId)` - Fetch restaurant reviews
+- `createReview(data)` - Submit review
+- `updateReview(id, data)` - Update review
+- `deleteReview(id)` - Delete review
+- `getReviewStats(restaurantId)` - Get review statistics
+
+**Uses:** DataService for HTTP calls
+
+### 15. LocationService (`location.service.ts`)
+**Purpose:** GPS and distance calculations
+**Key Methods:**
+- `getCurrentPosition()` - Get device GPS coordinates
+- `calculateDistance(lat1, lon1, lat2, lon2)` - Haversine formula
+- `formatDistance(meters)` - Human-readable distance
+
+**Features:**
+- Geolocation API integration
+- Distance calculation with Haversine algorithm
+- Coordinate validation
+
+### 16. ChatService (`chat.service.ts`) - NEW in v1.4.0
+**Purpose:** Real-time chat via Socket.IO
+**Key Methods:**
+- `connect()` - Connect to Socket.IO server
+- `disconnect()` - Close connection
+- `joinRoom(roomId)` - Join chat room
+- `sendMessage(roomId, message)` - Send message
+- `sendTypingIndicator(roomId, isTyping)` - Send typing status
+
+**Features:**
+- Socket.IO client integration
+- Room-based messaging
+- Typing indicators
+- Online/offline status tracking
+- Auto-reconnection with exponential backoff
+- Observable message streams
+
+**State:**
+- `messages$: Observable<ChatMessage>` - Message stream
+- `connectionStatus$: Observable<boolean>` - Connection state
+
+### 17. GeminiService (`gemini.service.ts`) - NEW in v1.4.0
+**Purpose:** Google Gemini AI assistant integration
+**Key Methods:**
+- `chat(message, history?)` - Conversational AI
+- `generate(prompt)` - Text generation
+- `askAboutRestaurant(question, restaurantName)` - Restaurant-specific queries
+- `getDiningRecommendation(preferences)` - Personalized recommendations
+
+**Features:**
+- Google Gemini API integration
+- Chat history management
+- Restaurant context awareness
+- Error handling and retry logic
+- Bilingual support (EN/TC)
+
+**Uses:** DataService for HTTP calls to `/API/Gemini` endpoints
+
 ---
 
 ## Routing & Navigation
@@ -1375,6 +1468,108 @@ The global styles now include modern utility classes for consistent page layouts
 - Content grids collapse to single column
 - Section headers stack vertically
 - Padding reduces for smaller screens
+
+### 11. Adaptive Responsive Layout System (NEW in v1.4.0)
+
+The application now uses a comprehensive adaptive layout system that automatically adjusts based on device type:
+
+**Platform Detection:**
+```typescript
+// In component
+public isMobile$: Observable<boolean>;
+
+constructor(private platformService: PlatformService) {
+  this.isMobile$ = this.platformService.isMobile$;
+}
+```
+
+**Layout Classes:**
+```html
+<!-- In page template -->
+<div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
+  <!-- Page content -->
+</div>
+```
+
+**Mobile Layout (`mobile-layout`):**
+- **Minimal Spacing:** Zero padding to screen edges for full-width content
+- **Hero Sections:** Full-width with no border radius
+- **Swiper Cards:** Shows 8% of next card (slides-per-view="1.08") to indicate scrollability
+- **Content Sections:** Minimal horizontal padding (12px for text, 0px for swipers)
+- **Gap Between Cards:** 12px spacing between swiper slides
+
+**Example Mobile Swiper:**
+```html
+<swiper-container
+  [class]="isMobile ? 'offers-swiper mobile-peek' : 'offers-swiper'"
+  [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
+  space-between="12">
+  <!-- Swiper slides -->
+</swiper-container>
+```
+
+**Web Layout (`web-layout`):**
+- **Left/Right Margins:**
+  - **Tablet (768px-1023px):** 15% (15vw) left and right margins
+  - **Desktop (1024px+):** 20% (20vw) left and right margins
+- **Hero Images:** Max height of 33.33vh (1/3 of viewport height)
+- **Content Sections:** Standard padding and spacing
+- **Swiper Cards:** Comfortable spacing with border radius
+
+**Hero Image Constraints:**
+```scss
+// Web layout - hero images limited to 1/3 screen height
+.web-layout .hero-section {
+  .hero-swiper, swiper-container {
+    max-height: 33.33vh;
+  }
+
+  .hero-image, img {
+    max-height: 33.33vh;
+    object-fit: cover;
+  }
+}
+```
+
+**Swiper "Peek" Effect (Mobile):**
+```scss
+// Global CSS - mobile peek class
+swiper-container.mobile-peek {
+  --swiper-slides-per-view: 1.08; // Shows 8% of next card
+}
+```
+
+**Responsive Margins:**
+```scss
+// Automatic margin adjustment
+.page-container.web-layout {
+  padding-left: 15vw;   // 15% on tablet
+  padding-right: 15vw;
+}
+
+@media (min-width: 1024px) {
+  .page-container.web-layout {
+    padding-left: 20vw;   // 20% on desktop
+    padding-right: 20vw;
+  }
+}
+```
+
+**Implementation Pattern for New Pages:**
+1. Inject `PlatformService` in component constructor
+2. Create `isMobile$` observable
+3. Wrap page content in `<ng-container *ngIf="isMobile$ | async as isMobile">`
+4. Apply `[class.mobile-layout]` and `[class.web-layout]` to page container
+5. Use conditional classes for swipers: `[class]="isMobile ? 'swiper mobile-peek' : 'swiper'"`
+6. Use conditional `slides-per-view`: `[attr.slides-per-view]="isMobile ? '1.08' : '1.2'"`
+
+**Key Benefits:**
+- Seamless mobile-to-web experience
+- Automatic layout adjustments
+- Optimized swiper behavior per platform
+- Consistent spacing and margins
+- Hero images properly constrained on web
+- Touch-friendly mobile design with visual scroll indicators
 
 ---
 
@@ -2141,11 +2336,12 @@ This is automatically handled by:
 
 ---
 
-**Document Version:** 1.3
-**Last Updated:** 2025-11-27
-**Changes:** Major architectural refactor - centralized app state, simplified DataService, UI/UX overhaul, Gemini button repositioning
+**Document Version:** 1.4.0
+**Last Updated:** 2025-11-29
+**Changes:** Adaptive responsive layout system implementation, API migration to Vercel, comprehensive service inventory update
 
 **Changelog:**
+- v1.4.0 (2025-11-29): Implemented adaptive responsive layout system with mobile/web-specific layouts, documented API Vercel deployment, added 5 missing services to documentation (BookingService, ReviewsService, LocationService, ChatService, GeminiService), updated all pages with platform-aware layout classes, added comprehensive responsive layout guidelines
 - v1.3 (2025-11-27): Centralized app state in AppComponent, refactored DataService to simple HTTP helper, removed individual page headers, dynamic restaurant titles, Gemini button moved to bottom-left and hidden when not logged in, added modern UI/UX utility classes
 - v1.2 (2025-11-27): Added Socket.IO chat integration, Google Gemini AI assistant, enhanced DataService, UI/UX modernization
 - v1.1 (2025-11-27): Updated loading states to use Eclipse.gif

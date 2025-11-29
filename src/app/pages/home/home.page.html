@@ -4,7 +4,7 @@
   <ng-container *ngIf="lang$ | async as curLang">
   <ng-container *ngIf="isMobile$ | async as isMobile">
   <!-- Main container with platform-aware class -->
-    <div class="page-container" [class.mobile-spacing]="isMobile" [class.web-spacing]="!isMobile">
+    <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
       <!-- Hero Banner with Auto-rotating Ads -->
       <div class="hero-section">
         <swiper-container #heroSwiper
@@ -48,9 +48,9 @@
         </div>
 
         <swiper-container #offersSwiper
-                          class="offers-swiper"
-                          slides-per-view="1.2"
-                          space-between="16"
+                          [class]="isMobile ? 'offers-swiper mobile-peek' : 'offers-swiper'"
+                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
+                          space-between="12"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let offer of (offers$ | async) || []">
             <ion-card class="offer-card" (click)="setFeatured(offer.image)" button>
@@ -86,9 +86,9 @@
         </div>
 
         <swiper-container #articlesSwiper
-                          class="articles-swiper"
-                          slides-per-view="1.2"
-                          space-between="16"
+                          [class]="isMobile ? 'articles-swiper mobile-peek' : 'articles-swiper'"
+                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
+                          space-between="12"
                           breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let article of (articles$ | async) || []">
             <ion-card class="article-card" button>
@@ -124,9 +124,9 @@
         </div>
 
         <swiper-container #reviewsSwiper
-                          class="reviews-swiper"
-                          slides-per-view="1.2"
-                          space-between="16"
+                          [class]="isMobile ? 'reviews-swiper mobile-peek' : 'reviews-swiper'"
+                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
+                          space-between="12"
                           breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let review of (reviews$ | async) || []">
             <ion-card class="review-card">
@@ -163,9 +163,9 @@
         </div>
 
         <swiper-container #restaurantsSwiper
-                          class="restaurants-swiper"
-                          slides-per-view="1.2"
-                          space-between="16"
+                          [class]="isMobile ? 'restaurants-swiper mobile-peek' : 'restaurants-swiper'"
+                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
+                          space-between="12"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
             <ion-card class="restaurant-card" button>

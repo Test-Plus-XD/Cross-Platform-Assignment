@@ -2,10 +2,11 @@
 // TestPage with header copied from Home and a minimal Swiper demo for narrowing the theme issue
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { IonContent, ScrollDetail } from '@ionic/angular/standalone';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable } from 'rxjs';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { LayoutService } from '../../services/layout.service';
+import { PlatformService } from '../../services/platform.service';
 
 @Component({
   selector: 'app-test',
@@ -14,9 +15,10 @@ import { LayoutService } from '../../services/layout.service';
   standalone: false,
 })
 export class TestPage implements OnInit, OnDestroy {
-  // Language and theme streams exposed for template binding
+  // Language, theme, and platform streams exposed for template binding
   lang$ = this.lang.lang$;
   isDark$ = this.theme.isDark$;
+  isMobile$: Observable<boolean>;
   // Minimal demo slides for the test swiper
   slides: string[] = ['Slide one — hello', 'Slide two — greetings', 'Slide three — farewell'];
   longText: string[] = [];
@@ -25,9 +27,15 @@ export class TestPage implements OnInit, OnDestroy {
   // Subscriptions container so we can tear down listeners
   private subs: Subscription[] = [];
 
-  constructor(readonly lang: LanguageService, readonly theme: ThemeService, public layout: LayoutService) {
+  constructor(
+    readonly lang: LanguageService,
+    readonly theme: ThemeService,
+    public layout: LayoutService,
+    readonly platformService: PlatformService
+  ) {
     // Log construction for debug
     console.log('TestPage: constructor()');
+    this.isMobile$ = this.platformService.isMobile$;
   }
 
   ngOnInit(): void {
