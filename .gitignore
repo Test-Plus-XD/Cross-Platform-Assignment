@@ -11,6 +11,7 @@ serviceAccountKey.json
 .tmp
 *.tmp
 *.tmp.*
+.bak
 UserInterfaceState.xcuserstate
 $RECYCLE.BIN/
 
