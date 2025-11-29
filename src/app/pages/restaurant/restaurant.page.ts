@@ -11,6 +11,7 @@ import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
 import { AuthService } from '../../services/auth.service';
+import { UserService, UserProfile } from '../../services/user.service';
 import { BookingService, CreateBookingRequest } from '../../services/booking.service';
 import { LocationService, DistanceResult } from '../../services/location.service';
 import { MapModalComponent } from './map-modal.component';
@@ -70,7 +71,11 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   newReviewRating: number = 5;
   newReviewComment: string = '';
   isWritingReview: boolean = false;
-  
+
+  // Restaurant claim state
+  canClaimRestaurant: boolean = false;
+  isClaimingRestaurant: boolean = false;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
@@ -80,6 +85,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     private readonly theme: ThemeService,
     private readonly platform: PlatformService,
     private readonly authService: AuthService,
+    private readonly userService: UserService,
     private readonly bookingService: BookingService,
     private readonly locationService: LocationService,
     private readonly modalController: ModalController,
@@ -137,6 +143,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
         // Calculate distance from user's location
         this.calculateDistance();
+
+        // Check if user can claim this restaurant
+        this.checkClaimEligibility();
 
         // Load menu items from sub-collection
         this.loadMenuItems(id);
@@ -544,6 +553,138 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Get rating colour
   getRatingColour(rating: number): string {
     return this.reviewsService.getRatingColour(rating);
+  }
+
+  /// Check if current user can claim this restaurant
+  private checkClaimEligibility(): void {
+    // Check if user is logged in
+    if (!this.authService.isLoggedIn) {
+      this.canClaimRestaurant = false;
+      return;
+    }
+
+    // Check if restaurant has no owner
+    if (this.restaurant?.Owner) {
+      this.canClaimRestaurant = false;
+      return;
+    }
+
+    // Get current user profile to check type
+    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
+      if (!user) {
+        this.canClaimRestaurant = false;
+        return;
+      }
+
+      // Get user profile to check type
+      this.userService.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
+        next: (profile: UserProfile | null) => {
+          // User can claim if they have type 'Restaurant'
+          this.canClaimRestaurant = profile?.type?.toLowerCase() === 'restaurant';
+          console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant, 'User type:', profile?.type);
+        },
+        error: (err) => {
+          console.error('RestaurantPage: Error checking claim eligibility', err);
+          this.canClaimRestaurant = false;
+        }
+      });
+    });
+  }
+
+  /// Claim ownership of this restaurant
+  async claimRestaurant(): Promise<void> {
+    try {
+      if (!this.restaurant || !this.authService.isLoggedIn) {
+        return;
+      }
+
+      const lang = await this.language.lang$.pipe(take(1)).toPromise();
+      const user = await this.authService.currentUser$.pipe(take(1)).toPromise();
+
+      if (!user) {
+        await this.showToast(lang === 'TC' ? '請先登入' : 'Please log in first', 'warning');
+        return;
+      }
+
+      // Confirm claim
+      const confirmed = await this.confirmClaim(lang === 'TC');
+      if (!confirmed) return;
+
+      this.isClaimingRestaurant = true;
+
+      // Update restaurant with current user as owner
+      this.restaurantsService.updateRestaurant(this.restaurant.id, {
+        Owner: user.uid
+      }).pipe(takeUntil(this.destroy$)).subscribe({
+        next: async () => {
+          console.log('RestaurantPage: Restaurant claimed successfully');
+
+          // Update local restaurant object
+          if (this.restaurant) {
+            this.restaurant.Owner = user.uid;
+          }
+
+          // Update user profile with restaurantId
+          await this.userService.updateUserProfile(user.uid, {
+            restaurantId: this.restaurant?.id
+          }).toPromise();
+
+          this.isClaimingRestaurant = false;
+          this.canClaimRestaurant = false;
+
+          const successMessage = lang === 'TC'
+            ? '已成功認領餐廳！'
+            : 'Restaurant claimed successfully!';
+          await this.showToast(successMessage, 'success');
+
+          // Reload restaurant data
+          if (this.restaurant?.id) {
+            this.loadRestaurantData(this.restaurant.id);
+          }
+        },
+        error: async (err: Error) => {
+          console.error('RestaurantPage: Error claiming restaurant', err);
+          this.isClaimingRestaurant = false;
+          await this.showToast(
+            err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again'),
+            'danger'
+          );
+        }
+      });
+    } catch (err) {
+      console.error('claimRestaurant error', err);
+      this.isClaimingRestaurant = false;
+    }
+  }
+
+  /// Confirm restaurant claim
+  private async confirmClaim(isTC: boolean): Promise<boolean> {
+    return new Promise(async (resolve) => {
+      const restaurantName = isTC
+        ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
+        : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || '');
+
+      const message = isTC
+        ? `您確定要認領 ${restaurantName} 嗎？認領後，您將成為此餐廳的擁有者。`
+        : `Are you sure you want to claim ${restaurantName}? After claiming, you will become the owner of this restaurant.`;
+
+      const alert = await this.alertController.create({
+        header: isTC ? '確認認領' : 'Confirm Claim',
+        message: message,
+        buttons: [
+          {
+            text: isTC ? '取消' : 'Cancel',
+            role: 'cancel',
+            handler: () => resolve(false)
+          },
+          {
+            text: isTC ? '確認' : 'Confirm',
+            handler: () => resolve(true)
+          }
+        ]
+      });
+      await alert.present();
+    });
   }
 
   /// Clean up on destroy
