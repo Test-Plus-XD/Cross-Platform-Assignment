@@ -28,7 +28,7 @@ export interface AppState {
 export class AppComponent implements OnInit, OnDestroy {
     @ViewChild(HeaderComponent) header!: HeaderComponent;
 
-    // Centralized app state - accessible by all components
+    // Centralised app state - accessible by all components
     private appStateSubject = new BehaviorSubject<AppState>(this.loadStateFromStorage());
     public appState$ = this.appStateSubject.asObservable();
 
@@ -42,7 +42,7 @@ export class AppComponent implements OnInit, OnDestroy {
         readonly platform: PlatformService,
         readonly UI: UIService,
         readonly authService: AuthService,
-        private router: Router
+        readonly router: Router
     ) {
         // Ensure the initial theme is applied right away.
         // This re-applies whatever ThemeService computed in getInitialTheme().
