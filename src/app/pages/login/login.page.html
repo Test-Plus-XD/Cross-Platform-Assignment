@@ -4,10 +4,10 @@
     <!-- Email/Password Form -->
     <form (ngSubmit)="onSubmitEmail()" #emailForm="ngForm">
 
-      <!-- App Image -->
-      <ion-item>
-
-      </ion-item>
+      <!-- App Brand Image -->
+      <div class="brand-container">
+        <img [src]="brandIcon$ | async" alt="App Brand" class="login-brand-img" />
+      </div>
 
       <!-- Display Name Field (only shown in registration mode) -->
       <ion-item *ngIf="!isLoginMode">

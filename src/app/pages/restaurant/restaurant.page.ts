@@ -76,6 +76,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   canClaimRestaurant: boolean = false;
   isClaimingRestaurant: boolean = false;
 
+  // Tab navigation state
+  selectedTab: string = 'overview';
+
+  // Opening hours expansion state
+  hoursExpanded: boolean = false;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
@@ -685,6 +691,17 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       });
       await alert.present();
     });
+  }
+
+  /// Toggle opening hours expansion
+  toggleHours(): void {
+    this.hoursExpanded = !this.hoursExpanded;
+  }
+
+  /// Scroll to booking section (switches to overview tab if needed)
+  scrollToBooking(): void {
+    this.selectedTab = 'overview';
+    // Smooth scroll to booking section would be implemented here if needed
   }
 
   /// Clean up on destroy

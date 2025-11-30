@@ -2,6 +2,7 @@ import { Component, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
+import { ThemeService } from '../../services/theme.service';
 import { ToastController, LoadingController } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
@@ -21,6 +22,8 @@ export class LoginPage implements OnDestroy {
 
   // Language observable
   public lang$ = this.languageService.lang$;
+  // Brand icon observable that changes with theme
+  public brandIcon$ = this.themeService.brandIcon$;
   // Translations
   public translations = {
     displayName: { EN: 'Display Name', TC: '顯示名稱' },
@@ -54,6 +57,7 @@ export class LoginPage implements OnDestroy {
   constructor(
     readonly authService: AuthService,
     readonly languageService: LanguageService,
+    readonly themeService: ThemeService,
     readonly router: Router,
     readonly toastController: ToastController,
     readonly loadingController: LoadingController

@@ -13,9 +13,15 @@
     max-width: 1400px;
     margin: 0 auto;
   }
-  // Search header section styling
+  // Search header section styling - sticky below header
   .search-header {
-    margin-bottom: 2rem;
+    position: sticky;
+    top: var(--header-spacing, 48px);
+    z-index: 10;
+    background: var(--ion-background-color);
+    padding: 1rem 1rem 0.5rem;
+    margin: -1rem -1rem 2rem -1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   // Title container
   .search-title-container {
@@ -95,6 +101,35 @@
 
       &.clear-chip {
         --background: rgba(var(--ion-color-danger-rgb), 0.1);
+      }
+    }
+
+    // Filter button styling (opens filter dialog)
+    .filter-button {
+      font-weight: 600;
+
+      ion-icon:first-of-type {
+        margin-right: 0.25rem;
+      }
+    }
+
+    // Filter tag styling (individual selected filters)
+    .filter-tag {
+      font-size: 0.8125rem;
+      padding: 0.375rem 0.75rem;
+
+      ion-label {
+        font-weight: 500;
+      }
+
+      ion-icon {
+        font-size: 1rem;
+        cursor: pointer;
+        margin-left: 0.25rem;
+
+        &:hover {
+          opacity: 0.7;
+        }
       }
     }
   }

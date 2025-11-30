@@ -1,611 +1,835 @@
-/* Modern minimalist UI - add spacing between cards */
-ion-card {
-  margin-bottom: 20px;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+// Modern restaurant detail page styling - Comprehensive redesign
+:host {
+  // Restaurant page styling with white background and high contrast black text
+  .restaurant-page {
+    background: #ffffff;
+    color: #000000;
+    min-height: 100vh;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-  }
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-/* Claim Restaurant Card - special styling */
-.claim-card {
-  background: linear-gradient(135deg, rgba(var(--ion-color-success-rgb), 0.1), rgba(var(--ion-color-success-rgb), 0.05));
-  border: 2px solid var(--ion-color-success);
-
-  ion-card-title {
-    color: var(--ion-color-success);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 600;
-
-    ion-icon {
-      font-size: 1.5rem;
+    // Dark mode adjustments
+    @at-root :host-context(.dark) & {
+      background: var(--ion-background-color);
+      color: var(--ion-text-color);
     }
   }
 
-  .claim-description {
-    margin-bottom: 16px;
-    line-height: 1.5;
-    color: var(--ion-text-color);
-  }
-
-  .claim-button {
-    --background: var(--ion-color-success);
-    --background-hover: var(--ion-color-success-shade);
-    --color: white;
-    font-weight: 600;
-  }
-}
-
-/* Image banner fills width and keeps aspect ratio */
-.image-row {
-  margin: 0;
-}
-
-.image-col {
-  padding: 0;
-  position: relative;
-}
-
-.restaurant-image {
-  min-width: 100% !important;
-  max-width: 100% !important;
-  height: 240px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Web view: 25% margin left/right and reduce image height to max 1/3 of screen */
-@media (min-width: 769px) {
-  .restaurant-container {
-    margin-left: 25%;
-    margin-right: 25%;
-    padding: 0 20px;
-  }
-
-  .restaurant-image {
-    max-height: 33vh;
-    height: auto;
-  }
-
+  // === HERO SECTION === //
   .hero-section {
-    max-height: 33vh;
+    position: relative;
+    width: 100%;
+    min-height: 400px;
+    max-height: 60vh;
     overflow: hidden;
-  }
-}
 
-/* Name overlay centred on image */
-.name-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: center;
-  color: white;
-  text-shadow: 0 2px 6px rgba(0,0,0,0.6);
-  pointer-events: none;
-}
-
-.name-overlay h1 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-
-/* Refresher spinner styling */
-.refresher-spinner {
-  width: 100px;
-  height: 100px;
-  display: block;
-  margin: 0 auto;
-}
-
-.custom-loading .loading-spinner {
-  display: none;
-}
-
-.custom-loading .loading-wrapper::before {
-  content: "";
-  display: block;
-  width: 50px;
-  height: 50px;
-  margin: 0 auto 12px auto;
-  background-image: url("../../../assets/icon/Eclipse.gif");
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-
-/* Distance badge styling on hero image */
-.distance-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 8px;
-  padding: 6px 12px;
-  border-radius: 16px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  pointer-events: auto;
-
-  ion-icon {
-    font-size: 1rem;
-  }
-}
-
-/* Cells: equal height look, no border */
-.cells-row {
-  margin: 0;
-}
-
-.cell {
-  padding: 0.75rem;
-  min-height: 120px;
-}
-
-ion-toolbar {
-  --background: transparent;
-  box-shadow: none;
-  width: 100%;
-}
-
-ion-datetime {
-  --inner-padding-end: 0;
-  --inner-padding-start: 0;
-  border-radius: 10px;
-}
-
-/* Titles */
-.cell-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-
-/* Muted helper */
-.muted {
-  color: var(--muted);
-}
-
-/* Booking bar overlay just below the hero image */
-.booking-bar {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: -22px; /* overlap the image edge slightly */
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  background: rgba(255,255,255,0.95);
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  z-index: 30;
-  backdrop-filter: blur(4px);
-  width: 100%;
-  min-height: 150px;
-  max-height: 50vw;
-  height: 50vh;
-}
-
-/* Booking stack styling for light theme */
-.booking-stack {
-  width: 100% !important;
-  display: block;
-  padding: 0.25rem 0;
-  background: transparent;
-  border-radius: 6px;
-}
-
-/* Booking stack for dark theme */
-.booking-stack.dark {
-  background: rgba(10,12,14,0.016); // subtle dark background overlay
-  color: var(--ion-color-light); // text uses light colour variable
-  border-radius: 8px;
-}
-
-/* Ensure the datetime control respects contrast inside dark booking bar */
-.booking-stack.dark ion-datetime {
-  background: var(--bg);
-  color: var(--ion-color-primary);
-}
-
-/* Light theme booking style tweak */
-.booking-stack ion-datetime {
-  color: var(--ion-color-primary);
-}
-
-/* Small helper to keep button readable against dark background */
-.booking-stack.dark ion-button {
-  --background: var(--ion-color-primary-shade, #2d6cdf);
-  --color: #fff;
-  color: #fff !important;
-}
-
-/* Make the datetime compact */
-.booking-datetime {
-  width: 100%;
-  align-self: center;
-  --padding-start: 6px;
-  --padding-end: 6px;
-}
-
-/* Guest selection styling */
-.guest-selection {
-  width: 100%;
-
-  .guest-item {
-    --background: transparent;
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    --min-height: 44px;
-
-    ion-icon {
-      color: var(--ion-color-primary);
-      margin-right: 8px;
+    .hero-background {
+      width: 100%;
+      height: 100%;
+      min-height: 400px;
+      object-fit: cover;
+      display: block;
     }
 
-    ion-label {
-      font-weight: 500;
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
     }
 
-    .guest-select {
-      min-width: 100px;
+    .hero-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2rem 1.5rem;
+      z-index: 10;
+      text-align: center;
+      color: white;
+
+      .restaurant-name-en {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        line-height: 1.2;
+      }
+
+      .restaurant-name-tc {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+        line-height: 1.3;
+      }
+
+      .restaurant-description {
+        font-size: 1rem;
+        margin: 0;
+        opacity: 0.95;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      }
+    }
+  }
+
+  // === TAB NAVIGATION === //
+  .tab-navigation {
+    background: white;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0;
+
+    @at-root :host-context(.dark) & {
+      background: var(--ion-card-background);
+      border-bottom-color: var(--border);
+    }
+
+    ion-segment {
+      --background: transparent;
+      padding: 0.5rem 1rem;
+
+      ion-segment-button {
+        --color: #666666;
+        --color-checked: #000000;
+        --indicator-color: #FFD700; // Yellow underline
+        --indicator-height: 3px;
+        font-weight: 600;
+        text-transform: none;
+        font-size: 1rem;
+
+        @at-root :host-context(.dark) & {
+          --color: var(--ion-text-color);
+          --color-checked: var(--ion-color-primary);
+          --indicator-color: var(--ion-color-primary);
+        }
+      }
+    }
+  }
+
+  // === TAB CONTENT === //
+  .tab-content {
+    padding: 1.5rem 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  // === DIETARY TAGS SECTION === //
+  .dietary-tags-section {
+    margin-bottom: 2rem;
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+
+      .dietary-tag {
+        background: #000000;
+        color: #ffffff;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        margin: 0;
+
+        @at-root :host-context(.dark) & {
+          background: var(--ion-color-primary);
+        }
+      }
+    }
+
+    .dietary-explanation {
       text-align: right;
+
+      .explanation-label {
+        font-size: 0.875rem;
+        color: #666666;
+        font-style: italic;
+
+        @at-root :host-context(.dark) & {
+          color: var(--muted);
+        }
+      }
     }
   }
-}
 
-/* Special requests styling */
-.special-requests {
-  width: 100%;
+  // === INFO GRID === //
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
 
-  .requests-item {
-    --background: transparent;
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    align-items: flex-start;
-
-    ion-icon {
-      color: var(--ion-color-primary);
-      margin-right: 8px;
-      margin-top: 12px;
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
     }
 
-    .requests-textarea {
-      --padding-start: 0;
-      --padding-end: 0;
-      font-size: 0.9rem;
+    .info-card {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+      @at-root :host-context(.dark) & {
+        background: var(--ion-card-background);
+      }
+
+      .info-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #000000;
+        margin: 0 0 0.75rem 0;
+
+        @at-root :host-context(.dark) & {
+          color: var(--ion-text-color);
+        }
+      }
+
+      .info-content {
+        font-size: 0.9375rem;
+        line-height: 1.6;
+        color: #333333;
+
+        @at-root :host-context(.dark) & {
+          color: var(--ion-text-color);
+        }
+
+        p {
+          margin: 0;
+        }
+
+        .payment-methods {
+          font-weight: 500;
+        }
+
+        .seats-number {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #000000;
+
+          @at-root :host-context(.dark) & {
+            color: var(--ion-color-primary);
+          }
+        }
+      }
+
+      .contact-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+
+        .contact-item {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+
+          ion-icon {
+            font-size: 1.25rem;
+            color: #000000;
+
+            @at-root :host-context(.dark) & {
+              color: var(--ion-color-primary);
+            }
+          }
+
+          a {
+            color: #000000;
+            text-decoration: none;
+            font-weight: 500;
+
+            &:hover {
+              text-decoration: underline;
+            }
+
+            @at-root :host-context(.dark) & {
+              color: var(--ion-text-color);
+            }
+          }
+        }
+      }
     }
   }
-}
 
-/* Booking datetime row layout */
-.datetime-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 98%;
-  gap: 1rem;
-}
+  // === OPENING HOURS SECTION === //
+  .opening-hours-section {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
 
-.datetime-row.dark {
-  background: #fff;
-}
+    @at-root :host-context(.dark) & {
+      background: var(--ion-card-background);
+      border-color: var(--border);
+    }
 
-/* Override dark mode button styles */
-ion-button.dark {
-  --background: var(--ion-color-primary);
-  --color: var(--ion-color-primary-contrast);
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      margin-bottom: 1rem;
 
-  &:hover {
-    --background: var(--ion-color-primary-shade);
+      .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #000000;
+        margin: 0;
+
+        @at-root :host-context(.dark) & {
+          color: var(--ion-text-color);
+        }
+      }
+
+      ion-icon {
+        font-size: 1.5rem;
+        color: #000000;
+
+        @at-root :host-context(.dark) & {
+          color: var(--ion-text-color);
+        }
+      }
+    }
+
+    .hours-content {
+      margin-bottom: 1rem;
+
+      .hours-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        .hours-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 0.5rem 0;
+          border-bottom: 1px solid #f0f0f0;
+
+          @at-root :host-context(.dark) & {
+            border-bottom-color: var(--border);
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          .day {
+            font-weight: 600;
+            color: #000000;
+
+            @at-root :host-context(.dark) & {
+              color: var(--ion-text-color);
+            }
+          }
+
+          .time {
+            color: #666666;
+
+            @at-root :host-context(.dark) & {
+              color: var(--muted);
+            }
+          }
+        }
+      }
+
+      .no-data {
+        color: #999999;
+        font-style: italic;
+        margin: 0;
+
+        @at-root :host-context(.dark) & {
+          color: var(--muted);
+        }
+      }
+    }
+
+    .reserve-button {
+      --background: #000000;
+      --background-hover: #333333;
+      --color: #ffffff;
+      font-weight: 600;
+      text-transform: none;
+      margin: 0;
+
+      @at-root :host-context(.dark) & {
+        --background: var(--ion-color-primary);
+        --background-hover: var(--ion-color-primary-shade);
+      }
+    }
   }
 
-  &[disabled] {
-    --background: var(--ion-color-medium);
-    opacity: 0.7;
+  // === ADDRESS & MAP SECTION === //
+  .address-map-section {
+    margin-bottom: 2rem;
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #000000;
+      margin: 0 0 0.75rem 0;
+
+      @at-root :host-context(.dark) & {
+        color: var(--ion-text-color);
+      }
+    }
+
+    .address-text {
+      font-size: 0.9375rem;
+      line-height: 1.6;
+      color: #333333;
+      margin: 0 0 1rem 0;
+
+      @at-root :host-context(.dark) & {
+        color: var(--ion-text-color);
+      }
+    }
+
+    .map-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #000000;
+      text-decoration: none;
+      font-weight: 600;
+      margin-bottom: 1rem;
+
+      &:hover {
+        text-decoration: underline;
+      }
+
+      @at-root :host-context(.dark) & {
+        color: var(--ion-color-primary);
+      }
+
+      ion-icon {
+        font-size: 1.25rem;
+      }
+    }
+
+    .map-container {
+      width: 100%;
+      height: 300px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 1rem;
+      border: 1px solid #e0e0e0;
+
+      @at-root :host-context(.dark) & {
+        border-color: var(--border);
+      }
+
+      .leaflet-map {
+        width: 100%;
+        height: 100%;
+      }
+    }
   }
-}
 
-.time-body {
-  background: none !important;
-}
+  // === MENU SECTION === //
+  .menu-section {
+    margin-bottom: 2rem;
 
-ion-button .dark {
-  color: rgba(255,255,255,0.95);
-}
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #000000;
+      margin: 0 0 1.5rem 0;
 
-/* Section header used for Menu and Review sections */
-.section-header {
-  display: flex;
-  align-items: center;
-  font-weight: 600;
-  margin: 0.75rem 0;
-}
+      @at-root :host-context(.dark) & {
+        color: var(--ion-text-color);
+      }
+    }
 
-/* Review spot styling */
-.review-spot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem 0;
-}
+    .menu-loading {
+      display: flex;
+      justify-content: center;
+      padding: 2rem 0;
 
-/* Keep map height reasonable */
-.map-container {
-  width: 100%;
-  min-height: 150px;
-  max-height: 50vh;
-  height: 30vw;
-  border-radius: 5px;
-  overflow: hidden;
-}
+      .small-spinner {
+        width: 40px;
+        height: 40px;
+      }
+    }
 
-/* Menu small hint */
-.hint {
-  margin-top: 6px;
-}
+    .menu-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
 
-/* Slight adjustment so booking bar doesn't overlap page content too much */
-.info-grid {
-  padding-top: 28px; /* allow space for the booking bar overlap */
-}
+      .menu-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f9f9f9;
+        border-radius: 8px;
 
-/* Small spacing helper */
-.small {
-  font-size: 0.9rem;
-}
+        @at-root :host-context(.dark) & {
+          background: var(--ion-card-background);
+        }
 
-/* Utility spacing */
-.mt-1 {
-  margin-top: 0.5rem;
-}
+        .menu-item-price {
+          min-width: 80px;
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: #000000;
+          text-align: left;
 
-/* Font weight helper */
-.font-medium {
-  font-weight: 500;
-}
+          @at-root :host-context(.dark) & {
+            color: var(--ion-color-primary);
+          }
+        }
 
-/* Force calendar to act as a light-scheme component even inside dark UI */
-.force-calendar-light-in-dark {
-  /* Tell UA the component uses light colours (helps form controls, scrollbars, etc.). */
-  color-scheme: light !important;
-  /* Prevent system forced-colour adjustments (Windows high-contrast / browser auto-invert). */
-  forced-color-adjust: none !important;
-  /* Small safety: make sure images/icons inside this area are not auto-inverted. */
-  -webkit-print-color-adjust: exact !important;
-}
+        .menu-item-info {
+          flex: 1;
 
-/* Define the canonical palette for the in-light calendar */
-.force-calendar-light-in-dark {
-  /* Background for calendar panels (cards/picker) */
-  --calendar-bg: #ffffff !important;
-  /* Primary text colour inside the calendar */
-  --calendar-text: #0b0b0b !important;
-  /* Muted / secondary text inside calendar */
-  --calendar-muted: #6b7280 !important;
-  /* Border / divider colour */
-  --calendar-border: rgba(0,0,0,0.08) !important;
-  /* Primary highlight (selected date) */
-  --calendar-primary: #0b69ff !important;
-  /* Colour for text on primary highlight */
-  --calendar-primary-contrast: #ffffff !important;
-  /* Hover / focus shadow */
-  --calendar-focus-shadow: 0 0 0 3px rgba(11,105,255,0.14) !important;
-}
+          .menu-item-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #000000;
+            margin: 0 0 0.25rem 0;
 
-/* Apply to Ionic ion-datetime and its internal parts via exposed CSS vars */
-.force-calendar-light-in-dark ion-datetime,
-.force-calendar-light-in-dark ion-datetime * {
-  /* Ensure the host element uses our chosen background and foreground. */
-  background: var(--calendar-bg) !important;
-  color: var(--calendar-text) !important;
-  border-color: var(--calendar-border) !important;
-}
+            @at-root :host-context(.dark) & {
+              color: var(--ion-text-color);
+            }
+          }
 
-/* Ionic components expose CSS variables — override the common ones here */
-.force-calendar-light-in-dark ion-datetime {
-  /* Ionic-specific variables — set both standard and fallback names. */
-  --background: var(--calendar-bg) !important;
-  --ion-background-color: var(--calendar-bg) !important;
-  --color: var(--calendar-text) !important;
-  --ion-text-color: var(--calendar-text) !important;
-  --placeholder-color: var(--calendar-muted) !important;
-  --highlight-color: var(--calendar-primary) !important;
-  --box-shadow: none !important;
-}
+          .menu-item-description {
+            font-size: 0.875rem;
+            color: #666666;
+            margin: 0;
+            line-height: 1.5;
 
-/* Common calendar DOMs: force backgrounds, text, borders and z-index
-   (covers many calendar libraries and custom implementations). */
-.force-calendar-light-in-dark .calendar,
-.force-calendar-light-in-dark .datepicker,
-.force-calendar-light-in-dark .ion-datetime,
-.force-calendar-light-in-dark .calendar-wrapper,
-.force-calendar-light-in-dark .calendar-panel {
-  background: var(--calendar-bg) !important; /* Panel background */
-  color: var(--calendar-text) !important; /* Primary text */
-  border: 1px solid var(--calendar-border) !important; /* Subtle borders */
-  box-shadow: 0 6px 18px rgba(2,6,23,0.06) !important; /* Gentle elevation */
-}
+            @at-root :host-context(.dark) & {
+              color: var(--muted);
+            }
+          }
+        }
+      }
+    }
 
-/* Weekday (header) row: white background, muted uppercase labels */
-.force-calendar-light-in-dark .calendar-header,
-.force-calendar-light-in-dark .calendar-weekdays,
-.force-calendar-light-in-dark .calendar-weekday {
-  background: transparent !important;
-  color: var(--calendar-muted) !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
-  border-bottom: 1px solid var(--calendar-border) !important;
-}
+    .no-data {
+      color: #999999;
+      font-style: italic;
+      text-align: center;
+      padding: 2rem 0;
 
-/* Day cells: default, disabled, muted and today styles */
-.force-calendar-light-in-dark .calendar-day,
-.force-calendar-light-in-dark .day,
-.force-calendar-light-in-dark .ion-datetime-day {
-  background: transparent !important;
-  color: var(--calendar-text) !important;
-  border-radius: 6px !important;
-  border: 0 !important;
-  padding: 0.375rem !important;
-  min-width: 2.4rem !important;
-  min-height: 2.4rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
+      @at-root :host-context(.dark) & {
+        color: var(--muted);
+      }
+    }
+  }
 
-/* Disabled/unavailable dates: lowered contrast but still readable */
-.force-calendar-light-in-dark .calendar-day[aria-disabled="true"],
-.force-calendar-light-in-dark .calendar-day.disabled,
-.force-calendar-light-in-dark .day.disabled {
-  color: rgba(11,11,11,0.38) !important; /* Muted but readable */
-  opacity: 0.7 !important;
-  pointer-events: none !important;
-}
+  // === REVIEW TAB === //
+  .review-tab {
+    .review-stats {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 2rem 1.5rem;
+      margin-bottom: 2rem;
+      text-align: center;
 
-/* Today marker: subtle outline to identify 'today' */
-.force-calendar-light-in-dark .calendar-day.today,
-.force-calendar-light-in-dark .calendar-day--today {
-  box-shadow: inset 0 0 0 1px rgba(11,11,11,0.06) !important;
-  color: var(--calendar-text) !important;
-}
+      @at-root :host-context(.dark) & {
+        background: var(--ion-card-background);
+      }
 
-/* Selected / active date: bright blue pill with white text */
-.force-calendar-light-in-dark .calendar-day.selected,
-.force-calendar-light-in-dark .calendar-day--selected,
-.force-calendar-light-in-dark .day.selected,
-.force-calendar-light-in-dark .ion-datetime-day-selected,
-.force-calendar-light-in-dark [data-selected="true"] {
-  background: var(--calendar-primary) !important; /* Blue selected background */
-  color: var(--calendar-primary-contrast) !important; /* White text on blue */
-  box-shadow: none !important;
-  border-radius: 8px !important;
-  transform: translateZ(0); /* promote to own layer for crisp rendering */
-}
+      .stats-summary {
+        .average-rating {
+          h2 {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #000000;
+            margin: 0 0 0.5rem 0;
 
-/* Range states: start / end / in-range */
-.force-calendar-light-in-dark .calendar-range,
-.force-calendar-light-in-dark .in-range,
-.force-calendar-light-in-dark .range-start,
-.force-calendar-light-in-dark .range-end {
-  background: linear-gradient(90deg, rgba(11,105,255,0.08), rgba(11,105,255,0.04)) !important;
-  color: var(--calendar-text) !important;
-}
+            @at-root :host-context(.dark) & {
+              color: var(--ion-color-primary);
+            }
+          }
 
-/* Hover and focus: accessible focus ring and hover tint */
-.force-calendar-light-in-dark .calendar-day:hover,
-.force-calendar-light-in-dark .calendar-day:focus,
-.force-calendar-light-in-dark .calendar-day:active {
-  outline: none !important;
-  box-shadow: var(--calendar-focus-shadow) !important;
-  background: rgba(11,105,255,0.06) !important;
-  color: var(--calendar-text) !important;
-}
+          .stars {
+            font-size: 1.5rem;
+            color: #FFD700;
+            margin-bottom: 0.5rem;
+          }
 
-/* Calendar header titles and nav buttons (month/year & prev/next) */
-.force-calendar-light-in-dark .calendar-title,
-.force-calendar-light-in-dark .calendar-nav,
-.force-calendar-light-in-dark .calendar-header button,
-.force-calendar-light-in-dark .calendar-nav-button {
-  color: var(--calendar-text) !important;
-  background: transparent !important;
-  border-radius: 6px !important;
-  border: 1px solid transparent !important;
-  padding: 0.25rem 0.5rem !important;
-}
+          p {
+            color: #666666;
+            margin: 0;
 
-/* Make nav buttons visible on dark backgrounds and on hover */
-.force-calendar-light-in-dark .calendar-header button:hover,
-.force-calendar-light-in-dark .calendar-nav-button:hover {
-  background: rgba(11,105,255,0.06) !important;
-  border-color: rgba(11,105,255,0.08) !important;
-}
+            @at-root :host-context(.dark) & {
+              color: var(--muted);
+            }
+          }
+        }
+      }
+    }
 
-/* If the calendar uses shadow DOM parts, try to override common part names:
-   (Ionic/Stencil custom elements sometimes expose parts like 'day' / 'button') */
-.force-calendar-light-in-dark ion-datetime::part(day),
-.force-calendar-light-in-dark ion-datetime::part(header),
-.force-calendar-light-in-dark ion-datetime::part(button),
-.force-calendar-light-in-dark ion-datetime::part(content) {
-  background: var(--calendar-bg) !important;
-  color: var(--calendar-text) !important;
-  border-color: var(--calendar-border) !important;
-}
+    .review-carousel-section {
+      margin-bottom: 2rem;
 
-/* Ensure any SVG icons inside the calendar use the dark-on-light palette */
-.force-calendar-light-in-dark svg,
-.force-calendar-light-in-dark svg * {
-  fill: currentColor !important;
-  stroke: currentColor !important;
-}
+      .review-swiper {
+        padding: 0.5rem 0;
 
-/* Keep contrast for form inputs inside the calendar (time pickers / text inputs) */
-.force-calendar-light-in-dark input,
-.force-calendar-light-in-dark select,
-.force-calendar-light-in-dark textarea,
-.force-calendar-light-in-dark ion-input,
-.force-calendar-light-in-dark .picker-column {
-  background: var(--calendar-bg) !important;
-  color: var(--calendar-text) !important;
-  border: 1px solid var(--calendar-border) !important;
-  caret-color: var(--calendar-text) !important;
-}
+        .review-card {
+          background: #ffffff;
+          border: 1px solid #e0e0e0;
+          border-radius: 12px;
+          padding: 1.25rem;
+          height: 100%;
 
-/* Buttons inside the calendar: primary / outline rules */
-.force-calendar-light-in-dark .button,
-.force-calendar-light-in-dark ion-button,
-.force-calendar-light-in-dark .btn {
-  color: var(--calendar-text) !important;
-  background: transparent !important;
-  border: 1px solid rgba(0,0,0,0.06) !important;
-  border-radius: 6px !important;
-}
+          @at-root :host-context(.dark) & {
+            background: var(--ion-card-background);
+            border-color: var(--border);
+          }
 
-/* Primary calendar CTA (confirm/select) — use the calendar primary colour */
-.force-calendar-light-in-dark .button--primary,
-.force-calendar-light-in-dark ion-button[color="primary"],
-.force-calendar-light-in-dark .btn-primary {
-  background: var(--calendar-primary) !important;
-  color: var(--calendar-primary-contrast) !important;
-  border-color: transparent !important;
-}
+          .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
 
-/* Accessibility: ensure sufficient contrast for selected text and for keyboard focus */
-.force-calendar-light-in-dark .calendar-day.selected:focus,
-.force-calendar-light-in-dark .calendar-day:focus {
-  box-shadow: 0 0 0 3px rgba(11,105,255,0.16) !important;
-  outline: none !important;
-}
+            .reviewer-info {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
 
-/* If the rest of the page uses CSS filters or backdrop inversions, try to isolate the calendar
-   by resetting filter and backdrop-filter to neutral values inside the container. */
-.force-calendar-light-in-dark,
-.force-calendar-light-in-dark * {
-  filter: none !important;
-  -webkit-filter: none !important;
-  backdrop-filter: none !important;
-}
+              .avatar-icon {
+                font-size: 2rem;
+                color: #000000;
 
-/* Fallback: if your booking stack already toggles .dark, apply force class there too */
-.booking-stack.dark.force-calendar-light-in-dark,
-.booking-stack.dark .force-calendar-light-in-dark {
-  /* Keep same rules: intentionally empty - selector ensures compatibility when both classes present. */
-}
+                @at-root :host-context(.dark) & {
+                  color: var(--ion-color-primary);
+                }
+              }
 
-@media (prefers-color-scheme: dark) {
-  :root .booking-stack.dark {
-    --calendar-bg: #ffffff !important;
-    --calendar-text: #0b0b0b !important;
+              .reviewer-id {
+                font-weight: 600;
+                color: #000000;
+
+                @at-root :host-context(.dark) & {
+                  color: var(--ion-text-color);
+                }
+              }
+            }
+
+            .review-rating {
+              color: #FFD700;
+              font-size: 1rem;
+            }
+          }
+
+          .review-comment {
+            font-size: 0.9375rem;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0 0 1rem 0;
+
+            @at-root :host-context(.dark) & {
+              color: var(--ion-text-color);
+            }
+          }
+
+          .review-date {
+            font-size: 0.8125rem;
+            color: #999999;
+            margin: 0;
+
+            @at-root :host-context(.dark) & {
+              color: var(--muted);
+            }
+          }
+        }
+      }
+    }
+
+    .write-review-button {
+      --background: #000000;
+      --background-hover: #333333;
+      --color: #ffffff;
+      font-weight: 600;
+      text-transform: none;
+      margin-bottom: 2rem;
+
+      @at-root :host-context(.dark) & {
+        --background: var(--ion-color-primary);
+        --background-hover: var(--ion-color-primary-shade);
+      }
+    }
+
+    .review-form {
+      background: #f9f9f9;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+
+      @at-root :host-context(.dark) & {
+        background: var(--ion-card-background);
+      }
+
+      h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #000000;
+        margin: 0 0 1.5rem 0;
+
+        @at-root :host-context(.dark) & {
+          color: var(--ion-text-color);
+        }
+      }
+
+      .rating-selector {
+        margin-bottom: 1rem;
+
+        ion-label {
+          display: block;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          color: #000000;
+
+          @at-root :host-context(.dark) & {
+            color: var(--ion-text-color);
+          }
+        }
+
+        .star-buttons {
+          display: flex;
+          gap: 0.25rem;
+
+          ion-button {
+            --color: #cccccc;
+
+            &.selected {
+              --color: #FFD700;
+            }
+
+            ion-icon {
+              font-size: 2rem;
+            }
+          }
+        }
+      }
+
+      ion-item {
+        --background: transparent;
+        margin-bottom: 1rem;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+
+        ion-button {
+          text-transform: none;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .no-reviews {
+      text-align: center;
+      padding: 3rem 1rem;
+
+      .empty-icon {
+        font-size: 4rem;
+        color: #cccccc;
+        margin-bottom: 1rem;
+
+        @at-root :host-context(.dark) & {
+          color: var(--muted);
+        }
+      }
+
+      p {
+        color: #999999;
+        font-size: 1rem;
+
+        @at-root :host-context(.dark) & {
+          color: var(--muted);
+        }
+      }
+    }
+  }
+
+  // === MOBILE LAYOUT === //
+  .mobile-layout {
+    padding: 0;
+
+    .tab-content {
+      padding: 1rem 0.75rem;
+    }
+
+    .hero-section {
+      .hero-content {
+        .restaurant-name-en {
+          font-size: 1.5rem;
+        }
+
+        .restaurant-name-tc {
+          font-size: 1.125rem;
+        }
+      }
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .menu-section .menu-list .menu-item {
+      flex-direction: column;
+      gap: 0.5rem;
+
+      .menu-item-price {
+        text-align: left;
+      }
+    }
+  }
+
+  // === WEB LAYOUT === //
+  .web-layout {
+    .tab-content {
+      padding: 2rem 3rem;
+    }
+
+    .hero-section {
+      max-height: 40vh;
+
+      .hero-content {
+        padding: 3rem 2rem;
+      }
+    }
+  }
+
+  // === LOADING & ERROR STATES === //
+  .loading-container,
+  .error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    padding: 2rem;
+    text-align: center;
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+
+    .error-icon {
+      font-size: 4rem;
+      color: var(--ion-color-danger);
+      margin-bottom: 1rem;
+    }
+
+    p,
+    h2 {
+      color: var(--ion-text-color);
+    }
+  }
+
+  // === BOTTOM SPACER === //
+  .bottom-spacer {
+    height: 2rem;
   }
 }

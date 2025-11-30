@@ -7,6 +7,21 @@ form {
   margin: 2rem auto 0;
 }
 
+.brand-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.login-brand-img {
+  width: auto;
+  max-width: 200px;
+  height: auto;
+  max-height: 120px;
+  object-fit: contain;
+}
+
 .google-button {
   margin-top: 1rem;
   padding-left: 0vw;

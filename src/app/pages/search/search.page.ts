@@ -423,7 +423,7 @@ export class SearchPage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Clear single district (from chip close button)
+  // Clear all districts (from chip close button)
   public clearDistrict(event: Event): void {
     event.stopPropagation();
     this.selectedDistrictTokens = [];
@@ -431,12 +431,40 @@ export class SearchPage implements OnInit, OnDestroy {
     this.performSearch();
   }
 
-  // Clear single keyword (from chip close button)
+  // Clear all keywords (from chip close button)
   public clearKeyword(event: Event): void {
     event.stopPropagation();
     this.selectedKeywordTokens = [];
     this.currentPage = 0;
     this.performSearch();
+  }
+
+  // Remove a specific district tag
+  public removeDistrictTag(districtToken: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedDistrictTokens = this.selectedDistrictTokens.filter(d => d !== districtToken);
+    this.currentPage = 0;
+    this.performSearch();
+  }
+
+  // Remove a specific keyword tag
+  public removeKeywordTag(keywordToken: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedKeywordTokens = this.selectedKeywordTokens.filter(k => k !== keywordToken);
+    this.currentPage = 0;
+    this.performSearch();
+  }
+
+  // Get display label for a district token
+  public getDistrictLabel(token: string): string {
+    const district = this.availableDistricts.find(d => d.district_en === token);
+    return this.currentLang === 'TC' ? (district?.district_tc || token) : (district?.district_en || token);
+  }
+
+  // Get display label for a keyword token
+  public getKeywordLabel(token: string): string {
+    const keyword = this.availableKeywords.find(k => k.value_en === token);
+    return this.currentLang === 'TC' ? (keyword?.label_tc || token) : (keyword?.label_en || token);
   }
 
   // Clear all selected filters
