@@ -4,13 +4,18 @@
     <!-- Email/Password Form -->
     <form (ngSubmit)="onSubmitEmail()" #emailForm="ngForm">
 
+      <!-- App Image -->
+      <ion-item>
+
+      </ion-item>
+
       <!-- Display Name Field (only shown in registration mode) -->
       <ion-item *ngIf="!isLoginMode">
         <ion-label position="floating">{{ (lang$ | async) === 'TC' ? translations.displayName.TC : translations.displayName.EN }}</ion-label>
         <ion-input type="text"
-                    [(ngModel)]="displayName"
-                    name="displayName"
-                    autocomplete="name">
+                   [(ngModel)]="displayName"
+                   name="displayName"
+                   autocomplete="name">
         </ion-input>
       </ion-item>
 
@@ -18,10 +23,10 @@
       <ion-item>
         <ion-label position="floating">{{ (lang$ | async) === 'TC' ? translations.email.TC : translations.email.EN }}</ion-label>
         <ion-input type="email"
-                    required
-                    [(ngModel)]="email"
-                    name="email"
-                    autocomplete="email">
+                   required
+                   [(ngModel)]="email"
+                   name="email"
+                   autocomplete="email">
         </ion-input>
       </ion-item>
 
@@ -29,10 +34,10 @@
       <ion-item>
         <ion-label position="floating">{{ (lang$ | async) === 'TC' ? translations.password.TC : translations.password.EN }}</ion-label>
         <ion-input type="password"
-                    required
-                    [(ngModel)]="password"
-                    name="password"
-                    autocomplete="current-password">
+                   required
+                   [(ngModel)]="password"
+                   name="password"
+                   autocomplete="current-password">
         </ion-input>
       </ion-item>
 

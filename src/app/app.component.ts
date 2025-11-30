@@ -41,7 +41,7 @@ export class AppComponent implements OnInit, OnDestroy {
         readonly language: LanguageService,
         readonly platform: PlatformService,
         readonly UI: UIService,
-        readonly authService: AuthService,
+        readonly auth: AuthService,
         readonly router: Router
     ) {
         // Ensure the initial theme is applied right away.
@@ -75,7 +75,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
       // Subscribe to auth state changes and update centralized state
-      this.authService.currentUser$
+      this.auth.currentUser$
         .pipe(takeUntil(this.destroy$))
         .subscribe(user => {
           const newState: AppState = {

@@ -52,11 +52,11 @@ export class LoginPage implements OnDestroy {
   private authSubscription: Subscription | null = null;
 
   constructor(
-    private authService: AuthService,
-    private languageService: LanguageService,
-    private router: Router,
-    private toastController: ToastController,
-    private loadingController: LoadingController
+    readonly authService: AuthService,
+    readonly languageService: LanguageService,
+    readonly router: Router,
+    readonly toastController: ToastController,
+    readonly loadingController: LoadingController
   ) {
     // Subscribe to auth state changes
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
