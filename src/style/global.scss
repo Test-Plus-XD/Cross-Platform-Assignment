@@ -426,14 +426,25 @@ ion-datetime:focus {
       padding: 0 !important;
       margin: 0;
       width: 100%;
+      overflow: visible; // Allow peek effect to show
 
       // Show 5-10% of next card by using slides-per-view and spacing
       &.mobile-peek {
         --swiper-slides-per-view: 1.08; // Shows ~8% of next card
+        padding-left: 0 !important;
+        padding-right: 0 !important;
 
         swiper-slide {
           width: auto !important;
+          padding-left: 0;
+          padding-right: 0;
         }
+      }
+
+      swiper-slide {
+        display: flex;
+        align-items: stretch;
+        height: auto;
       }
     }
   }
@@ -480,6 +491,21 @@ ion-datetime:focus {
     // Swiper containers with comfortable spacing on web
     swiper-container {
       padding: 0.5rem 0;
+      width: 100%;
+      overflow: visible;
+
+      swiper-slide {
+        display: flex;
+        align-items: stretch;
+        height: auto;
+      }
+    }
+
+    // Ensure content sections are visible on web
+    .content-section {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
   }
 

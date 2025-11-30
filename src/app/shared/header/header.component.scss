@@ -35,6 +35,13 @@
   max-width: 67px;
 }
 
+.mobile-brand-img {
+  height: 40px;
+  width: auto;
+  max-width: 150px;
+  object-fit: contain;
+}
+
 .toolbar-title {
   /* Centre content horizontally. Because we have start & end slots, using flex layout helps. */
   flex: 1;

@@ -28,32 +28,52 @@
       <!-- Filter Chips -->
       <div class="filter-section">
         <div class="filter-chips-container">
-          <!-- District Filter -->
-          <ion-chip [outline]="!selectedDistrict"
-                    [color]="selectedDistrict ? 'primary' : 'medium'"
+          <!-- District Filter Button -->
+          <ion-chip [outline]="selectedDistrictTokens.length === 0"
+                    [color]="selectedDistrictTokens.length > 0 ? 'primary' : 'medium'"
                     (click)="openDistrictFilter()"
-                    class="filter-chip">
+                    class="filter-chip filter-button">
             <ion-icon name="location-outline"></ion-icon>
             <ion-label>
-              {{ selectedDistrict || ((lang$ | async) === 'TC' ? translations.allDistricts.TC : translations.allDistricts.EN) }}
+              {{ selectedDistrictTokens.length > 0
+                 ? ((lang$ | async) === 'TC' ? '地區' : 'Districts')
+                 : ((lang$ | async) === 'TC' ? translations.allDistricts.TC : translations.allDistricts.EN) }}
             </ion-label>
-            <ion-icon name="close-circle" *ngIf="selectedDistrict" (click)="clearDistrict($event)"></ion-icon>
+            <ion-icon name="close-circle" *ngIf="selectedDistrictTokens.length > 0" (click)="clearDistrict($event)"></ion-icon>
           </ion-chip>
 
-          <!-- Keyword Filter -->
-          <ion-chip [outline]="!selectedKeyword"
-                    [color]="selectedKeyword ? 'primary' : 'medium'"
+          <!-- District Tags -->
+          <ion-chip *ngFor="let district of selectedDistrictTokens"
+                    color="primary"
+                    class="filter-tag">
+            <ion-label>{{ getDistrictLabel(district) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Keyword Filter Button -->
+          <ion-chip [outline]="selectedKeywordTokens.length === 0"
+                    [color]="selectedKeywordTokens.length > 0 ? 'primary' : 'medium'"
                     (click)="openKeywordFilter()"
-                    class="filter-chip">
+                    class="filter-chip filter-button">
             <ion-icon name="pricetag-outline"></ion-icon>
             <ion-label>
-              {{ selectedKeyword || ((lang$ | async) === 'TC' ? translations.allCategories.TC : translations.allCategories.EN) }}
+              {{ selectedKeywordTokens.length > 0
+                 ? ((lang$ | async) === 'TC' ? '分類' : 'Categories')
+                 : ((lang$ | async) === 'TC' ? translations.allCategories.TC : translations.allCategories.EN) }}
             </ion-label>
-            <ion-icon name="close-circle" *ngIf="selectedKeyword" (click)="clearKeyword($event)"></ion-icon>
+            <ion-icon name="close-circle" *ngIf="selectedKeywordTokens.length > 0" (click)="clearKeyword($event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Keyword Tags -->
+          <ion-chip *ngFor="let keyword of selectedKeywordTokens"
+                    color="primary"
+                    class="filter-tag">
+            <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
           </ion-chip>
 
           <!-- Clear All Filters Button -->
-          <ion-chip *ngIf="selectedDistrict || selectedKeyword"
+          <ion-chip *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0"
                     color="danger"
                     (click)="clearAllFilters()"
                     class="filter-chip clear-chip">
