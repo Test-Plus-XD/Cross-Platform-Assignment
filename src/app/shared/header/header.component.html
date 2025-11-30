@@ -18,14 +18,9 @@
         </ng-container>
       </div>
 
-      <!-- Centre title: show brand on mobile, page title on desktop -->
+      <!-- Centre title: use pageTitle$ once, then let lang$ choose which field to render -->
       <ion-title class="toolbar-title text-center">
-        <!-- Mobile: Show brand image -->
-        <ng-container *ngIf="(isMobile$ | async)">
-          <img [src]="brandIcon$ | async" alt="Brand" class="mobile-brand-img" />
-        </ng-container>
-        <!-- Desktop: Show page title -->
-        <ng-container *ngIf="!(isMobile$ | async) && (pageTitle$ | async) as pageTitle">
+        <ng-container *ngIf="pageTitle$ | async as pageTitle">
           {{
           (lang$ | async) === 'TC'
             ? (pageTitle.Header_TC || '&nbsp;')
