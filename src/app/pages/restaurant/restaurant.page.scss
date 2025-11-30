@@ -1,16 +1,10 @@
 // Modern restaurant detail page styling - Comprehensive redesign
 :host {
-  // Restaurant page styling with white background and high contrast black text
+  // Restaurant page styling with green theme and purple-blue gradient accents
   .restaurant-page {
-    background: #ffffff;
-    color: #000000;
+    background: var(--ion-background-color);
+    color: var(--ion-text-color);
     min-height: 100vh;
-
-    // Dark mode adjustments
-    @at-root :host-context(.dark) & {
-      background: var(--ion-background-color);
-      color: var(--ion-text-color);
-    }
   }
 
   // === HERO SECTION === //
@@ -75,33 +69,22 @@
 
   // === TAB NAVIGATION === //
   .tab-navigation {
-    background: white;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     padding: 0;
-
-    @at-root :host-context(.dark) & {
-      background: var(--ion-card-background);
-      border-bottom-color: var(--border);
-    }
 
     ion-segment {
       --background: transparent;
       padding: 0.5rem 1rem;
 
       ion-segment-button {
-        --color: #666666;
-        --color-checked: #000000;
-        --indicator-color: #FFD700; // Yellow underline
+        --color: var(--muted);
+        --color-checked: var(--ion-color-primary);
+        --indicator-color: var(--ion-color-primary); // Purple gradient start
         --indicator-height: 3px;
         font-weight: 600;
         text-transform: none;
         font-size: 1rem;
-
-        @at-root :host-context(.dark) & {
-          --color: var(--ion-text-color);
-          --color-checked: var(--ion-color-primary);
-          --indicator-color: var(--ion-color-primary);
-        }
       }
     }
   }
@@ -124,17 +107,13 @@
       margin-bottom: 1rem;
 
       .dietary-tag {
-        background: #000000;
+        background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
         color: #ffffff;
         border-radius: 20px;
         font-size: 0.875rem;
         font-weight: 500;
         padding: 0.5rem 1rem;
         margin: 0;
-
-        @at-root :host-context(.dark) & {
-          background: var(--ion-color-primary);
-        }
       }
     }
 
@@ -143,12 +122,8 @@
 
       .explanation-label {
         font-size: 0.875rem;
-        color: #666666;
+        color: var(--muted);
         font-style: italic;
-
-        @at-root :host-context(.dark) & {
-          color: var(--muted);
-        }
       }
     }
   }
@@ -165,34 +140,22 @@
     }
 
     .info-card {
-      background: #f9f9f9;
+      background: var(--ion-card-background);
       border-radius: 12px;
       padding: 1.25rem;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
-      @at-root :host-context(.dark) & {
-        background: var(--ion-card-background);
-      }
-
       .info-title {
         font-size: 1rem;
         font-weight: 700;
-        color: #000000;
+        color: var(--ion-text-color);
         margin: 0 0 0.75rem 0;
-
-        @at-root :host-context(.dark) & {
-          color: var(--ion-text-color);
-        }
       }
 
       .info-content {
         font-size: 0.9375rem;
         line-height: 1.6;
-        color: #333333;
-
-        @at-root :host-context(.dark) & {
-          color: var(--ion-text-color);
-        }
+        color: var(--ion-text-color);
 
         p {
           margin: 0;
@@ -205,11 +168,7 @@
         .seats-number {
           font-size: 1.5rem;
           font-weight: 700;
-          color: #000000;
-
-          @at-root :host-context(.dark) & {
-            color: var(--ion-color-primary);
-          }
+          color: var(--ion-color-primary);
         }
       }
 
@@ -225,24 +184,17 @@
 
           ion-icon {
             font-size: 1.25rem;
-            color: #000000;
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-color-primary);
-            }
+            color: var(--ion-color-primary);
           }
 
           a {
-            color: #000000;
+            color: var(--ion-text-color);
             text-decoration: none;
             font-weight: 500;
 
             &:hover {
               text-decoration: underline;
-            }
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-text-color);
+              color: var(--ion-color-primary);
             }
           }
         }
@@ -252,16 +204,11 @@
 
   // === OPENING HOURS SECTION === //
   .opening-hours-section {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
+    background: var(--ion-card-background);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.25rem;
     margin-bottom: 2rem;
-
-    @at-root :host-context(.dark) & {
-      background: var(--ion-card-background);
-      border-color: var(--border);
-    }
 
     .section-header {
       display: flex;
@@ -273,21 +220,13 @@
       .section-title {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #000000;
+        color: var(--ion-text-color);
         margin: 0;
-
-        @at-root :host-context(.dark) & {
-          color: var(--ion-text-color);
-        }
       }
 
       ion-icon {
         font-size: 1.5rem;
-        color: #000000;
-
-        @at-root :host-context(.dark) & {
-          color: var(--ion-text-color);
-        }
+        color: var(--ion-color-primary);
       }
     }
 
@@ -303,11 +242,7 @@
           display: flex;
           justify-content: space-between;
           padding: 0.5rem 0;
-          border-bottom: 1px solid #f0f0f0;
-
-          @at-root :host-context(.dark) & {
-            border-bottom-color: var(--border);
-          }
+          border-bottom: 1px solid var(--border);
 
           &:last-child {
             border-bottom: none;
@@ -315,45 +250,31 @@
 
           .day {
             font-weight: 600;
-            color: #000000;
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-text-color);
-            }
+            color: var(--ion-text-color);
           }
 
           .time {
-            color: #666666;
-
-            @at-root :host-context(.dark) & {
-              color: var(--muted);
-            }
+            color: var(--muted);
           }
         }
       }
 
       .no-data {
-        color: #999999;
+        color: var(--muted);
         font-style: italic;
         margin: 0;
-
-        @at-root :host-context(.dark) & {
-          color: var(--muted);
-        }
       }
     }
 
     .reserve-button {
-      --background: #000000;
-      --background-hover: #333333;
+      --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
       --color: #ffffff;
       font-weight: 600;
       text-transform: none;
       margin: 0;
 
-      @at-root :host-context(.dark) & {
-        --background: var(--ion-color-primary);
-        --background-hover: var(--ion-color-primary-shade);
+      &:hover {
+        opacity: 0.9;
       }
     }
   }
@@ -365,40 +286,29 @@
     .section-title {
       font-size: 1.25rem;
       font-weight: 700;
-      color: #000000;
+      color: var(--ion-text-color);
       margin: 0 0 0.75rem 0;
-
-      @at-root :host-context(.dark) & {
-        color: var(--ion-text-color);
-      }
     }
 
     .address-text {
       font-size: 0.9375rem;
       line-height: 1.6;
-      color: #333333;
+      color: var(--ion-text-color);
       margin: 0 0 1rem 0;
-
-      @at-root :host-context(.dark) & {
-        color: var(--ion-text-color);
-      }
     }
 
     .map-link {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      color: #000000;
+      color: var(--ion-color-primary);
       text-decoration: none;
       font-weight: 600;
       margin-bottom: 1rem;
 
       &:hover {
         text-decoration: underline;
-      }
-
-      @at-root :host-context(.dark) & {
-        color: var(--ion-color-primary);
+        color: var(--ion-color-secondary);
       }
 
       ion-icon {
@@ -412,11 +322,7 @@
       border-radius: 12px;
       overflow: hidden;
       margin-top: 1rem;
-      border: 1px solid #e0e0e0;
-
-      @at-root :host-context(.dark) & {
-        border-color: var(--border);
-      }
+      border: 1px solid var(--border);
 
       .leaflet-map {
         width: 100%;
@@ -432,12 +338,8 @@
     .section-title {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #000000;
+      color: var(--ion-text-color);
       margin: 0 0 1.5rem 0;
-
-      @at-root :host-context(.dark) & {
-        color: var(--ion-text-color);
-      }
     }
 
     .menu-loading {
@@ -460,23 +362,21 @@
         display: flex;
         gap: 1rem;
         padding: 1rem;
-        background: #f9f9f9;
+        background: var(--ion-card-background);
         border-radius: 8px;
+        transition: all 0.3s ease;
 
-        @at-root :host-context(.dark) & {
-          background: var(--ion-card-background);
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(167, 70, 240, 0.15);
         }
 
         .menu-item-price {
           min-width: 80px;
           font-size: 1.125rem;
           font-weight: 700;
-          color: #000000;
+          color: var(--ion-color-primary);
           text-align: left;
-
-          @at-root :host-context(.dark) & {
-            color: var(--ion-color-primary);
-          }
         }
 
         .menu-item-info {
@@ -485,79 +385,58 @@
           .menu-item-name {
             font-size: 1rem;
             font-weight: 600;
-            color: #000000;
+            color: var(--ion-text-color);
             margin: 0 0 0.25rem 0;
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-text-color);
-            }
           }
 
           .menu-item-description {
             font-size: 0.875rem;
-            color: #666666;
+            color: var(--muted);
             margin: 0;
             line-height: 1.5;
-
-            @at-root :host-context(.dark) & {
-              color: var(--muted);
-            }
           }
         }
       }
     }
 
     .no-data {
-      color: #999999;
+      color: var(--muted);
       font-style: italic;
       text-align: center;
       padding: 2rem 0;
-
-      @at-root :host-context(.dark) & {
-        color: var(--muted);
-      }
     }
   }
 
   // === REVIEW TAB === //
   .review-tab {
     .review-stats {
-      background: #f9f9f9;
+      background: var(--ion-card-background);
       border-radius: 12px;
       padding: 2rem 1.5rem;
       margin-bottom: 2rem;
       text-align: center;
-
-      @at-root :host-context(.dark) & {
-        background: var(--ion-card-background);
-      }
 
       .stats-summary {
         .average-rating {
           h2 {
             font-size: 3rem;
             font-weight: 700;
-            color: #000000;
+            background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin: 0 0 0.5rem 0;
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-color-primary);
-            }
           }
 
           .stars {
             font-size: 1.5rem;
-            color: #FFD700;
+            color: var(--ion-color-warning);
             margin-bottom: 0.5rem;
           }
 
           p {
-            color: #666666;
+            color: var(--muted);
             margin: 0;
-
-            @at-root :host-context(.dark) & {
-              color: var(--muted);
-            }
           }
         }
       }
@@ -570,15 +449,16 @@
         padding: 0.5rem 0;
 
         .review-card {
-          background: #ffffff;
-          border: 1px solid #e0e0e0;
+          background: var(--ion-card-background);
+          border: 1px solid var(--border);
           border-radius: 12px;
           padding: 1.25rem;
           height: 100%;
+          transition: all 0.3s ease;
 
-          @at-root :host-context(.dark) & {
-            background: var(--ion-card-background);
-            border-color: var(--border);
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(167, 70, 240, 0.15);
           }
 
           .review-header {
@@ -594,25 +474,17 @@
 
               .avatar-icon {
                 font-size: 2rem;
-                color: #000000;
-
-                @at-root :host-context(.dark) & {
-                  color: var(--ion-color-primary);
-                }
+                color: var(--ion-color-primary);
               }
 
               .reviewer-id {
                 font-weight: 600;
-                color: #000000;
-
-                @at-root :host-context(.dark) & {
-                  color: var(--ion-text-color);
-                }
+                color: var(--ion-text-color);
               }
             }
 
             .review-rating {
-              color: #FFD700;
+              color: var(--ion-color-warning);
               font-size: 1rem;
             }
           }
@@ -620,60 +492,42 @@
           .review-comment {
             font-size: 0.9375rem;
             line-height: 1.6;
-            color: #333333;
+            color: var(--ion-text-color);
             margin: 0 0 1rem 0;
-
-            @at-root :host-context(.dark) & {
-              color: var(--ion-text-color);
-            }
           }
 
           .review-date {
             font-size: 0.8125rem;
-            color: #999999;
+            color: var(--muted);
             margin: 0;
-
-            @at-root :host-context(.dark) & {
-              color: var(--muted);
-            }
           }
         }
       }
     }
 
     .write-review-button {
-      --background: #000000;
-      --background-hover: #333333;
+      --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
       --color: #ffffff;
       font-weight: 600;
       text-transform: none;
       margin-bottom: 2rem;
 
-      @at-root :host-context(.dark) & {
-        --background: var(--ion-color-primary);
-        --background-hover: var(--ion-color-primary-shade);
+      &:hover {
+        opacity: 0.9;
       }
     }
 
     .review-form {
-      background: #f9f9f9;
+      background: var(--ion-card-background);
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 2rem;
 
-      @at-root :host-context(.dark) & {
-        background: var(--ion-card-background);
-      }
-
       h3 {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #000000;
+        color: var(--ion-text-color);
         margin: 0 0 1.5rem 0;
-
-        @at-root :host-context(.dark) & {
-          color: var(--ion-text-color);
-        }
       }
 
       .rating-selector {
@@ -683,11 +537,7 @@
           display: block;
           font-weight: 600;
           margin-bottom: 0.5rem;
-          color: #000000;
-
-          @at-root :host-context(.dark) & {
-            color: var(--ion-text-color);
-          }
+          color: var(--ion-text-color);
         }
 
         .star-buttons {
@@ -695,10 +545,10 @@
           gap: 0.25rem;
 
           ion-button {
-            --color: #cccccc;
+            --color: var(--ion-color-medium);
 
             &.selected {
-              --color: #FFD700;
+              --color: var(--ion-color-warning);
             }
 
             ion-icon {
@@ -731,21 +581,13 @@
 
       .empty-icon {
         font-size: 4rem;
-        color: #cccccc;
+        color: var(--muted);
         margin-bottom: 1rem;
-
-        @at-root :host-context(.dark) & {
-          color: var(--muted);
-        }
       }
 
       p {
-        color: #999999;
+        color: var(--muted);
         font-size: 1rem;
-
-        @at-root :host-context(.dark) & {
-          color: var(--muted);
-        }
       }
     }
   }

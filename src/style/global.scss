@@ -238,20 +238,8 @@ span {
 }
 
 /* === LAYOUT ADJUSTMENTS === */
-toolbar-container {
-  margin-left: 4vh !important;
-  margin-right: 4vh !important;
-}
-
-// Router outlet and main content areas
-ion-router-outlet,
-ion-content,
-main,
-section {
-  margin: 2vw !important;
-  margin-block-end: 0.02vw !important;
-  padding-inline: 2vw !important;
-}
+// Removed global router outlet and content margins that were breaking web view
+// Page-specific layouts now handled via .mobile-layout and .web-layout classes
 
 /* Hide scrollbar for the entire page */
 ion-content::part(scroll) {

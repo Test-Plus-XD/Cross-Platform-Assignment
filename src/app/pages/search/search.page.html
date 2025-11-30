@@ -3,17 +3,18 @@
   <ng-container *ngIf="isMobile$ | async as isMobile">
   <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
 
-    <!-- Search Header Section -->
-    <div class="search-header">
-      <div class="search-title-container">
-        <h1 class="page-title">
-          {{ (lang$ | async) === 'TC' ? translations.searchTitle.TC : translations.searchTitle.EN }}
-        </h1>
-        <p class="page-subtitle">
-          {{ (lang$ | async) === 'TC' ? translations.searchSubtitle.TC : translations.searchSubtitle.EN }}
-        </p>
-      </div>
+    <!-- Page Title (Non-sticky) -->
+    <div class="search-title-container">
+      <h1 class="page-title">
+        {{ (lang$ | async) === 'TC' ? translations.searchTitle.TC : translations.searchTitle.EN }}
+      </h1>
+      <p class="page-subtitle">
+        {{ (lang$ | async) === 'TC' ? translations.searchSubtitle.TC : translations.searchSubtitle.EN }}
+      </p>
+    </div>
 
+    <!-- Sticky Search & Filter Section -->
+    <div class="search-header">
       <!-- Search Bar -->
       <div class="search-bar-container">
         <ion-searchbar [(ngModel)]="searchQuery"

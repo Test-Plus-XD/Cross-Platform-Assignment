@@ -13,20 +13,12 @@
     max-width: 1400px;
     margin: 0 auto;
   }
-  // Search header section styling - sticky below header
-  .search-header {
-    position: sticky;
-    top: var(--header-spacing, 48px);
-    z-index: 10;
-    background: var(--ion-background-color);
-    padding: 1rem 1rem 0.5rem;
-    margin: -1rem -1rem 2rem -1rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  }
-  // Title container
+
+  // Non-sticky title container
   .search-title-container {
     text-align: center;
     margin-bottom: 1.5rem;
+    padding: 0 1rem;
 
     .page-title {
       font-size: 2rem;
@@ -45,6 +37,17 @@
       color: var(--ion-color-medium);
       margin: 0;
     }
+  }
+
+  // Sticky search & filter section - positioned below header
+  .search-header {
+    position: sticky;
+    top: var(--header-spacing, 48px);
+    z-index: 10;
+    background: var(--ion-background-color);
+    padding: 1rem;
+    margin: 0 -1rem 2rem -1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
   // Modern search bar styling
   .search-bar-container {

@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-11-30 (UI/UX Improvements & Restaurant Page Redesign)
-> **Project Version:** 1.5.0
+> **Last Updated:** 2025-11-30 (Critical Bug Fix & Theme Improvements)
+> **Project Version:** 1.5.1
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
 > **API Backend:** Vercel (External Deployment)
@@ -2336,11 +2336,12 @@ This is automatically handled by:
 
 ---
 
-**Document Version:** 1.5.0
+**Document Version:** 1.5.1
 **Last Updated:** 2025-11-30
-**Changes:** UI/UX improvements across multiple pages, fixed swiper spacing issues, enhanced filter functionality, comprehensive restaurant page redesign, brand image integration
+**Changes:** Critical bug fix for web view content display, applied global green theme with purple-blue gradient accents to restaurant page, separated sticky search/filter section from page title
 
 **Changelog:**
+- v1.5.1 (2025-11-30): **CRITICAL BUG FIX** - Removed aggressive global margins on ion-router-outlet/ion-content/main/section elements that were preventing page content from displaying in web view (lines 241-254 in global.scss). Applied global green theme with purple-blue gradient accents to restaurant page, replacing all hardcoded colors (#ffffff, #000000, #FFD700) with theme CSS variables for consistent theming. Separated search page title from sticky search/filter section for improved UX - only search bar and filters are now sticky, title scrolls naturally with page content.
 - v1.5.0 (2025-11-30): Fixed swiper card displacement and empty space issues in mobile/web views, integrated theme-aware brand images (App-Light.png/App-Dark.png) in header and login page, made search filters sticky below header, implemented individual filter tag removal with tags displayed next to filter buttons, completely redesigned restaurant page with hero section overlay, tab navigation (Overview/Review), structured info grid, payment methods display, collapsible opening hours, traditional vertical menu list, and review carousel
 - v1.4.0 (2025-11-29): Implemented adaptive responsive layout system with mobile/web-specific layouts, documented API Vercel deployment, added 5 missing services to documentation (BookingService, ReviewsService, LocationService, ChatService, GeminiService), updated all pages with platform-aware layout classes, added comprehensive responsive layout guidelines
 - v1.3 (2025-11-27): Centralized app state in AppComponent, refactored DataService to simple HTTP helper, removed individual page headers, dynamic restaurant titles, Gemini button moved to bottom-left and hidden when not logged in, added modern UI/UX utility classes
