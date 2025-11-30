@@ -71,17 +71,18 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   newReviewRating: number = 5;
   newReviewComment: string = '';
   isWritingReview: boolean = false;
-
   // Restaurant claim state
   canClaimRestaurant: boolean = false;
   isClaimingRestaurant: boolean = false;
-
   // Tab navigation state
   selectedTab: string = 'overview';
-
   // Opening hours expansion state
   hoursExpanded: boolean = false;
-
+  // Swiper breakpoints configuration for responsive review carousel
+  readonly ReviewSwiperBreakpoints = {
+    768: { slidesPerView: 2 },
+    1024: { slidesPerView: 3 }
+  };
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,

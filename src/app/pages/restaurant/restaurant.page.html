@@ -78,9 +78,11 @@
           <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '付款方式' : 'Payment Methods' }}</h3>
           <div class="info-content">
             <p class="payment-methods">
-              {{ (lang$ | async) === 'TC'
+              {{
+ (lang$ | async) === 'TC'
                  ? 'Visa、Master、AlipayHK、支付寶、現金、八達通、Apple Pay、微信支付'
-                 : 'Visa, Master, AlipayHK, Alipay, Cash, Octopus, Apple Pay, WeChat Pay' }}
+                 : 'Visa, Master, AlipayHK, Alipay, Cash, Octopus, Apple Pay, WeChat Pay'
+              }}
             </p>
           </div>
         </div>
@@ -91,17 +93,15 @@
           <div class="info-content contact-list">
             <div class="contact-item" *ngIf="restaurant.Contacts?.Phone">
               <ion-icon name="call-outline"></ion-icon>
-              <a [href]="'tel:' + restaurant.Contacts.Phone">{{ restaurant.Contacts.Phone }}</a>
+              <a [href]="'tel:' + restaurant.Contacts!.Phone">{{ restaurant.Contacts!.Phone }}</a>
             </div>
             <div class="contact-item" *ngIf="restaurant.Contacts?.Email">
               <ion-icon name="mail-outline"></ion-icon>
-              <a [href]="'mailto:' + restaurant.Contacts.Email">{{ restaurant.Contacts.Email }}</a>
+              <a [href]="'mailto:' + restaurant.Contacts!.Email">{{ restaurant.Contacts!.Email }}</a>
             </div>
             <div class="contact-item" *ngIf="restaurant.Contacts?.Website">
               <ion-icon name="globe-outline"></ion-icon>
-              <a [href]="restaurant.Contacts.Website" target="_blank" rel="noopener noreferrer">
-                {{ (lang$ | async) === 'TC' ? '網站' : 'Website' }}
-              </a>
+              <a [href]="restaurant.Contacts!.Website" target="_blank" rel="noopener noreferrer">{{ (lang$ | async) === 'TC' ? '網站' : 'Website' }}</a>
             </div>
           </div>
         </div>
@@ -110,9 +110,13 @@
         <div class="info-card">
           <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '附加資料' : 'Additional Information' }}</h3>
           <div class="info-content">
-            <p>{{ (lang$ | async) === 'TC'
+            <p>
+              {{
+ (lang$ | async) === 'TC'
                    ? '可於網上/電話預訂座位'
-                   : 'Online/phone reservation available' }}</p>
+                   : 'Online/phone reservation available'
+              }}
+            </p>
           </div>
         </div>
 
@@ -222,7 +226,7 @@
                           class="review-swiper"
                           slides-per-view="1.1"
                           space-between="16"
-                          [breakpoints]="{768: {slidesPerView: 2}, 1024: {slidesPerView: 3}}">
+                          [breakpoints]="ReviewSwiperBreakpoints">
           <swiper-slide *ngFor="let review of reviews">
             <div class="review-card">
               <div class="review-header">
