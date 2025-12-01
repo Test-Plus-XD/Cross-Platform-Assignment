@@ -1,5 +1,6 @@
 // Shared header component that exposes language & theme controls and brand icon
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Location } from '@angular/common';
 import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { LanguageService } from '../../services/language.service';
@@ -41,7 +42,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     readonly lang: LanguageService,
     readonly theme: ThemeService,
     readonly platform: PlatformService,
-    readonly UI: UIService
+    readonly UI: UIService,
+    private location: Location
   ) {
     window.addEventListener('page-title', this.eventHandler as EventListener);
     // Use service observable directly for template consumption
@@ -78,6 +80,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Toggle menu via UIService
   onMenuButtonClicked(): void {
     this.UI.toggleMenu();
+  }
+
+  // Navigate back using Location service
+  goBack(): void {
+    this.location.back();
   }
 
   // Handler for custom page title events

@@ -48,14 +48,20 @@
   text-align: center;
   margin: 0 auto;
   padding-right: 3rem; /* to offset the end slot */
+  color: var(--ion-text-color);
 }
 
 .nav-link {
   margin-left: 1rem;
   margin-right: 1rem;
   text-decoration: none;
-  color: var(--ion-color-light);
+  color: var(--ion-text-color);
   font-size: 0.9rem;
+  font-weight: 500;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 .lang-btn, .lang-toggle, button {
@@ -76,4 +82,16 @@
   font-family: 'Arial Unicode MS', sans-serif;
   min-width: 3rem;
   cursor: pointer;
+  color: var(--ion-text-color);
+}
+
+// Ensure all header text uses theme colors
+ion-toolbar {
+  --color: var(--ion-text-color);
+
+  ion-title,
+  ion-button,
+  ion-icon {
+    color: var(--ion-text-color);
+  }
 }
