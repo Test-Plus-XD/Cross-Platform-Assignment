@@ -1,5 +1,5 @@
 <!-- src/app/pages/test/test.page.html -->
-<ion-content [scrollEvents]="true" scrollEvents="true">
+<ion-content fullscreen [scrollEvents]="true" scrollEvents="true">
   <ng-container *ngIf="isMobile$ | async as isMobile">
   <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
   <!-- Short explanatory note for your debugging -->
