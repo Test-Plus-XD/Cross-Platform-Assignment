@@ -1,7 +1,7 @@
 <!-- Ion-tabs rendered only when UIService says to show -->
 <div id="app-shared-tab" class="shared-tab" *ngIf="showTabs$ | async">
   <ion-tabs>
-    <ion-tab-bar slot="bottom" style="background: var(#fff) !important; background-color: white">
+    <ion-tab-bar slot="bottom">
       <ion-tab-button routerLink="/home">
         <ion-icon name="home"></ion-icon>
         <ion-label>{{ (lang$ | async) === 'TC' ? ' 主頁 ' : 'Home' }}</ion-label>

@@ -29,25 +29,35 @@
         </ng-container>
       </ion-title>
 
-      <!-- End slot: nav links + toggles (on non-mobile) -->
-      <div slot="end" class="header-end" *ngIf="!(isMobile$ | async)">
-        <a routerLink="/login" class="nav-link">
-          {{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}
-        </a>
-        <a routerLink="/search" class="nav-link">
-          {{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}
-        </a>
-        <div class="lang-toggle">
-          <button (click)="setLang('EN')" class="lang-btn">🇬🇧</button>
-          |
-          <button (click)="setLang('TC')" class="lang-btn">🇭🇰</button>
-        </div>
-        <button (click)="toggleTheme()"
-                class="theme-btn"
-                aria-label="Toggle theme">
-          <ng-container *ngIf="isDark$ | async; else sunIcon">🌒</ng-container>
-          <ng-template #sunIcon>☀️</ng-template>
-        </button>
+      <!-- End slot: nav links + toggles (on non-mobile) OR back button (on mobile) -->
+      <div slot="end" class="header-end">
+        <!-- Mobile: show back button -->
+        <ng-container *ngIf="isMobile$ | async">
+          <ion-button (click)="goBack()" fill="clear" size="small" color="medium" aria-label="Go back">
+            <ion-icon slot="icon-only" name="arrow-back"></ion-icon>
+          </ion-button>
+        </ng-container>
+
+        <!-- Non-mobile: show nav links + toggles -->
+        <ng-container *ngIf="!(isMobile$ | async)">
+          <a routerLink="/login" class="nav-link">
+            {{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}
+          </a>
+          <a routerLink="/search" class="nav-link">
+            {{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}
+          </a>
+          <div class="lang-toggle">
+            <button (click)="setLang('EN')" class="lang-btn">🇬🇧</button>
+            |
+            <button (click)="setLang('TC')" class="lang-btn">🇭🇰</button>
+          </div>
+          <button (click)="toggleTheme()"
+                  class="theme-btn"
+                  aria-label="Toggle theme">
+            <ng-container *ngIf="isDark$ | async; else sunIcon">🌒</ng-container>
+            <ng-template #sunIcon>☀️</ng-template>
+          </button>
+        </ng-container>
       </div>
     </ion-toolbar>
   </ion-header>
