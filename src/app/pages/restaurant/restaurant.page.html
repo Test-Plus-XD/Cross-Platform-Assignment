@@ -35,7 +35,7 @@
         <h2 class="restaurant-name-tc">
           {{ restaurant.Name_TC || restaurant.Name_EN || '—' }}
         </h2>
-        <!-- District - Removed hardcoded description -->
+        <!-- District -->
         <p class="restaurant-description" *ngIf="restaurant.District_EN || restaurant.District_TC">
           {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') : (restaurant.District_EN || restaurant.District_TC || '') }}
         </p>
