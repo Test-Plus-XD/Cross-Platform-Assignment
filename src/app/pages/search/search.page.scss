@@ -13,11 +13,10 @@
     max-width: 1400px;
     margin: 0 auto;
   }
-
   // Non-sticky title container
   .search-title-container {
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     padding: 0 1rem;
 
     .page-title {
@@ -26,7 +25,7 @@
       color: var(--ion-text-color);
       margin: 0 0 0.5rem 0;
       // Apply gradient to text using primary to secondary colours
-      background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
+      background: linear-gradient(175deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -38,7 +37,6 @@
       margin: 0;
     }
   }
-
   // Sticky search & filter section - positioned below header
   .search-header {
     position: sticky;
@@ -46,6 +44,7 @@
     z-index: 10;
     background: var(--ion-background-color);
     padding: 1rem;
+    padding-bottom: 0rem;
     margin: 0 -1rem 2rem -1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
@@ -106,7 +105,6 @@
         --background: rgba(var(--ion-color-danger-rgb), 0.1);
       }
     }
-
     // Filter button styling (opens filter dialog)
     .filter-button {
       font-weight: 600;
@@ -115,7 +113,6 @@
         margin-right: 0.25rem;
       }
     }
-
     // Filter tag styling (individual selected filters)
     .filter-tag {
       font-size: 0.8125rem;
@@ -348,7 +345,6 @@
       font-weight: 500;
     }
   }
-
   // Hide default infinite scroll content
   ion-infinite-scroll-content {
     ::ng-deep .infinite-loading-text {
