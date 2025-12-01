@@ -52,6 +52,7 @@ export interface Restaurant {
   Contacts?: Contacts | null;
   ImageUrl?: string | null;
   Owner?: string | null;
+  Payments?: string[] | null;
   reviewsId?: string[] | null;
   createdAt?: any;
   modifiedAt?: any;
@@ -281,6 +282,7 @@ export class RestaurantsService {
           Contacts: response.Contacts ?? null,
           ImageUrl: response.ImageUrl ?? null,
           Owner: response.Owner ?? null,
+          Payments: response.Payments ?? null,
           reviewsId: response.reviewsId ?? null,
           createdAt: response.createdAt,
           modifiedAt: response.modifiedAt

@@ -35,9 +35,9 @@
         <h2 class="restaurant-name-tc">
           {{ restaurant.Name_TC || restaurant.Name_EN || '—' }}
         </h2>
-        <!-- Subheading/Description -->
-        <p class="restaurant-description">
-          {{ (lang$ | async) === 'TC' ? '優質素食餐廳' : 'Quality Vegetarian Restaurant' }}
+        <!-- District - Removed hardcoded description -->
+        <p class="restaurant-description" *ngIf="restaurant.District_EN || restaurant.District_TC">
+          {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') : (restaurant.District_EN || restaurant.District_TC || '') }}
         </p>
       </div>
     </div>
@@ -74,16 +74,14 @@
       <div class="info-grid">
 
         <!-- Payment Methods -->
-        <div class="info-card">
+        <div class="info-card" *ngIf="restaurant.Payments && restaurant.Payments.length > 0">
           <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '付款方式' : 'Payment Methods' }}</h3>
           <div class="info-content">
-            <p class="payment-methods">
-              {{
- (lang$ | async) === 'TC'
-                 ? 'Visa、Master、AlipayHK、支付寶、現金、八達通、Apple Pay、微信支付'
-                 : 'Visa, Master, AlipayHK, Alipay, Cash, Octopus, Apple Pay, WeChat Pay'
-              }}
-            </p>
+            <div class="payment-methods">
+              <ion-chip *ngFor="let payment of restaurant.Payments" color="primary" outline="true">
+                {{ payment }}
+              </ion-chip>
+            </div>
           </div>
         </div>
 
@@ -103,20 +101,6 @@
               <ion-icon name="globe-outline"></ion-icon>
               <a [href]="restaurant.Contacts!.Website" target="_blank" rel="noopener noreferrer">{{ (lang$ | async) === 'TC' ? '網站' : 'Website' }}</a>
             </div>
-          </div>
-        </div>
-
-        <!-- Additional Information -->
-        <div class="info-card">
-          <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '附加資料' : 'Additional Information' }}</h3>
-          <div class="info-content">
-            <p>
-              {{
- (lang$ | async) === 'TC'
-                   ? '可於網上/電話預訂座位'
-                   : 'Online/phone reservation available'
-              }}
-            </p>
           </div>
         </div>
 
