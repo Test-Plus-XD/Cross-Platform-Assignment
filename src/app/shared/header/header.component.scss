@@ -20,11 +20,11 @@
 }
 
 .brand-title {
-  /* centre the brand image/title content */
+  /* Centre the brand image/title content */
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1; /* allow centre title to grow */
+  flex: 1; /* Allow centre title to grow */
   text-align: center;
 }
 
@@ -47,7 +47,7 @@
   flex: 1;
   text-align: center;
   margin: 0 auto;
-  padding-right: 3rem; /* to offset the end slot */
+  padding-left: 2rem; /* to offset the end slot */
   color: var(--ion-text-color);
 }
 
