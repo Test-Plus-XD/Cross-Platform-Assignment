@@ -363,7 +363,11 @@ ion-datetime:focus {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  min-height: calc(100vh - var(--header-spacing) - var(--footer-spacing));
+  min-height: auto; // Let content determine height naturally instead of forcing vh calculation
+  width: 100%;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 
 /* === NEW RESPONSIVE LAYOUT SYSTEM === */
@@ -494,6 +498,15 @@ ion-datetime:focus {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
+      max-width: none !important;
+      overflow: visible !important;
+    }
+
+    // Ensure all child elements are also visible
+    * {
+      visibility: visible !important;
+      opacity: 1 !important;
+      display: inherit;
     }
   }
 
