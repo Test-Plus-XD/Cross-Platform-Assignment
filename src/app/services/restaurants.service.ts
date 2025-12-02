@@ -75,6 +75,18 @@ export class RestaurantsService {
     this.algoliaClient = searchClient(environment.algoliaAppId, environment.algoliaSearchKey);
   }
 
+  /**
+   * Sanitize image URL to handle backend em dash replacement.
+   * The backend replaces null/undefined with '—' (em dash), which causes 404 errors.
+   * This helper returns null for invalid URLs so components can use their placeholder logic.
+   */
+  private sanitizeImageUrl(url: any): string | null {
+    if (!url || url === '—' || url === '' || url === 'null' || url === 'undefined') {
+      return null;
+    }
+    return url;
+  }
+
   // Search restaurants using Algolia with pagination and filters
   // Uses the array request form for broad compatibility with Algolia client
   searchRestaurants(
@@ -144,7 +156,7 @@ export class RestaurantsService {
             Opening_Hours: h.Opening_Hours ?? null,
             Seats: h.Seats ?? null,
             Contacts: h.Contacts ?? null,
-            ImageUrl: h.ImageUrl ?? null,
+            ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
             Owner: h.Owner ?? null,
             reviewsId: h.reviewsId ?? null
           }));
@@ -228,7 +240,7 @@ export class RestaurantsService {
           Opening_Hours: h.Opening_Hours ?? null,
           Seats: h.Seats ?? null,
           Contacts: h.Contacts ?? null,
-          ImageUrl: h.ImageUrl ?? null,
+          ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
           Owner: h.Owner ?? null,
           Payments: h.Payments ?? null,
           reviewsId: h.reviewsId ?? null
@@ -292,7 +304,7 @@ export class RestaurantsService {
           Opening_Hours: response.Opening_Hours ?? null,
           Seats: response.Seats ?? null,
           Contacts: response.Contacts ?? null,
-          ImageUrl: response.ImageUrl ?? null,
+          ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
           Owner: response.Owner ?? null,
           Payments: response.Payments ?? null,
           reviewsId: response.reviewsId ?? null,
@@ -318,7 +330,13 @@ export class RestaurantsService {
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu`;
 
     return this.dataService.get<{ count: number; data: MenuItem[] }>(endpoint).pipe(
-      map(response => response.data || []),
+      map(response => {
+        // Sanitize ImageUrl for each menu item
+        return (response.data || []).map(item => ({
+          ...item,
+          ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
+        }));
+      }),
       tap(items => {
         console.log('RestaurantsService: Fetched', items.length, 'menu items');
       }),
@@ -337,6 +355,14 @@ export class RestaurantsService {
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu/${encodeURIComponent(menuItemId)}`;
 
     return this.dataService.get<MenuItem>(endpoint).pipe(
+      map(item => {
+        if (!item) return null;
+        // Sanitize ImageUrl for the menu item
+        return {
+          ...item,
+          ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
+        };
+      }),
       catchError(err => {
         console.error('RestaurantsService: getMenuItem error', err);
         return of(null);

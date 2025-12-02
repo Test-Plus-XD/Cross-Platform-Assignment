@@ -112,6 +112,18 @@ export class UserService {
   }
 
   /**
+   * Sanitize image URL to handle backend em dash replacement.
+   * The backend replaces null/undefined with '—' (em dash), which causes 404 errors.
+   * This helper returns null for invalid URLs so components can use their placeholder logic.
+   */
+  private sanitizeImageUrl(url: any): string | null {
+    if (!url || url === '—' || url === '' || url === 'null' || url === 'undefined') {
+      return null;
+    }
+    return url;
+  }
+
+  /**
    * Get user profile by UID from the API.
    * This method returns null if the profile doesn't exist (404), which is expected
    * for new users who haven't had their profile created yet.
@@ -134,7 +146,7 @@ export class UserService {
           uid: response.uid || uid,
           email: response.email || null,
           displayName: response.displayName || null,
-          photoURL: response.photoURL || null,
+          photoURL: this.sanitizeImageUrl(response.photoURL),
           emailVerified: response.emailVerified || false,
           createdAt: response.createdAt,
           modifiedAt: response.modifiedAt,
@@ -228,14 +240,18 @@ export class UserService {
   // Get all users (public metadata only)
   getAllUsers(): Observable<UserProfile[]> {
     console.log('UserService: Fetching all users');
-    
+
     return this.httpClient.get<{ count: number; data: UserProfile[] }>(
       this.apiUrl,
       { headers: this.getHeaders() }
     ).pipe(
       map(response => {
         console.log('UserService: Fetched', response.count, 'users');
-        return response.data || [];
+        // Sanitize photoURL for each user
+        return (response.data || []).map(user => ({
+          ...user,
+          photoURL: this.sanitizeImageUrl(user.photoURL)
+        }));
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('UserService: Error fetching all users:', error);
