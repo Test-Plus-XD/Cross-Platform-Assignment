@@ -120,15 +120,17 @@
           <ion-icon [name]="hoursExpanded ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
         </div>
         <div class="hours-content" *ngIf="hoursExpanded">
-          <div *ngIf="restaurant.Opening_Hours; else noHours" class="hours-list">
-            <div *ngFor="let pair of (restaurant.Opening_Hours | keyvalue)" class="hours-item">
-              <span class="day">{{ pair.key }}</span>
-              <span class="time">{{ pair.value || '—' }}</span>
+          <ng-container *ngIf="lang$ | async as lang">
+            <div *ngIf="restaurant.Opening_Hours; else noHours" class="hours-list">
+              <div *ngFor="let pair of (restaurant.Opening_Hours | keyvalue)" class="hours-item">
+                <span class="day">{{ getDayName(pair.key, lang) }}</span>
+                <span class="time">{{ pair.value || '—' }}</span>
+              </div>
             </div>
-          </div>
-          <ng-template #noHours>
-            <p class="no-data">{{ (lang$ | async) === 'TC' ? '未提供營業時間' : 'Hours not available' }}</p>
-          </ng-template>
+            <ng-template #noHours>
+              <p class="no-data">{{ lang === 'TC' ? '未提供營業時間' : 'Hours not available' }}</p>
+            </ng-template>
+          </ng-container>
         </div>
         <ion-button expand="block" class="reserve-button" (click)="scrollToBooking()">
           <ion-icon slot="start" name="calendar-outline"></ion-icon>

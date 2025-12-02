@@ -3,7 +3,7 @@
   <div class="chat-icon-wrapper">
     <ion-icon name="chatbubbles" class="chat-icon"></ion-icon>
   </div>
-  <span class="chat-label" *ngIf="!isOpen">Chat</span>
+  <span class="chat-label" *ngIf="!isOpen">{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</span>
   <span class="unread-badge" *ngIf="unreadCount > 0 && !isOpen">{{ unreadCount }}</span>
 </div>
 
