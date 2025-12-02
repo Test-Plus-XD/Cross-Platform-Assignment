@@ -2336,11 +2336,36 @@ This is automatically handled by:
 
 ---
 
-**Document Version:** 1.5.1
-**Last Updated:** 2025-11-30
-**Changes:** Critical bug fix for web view content display, applied global green theme with purple-blue gradient accents to restaurant page, separated sticky search/filter section from page title
+## Known Issues & Fixes
+
+### Image URL Em Dash Bug (Fixed in v1.5.2)
+
+**Issue:** After opening any modal in the app, the application would freeze and become unresponsive. A hard refresh was required to restore functionality, and navigation between tabs was completely broken.
+
+**Root Cause:** The backend API sanitizes `null`/`undefined` values by replacing them with an em dash character (`'—'`). When image URL fields like `photoURL` or `ImageUrl` were null/undefined, they were being replaced with `'—'` instead of a proper placeholder image URL. This caused the browser to attempt fetching images from invalid URLs like `http://localhost:8100/%E2%80%94`, resulting in 404 errors that froze the entire application.
+
+**Error Logs:**
+```
+GET http://localhost:8100/%E2%80%94 404 (Not Found)
+Image setProperty @ dom_renderer.mjs:652
+```
+
+**Solution:** Implemented a `sanitizeImageUrl()` helper method in both `UserService` and `RestaurantsService` that detects the em dash character and other invalid URL values, returning `null` instead. This allows components to properly fall back to their placeholder image logic.
+
+**Files Modified:**
+- `src/app/services/user.service.ts` - Added `sanitizeImageUrl()` helper and applied to `getUserProfile()` and `getAllUsers()` methods
+- `src/app/services/restaurants.service.ts` - Added `sanitizeImageUrl()` helper and applied to all restaurant and menu item retrieval methods (`searchRestaurants()`, `searchRestaurantsWithFilters()`, `getRestaurantById()`, `getMenuItems()`, `getMenuItem()`)
+
+**Prevention:** When working with image URLs from the backend API, always check for the em dash character (`'—'`) and treat it as a null/invalid value. Components should have proper placeholder image fallback logic.
+
+---
+
+**Document Version:** 1.5.2
+**Last Updated:** 2025-12-02
+**Changes:** Critical bug fix for app freezing after modal interactions due to em dash character in image URLs
 
 **Changelog:**
+- v1.5.2 (2025-12-02): **CRITICAL BUG FIX** - Fixed app freezing/crashing after opening any modal. The backend API was replacing null/undefined image URLs with em dash character ('—'), causing browser to attempt fetching from invalid URLs (http://localhost:8100/%E2%80%94) and resulting in 404 errors that froze the app. Added sanitizeImageUrl() helper method in UserService and RestaurantsService to detect and replace em dash with null, allowing proper placeholder fallback logic. Affected methods: getUserProfile(), getAllUsers(), searchRestaurants(), searchRestaurantsWithFilters(), getRestaurantById(), getMenuItems(), getMenuItem().
 - v1.5.1 (2025-11-30): **CRITICAL BUG FIX** - Removed aggressive global margins on ion-router-outlet/ion-content/main/section elements that were preventing page content from displaying in web view (lines 241-254 in global.scss). Applied global green theme with purple-blue gradient accents to restaurant page, replacing all hardcoded colors (#ffffff, #000000, #FFD700) with theme CSS variables for consistent theming. Separated search page title from sticky search/filter section for improved UX - only search bar and filters are now sticky, title scrolls naturally with page content.
 - v1.5.0 (2025-11-30): Fixed swiper card displacement and empty space issues in mobile/web views, integrated theme-aware brand images (App-Light.png/App-Dark.png) in header and login page, made search filters sticky below header, implemented individual filter tag removal with tags displayed next to filter buttons, completely redesigned restaurant page with hero section overlay, tab navigation (Overview/Review), structured info grid, payment methods display, collapsible opening hours, traditional vertical menu list, and review carousel
 - v1.4.0 (2025-11-29): Implemented adaptive responsive layout system with mobile/web-specific layouts, documented API Vercel deployment, added 5 missing services to documentation (BookingService, ReviewsService, LocationService, ChatService, GeminiService), updated all pages with platform-aware layout classes, added comprehensive responsive layout guidelines
