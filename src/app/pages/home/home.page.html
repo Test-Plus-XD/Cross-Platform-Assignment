@@ -49,8 +49,13 @@
 
         <swiper-container #offersSwiper
                           [class]="isMobile ? 'offers-swiper mobile-peek' : 'offers-swiper'"
-                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
-                          space-between="12"
+                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
+                          space-between="16"
+                          centered-slides="true"
+                          loop="true"
+                          autoplay-delay="4000"
+                          autoplay-disable-on-interaction="false"
+                          speed="600"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let offer of (offers$ | async) || []">
             <ion-card class="offer-card" (click)="setFeatured(offer.image)" button>
@@ -87,8 +92,13 @@
 
         <swiper-container #articlesSwiper
                           [class]="isMobile ? 'articles-swiper mobile-peek' : 'articles-swiper'"
-                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
-                          space-between="12"
+                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
+                          space-between="16"
+                          centered-slides="true"
+                          loop="true"
+                          autoplay-delay="5000"
+                          autoplay-disable-on-interaction="false"
+                          speed="600"
                           breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let article of (articles$ | async) || []">
             <ion-card class="article-card" button>
@@ -125,8 +135,13 @@
 
         <swiper-container #reviewsSwiper
                           [class]="isMobile ? 'reviews-swiper mobile-peek' : 'reviews-swiper'"
-                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
-                          space-between="12"
+                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
+                          space-between="16"
+                          centered-slides="true"
+                          loop="true"
+                          autoplay-delay="6000"
+                          autoplay-disable-on-interaction="false"
+                          speed="600"
                           breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let review of (reviews$ | async) || []">
             <ion-card class="review-card">
@@ -164,8 +179,13 @@
 
         <swiper-container #restaurantsSwiper
                           [class]="isMobile ? 'restaurants-swiper mobile-peek' : 'restaurants-swiper'"
-                          [attr.slides-per-view]="isMobile ? '1.08' : '1.2'"
-                          space-between="12"
+                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
+                          space-between="16"
+                          centered-slides="true"
+                          loop="true"
+                          autoplay-delay="7000"
+                          autoplay-disable-on-interaction="false"
+                          speed="600"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
             <ion-card class="restaurant-card" button>
