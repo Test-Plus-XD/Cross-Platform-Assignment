@@ -416,16 +416,16 @@ ion-datetime:focus {
       width: 100%;
       overflow: visible; // Allow peek effect to show
 
-      // Show 5-10% of next card by using slides-per-view and spacing
+      // Show 8% of next card by using slides-per-view and spacing
       &.mobile-peek {
-        --swiper-slides-per-view: 1.08; // Shows ~8% of next card
         padding-left: 0 !important;
         padding-right: 0 !important;
 
         swiper-slide {
-          width: auto !important;
           padding-left: 0;
           padding-right: 0;
+          // Removed width: auto to fix displacement issue
+          // Swiper handles width calculation internally
         }
       }
 
@@ -439,9 +439,10 @@ ion-datetime:focus {
 
   // Web/tablet layout
   &.web-layout {
-    max-width: none;
-    padding-left: 15vw; // 15% left margin
-    padding-right: 15vw; // 15% right margin
+    max-width: 1400px; // Constrain maximum width
+    margin: 0 auto; // Center the content
+    padding-left: 2rem; // Standard padding instead of viewport-based
+    padding-right: 2rem;
     padding-top: 20px;
     padding-bottom: 20px;
 
@@ -474,6 +475,9 @@ ion-datetime:focus {
       padding-left: 0;
       padding-right: 0;
       margin-bottom: 2rem;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     // Swiper containers with comfortable spacing on web
@@ -488,28 +492,21 @@ ion-datetime:focus {
         height: auto;
       }
     }
-
-    // Ensure content sections are visible on web
-    .content-section {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
   }
 
-  // Tablet breakpoint (768px - 1024px): 15% margins
+  // Tablet breakpoint (768px - 1024px): Moderate padding
   @media (min-width: 768px) and (max-width: 1023px) {
     &.web-layout {
-      padding-left: 15vw;
-      padding-right: 15vw;
+      padding-left: 3rem;
+      padding-right: 3rem;
     }
   }
 
-  // Desktop breakpoint (1024px+): 20% margins
+  // Desktop breakpoint (1024px+): Comfortable padding
   @media (min-width: 1024px) {
     &.web-layout {
-      padding-left: 20vw;
-      padding-right: 20vw;
+      padding-left: 4rem;
+      padding-right: 4rem;
     }
   }
 }
