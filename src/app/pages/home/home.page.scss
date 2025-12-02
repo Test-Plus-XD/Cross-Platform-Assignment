@@ -95,12 +95,6 @@
       padding-right: 0;
     }
 
-    // Re-add padding to section headers and hero content on mobile
-    .section-header {
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
     .hero-section .hero-swiper .hero-slide .hero-content {
       padding-left: 1rem;
       padding-right: 1rem;
@@ -111,10 +105,10 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 1.25rem;
+    margin-bottom: 1.21rem;
 
     .section-title {
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: var(--ion-text-color);
       margin: 0;
@@ -418,10 +412,6 @@
     .content-section {
       padding: 0 2rem;
       margin-bottom: 3rem;
-    }
-
-    .section-header .section-title {
-      font-size: 1.75rem;
     }
 
     .app-promo-section .app-promo-card .app-promo-content {
