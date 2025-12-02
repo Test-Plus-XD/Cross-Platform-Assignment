@@ -283,6 +283,7 @@
   align-items: flex-end;
   background: var(--ion-background-color);
   border-top: 1px solid var(--ion-color-light);
+  z-index: 1000;
 
   textarea {
     flex: 1;

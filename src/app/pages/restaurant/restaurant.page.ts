@@ -147,16 +147,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
         // After restaurant loaded, initialise the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);
-
         // Calculate distance from user's location
         this.calculateDistance();
-
         // Check if user can claim this restaurant
         this.checkClaimEligibility();
-
         // Load menu items from sub-collection
         this.loadMenuItems(id);
-
         // Load reviews
         this.loadReviews(id);
       },
