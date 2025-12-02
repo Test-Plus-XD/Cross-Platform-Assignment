@@ -699,6 +699,43 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.hoursExpanded = !this.hoursExpanded;
   }
 
+  /// Translate day names to Traditional Chinese
+  translateDayName(dayName: string): string {
+    // Map of English day names to Traditional Chinese
+    const dayTranslations: { [key: string]: string } = {
+      'Monday': '星期一',
+      'Tuesday': '星期二',
+      'Wednesday': '星期三',
+      'Thursday': '星期四',
+      'Friday': '星期五',
+      'Saturday': '星期六',
+      'Sunday': '星期日',
+      // Also handle lowercase
+      'monday': '星期一',
+      'tuesday': '星期二',
+      'wednesday': '星期三',
+      'thursday': '星期四',
+      'friday': '星期五',
+      'saturday': '星期六',
+      'sunday': '星期日',
+      // Handle abbreviated forms
+      'Mon': '週一',
+      'Tue': '週二',
+      'Wed': '週三',
+      'Thu': '週四',
+      'Fri': '週五',
+      'Sat': '週六',
+      'Sun': '週日'
+    };
+
+    return dayTranslations[dayName] || dayName;
+  }
+
+  /// Get day name based on current language
+  getDayName(dayName: string, lang: 'EN' | 'TC'): string {
+    return lang === 'TC' ? this.translateDayName(dayName) : dayName;
+  }
+
   /// Scroll to booking section (switches to overview tab if needed)
   scrollToBooking(): void {
     this.selectedTab = 'overview';

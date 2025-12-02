@@ -166,6 +166,7 @@ export class RestaurantsService {
 
   // Search using Algolia with custom filter string and pagination
   // Supports multi-district and multi-keyword filters with EN-primary tokens
+  // Uses backend API endpoint instead of direct Algolia client
   searchRestaurantsWithFilters(
     query: string,
     filters: string | undefined,
@@ -173,67 +174,82 @@ export class RestaurantsService {
     page = 0,
     hitsPerPage = 10
   ): Observable<{ hits: Restaurant[]; nbHits: number; page: number; nbPages: number }> {
-    // Build params object for Algolia search
-    const params: any = {
-      query: query ?? '',
-      page,
-      hitsPerPage
-    };
-    if (filters) params.filters = filters;
+    // Build query parameters for backend API
+    const params = new URLSearchParams();
 
-    console.log('RestaurantsService: Algolia search with filters:', JSON.stringify(params));
+    if (query && query.trim()) {
+      params.append('query', query.trim());
+    }
 
-    // Use the array-request form which reliably returns results[0]
-    return new Observable(observer => {
-      this.algoliaClient.search([
-        {
-          indexName: this.algoliaIndexName,
-          params
-        }
-      ])
-        .then((result: any) => {
-          // Normalise result structure expecting result.results[0]
-          const searchResult = result && Array.isArray(result.results) ? result.results[0] : null;
-          if (!searchResult) {
-            observer.next({ hits: [], nbHits: 0, page: 0, nbPages: 0 });
-            observer.complete();
-            return;
-          }
+    // Parse districts and keywords from Algolia filter string
+    // Expected format: District_EN:"Central" OR District_EN:"Wan Chai" AND (Keyword_EN:"Organic" OR Keyword_EN:"Vegan")
+    const districts: string[] = [];
+    const keywords: string[] = [];
 
-          // Map Algolia hits to Restaurant interface
-          const hits: Restaurant[] = (searchResult.hits || []).map((h: any) => ({
-            id: h.objectID,
-            Name_EN: h.Name_EN ?? null,
-            Name_TC: h.Name_TC ?? null,
-            Address_EN: h.Address_EN ?? null,
-            Address_TC: h.Address_TC ?? null,
-            District_EN: h.District_EN ?? null,
-            District_TC: h.District_TC ?? null,
-            Latitude: h.Latitude ?? null,
-            Longitude: h.Longitude ?? null,
-            Keyword_EN: h.Keyword_EN ?? null,
-            Keyword_TC: h.Keyword_TC ?? null,
-            Opening_Hours: h.Opening_Hours ?? null,
-            Seats: h.Seats ?? null,
-            Contacts: h.Contacts ?? null,
-            ImageUrl: h.ImageUrl ?? null,
-            Owner: h.Owner ?? null,
-            reviewsId: h.reviewsId ?? null
-          }));
+    if (filters) {
+      // Extract districts from filter string
+      const districtMatches = filters.matchAll(/District_EN:"([^"]+)"/g);
+      for (const match of districtMatches) {
+        districts.push(match[1]);
+      }
 
-          observer.next({
-            hits,
-            nbHits: searchResult.nbHits ?? 0,
-            page: searchResult.page ?? 0,
-            nbPages: searchResult.nbPages ?? 0
-          });
-          observer.complete();
-        })
-        .catch((err: any) => {
-          console.error('RestaurantsService: Algolia search error:', err);
-          observer.error(err);
-        });
-    });
+      // Extract keywords from filter string
+      const keywordMatches = filters.matchAll(/Keyword_EN:"([^"]+)"/g);
+      for (const match of keywordMatches) {
+        keywords.push(match[1]);
+      }
+    }
+
+    if (districts.length > 0) {
+      params.append('districts', districts.join(','));
+    }
+
+    if (keywords.length > 0) {
+      params.append('keywords', keywords.join(','));
+    }
+
+    params.append('page', page.toString());
+    params.append('hitsPerPage', hitsPerPage.toString());
+
+    const endpoint = `/API/Algolia/Restaurants?${params.toString()}`;
+    console.log('RestaurantsService: Backend search endpoint:', endpoint);
+
+    return this.dataService.get<{ hits: Restaurant[]; nbHits: number; page: number; nbPages: number }>(endpoint).pipe(
+      map(response => {
+        // Map response hits to Restaurant interface
+        const hits: Restaurant[] = (response.hits || []).map((h: any) => ({
+          id: h.objectID || h.id,
+          Name_EN: h.Name_EN ?? null,
+          Name_TC: h.Name_TC ?? null,
+          Address_EN: h.Address_EN ?? null,
+          Address_TC: h.Address_TC ?? null,
+          District_EN: h.District_EN ?? null,
+          District_TC: h.District_TC ?? null,
+          Latitude: h.Latitude ?? null,
+          Longitude: h.Longitude ?? null,
+          Keyword_EN: h.Keyword_EN ?? null,
+          Keyword_TC: h.Keyword_TC ?? null,
+          Opening_Hours: h.Opening_Hours ?? null,
+          Seats: h.Seats ?? null,
+          Contacts: h.Contacts ?? null,
+          ImageUrl: h.ImageUrl ?? null,
+          Owner: h.Owner ?? null,
+          Payments: h.Payments ?? null,
+          reviewsId: h.reviewsId ?? null
+        }));
+
+        return {
+          hits,
+          nbHits: response.nbHits ?? 0,
+          page: response.page ?? 0,
+          nbPages: response.nbPages ?? 0
+        };
+      }),
+      catchError((err: any) => {
+        console.error('RestaurantsService: Backend search error:', err);
+        return of({ hits: [], nbHits: 0, page: 0, nbPages: 0 });
+      })
+    );
   }
 
   // Get all restaurants from API (fallback for non-search scenarios)
