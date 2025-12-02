@@ -339,7 +339,6 @@ export class SearchPage implements OnInit, OnDestroy {
   // Open the district selector using checkboxes (multiple selection supported).
   public async openDistrictFilter(): Promise<void> {
     const currentLang = this.currentLang;
-
     // Build inputs with label in UI language but value as EN token
     const inputs = [
       {
@@ -358,17 +357,27 @@ export class SearchPage implements OnInit, OnDestroy {
 
     const alert = await this.alertController.create({
       header: currentLang === 'TC' ? '選擇地區' : 'Select District(s)',
+      subHeader: currentLang === 'TC'
+        ? '選擇特定地區會自動取消「所有地區」'
+        : 'Selecting specific districts will automatically deselect "All Districts"',
       inputs,
       buttons: [
         { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
         {
           text: 'OK',
           handler: (values: string[]) => {
-            // If the All option was checked (value ''), clear selection
-            if (values && values.includes('')) {
+            // Filter out falsy values first
+            const selectedValues = Array.isArray(values) ? values.filter(Boolean) : [];
+
+            // If the All option was checked along with specific districts, prioritise specific districts
+            if (values && values.includes('') && selectedValues.length > 0) {
+              this.selectedDistrictTokens = selectedValues;
+            } else if (values && values.includes('')) {
+              // Only All option was checked, clear selection
               this.selectedDistrictTokens = [];
             } else {
-              this.selectedDistrictTokens = Array.isArray(values) ? values.filter(Boolean) : [];
+              // Only specific districts were checked
+              this.selectedDistrictTokens = selectedValues;
             }
             this.currentPage = 0;
             this.performSearch();
@@ -376,14 +385,13 @@ export class SearchPage implements OnInit, OnDestroy {
         }
       ]
     });
-
     await alert.present();
   }
 
   // Open the keyword selector using checkboxes (multiple selection supported).
   public async openKeywordFilter(): Promise<void> {
     const currentLang = this.currentLang;
-
+    // Build inputs with label in UI language but value as EN token
     const inputs = [
       {
         type: 'checkbox' as const,
@@ -401,17 +409,27 @@ export class SearchPage implements OnInit, OnDestroy {
 
     const alert = await this.alertController.create({
       header: currentLang === 'TC' ? '選擇分類' : 'Select Category(ies)',
+      subHeader: currentLang === 'TC'
+        ? '選擇特定分類會自動取消「所有分類」'
+        : 'Selecting specific categories will automatically deselect "All Categories"',
       inputs,
       buttons: [
         { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
         {
           text: 'OK',
           handler: (values: string[]) => {
-            // If the All option was checked (value ''), clear selection
-            if (values && values.includes('')) {
+            // Filter out falsy values first
+            const selectedValues = Array.isArray(values) ? values.filter(Boolean) : [];
+
+            // If the All option was checked along with specific keywords, prioritise specific keywords
+            if (values && values.includes('') && selectedValues.length > 0) {
+              this.selectedKeywordTokens = selectedValues;
+            } else if (values && values.includes('')) {
+              // Only All option was checked, clear selection
               this.selectedKeywordTokens = [];
             } else {
-              this.selectedKeywordTokens = Array.isArray(values) ? values.filter(Boolean) : [];
+              // Only specific keywords were checked
+              this.selectedKeywordTokens = selectedValues;
             }
             this.currentPage = 0;
             this.performSearch();
@@ -419,7 +437,6 @@ export class SearchPage implements OnInit, OnDestroy {
         }
       ]
     });
-
     await alert.present();
   }
 

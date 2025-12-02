@@ -182,31 +182,27 @@ export class RestaurantsService {
     }
 
     // Parse districts and keywords from Algolia filter string
-    // Expected format: District_EN:"Central" OR District_EN:"Wan Chai" AND (Keyword_EN:"Organic" OR Keyword_EN:"Vegan")
     const districts: string[] = [];
     const keywords: string[] = [];
 
     if (filters) {
       // Extract districts from filter string
-      const districtMatches = filters.matchAll(/District_EN:"([^"]+)"/g);
-      for (const match of districtMatches) {
-        districts.push(match[1]);
+      const districtRegex = /District_EN:"([^"]+)"/g;
+      let districtMatch;
+      while ((districtMatch = districtRegex.exec(filters)) !== null) {
+        districts.push(districtMatch[1]);
       }
 
       // Extract keywords from filter string
-      const keywordMatches = filters.matchAll(/Keyword_EN:"([^"]+)"/g);
-      for (const match of keywordMatches) {
-        keywords.push(match[1]);
+      const keywordRegex = /Keyword_EN:"([^"]+)"/g;
+      let keywordMatch;
+      while ((keywordMatch = keywordRegex.exec(filters)) !== null) {
+        keywords.push(keywordMatch[1]);
       }
     }
 
-    if (districts.length > 0) {
-      params.append('districts', districts.join(','));
-    }
-
-    if (keywords.length > 0) {
-      params.append('keywords', keywords.join(','));
-    }
+    if (districts.length > 0) params.append('districts', districts.join(','));
+    if (keywords.length > 0) params.append('keywords', keywords.join(','));
 
     params.append('page', page.toString());
     params.append('hitsPerPage', hitsPerPage.toString());

@@ -39,7 +39,7 @@ export class ProfileModalComponent implements OnInit {
     diner: { EN: 'Diner', TC: '食客' },
     dinerDesc: { EN: 'I want to discover and review restaurants', TC: '我想探索和評論餐廳' },
     restaurant: { EN: 'Restaurant', TC: '商戶' },
-    restaurantDesc: { EN: 'I own or manage a restaurant', TC: '我擁有或管理餐廳' },
+    restaurantDesc: { EN: 'I own and manage a restaurant', TC: '我擁有並管理餐廳' },
     basicInfo: { EN: 'Basic Information', TC: '基本資料' },
     displayName: { EN: 'Display Name', TC: '顯示名稱' },
     displayNamePlaceholder: { EN: 'Enter your name', TC: '輸入您的名稱' },
