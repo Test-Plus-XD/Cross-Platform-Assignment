@@ -6,17 +6,18 @@ import { UserPageRoutingModule } from './user-routing.module';
 import { UserPage } from './user.page';
 import { ProfileModalComponent } from './profile-modal.component';
 
+/// User module is defined with all required imports and declarations
 @NgModule({
   imports: [
     CommonModule,
-    FormsModule,
-    ReactiveFormsModule, // Required for reactive forms in modal
+    FormsModule, // Required for ngModel bindings in inline editing
+    ReactiveFormsModule, // Required for reactive forms in modal component
     IonicModule,
     UserPageRoutingModule
   ],
   declarations: [
     UserPage,
-    ProfileModalComponent // Declare the modal component here
+    ProfileModalComponent // Modal component is declared but not actively used
   ]
 })
 export class UserPageModule { }

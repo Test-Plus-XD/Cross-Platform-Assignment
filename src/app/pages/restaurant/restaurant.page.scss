@@ -6,7 +6,6 @@
     color: var(--ion-text-color);
     min-height: 100vh;
   }
-
   // === HERO SECTION === //
   .hero-section {
     position: relative;
@@ -61,8 +60,28 @@
         margin: 0;
         opacity: 0.95;
       }
-    }
 
+      .claim-restaurant-button {
+        --background: linear-gradient(35deg, var(--ion-color-primary), var(--ion-color-secondary));
+        --color: #ffffff;
+        --border-radius: 24px;
+        --padding-start: 1.5rem;
+        --padding-end: 1.5rem;
+        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        margin-top: 1rem;
+        font-weight: 600;
+        text-transform: none;
+        font-size: 0.9375rem;
+
+        &:hover {
+          opacity: 0.9;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+        }
+      }
+    }
     // White shadow in light mode
     :host-context(body:not(.dark)) .hero-content {
       .restaurant-name-en {
@@ -77,7 +96,6 @@
         text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6);
       }
     }
-
     // Dark shadow in dark mode
     :host-context(.dark) .hero-content {
       .restaurant-name-en {
@@ -93,7 +111,6 @@
       }
     }
   }
-
   // === TAB NAVIGATION === //
   .tab-navigation {
     background: var(--surface);
@@ -115,14 +132,12 @@
       }
     }
   }
-
   // === TAB CONTENT === //
   .tab-content {
     padding: 1.5rem 1rem;
     max-width: 1400px;
     margin: 0 auto;
   }
-
   // === DIETARY TAGS SECTION === //
   .dietary-tags-section {
     margin-bottom: 2rem;
@@ -154,7 +169,6 @@
       }
     }
   }
-
   // === INFO GRID === //
   .info-grid {
     display: grid;
@@ -228,7 +242,6 @@
       }
     }
   }
-
   // === OPENING HOURS SECTION === //
   .opening-hours-section {
     background: var(--ion-card-background);
@@ -305,7 +318,6 @@
       }
     }
   }
-
   // === ADDRESS & MAP SECTION === //
   .address-map-section {
     margin-bottom: 2rem;
@@ -357,7 +369,6 @@
       }
     }
   }
-
   // === MENU SECTION === //
   .menu-section {
     margin-bottom: 2rem;
@@ -433,7 +444,6 @@
       padding: 2rem 0;
     }
   }
-
   // === REVIEW TAB === //
   .review-tab {
     .review-stats {
@@ -618,7 +628,6 @@
       }
     }
   }
-
   // === MOBILE LAYOUT === //
   .mobile-layout {
     padding: 0;
@@ -652,7 +661,6 @@
       }
     }
   }
-
   // === WEB LAYOUT === //
   .web-layout {
     .tab-content {
@@ -667,7 +675,6 @@
       }
     }
   }
-
   // === LOADING & ERROR STATES === //
   .loading-container,
   .error-container {
@@ -696,7 +703,6 @@
       color: var(--ion-text-color);
     }
   }
-
   // === BOTTOM SPACER === //
   .bottom-spacer {
     height: 2rem;

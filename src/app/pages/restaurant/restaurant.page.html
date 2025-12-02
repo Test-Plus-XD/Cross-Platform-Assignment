@@ -39,6 +39,14 @@
         <p class="restaurant-description" *ngIf="restaurant.District_EN || restaurant.District_TC">
           {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') : (restaurant.District_EN || restaurant.District_TC || '') }}
         </p>
+        <!-- Claim Restaurant Button -->
+        <ion-button *ngIf="canClaimRestaurant && !restaurant.Owner"
+                    class="claim-restaurant-button"
+                    [disabled]="isClaimingRestaurant"
+                    (click)="claimRestaurant()">
+          <ion-icon slot="start" name="business-outline"></ion-icon>
+          {{ isClaimingRestaurant ? ((lang$ | async) === 'TC' ? '認領中...' : 'Claiming...') : ((lang$ | async) === 'TC' ? '認領此餐廳' : 'Claim This Restaurant') }}
+        </ion-button>
       </div>
     </div>
 

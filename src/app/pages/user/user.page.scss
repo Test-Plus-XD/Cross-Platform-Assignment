@@ -1,17 +1,17 @@
-// Modern, aesthetic user profile page styling
+// Modern, aesthetic user profile page styling with inline editing support
 :host {
-  // Page content background with green gradient
+  // Page content background with gradient is defined
   .user-page-content {
-    --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
+    --background: linear-gradient(235deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
-  // Main container with padding
+  // Main container with padding is defined
   .page-container {
     min-height: 100%;
     padding: 1rem;
     padding-top: 5rem; // Space for header
     padding-bottom: 5rem; // Space for bottom tabs on mobile
   }
-  // Loading state centred on screen
+  // Loading state centred on screen is defined
   .loading-container {
     display: flex;
     flex-direction: column;
@@ -30,7 +30,7 @@
       font-size: 1rem;
     }
   }
-  // Profile content wrapper
+  // Profile content wrapper is defined
   .profile-content {
     max-width: 800px;
     margin: 0 auto;
@@ -38,7 +38,7 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-  // Profile header card with purple-blue gradient background
+  // Profile header card with gradient background is defined
   .profile-header-card {
     margin: 0;
     border-radius: 20px;
@@ -47,7 +47,6 @@
 
     .header-background {
       height: 120px;
-      // Updated to purple-blue gradient
       background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%);
     }
 
@@ -118,20 +117,8 @@
         }
       }
     }
-
-    .header-actions {
-      width: 100%;
-      max-width: 300px;
-
-      .edit-button {
-        --border-radius: 12px;
-        --border-width: 2px;
-        font-weight: 500;
-        text-transform: none;
-      }
-    }
   }
-  // Information cards styling
+  // Information cards styling is defined
   .info-card {
     margin: 0;
     border-radius: 16px;
@@ -165,52 +152,10 @@
       padding-top: 1rem;
     }
   }
-  // Bio text styling
-  .bio-text {
-    color: var(--ion-text-color);
-    line-height: 1.6;
-    margin: 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-  }
-  // Information rows in cards
-  .info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--ion-color-light-shade);
-
-    &:last-child {
-      border-bottom: none;
-    }
-
-    .info-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.9375rem;
-      font-weight: 500;
-      color: var(--ion-color-medium);
-
-      ion-icon {
-        font-size: 1.25rem;
-      }
-    }
-
-    .info-value {
-      font-size: 0.9375rem;
-      color: var(--ion-text-color);
-      font-weight: 500;
-      text-align: right;
-      max-width: 60%;
-      word-wrap: break-word;
-    }
-  }
-  // Statistics grid layout
+  // Statistics grid layout with 2 columns is defined
   .stats-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
 
     .stat-item {
@@ -244,17 +189,107 @@
       }
     }
   }
-  // Action buttons container
+  // Information rows in cards are defined
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--ion-color-light-shade);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--ion-color-medium);
+      flex-shrink: 0;
+
+      ion-icon {
+        font-size: 1.25rem;
+      }
+    }
+
+    .info-value {
+      font-size: 0.9375rem;
+      color: var(--ion-text-color);
+      font-weight: 500;
+      text-align: right;
+      word-wrap: break-word;
+    }
+    // Edit mode inputs are styled
+    .edit-input,
+    .edit-textarea {
+      flex: 0 0 90%;
+      max-width: 60%;
+      --padding-start: 0.5rem;
+      --padding-end: 0.5rem;
+      --padding-top: 0.25rem;
+      --padding-bottom: 0.25rem;
+      font-size: 0.9375rem;
+      text-align: right;
+    }
+
+    .edit-textarea {
+      --padding-top: 0.5rem;
+      --padding-bottom: 0.5rem;
+    }
+
+    ion-button {
+      --padding-start: 1rem;
+      --padding-end: 1rem;
+      height: 2rem;
+      font-size: 0.875rem;
+    }
+
+    ion-toggle {
+      --handle-width: 1.5rem;
+      --handle-height: 1.5rem;
+    }
+  }
+  // Bio row is styled to span full width when editing
+  .bio-row {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .info-label {
+      margin-bottom: 0.5rem;
+    }
+
+    .info-value {
+      text-align: left;
+      width: 100%;
+    }
+
+    .edit-textarea {
+      max-width: 100%;
+      width: 100%;
+      text-align: left;
+    }
+  }
+  // Actions card is styled
+  .actions-card {
+    ion-card-content {
+      padding-top: 0.5rem;
+    }
+  }
+  // Action buttons container is defined
   .action-buttons {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    margin-top: 1rem;
 
     .action-button {
       --border-radius: 12px;
       font-weight: 500;
       text-transform: none;
+      margin: 0;
 
       &.delete-button {
         opacity: 0.7;
@@ -266,11 +301,11 @@
       }
     }
   }
-  // Bottom spacer for mobile navigation
+  // Bottom spacer for mobile navigation is defined
   .bottom-spacer {
     height: 2rem;
   }
-  // Responsive adjustments for larger screens
+  // Responsive adjustments for larger screens are defined
   @media (min-width: 768px) {
     .page-container {
       padding: 2rem;
@@ -297,23 +332,20 @@
       }
     }
 
-    .stats-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
     .action-buttons {
       flex-direction: row;
       justify-content: center;
       gap: 1rem;
 
       .action-button {
+        flex: 1;
         max-width: 300px;
       }
     }
   }
 }
 
-// Dark mode adjustments for both pages
+// Dark mode adjustments are defined
 :host-context(.dark) {
   .user-page-content {
     --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
@@ -332,4 +364,21 @@
   .stat-item {
     background: rgba(var(--ion-color-light-rgb), 0.1) !important;
   }
+}
+
+.edit-inline {
+  font-size: 18px;
+  opacity: 0.7;
+  margin-left: 4px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.edit-inline-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  width: 100%;
 }
