@@ -22,6 +22,28 @@
       <ion-icon name="person-outline" slot="start"></ion-icon>
       <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
     </ion-item>
+
+    <!-- Conditional menu items based on login state and user type -->
+    <ng-container *ngIf="appState$ | async as appState">
+      <ng-container *ngIf="appState.isLoggedIn">
+        <ion-item button routerLink="/chat/main" (click)="closeMenu()" lines="none" detail="false">
+          <ion-icon name="chatbubbles-outline" slot="start"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</ion-label>
+        </ion-item>
+
+        <ng-container *ngIf="isRestaurantUser$ | async as isRestaurant">
+          <ion-item button routerLink="/store" (click)="closeMenu()" lines="none" detail="false" *ngIf="isRestaurant">
+            <ion-icon name="storefront-outline" slot="start"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? '商店' : 'Store' }}</ion-label>
+          </ion-item>
+
+          <ion-item button routerLink="/bookings" (click)="closeMenu()" lines="none" detail="false" *ngIf="!isRestaurant">
+            <ion-icon name="calendar-outline" slot="start"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
+          </ion-item>
+        </ng-container>
+      </ng-container>
+    </ng-container>
   </ion-list>
   <br><br><br><br><br><br><br><br><br><br><br><br>
   <!-- Settings Section -->

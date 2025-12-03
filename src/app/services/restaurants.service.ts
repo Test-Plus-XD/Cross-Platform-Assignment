@@ -157,7 +157,7 @@ export class RestaurantsService {
             Seats: h.Seats ?? null,
             Contacts: h.Contacts ?? null,
             ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-            Owner: h.Owner ?? null,
+            ownerID: h.ownerID ?? h.Owner ?? null,
             reviewsId: h.reviewsId ?? null
           }));
 
@@ -241,7 +241,7 @@ export class RestaurantsService {
           Seats: h.Seats ?? null,
           Contacts: h.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-          Owner: h.Owner ?? null,
+          ownerID: h.ownerID ?? h.Owner ?? null,
           Payments: h.Payments ?? null,
           reviewsId: h.reviewsId ?? null
         }));
@@ -305,7 +305,7 @@ export class RestaurantsService {
           Seats: response.Seats ?? null,
           Contacts: response.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
-          Owner: response.Owner ?? null,
+          ownerID: response.ownerID ?? response.Owner ?? null,
           Payments: response.Payments ?? null,
           reviewsId: response.reviewsId ?? null,
           createdAt: response.createdAt,

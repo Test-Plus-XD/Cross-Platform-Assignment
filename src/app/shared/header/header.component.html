@@ -40,9 +40,11 @@
 
         <!-- Non-mobile: show nav links + toggles -->
         <ng-container *ngIf="!(isMobile$ | async)">
-          <a routerLink="/login" class="nav-link">
-            {{ (lang$ | async) === 'TC' ? '登入' : 'Login' }}
-          </a>
+          <ng-container *ngIf="appState$ | async as appState">
+            <a [routerLink]="appState.isLoggedIn ? '/user' : '/login'" class="nav-link">
+              {{ (lang$ | async) === 'TC' ? (appState.isLoggedIn ? '帳戶' : '登入') : (appState.isLoggedIn ? 'Account' : 'Login') }}
+            </a>
+          </ng-container>
           <a routerLink="/search" class="nav-link">
             {{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}
           </a>

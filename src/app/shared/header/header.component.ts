@@ -1,5 +1,5 @@
 // Shared header component that exposes language & theme controls and brand icon
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Observable, BehaviorSubject, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -7,6 +7,8 @@ import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
 import { UIService } from '../../services/UI.service';
+import { UserService } from '../../services/user.service';
+import { AppComponent } from '../../app.component';
 
 interface PageTitle {
   Header_EN: string;
@@ -34,6 +36,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private pageTitleSubject = new BehaviorSubject<PageTitle>({ Header_EN: '', Header_TC: '' });
   // Observable that emits the currently visible title (resolved by language)
   pageTitle$ = this.pageTitleSubject.asObservable();
+  // Observable for app state to check login status
+  appState$ = inject(AppComponent).appState$;
+  // User service for checking user type
+  private userService = inject(UserService);
+  // User profile observable
+  userProfile$ = this.userService.currentProfile$;
 
   private eventHandler = (ev: Event) => this.onPageTitleEvent(ev as CustomEvent);
   private subscriptions: Subscription[] = [];
