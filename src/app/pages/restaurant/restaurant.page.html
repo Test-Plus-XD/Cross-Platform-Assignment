@@ -79,7 +79,7 @@
                  (change)="onRestaurantImageSelected($event)"
                  style="display: none;">
 
-          <ion-button expand="block" fill="outline" (click)="document.getElementById('restaurant-page-image-input')?.click()">
+          <ion-button expand="block" fill="outline" (click)="clickImageUploadButton()">
             <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
             {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
           </ion-button>

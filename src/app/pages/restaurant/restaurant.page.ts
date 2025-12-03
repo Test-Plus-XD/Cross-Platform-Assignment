@@ -839,6 +839,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /// Click handler for image upload button
+  clickImageUploadButton(): void {
+    const fileInput = document.getElementById('restaurant-page-image-input') as HTMLInputElement;
+    fileInput?.click();
+  }
+
   /// Clear restaurant image selection
   clearRestaurantImageSelection(): void {
     this.selectedRestaurantImage = null;

@@ -50,18 +50,19 @@
       </p>
     </div>
 
-    <div
-      *ngIf="!showLoginPrompt"
-      *ngFor="let message of messages"
-      class="message"
-      [class.own]="isOwnMessage(message)"
-    >
-      <div class="message-content">
-        <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
-        <p class="message-text">{{ message.message }}</p>
-        <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+    <ng-container *ngIf="!showLoginPrompt">
+      <div
+        *ngFor="let message of messages"
+        class="message"
+        [class.own]="isOwnMessage(message)"
+      >
+        <div class="message-content">
+          <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
+          <p class="message-text">{{ message.message }}</p>
+          <span class="message-time">{{ formatTime(message.timestamp) }}</span>
+        </div>
       </div>
-    </div>
+    </ng-container>
 
     <div *ngIf="!showLoginPrompt && isTyping" class="typing-indicator">
       <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
