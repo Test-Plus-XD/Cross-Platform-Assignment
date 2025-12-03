@@ -51,8 +51,8 @@ export interface Restaurant {
   Seats?: number | null;
   Contacts?: Contacts | null;
   ImageUrl?: string | null;
-  Owner?: string | null;
   Payments?: string[] | null;
+  ownerID?: string | null;
   reviewsId?: string[] | null;
   createdAt?: any;
   modifiedAt?: any;
