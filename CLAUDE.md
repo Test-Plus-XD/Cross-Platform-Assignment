@@ -1,10 +1,11 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-12-03 (Restaurant Claiming & Chat Enhancements)
-> **Project Version:** 1.6.0
+> **Last Updated:** 2025-12-03 (Socket.IO Configuration & Auth Updates)
+> **Project Version:** 1.6.1
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
-> **API Backend:** Vercel (External Deployment)
+> **REST API Backend:** Vercel (External Deployment)
+> **Socket.IO Backend:** Railway (External Deployment)
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
@@ -27,7 +28,11 @@
 
 ## Project Overview
 
-**Cross-Platform-Assignment** is a full-stack restaurant discovery and booking application built with Angular/Ionic for the frontend and Node.js/Express for the backend (deployed on Vercel). The application supports:
+**Cross-Platform-Assignment** is a full-stack restaurant discovery and booking application built with Angular/Ionic for the frontend and Node.js/Express for the backend. The application uses a dual-backend architecture:
+- **REST API:** Deployed on Vercel (https://vercel-express-api-alpha.vercel.app)
+- **Socket.IO Server:** Deployed on Railway (https://railway-socket-production.up.railway.app)
+
+The application supports:
 
 - **Multi-platform deployment:** Web (PWA), iOS, and Android via Capacitor
 - **Bilingual support:** English and Traditional Chinese (EN/TC)
@@ -864,11 +869,16 @@ export const environment = {
     messagingSenderId: '123456789',
     appId: '1:123456789:web:abcdef'
   },
-  apiUrl: 'http://localhost:3000',
+  apiUrl: 'https://vercel-express-api-alpha.vercel.app',
+  socketUrl: 'https://railway-socket-production.up.railway.app',
   algoliaAppId: 'V9HMGL1VIZ',
   algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5'
 };
 ```
+
+**Important:**
+- `apiUrl`: Points to Vercel REST API backend
+- `socketUrl`: Points to Railway Socket.IO server for real-time chat
 
 **Production** (`src/environments/environment.prod.ts`):
 - Same structure, different values
@@ -1042,7 +1052,7 @@ this.dataService.post('/API/Bookings', data, token).subscribe(...);
 - Distance calculation with Haversine algorithm
 - Coordinate validation
 
-### 16. ChatService (`chat.service.ts`) - NEW in v1.4.0
+### 16. ChatService (`chat.service.ts`) - NEW in v1.4.0, UPDATED in v1.6.1
 **Purpose:** Real-time chat via Socket.IO
 **Key Methods:**
 - `connect()` - Connect to Socket.IO server
@@ -1058,10 +1068,14 @@ this.dataService.post('/API/Bookings', data, token).subscribe(...);
 - Online/offline status tracking
 - Auto-reconnection with exponential backoff
 - Observable message streams
+- **Connects to Railway Socket.IO server** via `environment.socketUrl` (not `apiUrl`)
 
 **State:**
 - `messages$: Observable<ChatMessage>` - Message stream
 - `connectionStatus$: Observable<boolean>` - Connection state
+
+**Configuration:**
+Uses `environment.socketUrl` to connect to the dedicated Socket.IO server on Railway, separate from the REST API on Vercel.
 
 ### 17. GeminiService (`gemini.service.ts`) - NEW in v1.4.0
 **Purpose:** Google Gemini AI assistant integration
@@ -2145,10 +2159,10 @@ For questions or updates to this guide, please file an issue in the GitHub repos
   - Context-aware responses
   - Helper methods for common queries
 
-**GeminiButton Component** (`src/app/shared/gemini-button/`) - UPDATED in v1.1.0
+**GeminiButton Component** (`src/app/shared/gemini-button/`) - UPDATED in v1.6.1
 - Global AI assistant accessible from all pages
-- **NEW:** Positioned at bottom-left corner (changed from bottom-right)
-- **NEW:** Only visible when user is logged in
+- **Positioned at bottom-left corner**
+- **No login required** - Available to all users for general assistance
 - Auto-dimming after 3 seconds of inactivity
 - Features:
   - Conversational chat interface
@@ -2157,7 +2171,18 @@ For questions or updates to this guide, please file an issue in the GitHub repos
   - Loading states with typing indicators
   - Modern gradient UI (purple-blue theme)
   - Bilingual support (EN/TC)
-- Usage: Appears as floating button on all pages (except login) when authenticated
+- Usage: Appears as floating button on all pages (except login) for all users
+
+**ChatButton Component** (`src/app/shared/chat-button/`) - UPDATED in v1.6.1
+- Restaurant-specific chat for customer-owner communication
+- **Login required** - Redirects to `/login` if user not authenticated
+- Appears on restaurant detail pages only
+- Features:
+  - Real-time messaging with restaurant owners
+  - Typing indicators
+  - Unread message badges
+  - Bilingual support (EN/TC)
+- Usage: Available on `/restaurant/:id` pages for authenticated users
 
 #### 3. Enhanced Data Service
 **DataService** (`src/app/services/data.service.ts`)
@@ -2590,11 +2615,12 @@ Image setProperty @ dom_renderer.mjs:652
 
 ---
 
-**Document Version:** 1.6.0
+**Document Version:** 1.6.1
 **Last Updated:** 2025-12-03
-**Changes:** Restaurant claiming enhancements, chat page improvements, and typing indicator redesign
+**Changes:** Socket.IO configuration fix, authentication requirements update
 
 **Changelog:**
+- v1.6.1 (2025-12-03): **CRITICAL CONFIGURATION FIX** - Fixed ChatService to connect to Railway Socket.IO server instead of Vercel API. Changed connection URL from `environment.apiUrl` to `environment.socketUrl` (https://railway-socket-production.up.railway.app). Updated authentication requirements: GeminiButton (AI assistant) now accessible without login for all users, ChatButton (restaurant chat) now requires login and redirects to /login if not authenticated. Added `socketUrl` field to environment configuration. Updated documentation to reflect separate Socket.IO and REST API deployments. Files modified: chat.service.ts (socketUrl usage), gemini-button.component.ts (removed login check), chat-button.component.ts (added login check and Router import), environment.ts (added socketUrl), CLAUDE.md (documentation updates).
 - v1.6.0 (2025-12-03): **FEATURE ENHANCEMENTS** - Enhanced restaurant claiming feature with stricter validation: claim button now only shows if user type is "Restaurant" AND user's restaurantId is empty/null AND restaurant's ownerId is empty/null. Added automatic redirect to /store page after successful claim. Implemented comprehensive bilingual error messages (EN/TC) for all claim failure scenarios (already claimed, already own another, not authorized, not found, generic failure, auth token missing). Updated Chat page with user-type-specific bilingual guidance messages for Diner and Restaurant users, including icon-based information cards and contextual action buttons. Replaced animated dots typing indicator with modern chatbox-ellipses-sharp icon with pulse animation and bilingual text label. Files modified: restaurant.page.ts (checkClaimEligibility, claimRestaurant), restaurant.page.html (claim button conditions), chat.page.ts (user type detection), chat.page.html (user-type-specific messages), chat.page.scss (styling), chat-button.component.html (typing indicator), chat-button.component.scss (typing indicator styles), CLAUDE.md (documentation).
 - v1.5.2 (2025-12-02): **CRITICAL BUG FIX** - Fixed app freezing/crashing after opening any modal. The backend API was replacing null/undefined image URLs with em dash character ('—'), causing browser to attempt fetching from invalid URLs (http://localhost:8100/%E2%80%94) and resulting in 404 errors that froze the app. Added sanitizeImageUrl() helper method in UserService and RestaurantsService to detect and replace em dash with null, allowing proper placeholder fallback logic. Affected methods: getUserProfile(), getAllUsers(), searchRestaurants(), searchRestaurantsWithFilters(), getRestaurantById(), getMenuItems(), getMenuItem().
 - v1.5.1 (2025-11-30): **CRITICAL BUG FIX** - Removed aggressive global margins on ion-router-outlet/ion-content/main/section elements that were preventing page content from displaying in web view (lines 241-254 in global.scss). Applied global green theme with purple-blue gradient accents to restaurant page, replacing all hardcoded colors (#ffffff, #000000, #FFD700) with theme CSS variables for consistent theming. Separated search page title from sticky search/filter section for improved UX - only search bar and filters are now sticky, title scrolls naturally with page content.

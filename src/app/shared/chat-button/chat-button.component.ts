@@ -1,5 +1,6 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ChatService, ChatMessage } from '../../services/chat.service';
@@ -36,7 +37,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
-    private readonly modalController: ModalController
+    private readonly modalController: ModalController,
+    private readonly router: Router
   ) {}
 
   ngOnInit(): void {
@@ -101,6 +103,12 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
    * Toggle chat window
    */
   toggleChat(): void {
+    // Check if user is logged in
+    if (!this.authService.currentUser) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.unreadCount = 0;
