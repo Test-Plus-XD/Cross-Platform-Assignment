@@ -700,8 +700,8 @@ interface Restaurant {
   Keyword_EN?: string[];         // Search keywords (English)
   Keyword_TC?: string[];         // Search keywords (Chinese)
   Menu?: MenuItem[];             // Menu items
-  Opening_Hours?: {              // Operating hours
-    [day: string]: string | { open?: string; close?: string };
+  Opening_Hours?: {              // Operating hours (map of day name to hours string)
+    [day: string]: string;       // e.g., "11:30-15:00, 17:30-21:30" or "11:30-21:30"
   };
   Seats?: number;                // Capacity
   Contacts?: {                   // Contact info
@@ -710,8 +710,9 @@ interface Restaurant {
     Website?: string;
   };
   ImageUrl?: string;             // Restaurant image
-  createdAt: Timestamp;          // Auto-set
-  modifiedAt?: Timestamp;        // Auto-updated
+  ownerId?: string;              // Owner UID (Foreign key → Users.uid)
+  createdAt?: Firestore Timestamp;    // Auto-set by backend
+  modifiedAt?: Firestore Timestamp;   // Auto-updated by backend
 }
 
 interface MenuItem {
@@ -734,17 +735,23 @@ interface User {
   displayName?: string;          // Display name
   photoURL?: string;             // Profile picture URL
   emailVerified: boolean;        // Email verification status
+  phoneNumber?: string;          // Phone number
+  type?: string;                 // User type: 'Diner' or 'Restaurant' (case insensitive)
+  restaurantId?: string;         // Restaurant ID if user is owner
+  bio?: string;                  // User biography
   preferences?: {
     language?: 'EN' | 'TC';      // UI language preference
     theme?: 'light' | 'dark';    // Theme preference
     notifications?: boolean;     // Notification opt-in
   };
   loginCount?: number;           // Login tracking
-  lastLoginAt?: Timestamp;       // Last login timestamp
-  createdAt: Timestamp;          // Account creation
-  modifiedAt?: Timestamp;        // Last profile update
+  lastLoginAt?: Firestore Timestamp;  // Last login timestamp
+  createdAt: Firestore Timestamp;     // Account creation (auto-set by backend)
+  modifiedAt?: Firestore Timestamp;   // Last profile update (auto-updated by backend)
 }
 ```
+
+**Note:** `createdAt` and `modifiedAt` are Firestore server timestamps (automatically managed by the backend). When fetched via API, they are returned as ISO 8601 strings.
 
 #### 3. Bookings
 **Collection:** `Bookings`
@@ -755,13 +762,14 @@ interface Booking {
   id: string;                    // Auto-generated
   userId: string;                // Foreign key → Users.uid
   restaurantId: string;          // Foreign key → Restaurants.id
-  dateTime: Timestamp;           // Booking date/time
+  restaurantName: string;        // Denormalized restaurant name
+  dateTime: string | Firestore Timestamp;  // Booking date/time (ISO 8601 string or Firestore Timestamp)
   numberOfGuests: number;        // Party size
-  status?: 'pending' | 'confirmed' | 'cancelled';
-  paymentStatus?: 'unpaid' | 'paid';
+  status?: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  paymentStatus?: 'unpaid' | 'paid' | 'refunded';
   specialRequests?: string;      // Optional notes
-  createdAt: Timestamp;          // Auto-set
-  modifiedAt?: Timestamp;        // Auto-updated
+  createdAt?: Firestore Timestamp;    // Auto-set by backend
+  modifiedAt?: Firestore Timestamp;   // Auto-updated by backend
 }
 ```
 

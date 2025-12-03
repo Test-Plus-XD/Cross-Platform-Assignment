@@ -24,19 +24,17 @@
           <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
         </ion-tab-button>
 
-        <!-- Bookings/Store button - right-most, only show when logged in -->
-        <ng-container *ngIf="appState.isLoggedIn">
-          <ng-container *ngIf="isRestaurantUser$ | async as isRestaurant">
-            <ion-tab-button routerLink="/booking" *ngIf="!isRestaurant">
-              <ion-icon name="calendar"></ion-icon>
-              <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
-            </ion-tab-button>
-            <ion-tab-button routerLink="/store" *ngIf="isRestaurant">
-              <ion-icon name="storefront"></ion-icon>
-              <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
-            </ion-tab-button>
-          </ng-container>
-        </ng-container>
+        <!-- Bookings button - for Diner users -->
+        <ion-tab-button routerLink="/booking" *ngIf="appState.isLoggedIn && !(isRestaurantUser$ | async)">
+          <ion-icon name="calendar"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
+        </ion-tab-button>
+
+        <!-- Store button - for Restaurant users -->
+        <ion-tab-button routerLink="/store" *ngIf="appState.isLoggedIn && (isRestaurantUser$ | async)">
+          <ion-icon name="storefront"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
+        </ion-tab-button>
       </ion-tab-bar>
     </ion-tabs>
   </ng-container>

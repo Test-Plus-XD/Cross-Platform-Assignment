@@ -4,6 +4,9 @@ import { Observable, BehaviorSubject, from, throwError, of } from 'rxjs';
 import { catchError, map, tap, switchMap, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
+// Timestamp type: Can be ISO 8601 string (from API), Firestore Timestamp object (with toDate() method), or Date
+export type Timestamp = string | Date | { toDate: () => Date } | null | undefined;
+
 // User profile interface matching Firestore schema
 export interface UserProfile {
   uid: string;
@@ -23,10 +26,11 @@ export interface UserProfile {
     theme?: 'light' | 'dark';
     notifications?: boolean;
   };
-  // Metadata
-  createdAt?: any;
-  modifiedAt?: any;
-  lastLoginAt?: any;
+  // Metadata timestamps - Can be ISO 8601 strings (from API) or Firestore Timestamp objects
+  // API returns them as ISO 8601 strings after serialization
+  createdAt?: Timestamp;
+  modifiedAt?: Timestamp;
+  lastLoginAt?: Timestamp;
   loginCount?: number;
 }
 
@@ -55,6 +59,36 @@ export class UserService {
     this.authToken = null;
     this.currentProfileSubject.next(null);
     console.log('UserService: Auth token cleared');
+  }
+
+  /**
+   * Convert timestamp to Date object safely.
+   * Handles multiple timestamp formats:
+   * - ISO 8601 strings (from API responses)
+   * - Firestore Timestamp objects (with toDate() method)
+   * - Date instances
+   * Returns null/undefined if conversion fails or input is falsy
+   */
+  public static toDate(timestamp: Timestamp): Date | null {
+    if (!timestamp) return null;
+
+    try {
+      // If it's a Firestore Timestamp object with toDate() method
+      if (typeof (timestamp as any)?.toDate === 'function') {
+        return (timestamp as any).toDate();
+      }
+
+      // If it's already a Date instance
+      if (timestamp instanceof Date) {
+        return timestamp;
+      }
+
+      // Try parsing as ISO 8601 string
+      const date = new Date(timestamp as string);
+      return !isNaN(date.getTime()) ? date : null;
+    } catch {
+      return null;
+    }
   }
 
   // Get HTTP headers with authentication
