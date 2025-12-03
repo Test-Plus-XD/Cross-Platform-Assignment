@@ -1,198 +1,597 @@
-<!-- Store management page for Restaurant-type users -->
+<!-- Store management page with restaurant editing, menu management, and bookings -->
 <br><br>
 <ion-content fullscreen>
-  <!-- Pull to refresh -->
-  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
-    <ion-refresher-content></ion-refresher-content>
-  </ion-refresher>
+  <ng-container *ngIf="isMobile$ | async as isMobile">
+    <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
 
-  <!-- No restaurant linked state -->
-  <div class="empty-state" *ngIf="!isRestaurantLoading && !hasRestaurant">
-    <ion-icon name="storefront-outline" class="empty-icon"></ion-icon>
-    <h2>{{ (lang$ | async) === 'TC' ? translations.noRestaurant.TC : translations.noRestaurant.EN }}</h2>
-    <p>{{ (lang$ | async) === 'TC' ? translations.contactSupport.TC : translations.contactSupport.EN }}</p>
-  </div>
+      <!-- Pull to refresh -->
+      <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
 
-  <!-- Main content when restaurant exists -->
-  <div *ngIf="hasRestaurant" class="management-container">
-    <!-- Restaurant header card -->
-    <ion-card class="restaurant-header-card">
-      <ion-card-content>
-        <div class="restaurant-info">
-          <div class="restaurant-details">
-            <h2 class="restaurant-name">
-              {{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN) : (restaurant?.Name_EN || restaurant?.Name_TC) }}
-            </h2>
-            <p class="restaurant-address">
-              <ion-icon name="location-outline"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN) : (restaurant?.District_EN || restaurant?.District_TC) }}
-            </p>
-          </div>
-          <div class="restaurant-actions">
-            <ion-button fill="outline" size="small" (click)="viewPublicPage()">
-              <ion-icon name="eye-outline" slot="start"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.viewPublicPage.TC : translations.viewPublicPage.EN }}
-            </ion-button>
-            <ion-button fill="solid" size="small" (click)="editRestaurant()">
-              <ion-icon name="create-outline" slot="start"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.editRestaurant.TC : translations.editRestaurant.EN }}
-            </ion-button>
-          </div>
-        </div>
-      </ion-card-content>
-    </ion-card>
+      <!-- No restaurant linked state -->
+      <div class="empty-state" *ngIf="!isRestaurantLoading && !hasRestaurant">
+        <ion-icon name="storefront-outline" class="empty-icon"></ion-icon>
+        <h2>{{ (lang$ | async) === 'TC' ? translations.noRestaurant.TC : translations.noRestaurant.EN }}</h2>
+        <p>{{ (lang$ | async) === 'TC' ? translations.contactSupport.TC : translations.contactSupport.EN }}</p>
+      </div>
 
-    <!-- Statistics cards -->
-    <div class="stats-grid">
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <ion-icon name="today-outline" color="primary"></ion-icon>
-          <div class="stat-value">{{ getTodayBookingsCount() }}</div>
-          <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.todayBookings.TC : translations.todayBookings.EN }}</div>
-        </ion-card-content>
-      </ion-card>
+      <!-- Main content when restaurant exists -->
+      <div *ngIf="hasRestaurant" class="store-container">
 
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <ion-icon name="hourglass-outline" color="warning"></ion-icon>
-          <div class="stat-value">{{ getFilterCount('pending') }}</div>
-          <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.pendingCount.TC : translations.pendingCount.EN }}</div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <ion-icon name="calendar-outline" color="success"></ion-icon>
-          <div class="stat-value">{{ bookings.length }}</div>
-          <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.totalBookings.TC : translations.totalBookings.EN }}</div>
-        </ion-card-content>
-      </ion-card>
-
-      <ion-card class="stat-card">
-        <ion-card-content>
-          <ion-icon name="people-outline" color="tertiary"></ion-icon>
-          <div class="stat-value">{{ getTotalGuestsCount() }}</div>
-          <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.totalGuests.TC : translations.totalGuests.EN }}</div>
-        </ion-card-content>
-      </ion-card>
-    </div>
-
-    <!-- Bookings section header -->
-    <div class="section-header">
-      <ion-icon name="list-outline"></ion-icon>
-      <h3>{{ (lang$ | async) === 'TC' ? translations.incomingBookings.TC : translations.incomingBookings.EN }}</h3>
-    </div>
-
-    <!-- Filter segment -->
-    <ion-segment [value]="currentFilter" (ionChange)="onFilterChange($any($event).detail.value)" class="filter-segment" scrollable>
-      <ion-segment-button value="pending">
-        <ion-label>
-          {{ (lang$ | async) === 'TC' ? translations.pending.TC : translations.pending.EN }}
-          <ion-badge color="warning" *ngIf="getFilterCount('pending') > 0">{{ getFilterCount('pending') }}</ion-badge>
-        </ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="confirmed">
-        <ion-label>
-          {{ (lang$ | async) === 'TC' ? translations.confirmed.TC : translations.confirmed.EN }}
-          <ion-badge color="success" *ngIf="getFilterCount('confirmed') > 0">{{ getFilterCount('confirmed') }}</ion-badge>
-        </ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="completed">
-        <ion-label>
-          {{ (lang$ | async) === 'TC' ? translations.completed.TC : translations.completed.EN }}
-          <ion-badge color="primary" *ngIf="getFilterCount('completed') > 0">{{ getFilterCount('completed') }}</ion-badge>
-        </ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="cancelled">
-        <ion-label>
-          {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
-          <ion-badge color="danger" *ngIf="getFilterCount('cancelled') > 0">{{ getFilterCount('cancelled') }}</ion-badge>
-        </ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="all">
-        <ion-label>
-          {{ (lang$ | async) === 'TC' ? translations.all.TC : translations.all.EN }}
-        </ion-label>
-      </ion-segment-button>
-    </ion-segment>
-
-    <!-- Loading state -->
-    <div class="loading-state" *ngIf="isLoading">
-      <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
-    </div>
-
-    <!-- Error state -->
-    <div class="error-state" *ngIf="errorMessage && !isLoading">
-      <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
-      <p>{{ errorMessage }}</p>
-      <ion-button fill="outline" (click)="loadBookings(true)">
-        {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
-      </ion-button>
-    </div>
-
-    <!-- Empty state -->
-    <div class="empty-bookings" *ngIf="!isLoading && !errorMessage && filteredBookings.length === 0">
-      <ion-icon name="calendar-clear-outline"></ion-icon>
-      <p *ngIf="currentFilter === 'pending'">{{ (lang$ | async) === 'TC' ? translations.noPending.TC : translations.noPending.EN }}</p>
-      <p *ngIf="currentFilter === 'confirmed'">{{ (lang$ | async) === 'TC' ? translations.noConfirmed.TC : translations.noConfirmed.EN }}</p>
-      <p *ngIf="currentFilter === 'completed'">{{ (lang$ | async) === 'TC' ? translations.noCompleted.TC : translations.noCompleted.EN }}</p>
-      <p *ngIf="currentFilter === 'cancelled'">{{ (lang$ | async) === 'TC' ? translations.noCancelled.TC : translations.noCancelled.EN }}</p>
-      <p *ngIf="currentFilter === 'all'">{{ (lang$ | async) === 'TC' ? translations.noBookings.TC : translations.noBookings.EN }}</p>
-    </div>
-
-    <!-- Booking cards list -->
-    <ion-list lines="none" *ngIf="!isLoading && filteredBookings.length > 0" class="bookings-list">
-      <ion-card *ngFor="let booking of filteredBookings" class="booking-card">
-        <ion-card-content>
-          <!-- Booking header with date and status -->
-          <div class="booking-header">
-            <div class="booking-datetime">
-              <div class="booking-date">{{ formatDate(booking.dateTime, (lang$ | async) === 'TC') }}</div>
-              <div class="booking-time">{{ formatTime(booking.dateTime, (lang$ | async) === 'TC') }}</div>
+        <!-- Restaurant header card -->
+        <ion-card class="header-card">
+          <ion-card-content>
+            <div class="header-content">
+              <div class="restaurant-name-section">
+                <h2>{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN) : (restaurant?.Name_EN || restaurant?.Name_TC) }}</h2>
+                <p class="district">
+                  <ion-icon name="location-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN) : (restaurant?.District_EN || restaurant?.District_TC) }}
+                </p>
+              </div>
+              <ion-button fill="outline" size="small" (click)="viewPublicPage()">
+                <ion-icon name="eye-outline" slot="start"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.viewPublicPage.TC : translations.viewPublicPage.EN }}
+              </ion-button>
             </div>
-            <ion-badge [color]="getStatusColour(booking.status)">
-              {{ booking.status | titlecase }}
-            </ion-badge>
-          </div>
+          </ion-card-content>
+        </ion-card>
 
-          <!-- Guest count -->
-          <div class="booking-detail">
-            <ion-icon name="people-outline"></ion-icon>
-            <span>
-              {{ booking.numberOfGuests }}
-              {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN) : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN) }}
-            </span>
-          </div>
+        <!-- Statistics cards -->
+        <div class="stats-grid">
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="today-outline" color="primary"></ion-icon>
+              <div class="stat-value">{{ getTodayBookingsCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.todayBookings.TC : translations.todayBookings.EN }}</div>
+            </ion-card-content>
+          </ion-card>
 
-          <!-- Special requests -->
-          <div class="booking-detail special-requests" *ngIf="booking.specialRequests">
-            <ion-icon name="chatbubble-outline"></ion-icon>
-            <span>{{ booking.specialRequests }}</span>
-          </div>
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="hourglass-outline" color="warning"></ion-icon>
+              <div class="stat-value">{{ getPendingBookingsCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.pendingBookings.TC : translations.pendingBookings.EN }}</div>
+            </ion-card-content>
+          </ion-card>
 
-          <!-- Action buttons based on status -->
-          <div class="booking-actions" *ngIf="booking.status === 'pending'">
-            <ion-button fill="solid" color="success" size="small" (click)="confirmBookingAction(booking)">
-              <ion-icon name="checkmark-outline" slot="start"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.confirmBooking.TC : translations.confirmBooking.EN }}
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="calendar-outline" color="success"></ion-icon>
+              <div class="stat-value">{{ bookings.length }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.totalBookings.TC : translations.totalBookings.EN }}</div>
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <!-- Section tabs -->
+        <ion-segment [value]="currentSection" (ionChange)="switchSection($any($event).detail.value)" class="section-tabs">
+          <ion-segment-button value="info">
+            <ion-label>
+              <ion-icon name="information-circle-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.restaurantInfo.TC : translations.restaurantInfo.EN }}
+            </ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="menu">
+            <ion-label>
+              <ion-icon name="restaurant-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.menuManagement.TC : translations.menuManagement.EN }}
+            </ion-label>
+          </ion-segment-button>
+          <ion-segment-button value="bookings">
+            <ion-label>
+              <ion-icon name="calendar-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.bookingsOverview.TC : translations.bookingsOverview.EN }}
+            </ion-label>
+          </ion-segment-button>
+        </ion-segment>
+
+        <!-- SECTION 1: Restaurant Information -->
+        <div *ngIf="currentSection === 'info'" class="section-content">
+
+          <!-- Action buttons -->
+          <div class="action-buttons">
+            <ion-button *ngIf="!isEditingInfo" expand="block" (click)="startEditingInfo()">
+              <ion-icon name="create-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.editInfo.TC : translations.editInfo.EN }}
             </ion-button>
-            <ion-button fill="outline" color="danger" size="small" (click)="rejectBookingAction(booking)">
-              <ion-icon name="close-outline" slot="start"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.rejectBooking.TC : translations.rejectBooking.EN }}
-            </ion-button>
+            <div *ngIf="isEditingInfo" class="edit-actions">
+              <ion-button expand="block" color="success" (click)="saveRestaurantInfo()">
+                <ion-icon name="save-outline" slot="start"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
+              </ion-button>
+              <ion-button expand="block" fill="outline" (click)="cancelEditingInfo()">
+                <ion-icon name="close-outline" slot="start"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+              </ion-button>
+            </div>
           </div>
 
-          <div class="booking-actions" *ngIf="booking.status === 'confirmed'">
-            <ion-button fill="solid" color="primary" size="small" (click)="markCompleteAction(booking)">
-              <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
-              {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
-            </ion-button>
-          </div>
-        </ion-card-content>
-      </ion-card>
-    </ion-list>
+          <!-- Basic Information -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="document-text-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '基本資料' : 'Basic Information' }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
 
-    <!-- Bottom spacer -->
-    <div class="bottom-spacer"></div>
-  </div>
+              <!-- Name (English) -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="restaurant-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.nameEN.TC : translations.nameEN.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Name_EN || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Name_EN"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- Name (Chinese) -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="restaurant-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.nameTC.TC : translations.nameTC.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Name_TC || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Name_TC"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- Address (English) -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="navigate-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.addressEN.TC : translations.addressEN.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Address_EN || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Address_EN"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入英文地址' : 'Enter address in English'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- Address (Chinese) -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="navigate-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.addressTC.TC : translations.addressTC.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Address_TC || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Address_TC"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入中文地址' : 'Enter address in Chinese'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- District -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="location-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.district.TC : translations.district.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN || '—') : (restaurant?.District_EN || restaurant?.District_TC || '—') }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-button fill="outline" size="small" (click)="showDistrictSelector()">
+                    {{ (lang$ | async) === 'TC' ? (editedInfo.District_TC || translations.selectDistrict.TC) : (editedInfo.District_EN || translations.selectDistrict.EN) }}
+                    <ion-icon name="chevron-down-outline" slot="end"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+
+              <!-- Seats -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="people-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.seats.TC : translations.seats.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Seats || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Seats"
+                             type="number"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入座位數' : 'Enter number of seats'">
+                  </ion-input>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Contact Information -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="call-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '聯絡資料' : 'Contact Information' }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <!-- Phone -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="call-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.phone.TC : translations.phone.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Contacts?.Phone || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Contacts.Phone"
+                             type="tel"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入電話號碼' : 'Enter phone number'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="mail-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.email.TC : translations.email.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Contacts?.Email || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Contacts.Email"
+                             type="email"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入電郵地址' : 'Enter email address'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <!-- Website -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="globe-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.website.TC : translations.website.EN }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Contacts?.Website || '—' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedInfo.Contacts.Website"
+                             type="url"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入網站網址' : 'Enter website URL'">
+                  </ion-input>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Keywords & Categories -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="pricetags-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '分類與標籤' : 'Categories & Tags' }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <!-- Keywords -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="pricetag-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.keywords.TC : translations.keywords.EN }}
+                </div>
+                <div class="info-value keywords-display" *ngIf="!isEditingInfo">
+                  <span *ngFor="let keyword of (lang$ | async) === 'TC' ? restaurant?.Keyword_TC : restaurant?.Keyword_EN" class="keyword-chip">
+                    {{ keyword }}
+                  </span>
+                  <span *ngIf="!(restaurant?.Keyword_EN?.length)">—</span>
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-button fill="outline" size="small" (click)="showKeywordsSelector()">
+                    <ion-icon name="add-outline" slot="start"></ion-icon>
+                    {{ getKeywordDisplay((lang$ | async) as 'EN' | 'TC') }}
+                  </ion-button>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Payment Methods -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="card-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.payments.TC : translations.payments.EN }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="wallet-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '接受的付款方式' : 'Accepted Payment Methods' }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  <span *ngFor="let payment of restaurant?.Payments" class="payment-chip">
+                    {{ payment }}
+                  </span>
+                  <span *ngIf="!(restaurant?.Payments?.length)">—</span>
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-button fill="outline" size="small" (click)="showPaymentMethodsSelector()">
+                    <ion-icon name="add-outline" slot="start"></ion-icon>
+                    {{ getPaymentDisplay((lang$ | async) as 'EN' | 'TC') }}
+                  </ion-button>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Opening Hours -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="time-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.openingHours.TC : translations.openingHours.EN }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <div *ngFor="let day of weekdays" class="info-row">
+                <div class="info-label">
+                  {{ (lang$ | async) === 'TC' ? day.tc : day.en }}
+                </div>
+                <div class="info-value" *ngIf="!isEditingInfo">
+                  {{ restaurant?.Opening_Hours?.[day.en] || (lang$ | async) === 'TC' ? '未設定' : 'Not set' }}
+                </div>
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
+                  <ion-button fill="outline" size="small" (click)="updateOpeningHours(day.en)">
+                    {{ editedInfo.Opening_Hours[day.en] || ((lang$ | async) === 'TC' ? '點擊設定' : 'Click to set') }}
+                    <ion-icon name="create-outline" slot="end"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Location Map -->
+          <ion-card class="info-card" *ngIf="isEditingInfo">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="map-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.location.TC : translations.location.EN }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+              <p class="map-hint">{{ (lang$ | async) === 'TC' ? translations.clickMapToSet.TC : translations.clickMapToSet.EN }}</p>
+
+              <!-- Leaflet Map Container -->
+              <div id="store-map" class="map-container">
+                <!-- Map will be initialized by Leaflet -->
+              </div>
+
+              <!-- Coordinates display -->
+              <div class="coordinates-display" *ngIf="mapMarker">
+                <p>
+                  <ion-icon name="navigate-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '緯度' : 'Latitude' }}: {{ mapMarker.lat.toFixed(6) }}<br>
+                  <ion-icon name="navigate-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '經度' : 'Longitude' }}: {{ mapMarker.lng.toFixed(6) }}
+                </p>
+              </div>
+            </ion-card-content>
+          </ion-card>
+
+        </div>
+
+        <!-- SECTION 2: Menu Management -->
+        <div *ngIf="currentSection === 'menu'" class="section-content">
+
+          <!-- Add menu item button -->
+          <ion-button expand="block" (click)="startAddingMenuItem()" *ngIf="!isEditingMenu">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.addMenuItem.TC : translations.addMenuItem.EN }}
+          </ion-button>
+
+          <!-- Menu item editor -->
+          <ion-card class="info-card" *ngIf="isEditingMenu">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="restaurant-outline"></ion-icon>
+                {{ editingMenuItemId ? ((lang$ | async) === 'TC' ? translations.editMenuItem.TC : translations.editMenuItem.EN) : ((lang$ | async) === 'TC' ? translations.addMenuItem.TC : translations.addMenuItem.EN) }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <div class="info-row">
+                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.nameEN.TC : translations.nameEN.EN }}</div>
+                <div class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedMenuItem.Name_EN"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.nameTC.TC : translations.nameTC.EN }}</div>
+                <div class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedMenuItem.Name_TC"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.price.TC : translations.price.EN }}</div>
+                <div class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedMenuItem.Price"
+                             type="number"
+                             [placeholder]="(lang$ | async) === 'TC' ? '輸入價格' : 'Enter price'">
+                  </ion-input>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">{{ (lang$ | async) === 'TC' ? '描述（英文）' : 'Description (EN)' }}</div>
+                <div class="edit-input-wrapper">
+                  <ion-textarea [(ngModel)]="editedMenuItem.Description_EN"
+                                rows="3"
+                                [placeholder]="(lang$ | async) === 'TC' ? '輸入英文描述' : 'Enter description in English'">
+                  </ion-textarea>
+                </div>
+              </div>
+
+              <div class="info-row">
+                <div class="info-label">{{ (lang$ | async) === 'TC' ? '描述（中文）' : 'Description (TC)' }}</div>
+                <div class="edit-input-wrapper">
+                  <ion-textarea [(ngModel)]="editedMenuItem.Description_TC"
+                                rows="3"
+                                [placeholder]="(lang$ | async) === 'TC' ? '輸入中文描述' : 'Enter description in Chinese'">
+                  </ion-textarea>
+                </div>
+              </div>
+
+              <div class="edit-actions">
+                <ion-button expand="block" color="success" (click)="saveMenuItem()">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
+                </ion-button>
+                <ion-button expand="block" fill="outline" (click)="cancelEditingMenu()">
+                  <ion-icon name="close-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Loading state -->
+          <div class="loading-state" *ngIf="isMenuLoading">
+            <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+          </div>
+
+          <!-- Menu items list -->
+          <div class="menu-list" *ngIf="!isMenuLoading && !isEditingMenu">
+
+            <!-- Empty state -->
+            <div class="empty-state" *ngIf="menuItems.length === 0">
+              <ion-icon name="restaurant-outline"></ion-icon>
+              <p>{{ (lang$ | async) === 'TC' ? translations.noMenuItems.TC : translations.noMenuItems.EN }}</p>
+            </div>
+
+            <!-- Menu items -->
+            <ion-card *ngFor="let item of menuItems" class="menu-item-card">
+              <ion-card-content>
+                <div class="menu-item-header">
+                  <h3>{{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN) : (item.Name_EN || item.Name_TC) }}</h3>
+                  <div class="menu-item-actions">
+                    <ion-button fill="clear" size="small" (click)="startEditingMenuItem(item)">
+                      <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="clear" size="small" color="danger" (click)="deleteMenuItem(item)">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+                <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
+                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN) : (item.Description_EN || item.Description_TC) }}
+                </p>
+                <p class="menu-item-price" *ngIf="item.Price">
+                  ${{ item.Price }}
+                </p>
+              </ion-card-content>
+            </ion-card>
+
+          </div>
+
+        </div>
+
+        <!-- SECTION 3: Bookings Overview -->
+        <div *ngIf="currentSection === 'bookings'" class="section-content">
+
+          <!-- Loading state -->
+          <div class="loading-state" *ngIf="isBookingsLoading">
+            <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-state" *ngIf="!isBookingsLoading && bookings.length === 0">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <p>{{ (lang$ | async) === 'TC' ? translations.noBookings.TC : translations.noBookings.EN }}</p>
+          </div>
+
+          <!-- Bookings list with management actions -->
+          <ion-list lines="none" *ngIf="!isBookingsLoading && bookings.length > 0">
+            <ion-card *ngFor="let booking of bookings" class="booking-card">
+              <ion-card-content>
+                <div class="booking-header">
+                  <div class="booking-date">
+                    {{ booking.dateTime | date: 'short' }}
+                  </div>
+                  <ion-badge [color]="booking.status === 'pending' ? 'warning' : booking.status === 'confirmed' ? 'success' : booking.status === 'completed' ? 'primary' : 'danger'">
+                    {{ booking.status | titlecase }}
+                  </ion-badge>
+                </div>
+                <p class="booking-guests">
+                  <ion-icon name="people-outline"></ion-icon>
+                  {{ booking.numberOfGuests }} {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? '位' : 'guest') : ((lang$ | async) === 'TC' ? '位' : 'guests') }}
+                </p>
+                <p class="booking-requests" *ngIf="booking.specialRequests">
+                  <ion-icon name="chatbubble-outline"></ion-icon>
+                  {{ booking.specialRequests }}
+                </p>
+
+                <!-- Action buttons for pending bookings -->
+                <div class="booking-actions" *ngIf="booking.status === 'pending'">
+                  <ion-button size="small" color="success" (click)="confirmBookingAction(booking)">
+                    <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.confirmBooking.TC : translations.confirmBooking.EN }}
+                  </ion-button>
+                  <ion-button size="small" color="danger" fill="outline" (click)="rejectBookingAction(booking)">
+                    <ion-icon name="close-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.rejectBooking.TC : translations.rejectBooking.EN }}
+                  </ion-button>
+                </div>
+
+                <!-- Action button for confirmed bookings -->
+                <div class="booking-actions" *ngIf="booking.status === 'confirmed'">
+                  <ion-button size="small" color="primary" expand="block" (click)="markCompleteAction(booking)">
+                    <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
+                  </ion-button>
+                </div>
+              </ion-card-content>
+            </ion-card>
+          </ion-list>
+
+        </div>
+
+        <!-- Bottom spacer -->
+        <div class="bottom-spacer"></div>
+      </div>
+
+    </div>
+  </ng-container>
 </ion-content>
