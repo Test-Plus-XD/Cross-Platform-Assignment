@@ -404,6 +404,58 @@
             </ion-card-content>
           </ion-card>
 
+          <!-- Restaurant Hero Image Upload -->
+          <ion-card class="info-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="image-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '餐廳圖片' : 'Restaurant Image' }}
+              </ion-card-title>
+            </ion-card-header>
+            <ion-card-content>
+
+              <!-- Current restaurant image -->
+              <div class="current-image-preview" *ngIf="restaurant?.ImageUrl && !restaurantImagePreview">
+                <img [src]="restaurant.ImageUrl" alt="Restaurant Image">
+                <p class="image-label">{{ (lang$ | async) === 'TC' ? '當前圖片' : 'Current Image' }}</p>
+              </div>
+
+              <!-- Image preview -->
+              <div class="image-preview-container" *ngIf="restaurantImagePreview">
+                <img [src]="restaurantImagePreview" alt="Preview">
+                <ion-button fill="clear" size="small" color="danger" (click)="clearRestaurantImageSelection()">
+                  <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+                </ion-button>
+              </div>
+
+              <!-- Upload controls -->
+              <div class="upload-controls" *ngIf="!isEditingInfo">
+                <input type="file"
+                       id="restaurant-image-input"
+                       accept="image/*"
+                       (change)="onRestaurantImageSelected($event)"
+                       style="display: none;">
+
+                <ion-button expand="block" fill="outline" (click)="document.getElementById('restaurant-image-input')?.click()">
+                  <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
+                </ion-button>
+
+                <ion-button expand="block"
+                            [disabled]="!selectedRestaurantImage || isUploadingImage"
+                            (click)="uploadRestaurantImage()">
+                  <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '上傳圖片' : 'Upload Image' }}
+                </ion-button>
+              </div>
+
+              <p class="image-hint">
+                {{ (lang$ | async) === 'TC' ? '支援 JPEG、PNG、GIF、WebP 格式，最大 10MB' : 'Supports JPEG, PNG, GIF, WebP formats, max 10MB' }}
+              </p>
+
+            </ion-card-content>
+          </ion-card>
+
         </div>
 
         <!-- SECTION 2: Menu Management -->
@@ -473,12 +525,46 @@
                 </div>
               </div>
 
+              <!-- Menu Item Image Upload -->
+              <div class="info-row">
+                <div class="info-label">
+                  <ion-icon name="image-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '菜品圖片' : 'Item Image' }}
+                </div>
+                <div class="edit-input-wrapper">
+
+                  <!-- Image preview -->
+                  <div class="menu-item-image-preview" *ngIf="menuItemImagePreview">
+                    <img [src]="menuItemImagePreview" alt="Preview">
+                    <ion-button fill="clear" size="small" color="danger" (click)="clearMenuItemImageSelection()">
+                      <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+
+                  <!-- File input -->
+                  <input type="file"
+                         id="menu-item-image-input"
+                         accept="image/*"
+                         (change)="onMenuItemImageSelected($event)"
+                         style="display: none;">
+
+                  <ion-button size="small" fill="outline" (click)="document.getElementById('menu-item-image-input')?.click()">
+                    <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
+                  </ion-button>
+
+                  <p class="image-hint" style="margin-top: 8px; font-size: 12px; color: var(--ion-color-medium);">
+                    {{ (lang$ | async) === 'TC' ? '最大 10MB' : 'Max 10MB' }}
+                  </p>
+                </div>
+              </div>
+
               <div class="edit-actions">
                 <ion-button expand="block" color="success" (click)="saveMenuItem()">
                   <ion-icon name="save-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
                 </ion-button>
-                <ion-button expand="block" fill="outline" (click)="cancelEditingMenu()">
+                <ion-button expand="block" fill="outline" (click)="cancelEditingMenu(); clearMenuItemImageSelection()">
                   <ion-icon name="close-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
                 </ion-button>

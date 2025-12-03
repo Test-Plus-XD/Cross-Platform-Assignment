@@ -463,6 +463,47 @@ export class RestaurantsService {
     );
   }
 
+  // Upload restaurant hero image
+  // Uses the API endpoint: POST /API/Restaurants/:id/image
+  uploadRestaurantImage(restaurantId: string, file: File, authToken: string): Observable<{ imageUrl: string }> {
+    console.log('RestaurantsService: Uploading restaurant image for:', restaurantId);
+    const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/image`;
+
+    return this.dataService.uploadFile<{ imageUrl: string }>(endpoint, file, 'image', authToken).pipe(
+      tap(response => {
+        console.log('RestaurantsService: Restaurant image uploaded successfully:', response.imageUrl);
+        this.restaurantsCache.next(null); // Invalidate cache
+      }),
+      catchError((err: any) => {
+        console.error('RestaurantsService: uploadRestaurantImage error', err);
+        throw err;
+      })
+    );
+  }
+
+  // Upload menu item image
+  // Uploads the image and updates the menu item with the returned URL
+  uploadMenuItemImage(restaurantId: string, menuItemId: string, file: File, authToken: string): Observable<{ imageUrl: string }> {
+    console.log('RestaurantsService: Uploading menu item image for:', menuItemId);
+    // Use the restaurant image endpoint to upload, then update the menu item
+    const uploadEndpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/image`;
+
+    return this.dataService.uploadFile<{ imageUrl: string }>(uploadEndpoint, file, 'image', authToken).pipe(
+      tap(response => {
+        console.log('RestaurantsService: Menu item image uploaded successfully:', response.imageUrl);
+        // Update the menu item with the new image URL
+        this.updateMenuItem(restaurantId, menuItemId, { ImageUrl: response.imageUrl }).subscribe({
+          next: () => console.log('RestaurantsService: Menu item updated with new image URL'),
+          error: (err) => console.error('RestaurantsService: Failed to update menu item with image URL:', err)
+        });
+      }),
+      catchError((err: any) => {
+        console.error('RestaurantsService: uploadMenuItemImage error', err);
+        throw err;
+      })
+    );
+  }
+
   // Claim ownership of a restaurant
   // Requires authentication and user must be of type 'restaurant'
   claimRestaurant(restaurantId: string, authToken: string): Observable<{ message: string; restaurantId: string; userId: string }> {

@@ -50,6 +50,55 @@
       </div>
     </div>
 
+    <!-- Image Upload Section (for unclaimed restaurants) -->
+    <ion-card *ngIf="canEditRestaurant" class="edit-image-card">
+      <ion-card-header>
+        <ion-card-title>
+          <ion-icon name="image-outline"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? '編輯餐廳圖片' : 'Edit Restaurant Image' }}
+        </ion-card-title>
+        <ion-card-subtitle>
+          {{ (lang$ | async) === 'TC' ? '此餐廳尚未被認領，您可以幫助上傳圖片' : 'This restaurant is unclaimed. Help by uploading an image!' }}
+        </ion-card-subtitle>
+      </ion-card-header>
+      <ion-card-content>
+
+        <!-- Image preview -->
+        <div class="image-preview-container" *ngIf="restaurantImagePreview">
+          <img [src]="restaurantImagePreview" alt="Preview">
+          <ion-button fill="clear" size="small" color="danger" (click)="clearRestaurantImageSelection()">
+            <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- Upload controls -->
+        <div class="upload-controls-inline">
+          <input type="file"
+                 id="restaurant-page-image-input"
+                 accept="image/*"
+                 (change)="onRestaurantImageSelected($event)"
+                 style="display: none;">
+
+          <ion-button expand="block" fill="outline" (click)="document.getElementById('restaurant-page-image-input')?.click()">
+            <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
+          </ion-button>
+
+          <ion-button expand="block"
+                      [disabled]="!selectedRestaurantImage || isUploadingRestaurantImage"
+                      (click)="uploadRestaurantImageInline()">
+            <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '上傳圖片' : 'Upload Image' }}
+          </ion-button>
+        </div>
+
+        <p class="image-hint">
+          {{ (lang$ | async) === 'TC' ? '支援 JPEG、PNG、GIF、WebP 格式，最大 10MB' : 'Supports JPEG, PNG, GIF, WebP formats, max 10MB' }}
+        </p>
+
+      </ion-card-content>
+    </ion-card>
+
     <!-- Main Navigation Tabs -->
     <div class="tab-navigation">
       <ion-segment [(ngModel)]="selectedTab" mode="md">

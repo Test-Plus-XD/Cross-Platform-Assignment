@@ -94,6 +94,34 @@ export class DataService {
   }
 
   /**
+   * Upload file with multipart/form-data
+   * @param endpoint - API endpoint path
+   * @param file - File to upload
+   * @param fieldName - Form field name (default: 'image')
+   * @param authToken - Optional authentication token to include in headers
+   */
+  uploadFile<T>(endpoint: string, file: File, fieldName: string = 'image', authToken?: string | null): Observable<T> {
+    const url = `${this.apiUrl}${endpoint}`;
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    // Build headers without Content-Type (browser will set it with boundary)
+    const headers: { [key: string]: string } = {
+      'x-api-passcode': this.apiPasscode
+    };
+
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    console.log('DataService: POST (file upload)', url);
+
+    return this.http.post<T>(url, formData, { headers: new HttpHeaders(headers) }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
    * Handle HTTP errors and return user-friendly error messages.
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
