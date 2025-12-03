@@ -40,12 +40,19 @@ const routes: Routes = [
     loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)
   },
   {
-    path: 'bookings',
-    loadChildren: () => import('./pages/bookings/bookings.module').then( m => m.BookingsPageModule)
+    path: 'booking',
+    data: { title: { Header_EN: 'Booking', Header_TC: '預訂' } },
+    loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingPageModule)
   },
   {
     path: 'store',
+    data: { title: { Header_EN: 'Store', Header_TC: '鋪戶' } },
     loadChildren: () => import('./pages/store/store.module').then( m => m.StorePageModule)
+  },
+  {
+    path: 'chat/:id',
+    data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
+    loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
   },
 ];
 
