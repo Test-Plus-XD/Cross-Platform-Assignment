@@ -118,7 +118,7 @@
 
     <!-- Loading state -->
     <div class="loading-state" *ngIf="isLoading">
-      <ion-spinner name="crescent"></ion-spinner>
+      <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
     </div>
 
     <!-- Error state -->
@@ -160,11 +160,7 @@
             <ion-icon name="people-outline"></ion-icon>
             <span>
               {{ booking.numberOfGuests }}
-              {{
- booking.numberOfGuests === 1
-                 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN)
-                 : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN)
-              }}
+              {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN) : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN) }}
             </span>
           </div>
 
