@@ -255,21 +255,25 @@ export class ChatService {
   /**
    * Send a message to a room
    */
-  sendMessage(roomId: string, message: string): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket?.connected) {
-      console.warn('ChatService: Cannot send message, not connected');
-      return;
-    }
+    async sendMessage(roomId: string, message: string): Promise<void> {
+      const user = this.authService.currentUser;
+      if (!user || !this.socket?.connected) {
+        console.warn('ChatService: Cannot send message, not connected');
+        return;
+      }
 
-    console.log('ChatService: Sending message to room', roomId);
-    this.socket.emit('send-message', {
-      roomId,
-      userId: user.uid,
-      displayName: user.displayName || user.email || 'Anonymous',
-      message
-    });
-  }
+      // Retrieve the Firebase ID token for API authentication
+      const authToken = await this.authService.getIdToken();
+
+      console.log('ChatService: Sending message to room', roomId);
+      this.socket.emit('send-message', {
+        roomId,
+        userId: user.uid,
+        displayName: user.displayName || user.email || 'Anonymous',
+        message,
+        authToken // Include auth token for API persistence
+      });
+    }
 
   /**
    * Send a private message to a user

@@ -132,11 +132,12 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   /**
    * Send message
    */
-  sendMessage(): void {
+  async sendMessage(): Promise<void> {
     if (!this.newMessage.trim() || !this.isConnected) return;
 
     const roomId = this.getRoomId();
-    this.chatService.sendMessage(roomId, this.newMessage.trim());
+    // Await the async sendMessage call
+    await this.chatService.sendMessage(roomId, this.newMessage.trim());
     this.newMessage = '';
 
     // Stop typing indicator
