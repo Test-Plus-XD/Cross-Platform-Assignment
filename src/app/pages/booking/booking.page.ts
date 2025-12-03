@@ -279,6 +279,25 @@ export class BookingPage implements OnInit, OnDestroy {
     return new Date(booking.dateTime) >= now && booking.status !== 'cancelled' && booking.status !== 'completed';
   }
 
+  // Get statistics for display
+  getUpcomingCount(): number {
+    const now = new Date();
+    return this.booking.filter(b => new Date(b.dateTime) >= now && b.status !== 'cancelled').length;
+  }
+
+  getPastCount(): number {
+    const now = new Date();
+    return this.booking.filter(b => new Date(b.dateTime) < now && b.status !== 'cancelled').length;
+  }
+
+  getCancelledCount(): number {
+    return this.booking.filter(b => b.status === 'cancelled').length;
+  }
+
+  getTotalCount(): number {
+    return this.booking.length;
+  }
+
   // Handle pull-to-refresh
   async doRefresh(event: any): Promise<void> {
     this.loadBooking(true);
