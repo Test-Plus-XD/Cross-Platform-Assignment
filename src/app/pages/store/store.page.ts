@@ -730,6 +730,9 @@ export class StorePage implements OnInit, OnDestroy {
       } else {
         // Create new item
         const createResponse = await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
+        if (!createResponse || !createResponse.id) {
+          throw new Error('Failed to create menu item');
+        }
         menuItemId = createResponse.id;
       }
 
@@ -746,7 +749,7 @@ export class StorePage implements OnInit, OnDestroy {
         }
       }
 
-      await this.showToast(this.editingMenuItemId ? this.translations.updateSuccess[lang] : this.translations.createSuccess[lang], 'success');
+      await this.showToast(this.editingMenuItemId ? this.translations.updateSuccess[language] : this.translations.createSuccess[language], 'success');
 
       this.cancelEditingMenu();
       this.clearMenuItemImageSelection();
@@ -795,6 +798,18 @@ export class StorePage implements OnInit, OnDestroy {
       ]
     });
     await alert.present();
+  }
+
+  /// Click handler for restaurant image upload button
+  clickRestaurantImageUploadButton(): void {
+    const fileInput = document.getElementById('restaurant-image-input') as HTMLInputElement;
+    fileInput?.click();
+  }
+
+  /// Click handler for menu item image upload button
+  clickMenuItemImageUploadButton(): void {
+    const fileInput = document.getElementById('menu-item-image-input') as HTMLInputElement;
+    fileInput?.click();
   }
 
   // Navigate to the public restaurant page to view how customers see the restaurant.

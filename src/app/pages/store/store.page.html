@@ -416,7 +416,7 @@
 
               <!-- Current restaurant image -->
               <div class="current-image-preview" *ngIf="restaurant?.ImageUrl && !restaurantImagePreview">
-                <img [src]="restaurant.ImageUrl" alt="Restaurant Image">
+                <img [src]="restaurant?.ImageUrl || ''" alt="Restaurant Image">
                 <p class="image-label">{{ (lang$ | async) === 'TC' ? '當前圖片' : 'Current Image' }}</p>
               </div>
 
@@ -436,7 +436,7 @@
                        (change)="onRestaurantImageSelected($event)"
                        style="display: none;">
 
-                <ion-button expand="block" fill="outline" (click)="document.getElementById('restaurant-image-input')?.click()">
+                <ion-button expand="block" fill="outline" (click)="clickRestaurantImageUploadButton()">
                   <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
                 </ion-button>
@@ -548,7 +548,7 @@
                          (change)="onMenuItemImageSelected($event)"
                          style="display: none;">
 
-                  <ion-button size="small" fill="outline" (click)="document.getElementById('menu-item-image-input')?.click()">
+                  <ion-button size="small" fill="outline" (click)="clickMenuItemImageUploadButton()">
                     <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
                     {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
                   </ion-button>
