@@ -18,7 +18,7 @@ type BookingFilter = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'all'
   selector: 'app-store',
   templateUrl: './store.page.html',
   styleUrls: ['./store.page.scss'],
-  standalone: false
+  standalone: false,
 })
 export class StorePage implements OnInit, OnDestroy {
   // Language stream for bilingual content
@@ -104,7 +104,7 @@ export class StorePage implements OnInit, OnDestroy {
       detail: { Header_EN: 'Store Management', Header_TC: '店舖管理' },
       bubbles: true
     });
-    window.dispatchEvent(event);
+    globalThis.dispatchEvent(event);
 
     // Load restaurant and bookings
     this.loadRestaurantData();
@@ -187,19 +187,16 @@ export class StorePage implements OnInit, OnDestroy {
           .filter(b => b.status === 'confirmed')
           .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
         break;
-
       case 'completed':
         this.filteredBookings = this.bookings
           .filter(b => b.status === 'completed')
           .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
         break;
-
       case 'cancelled':
         this.filteredBookings = this.bookings
           .filter(b => b.status === 'cancelled')
           .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
         break;
-
       case 'all':
       default:
         this.filteredBookings = [...this.bookings]
@@ -323,7 +320,6 @@ export class StorePage implements OnInit, OnDestroy {
         }
       ]
     });
-
     await alert.present();
   }
 

@@ -636,9 +636,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
             console.log('RestaurantPage: Restaurant claimed successfully:', response);
 
             // Update local restaurant object
-            if (this.restaurant) {
-              this.restaurant.ownerId = response.userId;
-            }
+            if (this.restaurant) this.restaurant.ownerId = response.userId;
 
             this.isClaimingRestaurant = false;
             this.canClaimRestaurant = false;
