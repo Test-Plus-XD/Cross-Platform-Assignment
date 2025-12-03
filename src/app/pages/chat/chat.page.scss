@@ -1,0 +1,178 @@
+// Chat page styles
+.chat-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+// Page Header
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+
+  .header-icon {
+    font-size: 36px;
+    color: var(--ion-color-primary);
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ion-text-color);
+  }
+}
+
+// Info Card
+.info-card {
+  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+  ion-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+
+    .card-icon {
+      font-size: 28px;
+    }
+
+    ion-card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+  }
+
+  ion-card-content {
+    padding-top: 8px;
+
+    .info-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 16px;
+
+      .chat-icon {
+        font-size: 48px;
+        flex-shrink: 0;
+        margin-top: 4px;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.6;
+        color: var(--ion-text-color);
+      }
+    }
+
+    .action-button {
+      margin-top: 16px;
+    }
+  }
+}
+
+// Illustration Section
+.illustration-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+
+  .large-icon {
+    font-size: 120px;
+    color: var(--ion-color-medium);
+    opacity: 0.3;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--ion-text-color);
+  }
+
+  p {
+    font-size: 16px;
+    color: var(--ion-color-medium);
+    margin: 0;
+    max-width: 500px;
+    line-height: 1.5;
+  }
+}
+
+// Loading container
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 14px;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .chat-page-container {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 20px;
+
+    .header-icon {
+      font-size: 30px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+
+  .info-card {
+    ion-card-content {
+      .info-content {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+
+        .chat-icon {
+          margin-top: 0;
+        }
+      }
+    }
+  }
+
+  .illustration-section {
+    padding: 30px 16px;
+
+    .large-icon {
+      font-size: 80px;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+  }
+}
