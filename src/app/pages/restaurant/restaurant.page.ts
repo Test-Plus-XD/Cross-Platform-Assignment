@@ -615,45 +615,48 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
       this.isClaimingRestaurant = true;
 
-      // Update restaurant with current user as owner
-      this.restaurantsService.updateRestaurant(this.restaurant.id, {
-        ownerId: user.uid
-      }).pipe(takeUntil(this.destroy$)).subscribe({
-        next: async () => {
-          console.log('RestaurantPage: Restaurant claimed successfully');
+      // Get authentication token
+      const authToken = await this.authService.getIdToken();
+      if (!authToken) {
+        this.isClaimingRestaurant = false;
+        await this.showToast(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token', 'danger');
+        return;
+      }
 
-          // Update local restaurant object
-          if (this.restaurant) {
-            this.restaurant.ownerId = user.uid;
+      // Call claim API endpoint
+      this.restaurantsService.claimRestaurant(this.restaurant.id, authToken)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: async (response) => {
+            console.log('RestaurantPage: Restaurant claimed successfully:', response);
+
+            // Update local restaurant object
+            if (this.restaurant) {
+              this.restaurant.ownerId = response.userId;
+            }
+
+            this.isClaimingRestaurant = false;
+            this.canClaimRestaurant = false;
+
+            const successMessage = lang === 'TC'
+              ? '已成功認領餐廳！'
+              : 'Restaurant claimed successfully!';
+            await this.showToast(successMessage, 'success');
+
+            // Reload restaurant data
+            if (this.restaurant?.id) {
+              this.loadRestaurantData(this.restaurant.id);
+            }
+          },
+          error: async (err: Error) => {
+            console.error('RestaurantPage: Error claiming restaurant', err);
+            this.isClaimingRestaurant = false;
+            await this.showToast(
+              err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again'),
+              'danger'
+            );
           }
-
-          // Update user profile with restaurantId
-          await this.userService.updateUserProfile(user.uid, {
-            restaurantId: this.restaurant?.id
-          }).toPromise();
-
-          this.isClaimingRestaurant = false;
-          this.canClaimRestaurant = false;
-
-          const successMessage = lang === 'TC'
-            ? '已成功認領餐廳！'
-            : 'Restaurant claimed successfully!';
-          await this.showToast(successMessage, 'success');
-
-          // Reload restaurant data
-          if (this.restaurant?.id) {
-            this.loadRestaurantData(this.restaurant.id);
-          }
-        },
-        error: async (err: Error) => {
-          console.error('RestaurantPage: Error claiming restaurant', err);
-          this.isClaimingRestaurant = false;
-          await this.showToast(
-            err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again'),
-            'danger'
-          );
-        }
-      });
+        });
     } catch (err) {
       console.error('claimRestaurant error', err);
       this.isClaimingRestaurant = false;

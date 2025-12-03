@@ -463,6 +463,24 @@ export class RestaurantsService {
     );
   }
 
+  // Claim ownership of a restaurant
+  // Requires authentication and user must be of type 'restaurant'
+  claimRestaurant(restaurantId: string, authToken: string): Observable<{ message: string; restaurantId: string; userId: string }> {
+    console.log('RestaurantsService: Claiming restaurant:', restaurantId);
+    const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/claim`;
+
+    return this.dataService.post<{ message: string; restaurantId: string; userId: string }>(endpoint, {}, authToken).pipe(
+      tap(response => {
+        console.log('RestaurantsService: Restaurant claimed successfully:', response);
+        this.restaurantsCache.next(null); // Invalidate cache
+      }),
+      catchError((err: any) => {
+        console.error('RestaurantsService: claimRestaurant error', err);
+        throw err;
+      })
+    );
+  }
+
   // Clear local cache
   clearCache(): void {
     this.restaurantsCache.next(null);
