@@ -12,33 +12,8 @@ import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
 import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 import { UserService } from '../../services/user.service';
-import { DISTRICTS, KEYWORDS, District, Keyword } from '../../constants/restaurant-constants';
+import { Districts, Keywords, PaymentMethods, Weekdays, District, Keyword, PaymentMethod, Weekday } from '../../constants/restaurant-constants';
 import * as L from 'leaflet';
-
-// Payment methods supported
-export const PAYMENT_METHODS = [
-  { en: 'Cash', tc: '現金' },
-  { en: 'Credit Card', tc: '信用卡' },
-  { en: 'Debit Card', tc: '扣賬卡' },
-  { en: 'Octopus', tc: '八達通' },
-  { en: 'AliPay HK', tc: '支付寶香港' },
-  { en: 'WeChat Pay HK', tc: '微信支付香港' },
-  { en: 'PayMe', tc: 'PayMe' },
-  { en: 'FPS', tc: '轉數快' },
-  { en: 'Apple Pay', tc: 'Apple Pay' },
-  { en: 'Google Pay', tc: 'Google Pay' }
-];
-
-// Days of the week for opening hours
-export const WEEKDAYS = [
-  { en: 'Monday', tc: '星期一' },
-  { en: 'Tuesday', tc: '星期二' },
-  { en: 'Wednesday', tc: '星期三' },
-  { en: 'Thursday', tc: '星期四' },
-  { en: 'Friday', tc: '星期五' },
-  { en: 'Saturday', tc: '星期六' },
-  { en: 'Sunday', tc: '星期日' }
-];
 
 @Component({
   selector: 'app-store',
@@ -82,10 +57,10 @@ export class StorePage implements OnInit, OnDestroy {
   private restaurantId: string | null = null;
 
   // Centralized data
-  districts = DISTRICTS;
-  keywords = KEYWORDS;
-  paymentMethods = PAYMENT_METHODS;
-  weekdays = WEEKDAYS;
+  districts = Districts;
+  keywords = Keywords;
+  paymentMethods = PaymentMethods;
+  weekdays = Weekdays;
 
   // Edited restaurant info
   editedInfo = {
@@ -175,7 +150,17 @@ export class StorePage implements OnInit, OnDestroy {
     noBookings: { EN: 'No bookings yet', TC: '尚無預約' },
     enterValue: { EN: 'Enter value', TC: '輸入數值' },
     closed: { EN: 'Closed', tc: '休息' },
-    open24h: { EN: 'Open 24h', tc: '24小時' }
+    open24h: { EN: 'Open 24h', tc: '24小時' },
+    confirmBooking: { EN: 'Confirm', TC: '確認' },
+    rejectBooking: { EN: 'Reject', TC: '拒絕' },
+    markComplete: { EN: 'Complete', TC: '完成' },
+    confirmBookingTitle: { EN: 'Confirm Booking', TC: '確認預約' },
+    confirmBookingMessage: { EN: 'Confirm this booking?', TC: '確認此預約？' },
+    rejectBookingTitle: { EN: 'Reject Booking', TC: '拒絕預約' },
+    rejectBookingMessage: { EN: 'Reject this booking?', TC: '拒絕此預約？' },
+    completeBookingTitle: { EN: 'Complete Booking', TC: '完成預約' },
+    completeBookingMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為完成？' },
+    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' }
   };
 
   constructor(
@@ -844,6 +829,87 @@ export class StorePage implements OnInit, OnDestroy {
     setTimeout(() => {
       event.target.complete();
     }, 1000);
+  }
+
+  // Confirm a pending booking
+  async confirmBookingAction(booking: Booking): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.confirmBookingTitle[lang],
+      message: this.translations.confirmBookingMessage[lang],
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: this.translations.confirmBooking[lang],
+          handler: async () => {
+            await this.updateBookingStatus(booking, 'confirmed', lang === 'TC');
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Reject a pending booking
+  async rejectBookingAction(booking: Booking): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.rejectBookingTitle[lang],
+      message: this.translations.rejectBookingMessage[lang],
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: this.translations.rejectBooking[lang],
+          role: 'destructive',
+          handler: async () => {
+            await this.updateBookingStatus(booking, 'cancelled', lang === 'TC');
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Mark booking as completed
+  async markCompleteAction(booking: Booking): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.completeBookingTitle[lang],
+      message: this.translations.completeBookingMessage[lang],
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: this.translations.markComplete[lang],
+          handler: async () => {
+            await this.updateBookingStatus(booking, 'completed', lang === 'TC');
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Update booking status (helper method)
+  private async updateBookingStatus(booking: Booking, newStatus: Booking['status'], isTC: boolean): Promise<void> {
+    const loading = await this.loadingController.create({
+      message: isTC ? this.translations.saving.TC : this.translations.saving.EN,
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      await this.bookingService.updateBooking(booking.id, { status: newStatus }).toPromise();
+      await this.showToast(isTC ? this.translations.bookingUpdated.TC : this.translations.bookingUpdated.EN, 'success');
+      this.loadBookings(); // Reload bookings list
+    } catch (error: any) {
+      console.error('StorePage: Error updating booking status:', error);
+      await this.showToast(error.message || (isTC ? this.translations.updateFailed.TC : this.translations.updateFailed.EN), 'danger');
+    } finally {
+      await loading.dismiss();
+    }
   }
 
   // Cleanup

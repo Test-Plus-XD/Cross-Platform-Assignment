@@ -417,6 +417,19 @@
       font-size: 18px;
     }
   }
+
+  .booking-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    ion-button {
+      margin: 0;
+      flex: 1;
+      min-width: 120px;
+    }
+  }
 }
 
 .bookings-note {

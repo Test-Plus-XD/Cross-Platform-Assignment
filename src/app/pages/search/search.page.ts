@@ -5,6 +5,7 @@ import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
+import { Districts, Keywords } from '../../constants/restaurant-constants';
 
 interface DistrictOption {
   district_en: string;
@@ -124,59 +125,33 @@ export class SearchPage implements OnInit, OnDestroy {
     this.searchSubject.next();
   }
 
-  // Load available districts and keywords from restaurants dataset
-  // and build canonical EN-keyed lists to use as radio/checkbox values.
+  // Load available districts and keywords from centralized constants
   private loadFilterOptions(): void {
-    // Only load once to avoid unnecessary network calls
+    // Only load once to avoid unnecessary processing
     if (this.optionsLoaded && this.availableDistricts.length > 0) {
       return;
     }
 
-    // Fetch all restaurants (small dataset assumed). If your dataset is large,
-    // consider a dedicated endpoint for just distinct districts/keywords.
-    const optionsSub = this.restaurantsService.getRestaurants().subscribe({
-      next: (restaurants: Restaurant[]) => {
-        // Use maps keyed by EN token to deduplicate and preserve EN canonical values.
-        const districtsByEn = new Map<string, DistrictOption>();
-        const keywordsByEn = new Map<string, KeywordOption>();
+    // Convert centralized Districts to DistrictOption format
+    this.availableDistricts = Districts.map(d => ({
+      district_en: d.en,
+      district_tc: d.tc
+    }));
 
-        restaurants.forEach(r => {
-          // Add district by EN token
-          if (r.District_EN) {
-            districtsByEn.set(r.District_EN, {
-              district_en: r.District_EN,
-              district_tc: r.District_TC || r.District_EN
-            });
-          }
+    // Convert centralized Keywords to KeywordOption format
+    this.availableKeywords = Keywords.map(k => ({
+      value_en: k.en,
+      label_en: k.en,
+      label_tc: k.tc
+    }));
 
-          // Add keywords by EN token
-          (r.Keyword_EN || []).forEach((kEn: string, idx: number) => {
-            // Try to find matching TC token at same index as best-effort
-            const kTc = (r.Keyword_TC && r.Keyword_TC[idx]) ? r.Keyword_TC[idx] : kEn;
-            if (!keywordsByEn.has(kEn)) {
-              keywordsByEn.set(kEn, { value_en: kEn, label_en: kEn, label_tc: kTc });
-            }
-          });
-        });
+    // Sort by label in current language
+    const labelKey = this.currentLang === 'TC' ? 'district_tc' : 'district_en';
+    this.availableDistricts.sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''));
+    this.availableKeywords.sort((a, b) => (this.currentLang === 'TC' ? a.label_tc : a.label_en)
+      .localeCompare(this.currentLang === 'TC' ? b.label_tc : b.label_en));
 
-        // Convert maps to arrays and sort by label in current language
-        const districtArray = Array.from(districtsByEn.values());
-        const keywordArray = Array.from(keywordsByEn.values());
-
-        const labelKey = this.currentLang === 'TC' ? 'district_tc' : 'district_en';
-        districtArray.sort((a, b) => (a[labelKey] || '').localeCompare(b[labelKey] || ''));
-        keywordArray.sort((a, b) => (this.currentLang === 'TC' ? a.label_tc : a.label_en)
-          .localeCompare(this.currentLang === 'TC' ? b.label_tc : b.label_en));
-
-        this.availableDistricts = districtArray;
-        this.availableKeywords = keywordArray;
-        this.optionsLoaded = true;
-      },
-      error: (err: any) => {
-        console.error('SearchPage: loadFilterOptions failed', err);
-      }
-    });
-    this.subscriptions.push(optionsSub);
+    this.optionsLoaded = true;
   }
 
   // Build an Algolia-style filter string from selected districts and keywords.

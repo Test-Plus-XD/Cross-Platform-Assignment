@@ -542,7 +542,7 @@
             <p>{{ (lang$ | async) === 'TC' ? translations.noBookings.TC : translations.noBookings.EN }}</p>
           </div>
 
-          <!-- Bookings list (simplified view) -->
+          <!-- Bookings list with management actions -->
           <ion-list lines="none" *ngIf="!isBookingsLoading && bookings.length > 0">
             <ion-card *ngFor="let booking of bookings" class="booking-card">
               <ion-card-content>
@@ -562,13 +562,29 @@
                   <ion-icon name="chatbubble-outline"></ion-icon>
                   {{ booking.specialRequests }}
                 </p>
+
+                <!-- Action buttons for pending bookings -->
+                <div class="booking-actions" *ngIf="booking.status === 'pending'">
+                  <ion-button size="small" color="success" (click)="confirmBookingAction(booking)">
+                    <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.confirmBooking.TC : translations.confirmBooking.EN }}
+                  </ion-button>
+                  <ion-button size="small" color="danger" fill="outline" (click)="rejectBookingAction(booking)">
+                    <ion-icon name="close-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.rejectBooking.TC : translations.rejectBooking.EN }}
+                  </ion-button>
+                </div>
+
+                <!-- Action button for confirmed bookings -->
+                <div class="booking-actions" *ngIf="booking.status === 'confirmed'">
+                  <ion-button size="small" color="primary" expand="block" (click)="markCompleteAction(booking)">
+                    <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
+                    {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
+                  </ion-button>
+                </div>
               </ion-card-content>
             </ion-card>
           </ion-list>
-
-          <div class="bookings-note">
-            <p>{{ (lang$ | async) === 'TC' ? '如需管理預約，請前往' : 'To manage bookings, view the' }} <a routerLink="/bookings">{{ (lang$ | async) === 'TC' ? '預約頁面' : 'Bookings page' }}</a></p>
-          </div>
 
         </div>
 

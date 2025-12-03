@@ -1,68 +1,43 @@
 /**
- * Centralized restaurant constants for districts and keywords
+ * Centralized restaurant constants for districts, keywords, payment methods, and weekdays
  * Provides bilingual support (EN/TC) for consistent data across the application
  */
 
-// Districts in Hong Kong with bilingual support
+// Districts in Hong Kong with bilingual support (18 official districts)
 export interface District {
   en: string;
   tc: string;
 }
 
-export const DISTRICTS: District[] = [
-  { en: 'Central', tc: '中環' },
-  { en: 'Wan Chai', tc: '灣仔' },
-  { en: 'Causeway Bay', tc: '銅鑼灣' },
-  { en: 'Tsim Sha Tsui', tc: '尖沙咀' },
-  { en: 'Mong Kok', tc: '旺角' },
-  { en: 'Yau Ma Tei', tc: '油麻地' },
-  { en: 'Jordan', tc: '佐敦' },
-  { en: 'Sham Shui Po', tc: '深水埗' },
-  { en: 'Admiralty', tc: '金鐘' },
-  { en: 'Sheung Wan', tc: '上環' },
-  { en: 'North Point', tc: '北角' },
-  { en: 'Quarry Bay', tc: '鰂魚涌' },
-  { en: 'Tai Koo', tc: '太古' },
-  { en: 'Chai Wan', tc: '柴灣' },
-  { en: 'Shau Kei Wan', tc: '筲箕灣' },
-  { en: 'Sai Wan Ho', tc: '西灣河' },
-  { en: 'Tin Hau', tc: '天后' },
-  { en: 'Fortress Hill', tc: '炮台山' },
-  { en: 'Kennedy Town', tc: '堅尼地城' },
-  { en: 'Sai Ying Pun', tc: '西營盤' },
-  { en: 'Mid-Levels', tc: '半山' },
-  { en: 'The Peak', tc: '山頂' },
-  { en: 'Aberdeen', tc: '香港仔' },
-  { en: 'Ap Lei Chau', tc: '鴨脷洲' },
-  { en: 'Stanley', tc: '赤柱' },
-  { en: 'Repulse Bay', tc: '淺水灣' },
-  { en: 'Shek O', tc: '石澳' },
+export const Districts: District[] = [
+  { en: 'Islands', tc: '離島' },
+  { en: 'Kwai Tsing', tc: '葵青' },
+  { en: 'North', tc: '北區' },
+  { en: 'Sai Kung', tc: '西貢' },
+  { en: 'Sha Tin', tc: '沙田' },
+  { en: 'Tai Po', tc: '大埔' },
   { en: 'Tsuen Wan', tc: '荃灣' },
-  { en: 'Kwai Chung', tc: '葵涌' },
-  { en: 'Tsing Yi', tc: '青衣' },
   { en: 'Tuen Mun', tc: '屯門' },
   { en: 'Yuen Long', tc: '元朗' },
-  { en: 'Tin Shui Wai', tc: '天水圍' },
-  { en: 'Sheung Shui', tc: '上水' },
-  { en: 'Fanling', tc: '粉嶺' },
-  { en: 'Tai Po', tc: '大埔' },
-  { en: 'Sha Tin', tc: '沙田' },
-  { en: 'Ma On Shan', tc: '馬鞍山' },
-  { en: 'Tseung Kwan O', tc: '將軍澳' },
-  { en: 'Sai Kung', tc: '西貢' },
-  { en: 'Tung Chung', tc: '東涌' },
-  { en: 'Discovery Bay', tc: '愉景灣' },
-  { en: 'Lantau Island', tc: '大嶼山' }
+  { en: 'Kowloon City', tc: '九龍城' },
+  { en: 'Kwun Tong', tc: '觀塘' },
+  { en: 'Sham Shui Po', tc: '深水埗' },
+  { en: 'Wong Tai Sin', tc: '黃大仙' },
+  { en: 'Yau Tsim Mong', tc: '油尖旺區' },
+  { en: 'Central/Western', tc: '中西區' },
+  { en: 'Eastern', tc: '東區' },
+  { en: 'Southern', tc: '南區' },
+  { en: 'Wan Chai', tc: '灣仔' }
 ];
 
 // Keywords for restaurant categories with bilingual support
-// Focused on vegan and plant-based themes
+// Focused on vegan, plant-based, and religious dietary preferences
 export interface Keyword {
   en: string;
   tc: string;
 }
 
-export const KEYWORDS: Keyword[] = [
+export const Keywords: Keyword[] = [
   // Core vegan/plant-based categories
   { en: 'Vegan', tc: '純素' },
   { en: 'Vegetarian', tc: '素食' },
@@ -74,6 +49,16 @@ export const KEYWORDS: Keyword[] = [
   { en: 'Whole Foods', tc: '全食物' },
   { en: 'Raw Vegan', tc: '生機素食' },
   { en: 'Macrobiotic', tc: '長壽飲食' },
+
+  // Religious dietary preferences
+  { en: 'Buddhism', tc: '佛教' },
+  { en: 'Buddhist Vegetarian', tc: '齋' },
+  { en: 'Muslim', tc: '穆斯林' },
+  { en: 'Halal', tc: '清真' },
+  { en: 'Kosher', tc: '猶太潔食' },
+  { en: 'Jain', tc: '耆那教' },
+  { en: 'Hindu', tc: '印度教' },
+  { en: 'Taoist', tc: '道教' },
 
   // Cuisine types
   { en: 'Asian', tc: '亞洲菜' },
@@ -160,28 +145,87 @@ export const KEYWORDS: Keyword[] = [
   { en: 'Air-Conditioned', tc: '空調' }
 ];
 
-// Helper functions to get district/keyword by code
+// Payment methods with bilingual support
+export interface PaymentMethod {
+  en: string;
+  tc: string;
+}
+
+export const PaymentMethods: PaymentMethod[] = [
+  { en: 'Cash', tc: '現金' },
+  { en: 'Credit Card', tc: '信用卡' },
+  { en: 'Debit Card', tc: '扣賬卡' },
+  { en: 'Octopus', tc: '八達通' },
+  { en: 'AliPay HK', tc: '支付寶香港' },
+  { en: 'WeChat Pay HK', tc: '微信支付香港' },
+  { en: 'PayMe', tc: 'PayMe' },
+  { en: 'FPS', tc: '轉數快' },
+  { en: 'Apple Pay', tc: 'Apple Pay' },
+  { en: 'Google Pay', tc: 'Google Pay' }
+];
+
+// Weekdays with bilingual support
+export interface Weekday {
+  en: string;
+  tc: string;
+}
+
+export const Weekdays: Weekday[] = [
+  { en: 'Monday', tc: '星期一' },
+  { en: 'Tuesday', tc: '星期二' },
+  { en: 'Wednesday', tc: '星期三' },
+  { en: 'Thursday', tc: '星期四' },
+  { en: 'Friday', tc: '星期五' },
+  { en: 'Saturday', tc: '星期六' },
+  { en: 'Sunday', tc: '星期日' }
+];
+
+// Helper functions to get district/keyword by name
 export function getDistrictByEN(enName: string): District | undefined {
-  return DISTRICTS.find(d => d.en === enName);
+  return Districts.find(d => d.en === enName);
 }
 
 export function getDistrictByTC(tcName: string): District | undefined {
-  return DISTRICTS.find(d => d.tc === tcName);
+  return Districts.find(d => d.tc === tcName);
 }
 
 export function getKeywordByEN(enName: string): Keyword | undefined {
-  return KEYWORDS.find(k => k.en === enName);
+  return Keywords.find(k => k.en === enName);
 }
 
 export function getKeywordByTC(tcName: string): Keyword | undefined {
-  return KEYWORDS.find(k => k.tc === tcName);
+  return Keywords.find(k => k.tc === tcName);
 }
 
-// Get sorted district/keyword lists for dropdowns
+export function getPaymentMethodByEN(enName: string): PaymentMethod | undefined {
+  return PaymentMethods.find(p => p.en === enName);
+}
+
+export function getPaymentMethodByTC(tcName: string): PaymentMethod | undefined {
+  return PaymentMethods.find(p => p.tc === tcName);
+}
+
+export function getWeekdayByEN(enName: string): Weekday | undefined {
+  return Weekdays.find(w => w.en === enName);
+}
+
+export function getWeekdayByTC(tcName: string): Weekday | undefined {
+  return Weekdays.find(w => w.tc === tcName);
+}
+
+// Get sorted lists for dropdowns
 export function getDistrictOptions(lang: 'EN' | 'TC'): string[] {
-  return DISTRICTS.map(d => lang === 'TC' ? d.tc : d.en).sort();
+  return Districts.map(d => lang === 'TC' ? d.tc : d.en).sort();
 }
 
 export function getKeywordOptions(lang: 'EN' | 'TC'): string[] {
-  return KEYWORDS.map(k => lang === 'TC' ? k.tc : k.en).sort();
+  return Keywords.map(k => lang === 'TC' ? k.tc : k.en).sort();
+}
+
+export function getPaymentMethodOptions(lang: 'EN' | 'TC'): string[] {
+  return PaymentMethods.map(p => lang === 'TC' ? p.tc : p.en);
+}
+
+export function getWeekdayOptions(lang: 'EN' | 'TC'): string[] {
+  return Weekdays.map(w => lang === 'TC' ? w.tc : w.en);
 }
