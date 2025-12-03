@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-11-30 (Critical Bug Fix & Theme Improvements)
-> **Project Version:** 1.5.1
+> **Last Updated:** 2025-12-03 (Restaurant Claiming & Chat Enhancements)
+> **Project Version:** 1.6.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
 > **API Backend:** Vercel (External Deployment)
@@ -2336,6 +2336,236 @@ This is automatically handled by:
 
 ---
 
+## Restaurant Claiming Feature (NEW in v1.6.0)
+
+### Overview
+Restaurant owners can claim ownership of unclaimed restaurants to manage them through the Store page. The claiming feature ensures that:
+- Only users with type "Restaurant" (case insensitive) can claim restaurants
+- Users can only claim one restaurant (validated via `restaurantId` field)
+- Only unclaimed restaurants (without `ownerId`) can be claimed
+
+### Claim Button Visibility
+
+The "Claim This Restaurant" button appears on the restaurant detail page **only when**:
+1. User is logged in
+2. User type is "Restaurant" (or "restaurant", case insensitive)
+3. User's `restaurantId` field is `null` or empty
+4. Restaurant's `ownerId` field is `null` or empty
+
+**Implementation:** `restaurant.page.ts:562-600`
+
+```typescript
+private checkClaimEligibility(): void {
+  // Check if user is logged in
+  if (!this.authService.isLoggedIn) {
+    this.canClaimRestaurant = false;
+    return;
+  }
+
+  // Check if restaurant has no owner
+  if (this.restaurant?.ownerId) {
+    this.canClaimRestaurant = false;
+    return;
+  }
+
+  // Get user profile to check type and restaurantId
+  this.userService.getUserProfile(user.uid).subscribe({
+    next: (profile: UserProfile | null) => {
+      // User can claim if they have type 'Restaurant' (case insensitive) AND
+      // they haven't claimed a restaurant yet (restaurantId is empty or null)
+      const isRestaurantType = profile?.type?.toLowerCase() === 'restaurant';
+      const hasNoRestaurant = !profile?.restaurantId || profile.restaurantId.trim() === '';
+
+      this.canClaimRestaurant = isRestaurantType && hasNoRestaurant;
+    }
+  });
+}
+```
+
+### Claim Process
+
+**User Flow:**
+1. Restaurant owner navigates to an unclaimed restaurant page
+2. "Claim This Restaurant" button appears in the hero section
+3. User clicks the button
+4. Confirmation dialog displays restaurant name and claim consequences
+5. Upon confirmation, API call is made to claim the restaurant
+6. Success: User is redirected to `/store` page after 1.5 seconds
+7. Failure: Bilingual error message is displayed
+
+**API Endpoint:** `POST /API/Restaurants/:id/claim`
+
+**Redirect After Success:**
+```typescript
+// Redirect to store page after a short delay
+setTimeout(() => {
+  this.router.navigate(['/store']);
+}, 1500);
+```
+
+### Error Handling
+
+The claim feature provides **bilingual error messages** (EN/TC) for various failure scenarios:
+
+| Error Type | English | Traditional Chinese |
+|------------|---------|---------------------|
+| Already Claimed | This restaurant has already been claimed | 此餐廳已被認領 |
+| Already Own Another | You already own another restaurant | 您已經擁有另一間餐廳 |
+| Not Authorized | You are not authorized to claim this restaurant | 您沒有權限認領此餐廳 |
+| Not Found | Restaurant not found | 找不到此餐廳 |
+| Generic Failure | Claim failed, please try again | 認領失敗，請重試 |
+| Auth Token Missing | Failed to get authentication token | 無法獲取身份驗證令牌 |
+
+**Implementation:** `restaurant.page.ts:656-675`
+
+```typescript
+// Provide bilingual error messages
+let errorMessage: string;
+if (err.message.includes('already claimed') || err.message.includes('已被認領')) {
+  errorMessage = lang === 'TC' ? '此餐廳已被認領' : 'This restaurant has already been claimed';
+} else if (err.message.includes('already own') || err.message.includes('已擁有')) {
+  errorMessage = lang === 'TC' ? '您已經擁有另一間餐廳' : 'You already own another restaurant';
+} else if (err.message.includes('not authorized') || err.message.includes('未授權')) {
+  errorMessage = lang === 'TC' ? '您沒有權限認領此餐廳' : 'You are not authorized to claim this restaurant';
+} else if (err.message.includes('not found') || err.message.includes('找不到')) {
+  errorMessage = lang === 'TC' ? '找不到此餐廳' : 'Restaurant not found';
+} else {
+  errorMessage = err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again');
+}
+```
+
+### User Profile Fields
+
+The claiming feature relies on the following `UserProfile` fields:
+
+```typescript
+interface UserProfile {
+  uid: string;
+  type?: string | null;           // 'Diner' or 'Restaurant' (case insensitive)
+  restaurantId?: string | null;   // ID of claimed restaurant (if any)
+  // ... other fields
+}
+```
+
+**Important:**
+- `type` should be set when user registers (during onboarding or profile creation)
+- `restaurantId` is automatically updated by the backend when a restaurant is successfully claimed
+- Once a user claims a restaurant, they cannot claim another (enforced by checking `restaurantId`)
+
+---
+
+## Chat Page Enhancements (NEW in v1.6.0)
+
+### Overview
+The Chat page (`/chat`) now provides **user-type-specific bilingual messages** to guide Diners and Restaurant owners on how to use the chat feature.
+
+### User Type Detection
+
+The Chat page automatically detects the logged-in user's type and displays relevant information:
+
+**Implementation:** `chat.page.ts`
+
+```typescript
+isDiner(): boolean {
+  return this.userProfile?.type?.toLowerCase() === 'diner';
+}
+
+isRestaurant(): boolean {
+  return this.userProfile?.type?.toLowerCase() === 'restaurant';
+}
+```
+
+### Information Cards
+
+#### For Diner Users (`type: 'Diner'`)
+- **Icon:** `chatbox-ellipses-sharp` (primary color)
+- **Message (EN):** "You can chat with restaurant owners on each restaurant page. Look for the floating chat button to communicate directly with restaurants about menus, reservations, or any questions you may have."
+- **Message (TC):** "您可以在每個餐廳頁面與餐廳老闆聊天。尋找浮動聊天按鈕，與餐廳直接溝通，詢問菜單、預訂或任何問題。"
+- **Action Button:** "Search Restaurants" → `/search`
+
+#### For Restaurant Owners (`type: 'Restaurant'`)
+- **Icon:** `chatbox-ellipses-sharp` (success color)
+- **Message (EN):** "You will receive customer queries on your restaurant page. When customers have questions or want to make reservations, they can reach you through the chat feature. Please respond promptly to provide the best service!"
+- **Message (TC):** "您將在您的餐廳頁面收到來自顧客的查詢。當顧客有問題或想要預訂時，他們可以使用聊天功能與您聯繫。請及時回覆以提供最佳服務！"
+- **Action Button:** "Manage My Restaurant" → `/store`
+
+#### For Other User Types
+- Generic chat feature description
+- Bilingual support
+
+#### Not Logged In
+- Prompt to log in to use chat features
+- **Action Button:** "Log In" → `/login`
+
+### Styling
+**File:** `chat.page.scss`
+- Modern card design with icons
+- Responsive layout (stacks on mobile)
+- Illustration section with large icon and description
+- Loading state with Eclipse.gif spinner
+
+---
+
+## Typing Indicator Update (NEW in v1.6.0)
+
+### Overview
+The chat typing indicator now uses the **`chatbox-ellipses-sharp` icon** instead of animated dots, providing a more modern and consistent design.
+
+### Implementation
+
+**HTML:** `chat-button.component.html:50-53`
+```html
+<div *ngIf="isTyping" class="typing-indicator">
+  <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
+  <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
+</div>
+```
+
+**SCSS:** `chat-button.component.scss:241-274`
+```scss
+.typing-indicator {
+  align-self: flex-start;
+  padding: 12px 16px;
+  background: var(--ion-background-color);
+  border-radius: 16px 16px 16px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+
+  .typing-icon {
+    font-size: 20px;
+    color: var(--ion-color-primary);
+    animation: typing-pulse 1.5s ease-in-out infinite;
+  }
+
+  .typing-text {
+    font-size: 13px;
+    color: var(--ion-color-medium);
+    font-style: italic;
+  }
+}
+
+@keyframes typing-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+```
+
+### Features
+- **Icon:** `chatbox-ellipses-sharp` with pulsing animation
+- **Text:** Bilingual "Typing..." / "正在輸入..." label
+- **Animation:** Smooth pulse effect (opacity + scale)
+- **Styling:** Consistent with message bubbles (rounded corners, shadow)
+
+---
+
 ## Known Issues & Fixes
 
 ### Image URL Em Dash Bug (Fixed in v1.5.2)
@@ -2360,11 +2590,12 @@ Image setProperty @ dom_renderer.mjs:652
 
 ---
 
-**Document Version:** 1.5.2
-**Last Updated:** 2025-12-02
-**Changes:** Critical bug fix for app freezing after modal interactions due to em dash character in image URLs
+**Document Version:** 1.6.0
+**Last Updated:** 2025-12-03
+**Changes:** Restaurant claiming enhancements, chat page improvements, and typing indicator redesign
 
 **Changelog:**
+- v1.6.0 (2025-12-03): **FEATURE ENHANCEMENTS** - Enhanced restaurant claiming feature with stricter validation: claim button now only shows if user type is "Restaurant" AND user's restaurantId is empty/null AND restaurant's ownerId is empty/null. Added automatic redirect to /store page after successful claim. Implemented comprehensive bilingual error messages (EN/TC) for all claim failure scenarios (already claimed, already own another, not authorized, not found, generic failure, auth token missing). Updated Chat page with user-type-specific bilingual guidance messages for Diner and Restaurant users, including icon-based information cards and contextual action buttons. Replaced animated dots typing indicator with modern chatbox-ellipses-sharp icon with pulse animation and bilingual text label. Files modified: restaurant.page.ts (checkClaimEligibility, claimRestaurant), restaurant.page.html (claim button conditions), chat.page.ts (user type detection), chat.page.html (user-type-specific messages), chat.page.scss (styling), chat-button.component.html (typing indicator), chat-button.component.scss (typing indicator styles), CLAUDE.md (documentation).
 - v1.5.2 (2025-12-02): **CRITICAL BUG FIX** - Fixed app freezing/crashing after opening any modal. The backend API was replacing null/undefined image URLs with em dash character ('—'), causing browser to attempt fetching from invalid URLs (http://localhost:8100/%E2%80%94) and resulting in 404 errors that froze the app. Added sanitizeImageUrl() helper method in UserService and RestaurantsService to detect and replace em dash with null, allowing proper placeholder fallback logic. Affected methods: getUserProfile(), getAllUsers(), searchRestaurants(), searchRestaurantsWithFilters(), getRestaurantById(), getMenuItems(), getMenuItem().
 - v1.5.1 (2025-11-30): **CRITICAL BUG FIX** - Removed aggressive global margins on ion-router-outlet/ion-content/main/section elements that were preventing page content from displaying in web view (lines 241-254 in global.scss). Applied global green theme with purple-blue gradient accents to restaurant page, replacing all hardcoded colors (#ffffff, #000000, #FFD700) with theme CSS variables for consistent theming. Separated search page title from sticky search/filter section for improved UX - only search bar and filters are now sticky, title scrolls naturally with page content.
 - v1.5.0 (2025-11-30): Fixed swiper card displacement and empty space issues in mobile/web views, integrated theme-aware brand images (App-Light.png/App-Dark.png) in header and login page, made search filters sticky below header, implemented individual filter tag removal with tags displayed next to filter buttons, completely redesigned restaurant page with hero section overlay, tab navigation (Overview/Review), structured info grid, payment methods display, collapsible opening hours, traditional vertical menu list, and review carousel

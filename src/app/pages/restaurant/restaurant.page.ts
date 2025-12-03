@@ -579,12 +579,17 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      // Get user profile to check type
+      // Get user profile to check type and restaurantId
       this.userService.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
         next: (profile: UserProfile | null) => {
-          // User can claim if they have type 'Restaurant'
-          this.canClaimRestaurant = profile?.type?.toLowerCase() === 'restaurant';
-          console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant, 'User type:', profile?.type);
+          // User can claim if they have type 'Restaurant' (case insensitive) AND
+          // they haven't claimed a restaurant yet (restaurantId is empty or null)
+          const isRestaurantType = profile?.type?.toLowerCase() === 'restaurant';
+          const hasNoRestaurant = !profile?.restaurantId || profile.restaurantId.trim() === '';
+
+          this.canClaimRestaurant = isRestaurantType && hasNoRestaurant;
+          console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant,
+            'User type:', profile?.type, 'Has restaurantId:', !!profile?.restaurantId);
         },
         error: (err) => {
           console.error('RestaurantPage: Error checking claim eligibility', err);
@@ -637,21 +642,34 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
             this.canClaimRestaurant = false;
 
             const successMessage = lang === 'TC'
-              ? '已成功認領餐廳！' : 'Restaurant claimed successfully!';
+              ? '已成功認領餐廳！正在前往商店頁面...'
+              : 'Restaurant claimed successfully! Redirecting to store page...';
             await this.showToast(successMessage, 'success');
 
-            // Reload restaurant data
-            if (this.restaurant?.id) {
-              this.loadRestaurantData(this.restaurant.id);
-            }
+            // Redirect to store page after a short delay
+            setTimeout(() => {
+              this.router.navigate(['/store']);
+            }, 1500);
           },
           error: async (err: Error) => {
             console.error('RestaurantPage: Error claiming restaurant', err);
             this.isClaimingRestaurant = false;
-            await this.showToast(
-              err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again'),
-              'danger'
-            );
+
+            // Provide bilingual error messages
+            let errorMessage: string;
+            if (err.message.includes('already claimed') || err.message.includes('已被認領')) {
+              errorMessage = lang === 'TC' ? '此餐廳已被認領' : 'This restaurant has already been claimed';
+            } else if (err.message.includes('already own') || err.message.includes('已擁有')) {
+              errorMessage = lang === 'TC' ? '您已經擁有另一間餐廳' : 'You already own another restaurant';
+            } else if (err.message.includes('not authorized') || err.message.includes('未授權')) {
+              errorMessage = lang === 'TC' ? '您沒有權限認領此餐廳' : 'You are not authorized to claim this restaurant';
+            } else if (err.message.includes('not found') || err.message.includes('找不到')) {
+              errorMessage = lang === 'TC' ? '找不到此餐廳' : 'Restaurant not found';
+            } else {
+              errorMessage = err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again');
+            }
+
+            await this.showToast(errorMessage, 'danger');
           }
         });
     } catch (err) {

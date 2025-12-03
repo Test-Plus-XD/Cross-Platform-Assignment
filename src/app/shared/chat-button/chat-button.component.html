@@ -48,9 +48,8 @@
     </div>
 
     <div *ngIf="isTyping" class="typing-indicator">
-      <span></span>
-      <span></span>
-      <span></span>
+      <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
+      <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
     </div>
   </div>
 
