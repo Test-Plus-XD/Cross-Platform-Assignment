@@ -81,34 +81,33 @@ export class BookingPage implements OnInit, OnDestroy {
       detail: { Header_EN: 'My Booking', Header_TC: '我的預約' },
       bubbles: true
     });
-    window.dispatchEvent(event);
+    globalThis.dispatchEvent(event);
 
     // Check if user is logged in
     if (!this.authService.isLoggedIn) {
       this.router.navigate(['/login']);
       return;
     }
-
     // Load booking
     this.loadBooking();
   }
 
-  // Load user's booking
+  // Load user's bookings
   loadBooking(forceRefresh: boolean = false): void {
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.bookingService.getMyBooking(forceRefresh)
+    this.bookingService.getUserBookings(forceRefresh)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (booking) => {
-          this.booking = booking;
+        next: (bookings: Booking[]) => {
+          this.booking = bookings;
           this.applyFilter();
           this.isLoading = false;
         },
-        error: (err) => {
-          console.error('BookingPage: Error loading booking', err);
-          this.errorMessage = err.message || 'Failed to load booking';
+        error: (err: Error) => {
+          console.error('BookingPage: Error loading bookings', err);
+          this.errorMessage = err.message || 'Failed to load bookings';
           this.isLoading = false;
         }
       });

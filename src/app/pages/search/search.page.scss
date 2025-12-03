@@ -52,7 +52,7 @@
   .search-bar-container {
     margin-bottom: 1rem;
 
-    .modern-searchbar {
+    .search-bar {
       --background: var(--ion-background-color);
       --border-radius: 16px;
       --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -399,8 +399,10 @@
     --background: linear-gradient(135deg, var(--ion-color-dark) 0%, var(--ion-background-color) 100%);
   }
 
-  .modern-searchbar {
+  .search-bar {
     --background: var(--ion-card-background);
+    --color: white;
+    --placeholder-color: rgba(255, 255, 255, 0.5);
   }
 
   .filter-chip {
@@ -433,7 +435,6 @@
       }
     }
   }
-
   // Force white text for filter chips in dark mode
   .filter-chip {
     color: var(--ion-text-color) !important;
