@@ -155,8 +155,10 @@ export class UserService {
           preferences: response.preferences || {},
           lastLoginAt: response.lastLoginAt,
           loginCount: response.loginCount || 0,
-          type: response.type || null // Ensure 'type' is mapped correctly
+          type: response.type || null, // Ensure 'type' is mapped correctly
+          restaurantId: response.restaurantId || null // FIXED: Missing restaurantId mapping
         };
+        console.log('UserService: Profile mapped with restaurantId:', profile.restaurantId);
         this.currentProfileSubject.next(profile);
         return profile;
       }),
