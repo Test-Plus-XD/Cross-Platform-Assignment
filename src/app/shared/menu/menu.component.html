@@ -37,7 +37,7 @@
             <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
           </ion-item>
 
-          <ion-item button routerLink="/bookings" (click)="closeMenu()" lines="none" detail="false" *ngIf="!isRestaurant">
+          <ion-item button routerLink="/booking" (click)="closeMenu()" lines="none" detail="false" *ngIf="!isRestaurant">
             <ion-icon name="calendar-outline" slot="start"></ion-icon>
             <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
           </ion-item>

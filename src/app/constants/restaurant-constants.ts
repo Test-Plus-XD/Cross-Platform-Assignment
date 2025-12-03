@@ -1,14 +1,10 @@
-/**
- * Centralized restaurant constants for districts, keywords, payment methods, and weekdays
- * Provides bilingual support (EN/TC) for consistent data across the application
- */
-
+/// Centralized restaurant constants for districts, keywords, payment methods, and weekdays
+/// Provides bilingual support (EN/TC) for consistent data across the application
 // Districts in Hong Kong with bilingual support (18 official districts)
 export interface District {
   en: string;
   tc: string;
 }
-
 export const Districts: District[] = [
   { en: 'Islands', tc: '離島' },
   { en: 'Kwai Tsing', tc: '葵青' },
@@ -36,7 +32,6 @@ export interface Keyword {
   en: string;
   tc: string;
 }
-
 export const Keywords: Keyword[] = [
   // Core vegan/plant-based categories
   { en: 'Vegan', tc: '純素' },
@@ -142,7 +137,7 @@ export const Keywords: Keyword[] = [
   { en: 'Bar', tc: '酒吧' },
   { en: 'Live Music', tc: '現場音樂' },
   { en: 'Wi-Fi', tc: 'Wi-Fi' },
-  { en: 'Air-Conditioned', tc: '空調' }
+  { en: 'Air-Conditioned', tc: '室內冷氣' }
 ];
 
 // Payment methods with bilingual support
@@ -184,31 +179,24 @@ export const Weekdays: Weekday[] = [
 export function getDistrictByEN(enName: string): District | undefined {
   return Districts.find(d => d.en === enName);
 }
-
 export function getDistrictByTC(tcName: string): District | undefined {
   return Districts.find(d => d.tc === tcName);
 }
-
 export function getKeywordByEN(enName: string): Keyword | undefined {
   return Keywords.find(k => k.en === enName);
 }
-
 export function getKeywordByTC(tcName: string): Keyword | undefined {
   return Keywords.find(k => k.tc === tcName);
 }
-
 export function getPaymentMethodByEN(enName: string): PaymentMethod | undefined {
   return PaymentMethods.find(p => p.en === enName);
 }
-
 export function getPaymentMethodByTC(tcName: string): PaymentMethod | undefined {
   return PaymentMethods.find(p => p.tc === tcName);
 }
-
 export function getWeekdayByEN(enName: string): Weekday | undefined {
   return Weekdays.find(w => w.en === enName);
 }
-
 export function getWeekdayByTC(tcName: string): Weekday | undefined {
   return Weekdays.find(w => w.tc === tcName);
 }
@@ -217,15 +205,12 @@ export function getWeekdayByTC(tcName: string): Weekday | undefined {
 export function getDistrictOptions(lang: 'EN' | 'TC'): string[] {
   return Districts.map(d => lang === 'TC' ? d.tc : d.en).sort();
 }
-
 export function getKeywordOptions(lang: 'EN' | 'TC'): string[] {
   return Keywords.map(k => lang === 'TC' ? k.tc : k.en).sort();
 }
-
 export function getPaymentMethodOptions(lang: 'EN' | 'TC'): string[] {
   return PaymentMethods.map(p => lang === 'TC' ? p.tc : p.en);
 }
-
 export function getWeekdayOptions(lang: 'EN' | 'TC'): string[] {
   return Weekdays.map(w => lang === 'TC' ? w.tc : w.en);
 }
