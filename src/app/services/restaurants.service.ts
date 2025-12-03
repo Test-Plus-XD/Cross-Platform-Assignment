@@ -75,11 +75,9 @@ export class RestaurantsService {
     this.algoliaClient = searchClient(environment.algoliaAppId, environment.algoliaSearchKey);
   }
 
-  /**
-   * Sanitize image URL to handle backend em dash replacement.
-   * The backend replaces null/undefined with '—' (em dash), which causes 404 errors.
-   * This helper returns null for invalid URLs so components can use their placeholder logic.
-   */
+  /// Sanitise image URL to handle backend em dash replacement.
+  /// The backend replaces null/undefined with '—' (em dash), which causes 404 errors.
+  /// This helper returns null for invalid URLs so components can use their placeholder logic.
   private sanitizeImageUrl(url: any): string | null {
     if (!url || url === '—' || url === '' || url === 'null' || url === 'undefined') {
       return null;
@@ -87,8 +85,17 @@ export class RestaurantsService {
     return url;
   }
 
-  // Search restaurants using Algolia with pagination and filters
-  // Uses the array request form for broad compatibility with Algolia client
+  /// Sanitise Payments field from em dash string representation.
+  /// The API may return '—' for empty payment methods instead of null or an empty array.
+  /// This helper ensures the Payments field is always either null or a non-empty array.
+  private sanitizePayments(payments: any): string[] | null {
+    if (!payments || payments === '—' || payments === '' || payments === 'null' || payments === 'undefined') return null;
+    if (Array.isArray(payments)) return payments.length > 0 ? payments : null;
+    return null;
+  }
+
+  /// Search restaurants using Algolia with pagination and filters.
+  /// Uses the array request form for broad compatibility with Algolia client.
   searchRestaurants(
     query: string,
     districtEn: string,
@@ -157,6 +164,7 @@ export class RestaurantsService {
             Seats: h.Seats ?? null,
             Contacts: h.Contacts ?? null,
             ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
+            Payments: this.sanitizePayments(h.Payments),
             ownerId: h.Owner ?? h.ownerId ?? null,
             reviewsId: h.reviewsId ?? null
           }));
@@ -176,9 +184,9 @@ export class RestaurantsService {
     });
   }
 
-  // Search using Algolia with custom filter string and pagination
-  // Supports multi-district and multi-keyword filters with EN-primary tokens
-  // Uses backend API endpoint instead of direct Algolia client
+  /// Search using Algolia with custom filter string and pagination.
+  /// Supports multi-district and multi-keyword filters with EN-primary tokens.
+  /// Uses backend API endpoint instead of direct Algolia client.
   searchRestaurantsWithFilters(
     query: string,
     filters: string | undefined,
@@ -241,8 +249,8 @@ export class RestaurantsService {
           Seats: h.Seats ?? null,
           Contacts: h.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
+          Payments: this.sanitizePayments(h.Payments),
           ownerId: h.ownerId ?? h.Owner ?? null,
-          Payments: h.Payments ?? null,
           reviewsId: h.reviewsId ?? null
         }));
 
@@ -260,7 +268,7 @@ export class RestaurantsService {
     );
   }
 
-  // Get all restaurants from API (fallback for non-search scenarios)
+  /// Get all restaurants from API (fallback for non-search scenarios)
   getRestaurants(): Observable<Restaurant[]> {
     const cached = this.restaurantsCache.getValue();
     if (cached && cached.length > 0) {
@@ -281,7 +289,7 @@ export class RestaurantsService {
     );
   }
 
-  // Get a single restaurant by ID from server API
+  /// Get a single restaurant by ID from server API
   getRestaurantById(id: string): Observable<Restaurant | null> {
     if (!id) return of(null);
 
@@ -306,7 +314,7 @@ export class RestaurantsService {
           Contacts: response.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
           ownerId: response.ownerId ?? null,
-          Payments: response.Payments ?? null,
+          Payments: this.sanitizePayments(response.Payments),
           reviewsId: response.reviewsId ?? null,
           createdAt: response.createdAt,
           modifiedAt: response.modifiedAt
@@ -321,8 +329,8 @@ export class RestaurantsService {
     );
   }
 
-  // Get menu items for a specific restaurant from sub-collection
-  // Note: Menu items are stored as a sub-collection, not an array field
+  /// Get menu items for a specific restaurant from sub-collection.
+  /// Note: Menu items are stored as a sub-collection, not an array field.
   getMenuItems(restaurantId: string): Observable<MenuItem[]> {
     if (!restaurantId) return of([]);
 
@@ -331,7 +339,7 @@ export class RestaurantsService {
 
     return this.dataService.get<{ count: number; data: MenuItem[] }>(endpoint).pipe(
       map(response => {
-        // Sanitize ImageUrl for each menu item
+        // Sanitise ImageUrl for each menu item
         return (response.data || []).map(item => ({
           ...item,
           ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
@@ -347,7 +355,7 @@ export class RestaurantsService {
     );
   }
 
-  // Get a single menu item by ID from a restaurant's menu sub-collection
+  /// Get a single menu item by ID from a restaurant's menu sub-collection
   getMenuItem(restaurantId: string, menuItemId: string): Observable<MenuItem | null> {
     if (!restaurantId || !menuItemId) return of(null);
 
@@ -357,7 +365,7 @@ export class RestaurantsService {
     return this.dataService.get<MenuItem>(endpoint).pipe(
       map(item => {
         if (!item) return null;
-        // Sanitize ImageUrl for the menu item
+        // Sanitise ImageUrl for the menu item
         return {
           ...item,
           ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
@@ -370,7 +378,7 @@ export class RestaurantsService {
     );
   }
 
-  // Create a new restaurant (requires authentication if enabled)
+  /// Create a new restaurant (requires authentication if enabled)
   createRestaurant(payload: Partial<Restaurant>): Observable<{ id: string }> {
     console.log('RestaurantsService: Creating restaurant');
     return this.dataService.post<{ id: string }>(this.restaurantsEndpoint, payload).pipe(
@@ -385,7 +393,7 @@ export class RestaurantsService {
     );
   }
 
-  // Update an existing restaurant
+  /// Update an existing restaurant
   updateRestaurant(id: string, payload: Partial<Restaurant>): Observable<void> {
     console.log('RestaurantsService: Updating restaurant:', id);
     return this.dataService.put<void>(`${this.restaurantsEndpoint}/${encodeURIComponent(id)}`, payload).pipe(
@@ -400,7 +408,7 @@ export class RestaurantsService {
     );
   }
 
-  // Delete a restaurant
+  /// Delete a restaurant
   deleteRestaurant(id: string): Observable<void> {
     console.log('RestaurantsService: Deleting restaurant:', id);
     return this.dataService.delete<void>(`${this.restaurantsEndpoint}/${encodeURIComponent(id)}`).pipe(
@@ -415,7 +423,7 @@ export class RestaurantsService {
     );
   }
 
-  // Create a menu item in a restaurant's menu sub-collection
+  /// Create a menu item in a restaurant's menu sub-collection
   createMenuItem(restaurantId: string, payload: Partial<MenuItem>): Observable<{ id: string }> {
     console.log('RestaurantsService: Creating menu item for restaurant:', restaurantId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu`;
@@ -431,7 +439,7 @@ export class RestaurantsService {
     );
   }
 
-  // Update a menu item in a restaurant's menu sub-collection
+  /// Update a menu item in a restaurant's menu sub-collection
   updateMenuItem(restaurantId: string, menuItemId: string, payload: Partial<MenuItem>): Observable<void> {
     console.log('RestaurantsService: Updating menu item:', menuItemId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu/${encodeURIComponent(menuItemId)}`;
@@ -447,7 +455,7 @@ export class RestaurantsService {
     );
   }
 
-  // Delete a menu item from a restaurant's menu sub-collection
+  /// Delete a menu item from a restaurant's menu sub-collection
   deleteMenuItem(restaurantId: string, menuItemId: string): Observable<void> {
     console.log('RestaurantsService: Deleting menu item:', menuItemId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu/${encodeURIComponent(menuItemId)}`;
@@ -463,8 +471,8 @@ export class RestaurantsService {
     );
   }
 
-  // Upload restaurant hero image
-  // Uses the API endpoint: POST /API/Restaurants/:id/image
+  /// Upload restaurant hero image.
+  /// Uses the API endpoint: POST /API/Restaurants/:id/image
   uploadRestaurantImage(restaurantId: string, file: File, authToken: string): Observable<{ imageUrl: string }> {
     console.log('RestaurantsService: Uploading restaurant image for:', restaurantId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/image`;
@@ -481,8 +489,8 @@ export class RestaurantsService {
     );
   }
 
-  // Upload menu item image
-  // Uploads the image and updates the menu item with the returned URL
+  /// Upload menu item image.
+  /// Uploads the image and updates the menu item with the returned URL.
   uploadMenuItemImage(restaurantId: string, menuItemId: string, file: File, authToken: string): Observable<{ imageUrl: string }> {
     console.log('RestaurantsService: Uploading menu item image for:', menuItemId);
     // Use the restaurant image endpoint to upload, then update the menu item
@@ -504,8 +512,8 @@ export class RestaurantsService {
     );
   }
 
-  // Claim ownership of a restaurant
-  // Requires authentication and user must be of type 'restaurant'
+  /// Claim ownership of a restaurant.
+  /// Requires authentication and user must be of type 'restaurant'.
   claimRestaurant(restaurantId: string, authToken: string): Observable<{ message: string; restaurantId: string; userId: string }> {
     console.log('RestaurantsService: Claiming restaurant:', restaurantId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/claim`;
@@ -522,7 +530,7 @@ export class RestaurantsService {
     );
   }
 
-  // Clear local cache
+  /// Clear local cache
   clearCache(): void {
     this.restaurantsCache.next(null);
     console.log('RestaurantsService: Cache cleared');

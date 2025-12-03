@@ -1,10 +1,10 @@
 // Restaurant detail page component with modern responsive design
 // Displays comprehensive restaurant information including menu, reviews, and booking functionality
-import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { take, takeUntil, tap } from 'rxjs/operators';
+import { take, takeUntil, tap, finalize } from 'rxjs/operators';
 import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 import { ReviewsService, Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
 import { LanguageService } from '../../services/language.service';
@@ -90,6 +90,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isUploadingRestaurantImage: boolean = false;
   // Check if current user can edit this restaurant (no owner or is owner)
   canEditRestaurant: boolean = false;
+
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
@@ -104,7 +105,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     private readonly locationService: LocationService,
     private readonly modalController: ModalController,
     private readonly toastController: ToastController,
-    private readonly alertController: AlertController
+    private readonly alertController: AlertController,
+    private readonly changeDetectionReference: ChangeDetectorRef
   ) {
     this.isDark$ = this.theme.isDark$;
   }
@@ -114,33 +116,55 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.locationService.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
   }
 
-  // When view initialises, fetch restaurant ID and load all data
+  /// When view initialises, fetch restaurant ID and load all data
   ngAfterViewInit(): void {
-    const id = this.route.snapshot.paramMap.get('id') || '';
-    if (!id) {
-      this.errorMessage = 'Missing restaurant ID';
-      this.isLoading = false;
-      return;
-    }
+    try {
+      const restaurantId = this.route.snapshot.paramMap.get('id') || '';
+      if (!restaurantId) {
+        this.errorMessage = 'Missing restaurant ID';
+        this.isLoading = false;
+        this.changeDetectionReference.markForCheck();
+        console.error('RestaurantPage: No restaurant ID provided');
+        return;
+      }
 
-    this.loadRestaurantData(id);
+      console.log('RestaurantPage: ngAfterViewInit called with ID:', restaurantId);
+      this.loadRestaurantData(restaurantId);
+    } catch (error) {
+      console.error('RestaurantPage: Error in ngAfterViewInit:', error);
+      this.errorMessage = 'An unexpected error occurred';
+      this.isLoading = false;
+      this.changeDetectionReference.markForCheck();
+    }
   }
 
   /// Load all restaurant data including basic info, menu, and reviews
-  private loadRestaurantData(id: string): void {
+  private loadRestaurantData(restaurantId: string): void {
+    console.log('RestaurantPage: Starting to load restaurant data for ID:', restaurantId);
     this.isLoading = true;
+    this.errorMessage = null;
+    this.changeDetectionReference.markForCheck();
 
     // Fetch restaurant basic information
-    this.restaurantsService.getRestaurantById(id).pipe(takeUntil(this.destroy$)).subscribe({
+    this.restaurantsService.getRestaurantById(restaurantId).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        console.log('RestaurantPage: getRestaurantById observable completed');
+      })
+    ).subscribe({
       next: (restaurant: Restaurant | null) => {
+        console.log('RestaurantPage: getRestaurantById returned:', restaurant?.id, restaurant?.Name_EN);
+
         if (!restaurant) {
+          console.error('RestaurantPage: Restaurant not found with ID:', restaurantId);
           this.errorMessage = 'Restaurant not found';
           this.isLoading = false;
+          this.changeDetectionReference.markForCheck();
           return;
         }
 
         this.restaurant = restaurant;
-        this.isLoading = false;
+        console.log('RestaurantPage: Restaurant loaded successfully:', restaurant.Name_EN);
 
         // Emit dynamic restaurant name to header
         const titleEvent = new CustomEvent('page-title', {
@@ -161,71 +185,96 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         // Check if user can edit this restaurant (no owner)
         this.checkEditPermission();
         // Load menu items from sub-collection
-        this.loadMenuItems(id);
+        this.loadMenuItems(restaurantId);
         // Load reviews
-        this.loadReviews(id);
-      },
-      error: (err: Error) => {
-        console.error('RestaurantPage: Failed to load restaurant', err);
-        this.errorMessage = 'Failed to load restaurant';
+        this.loadReviews(restaurantId);
+
+        // Mark loading as complete after primary data is loaded
         this.isLoading = false;
+        this.changeDetectionReference.markForCheck();
+        console.log('RestaurantPage: Primary restaurant data loaded');
+      },
+      error: (error: any) => {
+        console.error('RestaurantPage: Error loading restaurant:', error);
+        this.errorMessage = error?.message || 'Failed to load restaurant';
+        this.isLoading = false;
+        this.changeDetectionReference.markForCheck();
       }
     });
   }
 
   /// Load menu items for the restaurant from API sub-collection
   private loadMenuItems(restaurantId: string): void {
+    console.log('RestaurantPage: Starting to load menu items');
     this.isMenuLoading = true;
-    this.restaurantsService.getMenuItems(restaurantId).pipe(takeUntil(this.destroy$)).subscribe({
+    this.changeDetectionReference.markForCheck();
+
+    this.restaurantsService.getMenuItems(restaurantId).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        console.log('RestaurantPage: getMenuItems observable completed');
+      })
+    ).subscribe({
       next: (items: MenuItem[]) => {
         this.menuItems = items;
         this.isMenuLoading = false;
+        this.changeDetectionReference.markForCheck();
         console.log('RestaurantPage: Loaded', items.length, 'menu items');
       },
-      error: (err: Error) => {
-        console.error('RestaurantPage: Failed to load menu items', err);
+      error: (error: any) => {
+        console.error('RestaurantPage: Error loading menu items:', error);
         this.menuItems = [];
         this.isMenuLoading = false;
+        this.changeDetectionReference.markForCheck();
       }
     });
   }
 
   /// Load reviews for the restaurant
   private loadReviews(restaurantId: string): void {
+    console.log('RestaurantPage: Starting to load reviews');
     this.isReviewsLoading = true;
+    this.changeDetectionReference.markForCheck();
 
     // Load reviews and stats in parallel
     combineLatest([
       this.reviewsService.getReviews(restaurantId),
       this.reviewsService.getRestaurantStats(restaurantId)
-    ]).pipe(takeUntil(this.destroy$)).subscribe({
+    ]).pipe(
+      takeUntil(this.destroy$),
+      finalize(() => {
+        console.log('RestaurantPage: getReviews and getRestaurantStats observables completed');
+      })
+    ).subscribe({
       next: ([reviews, stats]) => {
         this.reviews = reviews;
         this.reviewStats = stats;
         this.isReviewsLoading = false;
+        this.changeDetectionReference.markForCheck();
         console.log('RestaurantPage: Loaded', reviews.length, 'reviews');
       },
-      error: (err: Error) => {
-        console.error('RestaurantPage: Failed to load reviews', err);
+      error: (error: any) => {
+        console.error('RestaurantPage: Error loading reviews:', error);
         this.reviews = [];
         this.reviewStats = null;
         this.isReviewsLoading = false;
+        this.changeDetectionReference.markForCheck();
       }
     });
   }
 
-  // Retrieves the count for a specific rating from the distribution
+  /// Retrieves the count for a specific rating from the distribution
   public GetRatingCount(Rating: number): number {
     return (this.reviewStats?.ratingDistribution as any)?.[Rating] ?? 0;
   }
 
-  // Calculates the percentage width for a rating bar
+  /// Calculates the percentage width for a rating bar
   public GetRatingPercentage(Rating: number): number {
     if (!this.reviewStats?.totalReviews) return 0;
     return (this.GetRatingCount(Rating) / this.reviewStats.totalReviews) * 100;
   }
 
-  // Calculate distance from user's location to restaurant
+  /// Calculate distance from user's location to restaurant
   private calculateDistance(): void {
     if (!this.restaurant?.Latitude || !this.restaurant?.Longitude) {
       return;
@@ -237,32 +286,36 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
-  // Get distance colour for badge display
+  /// Get distance colour for badge display
   getDistanceColour(): string {
     if (!this.distanceResult) return 'medium';
     return this.locationService.getDistanceColour(this.distanceResult.distanceKm);
   }
 
-  // Initialise a Leaflet map when coordinates are present
+  /// Initialise a Leaflet map when coordinates are present
   private initialiseMapIfNeeded(): void {
     try {
       if (!this.restaurant) return;
-      const lat = this.restaurant.Latitude;
-      const lng = this.restaurant.Longitude;
-      if (typeof lat !== 'number' || typeof lng !== 'number' || Number.isNaN(lat) || Number.isNaN(lng)) {
+      const latitude = this.restaurant.Latitude;
+      const longitude = this.restaurant.Longitude;
+      if (typeof latitude !== 'number' || typeof longitude !== 'number' || Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        console.warn('RestaurantPage: Invalid coordinates for map initialisation');
         return;
       }
 
       // Ensure map container exists and clear if already initialised
       const mapContainer = document.getElementById('restaurant-map');
-      if (!mapContainer) return;
+      if (!mapContainer) {
+        console.warn('RestaurantPage: Map container not found');
+        return;
+      }
       if (this.map) {
         this.map.remove();
         this.map = null;
       }
 
       // Create Leaflet map and set view
-      this.map = Leaflet.map(mapContainer, { attributionControl: false }).setView([lat, lng], 15);
+      this.map = Leaflet.map(mapContainer, { attributionControl: false }).setView([latitude, longitude], 15);
 
       // Add OpenStreetMap tile layer
       Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -271,13 +324,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       }).addTo(this.map);
 
       // Add marker for the restaurant
-      Leaflet.marker([lat, lng]).addTo(this.map);
+      Leaflet.marker([latitude, longitude]).addTo(this.map);
 
       // Invalidate size to ensure correct rendering in Ionic
       setTimeout(() => this.map && this.map.invalidateSize(), 50);
+      console.log('RestaurantPage: Map initialised successfully');
 
-    } catch (err) {
-      console.warn('RestaurantPage.initialiseMapIfNeeded error', err);
+    } catch (error) {
+      console.warn('RestaurantPage.initialiseMapIfNeeded error:', error);
     }
   }
 
@@ -309,6 +363,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       if (!confirmed) return;
 
       this.isBookingLoading = true;
+      this.changeDetectionReference.markForCheck();
 
       // Create booking request
       const bookingRequest: CreateBookingRequest = {
@@ -326,6 +381,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         next: async (response) => {
           console.info('Booking created successfully:', response.id);
           this.isBookingLoading = false;
+          this.changeDetectionReference.markForCheck();
 
           // Show success message
           const successMessage = lang === 'TC'
@@ -338,16 +394,18 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
           this.numberOfGuests = 2;
           this.specialRequests = '';
         },
-        error: async (err: Error) => {
-          console.error('Booking failed:', err);
+        error: async (error: any) => {
+          console.error('Booking failed:', error);
           this.isBookingLoading = false;
-          await this.showToast(err.message || (lang === 'TC' ? '預約失敗，請重試' : 'Booking failed, please try again'), 'danger');
+          this.changeDetectionReference.markForCheck();
+          await this.showToast(error.message || (lang === 'TC' ? '預約失敗，請重試' : 'Booking failed, please try again'), 'danger');
         }
       });
 
-    } catch (err) {
-      console.error('onBook error', err);
+    } catch (error) {
+      console.error('onBook error', error);
       this.isBookingLoading = false;
+      this.changeDetectionReference.markForCheck();
     }
   }
 
@@ -453,20 +511,21 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
           this.newReviewRating = 5;
           this.newReviewComment = '';
           this.isWritingReview = false;
+          this.changeDetectionReference.markForCheck();
 
           // Reload reviews
           if (this.restaurant?.id) {
             this.loadReviews(this.restaurant.id);
           }
         },
-        error: async (err: Error) => {
-          console.error('Review submission failed:', err);
-          await this.showToast(err.message || (lang === 'TC' ? '提交評論失敗，請重試' : 'Review submission failed, please try again'), 'danger');
+        error: async (error: any) => {
+          console.error('Review submission failed:', error);
+          await this.showToast(error.message || (lang === 'TC' ? '提交評論失敗，請重試' : 'Review submission failed, please try again'), 'danger');
         }
       });
 
-    } catch (err) {
-      console.error('submitReview error', err);
+    } catch (error) {
+      console.error('submitReview error', error);
     }
   }
 
@@ -478,6 +537,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       this.newReviewRating = 5;
       this.newReviewComment = '';
     }
+    this.changeDetectionReference.markForCheck();
   }
 
   /// Show toast message helper
@@ -585,6 +645,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.authService.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
         this.canClaimRestaurant = false;
+        this.changeDetectionReference.markForCheck();
         return;
       }
 
@@ -597,12 +658,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
           const hasNoRestaurant = !profile?.restaurantId || profile.restaurantId.trim() === '';
 
           this.canClaimRestaurant = isRestaurantType && hasNoRestaurant;
+          this.changeDetectionReference.markForCheck();
           console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant,
             'User type:', profile?.type, 'Has restaurantId:', !!profile?.restaurantId);
         },
-        error: (err) => {
-          console.error('RestaurantPage: Error checking claim eligibility', err);
+        error: (error) => {
+          console.error('RestaurantPage: Error checking claim eligibility', error);
           this.canClaimRestaurant = false;
+          this.changeDetectionReference.markForCheck();
         }
       });
     });
@@ -628,11 +691,13 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       if (!confirmed) return;
 
       this.isClaimingRestaurant = true;
+      this.changeDetectionReference.markForCheck();
 
       // Get authentication token
       const authToken = await this.authService.getIdToken();
       if (!authToken) {
         this.isClaimingRestaurant = false;
+        this.changeDetectionReference.markForCheck();
         await this.showToast(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token', 'danger');
         return;
       }
@@ -649,6 +714,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
             this.isClaimingRestaurant = false;
             this.canClaimRestaurant = false;
+            this.changeDetectionReference.markForCheck();
 
             const successMessage = lang === 'TC'
               ? '已成功認領餐廳！正在前往商鋪頁面...'
@@ -660,30 +726,32 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
               this.router.navigate(['/store']);
             }, 1500);
           },
-          error: async (err: Error) => {
-            console.error('RestaurantPage: Error claiming restaurant', err);
+          error: async (error: any) => {
+            console.error('RestaurantPage: Error claiming restaurant', error);
             this.isClaimingRestaurant = false;
+            this.changeDetectionReference.markForCheck();
 
             // Provide bilingual error messages
             let errorMessage: string;
-            if (err.message.includes('already claimed') || err.message.includes('已被認領')) {
+            if (error.message.includes('already claimed') || error.message.includes('已被認領')) {
               errorMessage = lang === 'TC' ? '此餐廳已被認領' : 'This restaurant has already been claimed';
-            } else if (err.message.includes('already own') || err.message.includes('已擁有')) {
+            } else if (error.message.includes('already own') || error.message.includes('已擁有')) {
               errorMessage = lang === 'TC' ? '您已經擁有另一間餐廳' : 'You already own another restaurant';
-            } else if (err.message.includes('not authorized') || err.message.includes('未授權')) {
+            } else if (error.message.includes('not authorized') || error.message.includes('未授權')) {
               errorMessage = lang === 'TC' ? '您沒有權限認領此餐廳' : 'You are not authorized to claim this restaurant';
-            } else if (err.message.includes('not found') || err.message.includes('找不到')) {
+            } else if (error.message.includes('not found') || error.message.includes('找不到')) {
               errorMessage = lang === 'TC' ? '找不到此餐廳' : 'Restaurant not found';
             } else {
-              errorMessage = err.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again');
+              errorMessage = error.message || (lang === 'TC' ? '認領失敗，請重試' : 'Claim failed, please try again');
             }
 
             await this.showToast(errorMessage, 'danger');
           }
         });
-    } catch (err) {
-      console.error('claimRestaurant error', err);
+    } catch (error) {
+      console.error('claimRestaurant error', error);
       this.isClaimingRestaurant = false;
+      this.changeDetectionReference.markForCheck();
     }
   }
 
@@ -720,6 +788,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Toggle opening hours expansion
   toggleHours(): void {
     this.hoursExpanded = !this.hoursExpanded;
+    this.changeDetectionReference.markForCheck();
   }
 
   /// Translate day names to Traditional Chinese
@@ -762,6 +831,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Scroll to booking section (switches to overview tab if needed)
   scrollToBooking(): void {
     this.selectedTab = 'overview';
+    this.changeDetectionReference.markForCheck();
     // Smooth scroll to booking section would be implemented here if needed
   }
 
@@ -769,6 +839,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   checkEditPermission(): void {
     // Allow editing if restaurant has no owner and user is logged in
     this.canEditRestaurant = this.authService.isLoggedIn && !this.restaurant?.ownerId;
+    this.changeDetectionReference.markForCheck();
   }
 
   /// Handle restaurant image file selection
@@ -793,8 +864,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
       // Create preview
       const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        this.restaurantImagePreview = e.target?.result as string;
+      reader.onload = (event: ProgressEvent<FileReader>) => {
+        this.restaurantImagePreview = event.target?.result as string;
+        this.changeDetectionReference.markForCheck();
       };
       reader.readAsDataURL(file);
     }
@@ -806,6 +878,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
     const lang = await this.language.lang$.pipe(take(1)).toPromise();
     this.isUploadingRestaurantImage = true;
+    this.changeDetectionReference.markForCheck();
 
     try {
       // Get auth token
@@ -831,12 +904,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         // Clear selection
         this.selectedRestaurantImage = null;
         this.restaurantImagePreview = null;
+        this.changeDetectionReference.markForCheck();
       }
     } catch (error: any) {
       console.error('RestaurantPage: Error uploading restaurant image:', error);
       await this.showToast(error.message || (lang === 'TC' ? '圖片上傳失敗' : 'Image upload failed'), 'danger');
     } finally {
       this.isUploadingRestaurantImage = false;
+      this.changeDetectionReference.markForCheck();
     }
   }
 
@@ -850,6 +925,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   clearRestaurantImageSelection(): void {
     this.selectedRestaurantImage = null;
     this.restaurantImagePreview = null;
+    this.changeDetectionReference.markForCheck();
 
     // Reset file input
     const fileInput = document.getElementById('restaurant-page-image-input') as HTMLInputElement;
