@@ -8,7 +8,7 @@ import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
 import { UIService } from '../../services/UI.service';
 import { UserService } from '../../services/user.service';
-import { AppComponent } from '../../app.component';
+import { AppStateService } from '../../services/app-state.service';
 
 interface PageTitle {
   Header_EN: string;
@@ -37,7 +37,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   // Observable that emits the currently visible title (resolved by language)
   pageTitle$ = this.pageTitleSubject.asObservable();
   // Observable for app state to check login status
-  appState$ = inject(AppComponent).appState$;
+  appState$ = inject(AppStateService).appState$;
   // User service for checking user type
   private userService = inject(UserService);
   // User profile observable

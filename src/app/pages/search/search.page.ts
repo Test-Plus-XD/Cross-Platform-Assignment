@@ -5,7 +5,8 @@ import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
-import { Districts, Keywords } from '../../constants/restaurant-constants';
+import { Districts } from '../../constants/districts.const';
+import { Keywords } from '../../constants/keywords.const';
 
 interface DistrictOption {
   district_en: string;

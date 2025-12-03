@@ -1,6 +1,6 @@
 // Restaurant detail page component with modern responsive design
 // Displays comprehensive restaurant information including menu, reviews, and booking functionality
-import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
@@ -23,6 +23,7 @@ import * as Leaflet from 'leaflet';
   templateUrl: './restaurant.page.html',
   styleUrls: ['./restaurant.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   // Bilingual language stream

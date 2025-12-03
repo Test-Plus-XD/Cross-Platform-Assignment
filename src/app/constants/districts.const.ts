@@ -1,0 +1,26 @@
+/// Districts in Hong Kong with bilingual support (18 official districts)
+export interface District {
+  en: string;
+  tc: string;
+}
+
+export const Districts: District[] = [
+  { en: 'Islands', tc: '離島' },
+  { en: 'Kwai Tsing', tc: '葵青' },
+  { en: 'North', tc: '北區' },
+  { en: 'Sai Kung', tc: '西貢' },
+  { en: 'Sha Tin', tc: '沙田' },
+  { en: 'Tai Po', tc: '大埔' },
+  { en: 'Tsuen Wan', tc: '荃灣' },
+  { en: 'Tuen Mun', tc: '屯門' },
+  { en: 'Yuen Long', tc: '元朗' },
+  { en: 'Kowloon City', tc: '九龍城' },
+  { en: 'Kwun Tong', tc: '觀塘' },
+  { en: 'Sham Shui Po', tc: '深水埗' },
+  { en: 'Wong Tai Sin', tc: '黃大仙' },
+  { en: 'Yau Tsim Mong', tc: '油尖旺區' },
+  { en: 'Central/Western', tc: '中西區' },
+  { en: 'Eastern', tc: '東區' },
+  { en: 'Southern', tc: '南區' },
+  { en: 'Wan Chai', tc: '灣仔' }
+];

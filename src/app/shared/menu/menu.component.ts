@@ -7,7 +7,7 @@ import { UIService } from '../../services/UI.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { UserService } from '../../services/user.service';
-import { AppComponent } from '../../app.component';
+import { AppStateService } from '../../services/app-state.service';
 
 @Component({
   selector: 'app-shared-menu',
@@ -21,7 +21,7 @@ export class MenuComponent {
   // Expose dark-mode observable for template use
   isDark$ = this.theme.isDark$;
   // App state for checking login status
-  appState$ = inject(AppComponent).appState$;
+  appState$ = inject(AppStateService).appState$;
   // User profile for checking user type
   userProfile$ = this.userService.currentProfile$;
   // Computed observable for whether user is Restaurant type

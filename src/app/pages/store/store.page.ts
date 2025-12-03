@@ -1,6 +1,6 @@
 // Store management page for Restaurant-type users
 // Provides restaurant info editing, menu management, and bookings overview
-import { Component, OnInit, OnDestroy, Injector, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, Injector, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
@@ -12,7 +12,10 @@ import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
 import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 import { UserService } from '../../services/user.service';
-import { Districts, Keywords, PaymentMethods, Weekdays, District, Keyword, PaymentMethod, Weekday } from '../../constants/restaurant-constants';
+import { District, Districts } from '../../constants/districts.const';
+import { Keyword, Keywords } from '../../constants/keywords.const';
+import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
+import { Weekday, Weekdays } from '../../constants/weekdays.const';
 import * as L from 'leaflet';
 
 @Component({
@@ -20,6 +23,7 @@ import * as L from 'leaflet';
   templateUrl: './store.page.html',
   styleUrls: ['./store.page.scss'],
   standalone: false,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StorePage implements OnInit, OnDestroy {
   // Language and platform streams
