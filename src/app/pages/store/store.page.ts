@@ -1,19 +1,44 @@
 // Store management page for Restaurant-type users
-// Provides functionality to view incoming bookings and manage restaurant details
-import { Component, OnInit, OnDestroy, Injector } from '@angular/core';
+// Provides restaurant info editing, menu management, and bookings overview
+import { Component, OnInit, OnDestroy, Injector, AfterViewInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController, ToastController, LoadingController } from '@ionic/angular';
+import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
 import { BookingService, Booking } from '../../services/booking.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
-import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
+import { PlatformService } from '../../services/platform.service';
+import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 import { UserService } from '../../services/user.service';
+import { DISTRICTS, KEYWORDS, District, Keyword } from '../../constants/restaurant-constants';
+import * as L from 'leaflet';
 
-// Type for booking status filter tabs
-type BookingFilter = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'all';
+// Payment methods supported
+export const PAYMENT_METHODS = [
+  { en: 'Cash', tc: '現金' },
+  { en: 'Credit Card', tc: '信用卡' },
+  { en: 'Debit Card', tc: '扣賬卡' },
+  { en: 'Octopus', tc: '八達通' },
+  { en: 'AliPay HK', tc: '支付寶香港' },
+  { en: 'WeChat Pay HK', tc: '微信支付香港' },
+  { en: 'PayMe', tc: 'PayMe' },
+  { en: 'FPS', tc: '轉數快' },
+  { en: 'Apple Pay', tc: 'Apple Pay' },
+  { en: 'Google Pay', tc: 'Google Pay' }
+];
+
+// Days of the week for opening hours
+export const WEEKDAYS = [
+  { en: 'Monday', tc: '星期一' },
+  { en: 'Tuesday', tc: '星期二' },
+  { en: 'Wednesday', tc: '星期三' },
+  { en: 'Thursday', tc: '星期四' },
+  { en: 'Friday', tc: '星期五' },
+  { en: 'Saturday', tc: '星期六' },
+  { en: 'Sunday', tc: '星期日' }
+];
 
 @Component({
   selector: 'app-store',
@@ -22,69 +47,135 @@ type BookingFilter = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'all'
   standalone: false,
 })
 export class StorePage implements OnInit, OnDestroy {
-  // Language stream for bilingual content
+  // Language and platform streams
   lang$ = this.languageService.lang$;
-  // Dark mode stream
   isDark$ = this.themeService.isDark$;
-  // Restaurant details for this owner
+  isMobile$: Observable<boolean>;
+
+  // Restaurant and data
   restaurant: Restaurant | null = null;
-  // All incoming bookings for this restaurant
+  menuItems: MenuItem[] = [];
   bookings: Booking[] = [];
-  // Filtered bookings based on current tab
-  filteredBookings: Booking[] = [];
-  // Current filter selection
-  currentFilter: BookingFilter = 'pending';
+
+  // Current section
+  currentSection: 'info' | 'menu' | 'bookings' = 'info';
+
   // Loading states
   isLoading = true;
   isRestaurantLoading = true;
+  isMenuLoading = false;
+  isBookingsLoading = false;
+  isSaving = false;
+
+  // Editing states
+  isEditingInfo = false;
+  isEditingMenu = false;
+  editingMenuItemId: string | null = null;
+
   // Error message
   errorMessage: string | null = null;
-  // Subject for cleanup
+
+  // Cleanup subject
   private destroy$ = new Subject<void>();
-  // Current user's restaurant ID (retrieved from auth or user profile)
+
+  // Current user's restaurant ID
   private restaurantId: string | null = null;
 
-  // Translations for the page
+  // Centralized data
+  districts = DISTRICTS;
+  keywords = KEYWORDS;
+  paymentMethods = PAYMENT_METHODS;
+  weekdays = WEEKDAYS;
+
+  // Edited restaurant info
+  editedInfo = {
+    Name_EN: '',
+    Name_TC: '',
+    Address_EN: '',
+    Address_TC: '',
+    District_EN: '',
+    District_TC: '',
+    Latitude: null as number | null,
+    Longitude: null as number | null,
+    Keyword_EN: [] as string[],
+    Keyword_TC: [] as string[],
+    Seats: null as number | null,
+    Contacts: {
+      Phone: '',
+      Email: '',
+      Website: ''
+    },
+    Payments: [] as string[],
+    Opening_Hours: {} as { [key: string]: string }
+  };
+
+  // Edited menu item
+  editedMenuItem: Partial<MenuItem> = {
+    Name_EN: '',
+    Name_TC: '',
+    Description_EN: '',
+    Description_TC: '',
+    Price: null
+  };
+
+  // Map marker
+  mapMarker: { lat: number; lng: number } | null = null;
+
+  // Leaflet map instance
+  private map: L.Map | null = null;
+  private mapInitialized = false;
+
+  // Translations
   translations = {
     pageTitle: { EN: 'Store Management', TC: '店舖管理' },
-    restaurantDetails: { EN: 'Restaurant Details', TC: '餐廳資料' },
-    incomingBookings: { EN: 'Incoming Bookings', TC: '預約訂單' },
-    pending: { EN: 'Pending', TC: '待處理' },
-    confirmed: { EN: 'Confirmed', TC: '已確認' },
-    completed: { EN: 'Completed', TC: '已完成' },
-    cancelled: { EN: 'Cancelled', TC: '已取消' },
-    all: { EN: 'All', TC: '全部' },
-    noBookings: { EN: 'No bookings found', TC: '沒有預約' },
-    noPending: { EN: 'No pending bookings', TC: '沒有待處理的預約' },
-    noConfirmed: { EN: 'No confirmed bookings', TC: '沒有已確認的預約' },
-    noCompleted: { EN: 'No completed bookings', TC: '沒有已完成的預約' },
-    noCancelled: { EN: 'No cancelled bookings', TC: '沒有已取消的預約' },
-    guests: { EN: 'guests', TC: '位' },
-    guest: { EN: 'guest', TC: '位' },
-    specialRequests: { EN: 'Special Requests', TC: '特別要求' },
-    confirmBooking: { EN: 'Confirm', TC: '確認' },
-    rejectBooking: { EN: 'Reject', TC: '拒絕' },
-    markComplete: { EN: 'Complete', TC: '完成' },
-    confirmAction: { EN: 'Confirm Booking?', TC: '確認預約？' },
-    confirmMessage: { EN: 'Are you sure you want to confirm this booking?', TC: '您確定要確認此預約嗎？' },
-    rejectAction: { EN: 'Reject Booking?', TC: '拒絕預約？' },
-    rejectMessage: { EN: 'Are you sure you want to reject this booking?', TC: '您確定要拒絕此預約嗎？' },
-    completeAction: { EN: 'Mark as Complete?', TC: '標記為完成？' },
-    completeMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為已完成？' },
+    restaurantInfo: { EN: 'Restaurant Information', TC: '餐廳資料' },
+    menuManagement: { EN: 'Menu Management', TC: '菜單管理' },
+    bookingsOverview: { EN: 'Bookings Overview', TC: '預約概覽' },
+    noRestaurant: { EN: 'No restaurant linked', TC: '未連結餐廳' },
+    contactSupport: { EN: 'Please contact support', TC: '請聯繫客服' },
+    editInfo: { EN: 'Edit Info', TC: '編輯資料' },
+    saveChanges: { EN: 'Save Changes', TC: '儲存變更' },
     cancel: { EN: 'Cancel', TC: '取消' },
-    confirm: { EN: 'Confirm', TC: '確認' },
-    actionSuccess: { EN: 'Booking updated successfully', TC: '預約已成功更新' },
-    actionError: { EN: 'Failed to update booking', TC: '更新預約失敗' },
-    todayBookings: { EN: "Today's Bookings", TC: '今日預約' },
-    upcomingBookings: { EN: 'Upcoming Bookings', TC: '即將到來的預約' },
-    editRestaurant: { EN: 'Edit Restaurant', TC: '編輯餐廳' },
+    saving: { EN: 'Saving...', TC: '儲存中...' },
+    nameEN: { EN: 'Name (English)', TC: '名稱（英文）' },
+    nameTC: { EN: 'Name (Chinese)', TC: '名稱（中文）' },
+    addressEN: { EN: 'Address (English)', TC: '地址（英文）' },
+    addressTC: { EN: 'Address (Chinese)', TC: '地址（中文）' },
+    district: { EN: 'District', TC: '地區' },
+    selectDistrict: { EN: 'Select District', TC: '選擇地區' },
+    keywords: { EN: 'Keywords', TC: '關鍵字' },
+    selectKeywords: { EN: 'Select Keywords', TC: '選擇關鍵字' },
+    seats: { EN: 'Seats', TC: '座位數' },
+    phone: { EN: 'Phone', TC: '電話' },
+    email: { EN: 'Email', TC: '電郵' },
+    website: { EN: 'Website', TC: '網站' },
+    payments: { EN: 'Payment Methods', TC: '付款方式' },
+    selectPayments: { EN: 'Select Payment Methods', TC: '選擇付款方式' },
+    openingHours: { EN: 'Opening Hours', TC: '營業時間' },
+    location: { EN: 'Location', TC: '位置' },
+    clickMapToSet: { EN: 'Click map to set location', TC: '點擊地圖設定位置' },
+    addMenuItem: { EN: 'Add Menu Item', TC: '新增菜單項目' },
+    editMenuItem: { EN: 'Edit Menu Item', TC: '編輯菜單項目' },
+    deleteMenuItem: { EN: 'Delete', TC: '刪除' },
+    confirmDelete: { EN: 'Confirm Delete', TC: '確認刪除' },
+    confirmDeleteMessage: { EN: 'Delete this menu item?', TC: '刪除此菜單項目？' },
+    delete: { EN: 'Delete', TC: '刪除' },
+    price: { EN: 'Price', TC: '價格' },
+    description: { EN: 'Description', TC: '描述' },
+    noMenuItems: { EN: 'No menu items yet', TC: '尚無菜單項目' },
+    updateSuccess: { EN: 'Updated successfully', TC: '更新成功' },
+    updateFailed: { EN: 'Update failed', TC: '更新失敗' },
+    createSuccess: { EN: 'Created successfully', TC: '建立成功' },
+    deleteSuccess: { EN: 'Deleted successfully', TC: '刪除成功' },
     viewPublicPage: { EN: 'View Public Page', TC: '查看公開頁面' },
-    statistics: { EN: 'Statistics', TC: '統計' },
+    todayBookings: { EN: "Today's Bookings", TC: '今日預約' },
     totalBookings: { EN: 'Total Bookings', TC: '總預約數' },
-    totalGuests: { EN: 'Total Guests', TC: '總人數' },
-    pendingCount: { EN: 'Pending', TC: '待處理' },
-    noRestaurant: { EN: 'No restaurant linked to your account', TC: '您的帳戶未連結餐廳' },
-    contactSupport: { EN: 'Please contact support to set up your restaurant.', TC: '請聯繫客服以設置您的餐廳。' }
+    pendingBookings: { EN: 'Pending', TC: '待處理' },
+    loading: { EN: 'Loading...', TC: '載入中...' },
+    noBookings: { EN: 'No bookings yet', TC: '尚無預約' },
+    enterValue: { EN: 'Enter value', TC: '輸入數值' },
+    closed: { EN: 'Closed', tc: '休息' },
+    open24h: { EN: 'Open 24h', tc: '24小時' }
   };
 
   constructor(
@@ -92,13 +183,17 @@ export class StorePage implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
     private readonly themeService: ThemeService,
+    private readonly platformService: PlatformService,
     private readonly restaurantsService: RestaurantsService,
     private readonly router: Router,
     private readonly alertController: AlertController,
     private readonly toastController: ToastController,
     private readonly loadingController: LoadingController,
+    private readonly modalController: ModalController,
     private readonly injector: Injector
-  ) { }
+  ) {
+    this.isMobile$ = this.platformService.isMobile$;
+  }
 
   ngOnInit(): void {
     // Emit page title event
@@ -108,13 +203,8 @@ export class StorePage implements OnInit, OnDestroy {
     });
     globalThis.dispatchEvent(event);
 
-    // Load restaurant and bookings
+    // Load restaurant data
     this.loadRestaurantData();
-  }
-
-  // Lifecycle hook when page enters view
-  ionViewWillEnter(): void {
-    this.loadBookings(true);
   }
 
   // Load restaurant data linked to current user
@@ -122,14 +212,8 @@ export class StorePage implements OnInit, OnDestroy {
     this.isRestaurantLoading = true;
     console.log('StorePage: Starting loadRestaurantData');
 
-    // Get the current user's UID from AuthService
     const currentUser = this.authService.currentUser;
-    console.log('StorePage: Current user from AuthService:', {
-      uid: currentUser?.uid,
-      email: currentUser?.email,
-      displayName: currentUser?.displayName,
-      restaurantId: currentUser?.restaurantId // This will be undefined
-    });
+    console.log('StorePage: Current user:', currentUser?.uid);
 
     if (!currentUser || !currentUser.uid) {
       console.warn('StorePage: No authenticated user found');
@@ -138,177 +222,550 @@ export class StorePage implements OnInit, OnDestroy {
       return;
     }
 
-    // Fetch the full user profile from Firestore to get restaurantId
-    // The AuthService only provides basic Firebase Auth fields
-    console.log('StorePage: Fetching full user profile for uid:', currentUser.uid);
-
+    // Fetch user profile to get restaurantId
     const userService = this.injector.get(UserService);
     userService.getUserProfile(currentUser.uid)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (userProfile) => {
-          console.log('StorePage: User profile fetched successfully:', {
-            uid: userProfile?.uid,
-            email: userProfile?.email,
-            displayName: userProfile?.displayName,
-            type: userProfile?.type,
-            restaurantId: userProfile?.restaurantId
-          });
+          console.log('StorePage: User profile fetched:', userProfile?.restaurantId);
 
-          if (!userProfile) {
-            console.warn('StorePage: User profile is null');
-            this.isRestaurantLoading = false;
-            this.isLoading = false;
-            return;
-          }
-
-          if (!userProfile.restaurantId || userProfile.restaurantId.trim() === '') {
-            console.warn('StorePage: User has no restaurantId set');
+          if (!userProfile || !userProfile.restaurantId || userProfile.restaurantId.trim() === '') {
+            console.warn('StorePage: User has no restaurantId');
             this.isRestaurantLoading = false;
             this.isLoading = false;
             return;
           }
 
           this.restaurantId = userProfile.restaurantId;
-          console.log('StorePage: Restaurant ID extracted:', this.restaurantId);
+          console.log('StorePage: Restaurant ID:', this.restaurantId);
 
           // Load restaurant details
-          console.log('StorePage: Loading restaurant details for id:', this.restaurantId);
-          this.restaurantsService.getRestaurantById(this.restaurantId)
-            .pipe(takeUntil(this.destroy$))
-            .subscribe({
-              next: (restaurant) => {
-                console.log('StorePage: Restaurant loaded successfully:', {
-                  id: restaurant?.id,
-                  Name_EN: restaurant?.Name_EN,
-                  Name_TC: restaurant?.Name_TC
-                });
-                this.restaurant = restaurant;
-                this.isRestaurantLoading = false;
-                // Load bookings for this restaurant
-                this.loadBookings();
-              },
-              error: (err) => {
-                console.error('StorePage: Error loading restaurant:', {
-                  restaurantId: this.restaurantId,
-                  error: err.message,
-                  fullError: err
-                });
-                this.isRestaurantLoading = false;
-              }
-            });
+          this.loadRestaurant();
+          // Load menu items
+          this.loadMenu();
+          // Load bookings
+          this.loadBookings();
         },
         error: (err) => {
-          console.error('StorePage: Error loading user profile:', {
-            uid: currentUser.uid,
-            error: err.message,
-            fullError: err
-          });
+          console.error('StorePage: Error loading user profile:', err);
           this.isRestaurantLoading = false;
           this.isLoading = false;
         }
       });
   }
 
-  // Load bookings for this restaurant
-  loadBookings(forceRefresh: boolean = false): void {
-    if (!this.restaurantId) {
-      console.warn('StorePage: Cannot load bookings - no restaurantId set');
-      this.isLoading = false;
-      return;
-    }
+  // Load restaurant details
+  private loadRestaurant(): void {
+    if (!this.restaurantId) return;
 
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    console.log('StorePage: Loading bookings for restaurant:', {
-      restaurantId: this.restaurantId,
-      forceRefresh: forceRefresh
-    });
-
-    // Fetch bookings for this restaurant (using restaurant-specific endpoint)
-    this.bookingService.getRestaurantBookings(this.restaurantId, forceRefresh)
+    this.restaurantsService.getRestaurantById(this.restaurantId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (bookings) => {
-          console.log('StorePage: Bookings loaded successfully:', {
-            restaurantId: this.restaurantId,
-            bookingsCount: bookings.length,
-            bookings: bookings.map(b => ({
-              id: b.id,
-              status: b.status,
-              dateTime: b.dateTime
-            }))
-          });
-          this.bookings = bookings;
-          this.applyFilter();
+        next: (restaurant) => {
+          console.log('StorePage: Restaurant loaded:', restaurant?.Name_EN);
+          this.restaurant = restaurant;
+          this.isRestaurantLoading = false;
           this.isLoading = false;
+
+          // Initialize edited values
+          if (restaurant) {
+            this.initializeEditedInfo(restaurant);
+          }
         },
         error: (err) => {
-          console.error('StorePage: Error loading bookings:', {
-            restaurantId: this.restaurantId,
-            error: err.message,
-            fullError: err
-          });
-          this.errorMessage = err.message || 'Failed to load bookings';
+          console.error('StorePage: Error loading restaurant:', err);
+          this.isRestaurantLoading = false;
           this.isLoading = false;
         }
       });
   }
 
-  // Apply the current filter to bookings
-  applyFilter(): void {
-    switch (this.currentFilter) {
-      case 'pending':
-        this.filteredBookings = this.bookings
-          .filter(b => b.status === 'pending')
-          .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-        break;
+  // Initialize edited info from restaurant data
+  private initializeEditedInfo(restaurant: Restaurant): void {
+    this.editedInfo = {
+      Name_EN: restaurant.Name_EN || '',
+      Name_TC: restaurant.Name_TC || '',
+      Address_EN: restaurant.Address_EN || '',
+      Address_TC: restaurant.Address_TC || '',
+      District_EN: restaurant.District_EN || '',
+      District_TC: restaurant.District_TC || '',
+      Latitude: restaurant.Latitude,
+      Longitude: restaurant.Longitude,
+      Keyword_EN: restaurant.Keyword_EN || [],
+      Keyword_TC: restaurant.Keyword_TC || [],
+      Seats: restaurant.Seats,
+      Contacts: {
+        Phone: restaurant.Contacts?.Phone || '',
+        Email: restaurant.Contacts?.Email || '',
+        Website: restaurant.Contacts?.Website || ''
+      },
+      Payments: restaurant.Payments || [],
+      Opening_Hours: restaurant.Opening_Hours || {}
+    };
 
-      case 'confirmed':
-        this.filteredBookings = this.bookings
-          .filter(b => b.status === 'confirmed')
-          .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-        break;
-      case 'completed':
-        this.filteredBookings = this.bookings
-          .filter(b => b.status === 'completed')
-          .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-        break;
-      case 'cancelled':
-        this.filteredBookings = this.bookings
-          .filter(b => b.status === 'cancelled')
-          .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-        break;
-      case 'all':
-      default:
-        this.filteredBookings = [...this.bookings]
-          .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
-        break;
+    // Set map marker if location exists
+    if (restaurant.Latitude && restaurant.Longitude) {
+      this.mapMarker = { lat: restaurant.Latitude, lng: restaurant.Longitude };
     }
   }
 
-  // Handle filter tab change
-  onFilterChange(filter: BookingFilter): void {
-    this.currentFilter = filter;
-    this.applyFilter();
+  // Load menu items
+  private loadMenu(): void {
+    if (!this.restaurantId) return;
+
+    this.isMenuLoading = true;
+    this.restaurantsService.getMenuItems(this.restaurantId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (items) => {
+          console.log('StorePage: Menu loaded:', items.length, 'items');
+          this.menuItems = items;
+          this.isMenuLoading = false;
+        },
+        error: (err) => {
+          console.error('StorePage: Error loading menu:', err);
+          this.isMenuLoading = false;
+        }
+      });
   }
 
-  // Get count for each filter category
-  getFilterCount(filter: BookingFilter): number {
-    switch (filter) {
-      case 'pending':
-        return this.bookings.filter(b => b.status === 'pending').length;
-      case 'confirmed':
-        return this.bookings.filter(b => b.status === 'confirmed').length;
-      case 'completed':
-        return this.bookings.filter(b => b.status === 'completed').length;
-      case 'cancelled':
-        return this.bookings.filter(b => b.status === 'cancelled').length;
-      case 'all':
-        return this.bookings.length;
-      default:
-        return 0;
+  // Load bookings
+  private loadBookings(): void {
+    if (!this.restaurantId) return;
+
+    this.isBookingsLoading = true;
+    this.bookingService.getRestaurantBookings(this.restaurantId, true)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (bookings) => {
+          console.log('StorePage: Bookings loaded:', bookings.length);
+          this.bookings = bookings;
+          this.isBookingsLoading = false;
+        },
+        error: (err) => {
+          console.error('StorePage: Error loading bookings:', err);
+          this.isBookingsLoading = false;
+        }
+      });
+  }
+
+  // Switch sections
+  switchSection(section: 'info' | 'menu' | 'bookings'): void {
+    this.currentSection = section;
+
+    // Cancel any ongoing edits
+    if (this.isEditingInfo) {
+      this.cancelEditingInfo();
+    }
+    if (this.isEditingMenu) {
+      this.cancelEditingMenu();
+    }
+  }
+
+  // Start editing restaurant info
+  startEditingInfo(): void {
+    if (!this.restaurant) return;
+    this.initializeEditedInfo(this.restaurant);
+    this.isEditingInfo = true;
+
+    // Initialize map after a short delay to ensure DOM is ready
+    setTimeout(() => {
+      this.initializeMap();
+    }, 300);
+  }
+
+  // Cancel editing restaurant info
+  cancelEditingInfo(): void {
+    this.isEditingInfo = false;
+    if (this.restaurant) {
+      this.initializeEditedInfo(this.restaurant);
+    }
+    // Cleanup map
+    this.destroyMap();
+  }
+
+  // Initialize Leaflet map
+  private initializeMap(): void {
+    if (this.mapInitialized || this.map) {
+      return;
+    }
+
+    const mapContainer = document.getElementById('store-map');
+    if (!mapContainer) {
+      console.warn('StorePage: Map container not found');
+      return;
+    }
+
+    // Default center (Hong Kong)
+    const defaultLat = 22.3193;
+    const defaultLng = 114.1694;
+
+    const centerLat = this.editedInfo.Latitude || defaultLat;
+    const centerLng = this.editedInfo.Longitude || defaultLng;
+
+    // Initialize map
+    this.map = L.map('store-map').setView([centerLat, centerLng], 13);
+
+    // Add tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(this.map);
+
+    // Add marker if location exists
+    if (this.mapMarker) {
+      L.marker([this.mapMarker.lat, this.mapMarker.lng]).addTo(this.map);
+    }
+
+    // Handle map click
+    this.map.on('click', (e: L.LeafletMouseEvent) => {
+      this.onMapClickHandler(e);
+    });
+
+    this.mapInitialized = true;
+    console.log('StorePage: Map initialized');
+  }
+
+  // Handle map click event
+  private onMapClickHandler(event: L.LeafletMouseEvent): void {
+    const lat = event.latlng.lat;
+    const lng = event.latlng.lng;
+
+    this.editedInfo.Latitude = lat;
+    this.editedInfo.Longitude = lng;
+    this.mapMarker = { lat, lng };
+
+    // Clear existing markers
+    if (this.map) {
+      this.map.eachLayer((layer) => {
+        if (layer instanceof L.Marker) {
+          this.map?.removeLayer(layer);
+        }
+      });
+
+      // Add new marker
+      L.marker([lat, lng]).addTo(this.map);
+    }
+  }
+
+  // Destroy map instance
+  private destroyMap(): void {
+    if (this.map) {
+      this.map.remove();
+      this.map = null;
+      this.mapInitialized = false;
+      console.log('StorePage: Map destroyed');
+    }
+  }
+
+  // Save restaurant info
+  async saveRestaurantInfo(): Promise<void> {
+    if (!this.restaurantId) return;
+
+    const lang = await this.getCurrentLanguage();
+    const loading = await this.loadingController.create({
+      message: this.translations.saving[lang],
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      // Prepare payload
+      const payload: Partial<Restaurant> = {
+        Name_EN: this.editedInfo.Name_EN.trim() || null,
+        Name_TC: this.editedInfo.Name_TC.trim() || null,
+        Address_EN: this.editedInfo.Address_EN.trim() || null,
+        Address_TC: this.editedInfo.Address_TC.trim() || null,
+        District_EN: this.editedInfo.District_EN || null,
+        District_TC: this.editedInfo.District_TC || null,
+        Latitude: this.editedInfo.Latitude,
+        Longitude: this.editedInfo.Longitude,
+        Keyword_EN: this.editedInfo.Keyword_EN.length ? this.editedInfo.Keyword_EN : null,
+        Keyword_TC: this.editedInfo.Keyword_TC.length ? this.editedInfo.Keyword_TC : null,
+        Seats: this.editedInfo.Seats,
+        Contacts: {
+          Phone: this.editedInfo.Contacts.Phone.trim() || null,
+          Email: this.editedInfo.Contacts.Email.trim() || null,
+          Website: this.editedInfo.Contacts.Website.trim() || null
+        },
+        Payments: this.editedInfo.Payments.length ? this.editedInfo.Payments : null,
+        Opening_Hours: Object.keys(this.editedInfo.Opening_Hours).length ? this.editedInfo.Opening_Hours : null
+      };
+
+      await this.restaurantsService.updateRestaurant(this.restaurantId, payload).toPromise();
+
+      await this.showToast(this.translations.updateSuccess[lang], 'success');
+      this.isEditingInfo = false;
+
+      // Reload restaurant data
+      this.loadRestaurant();
+    } catch (error: any) {
+      console.error('StorePage: Error saving restaurant info:', error);
+      await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+    } finally {
+      await loading.dismiss();
+    }
+  }
+
+  // Show district selector
+  async showDistrictSelector(): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.selectDistrict[lang],
+      inputs: this.districts.map(d => ({
+        type: 'radio' as const,
+        label: lang === 'TC' ? d.tc : d.en,
+        value: d.en,
+        checked: this.editedInfo.District_EN === d.en
+      })),
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: 'OK',
+          handler: (value: string) => {
+            const district = this.districts.find(d => d.en === value);
+            if (district) {
+              this.editedInfo.District_EN = district.en;
+              this.editedInfo.District_TC = district.tc;
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Show keywords selector
+  async showKeywordsSelector(): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.selectKeywords[lang],
+      inputs: this.keywords.map(k => ({
+        type: 'checkbox' as const,
+        label: lang === 'TC' ? k.tc : k.en,
+        value: k.en,
+        checked: this.editedInfo.Keyword_EN.includes(k.en)
+      })),
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: 'OK',
+          handler: (values: string[]) => {
+            this.editedInfo.Keyword_EN = values;
+            this.editedInfo.Keyword_TC = values.map(val => {
+              const keyword = this.keywords.find(k => k.en === val);
+              return keyword ? keyword.tc : val;
+            });
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Show payment methods selector
+  async showPaymentMethodsSelector(): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.selectPayments[lang],
+      inputs: this.paymentMethods.map(p => ({
+        type: 'checkbox' as const,
+        label: lang === 'TC' ? p.tc : p.en,
+        value: p.en,
+        checked: this.editedInfo.Payments.includes(p.en)
+      })),
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: 'OK',
+          handler: (values: string[]) => {
+            this.editedInfo.Payments = values;
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Update opening hours for a day
+  async updateOpeningHours(day: string): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+    const dayLabel = lang === 'TC'
+      ? this.weekdays.find(w => w.en === day)?.tc
+      : day;
+
+    const alert = await this.alertController.create({
+      header: dayLabel,
+      inputs: [
+        {
+          name: 'hours',
+          type: 'text',
+          placeholder: lang === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed',
+          value: this.editedInfo.Opening_Hours[day] || ''
+        }
+      ],
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: 'OK',
+          handler: (data) => {
+            if (data.hours && data.hours.trim()) {
+              this.editedInfo.Opening_Hours[day] = data.hours.trim();
+            } else {
+              delete this.editedInfo.Opening_Hours[day];
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Map click handler (placeholder - will be implemented with Leaflet)
+  onMapClick(event: any): void {
+    // This will be connected to Leaflet map click event
+    const lat = event.latlng?.lat;
+    const lng = event.latlng?.lng;
+
+    if (lat && lng) {
+      this.editedInfo.Latitude = lat;
+      this.editedInfo.Longitude = lng;
+      this.mapMarker = { lat, lng };
+    }
+  }
+
+  // Start adding new menu item
+  startAddingMenuItem(): void {
+    this.editingMenuItemId = null;
+    this.editedMenuItem = {
+      Name_EN: '',
+      Name_TC: '',
+      Description_EN: '',
+      Description_TC: '',
+      Price: null
+    };
+    this.isEditingMenu = true;
+  }
+
+  // Start editing existing menu item
+  startEditingMenuItem(item: MenuItem): void {
+    this.editingMenuItemId = item.id || null;
+    this.editedMenuItem = {
+      Name_EN: item.Name_EN || '',
+      Name_TC: item.Name_TC || '',
+      Description_EN: item.Description_EN || '',
+      Description_TC: item.Description_TC || '',
+      Price: item.Price
+    };
+    this.isEditingMenu = true;
+  }
+
+  // Cancel editing menu item
+  cancelEditingMenu(): void {
+    this.isEditingMenu = false;
+    this.editingMenuItemId = null;
+    this.editedMenuItem = {
+      Name_EN: '',
+      Name_TC: '',
+      Description_EN: '',
+      Description_TC: '',
+      Price: null
+    };
+  }
+
+  // Save menu item (create or update)
+  async saveMenuItem(): Promise<void> {
+    if (!this.restaurantId) return;
+
+    const lang = await this.getCurrentLanguage();
+
+    // Validation
+    if (!this.editedMenuItem.Name_EN && !this.editedMenuItem.Name_TC) {
+      await this.showToast(lang === 'TC' ? '請輸入名稱' : 'Please enter a name', 'warning');
+      return;
+    }
+
+    const loading = await this.loadingController.create({
+      message: this.translations.saving[lang],
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      const payload: Partial<MenuItem> = {
+        Name_EN: this.editedMenuItem.Name_EN?.trim() || null,
+        Name_TC: this.editedMenuItem.Name_TC?.trim() || null,
+        Description_EN: this.editedMenuItem.Description_EN?.trim() || null,
+        Description_TC: this.editedMenuItem.Description_TC?.trim() || null,
+        Price: this.editedMenuItem.Price
+      };
+
+      if (this.editingMenuItemId) {
+        // Update existing item
+        await this.restaurantsService.updateMenuItem(this.restaurantId, this.editingMenuItemId, payload).toPromise();
+        await this.showToast(this.translations.updateSuccess[lang], 'success');
+      } else {
+        // Create new item
+        await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
+        await this.showToast(this.translations.createSuccess[lang], 'success');
+      }
+
+      this.cancelEditingMenu();
+      this.loadMenu();
+    } catch (error: any) {
+      console.error('StorePage: Error saving menu item:', error);
+      await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+    } finally {
+      await loading.dismiss();
+    }
+  }
+
+  // Delete menu item
+  async deleteMenuItem(item: MenuItem): Promise<void> {
+    if (!this.restaurantId || !item.id) return;
+
+    const lang = await this.getCurrentLanguage();
+
+    const alert = await this.alertController.create({
+      header: this.translations.confirmDelete[lang],
+      message: this.translations.confirmDeleteMessage[lang],
+      buttons: [
+        { text: this.translations.cancel[lang], role: 'cancel' },
+        {
+          text: this.translations.delete[lang],
+          role: 'destructive',
+          handler: async () => {
+            const loading = await this.loadingController.create({
+              message: this.translations.saving[lang],
+              spinner: null
+            });
+            await loading.present();
+
+            try {
+              await this.restaurantsService.deleteMenuItem(this.restaurantId!, item.id!).toPromise();
+              await this.showToast(this.translations.deleteSuccess[lang], 'success');
+              this.loadMenu();
+            } catch (error: any) {
+              console.error('StorePage: Error deleting menu item:', error);
+              await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+            } finally {
+              await loading.dismiss();
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Navigate to public restaurant page
+  viewPublicPage(): void {
+    if (this.restaurantId) {
+      this.router.navigate(['/restaurant', this.restaurantId]);
     }
   }
 
@@ -325,180 +782,25 @@ export class StorePage implements OnInit, OnDestroy {
     }).length;
   }
 
-  // Get total guests count from confirmed/completed bookings
-  getTotalGuestsCount(): number {
-    return this.bookings
-      .filter(b => b.status === 'confirmed' || b.status === 'completed')
-      .reduce((sum, b) => sum + b.numberOfGuests, 0);
+  // Get pending bookings count
+  getPendingBookingsCount(): number {
+    return this.bookings.filter(b => b.status === 'pending').length;
   }
 
-  // Format date for display
-  formatDate(dateString: string, isTC: boolean): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(isTC ? 'zh-HK' : 'en-GB', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      weekday: 'short'
+  // Helper to get current language
+  private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
+    return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
+  }
+
+  // Show toast notification
+  private async showToast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      position: 'bottom',
+      color
     });
-  }
-
-  // Format time for display
-  formatTime(dateString: string, isTC: boolean): string {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString(isTC ? 'zh-HK' : 'en-GB', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
-  // Get status colour for badge
-  getStatusColour(status: Booking['status']): string {
-    switch (status) {
-      case 'pending':
-        return 'warning';
-      case 'confirmed':
-        return 'success';
-      case 'completed':
-        return 'primary';
-      case 'cancelled':
-        return 'danger';
-      default:
-        return 'medium';
-    }
-  }
-
-  // Navigate to restaurant public page
-  viewPublicPage(): void {
-    if (this.restaurantId) {
-      this.router.navigate(['/restaurant', this.restaurantId]);
-    }
-  }
-
-  // Navigate to edit restaurant page
-  editRestaurant(): void {
-    if (this.restaurantId) {
-      this.router.navigate(['/edit-restaurant', this.restaurantId]);
-    }
-  }
-
-  // Confirm a pending booking
-  async confirmBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.languageService.lang$.pipe(take(1)).toPromise();
-    const isTC = lang === 'TC';
-
-    const alert = await this.alertController.create({
-      header: isTC ? this.translations.confirmAction.TC : this.translations.confirmAction.EN,
-      message: isTC ? this.translations.confirmMessage.TC : this.translations.confirmMessage.EN,
-      buttons: [
-        {
-          text: isTC ? this.translations.cancel.TC : this.translations.cancel.EN,
-          role: 'cancel'
-        },
-        {
-          text: isTC ? this.translations.confirm.TC : this.translations.confirm.EN,
-          handler: async () => {
-            await this.updateBookingStatus(booking, 'confirmed', isTC);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  // Reject a pending booking
-  async rejectBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.languageService.lang$.pipe(take(1)).toPromise();
-    const isTC = lang === 'TC';
-
-    const alert = await this.alertController.create({
-      header: isTC ? this.translations.rejectAction.TC : this.translations.rejectAction.EN,
-      message: isTC ? this.translations.rejectMessage.TC : this.translations.rejectMessage.EN,
-      buttons: [
-        {
-          text: isTC ? this.translations.cancel.TC : this.translations.cancel.EN,
-          role: 'cancel'
-        },
-        {
-          text: isTC ? this.translations.confirm.TC : this.translations.confirm.EN,
-          role: 'destructive',
-          handler: async () => {
-            await this.updateBookingStatus(booking, 'cancelled', isTC);
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
-  // Mark booking as completed
-  async markCompleteAction(booking: Booking): Promise<void> {
-    const lang = await this.languageService.lang$.pipe(take(1)).toPromise();
-    const isTC = lang === 'TC';
-
-    const alert = await this.alertController.create({
-      header: isTC ? this.translations.completeAction.TC : this.translations.completeAction.EN,
-      message: isTC ? this.translations.completeMessage.TC : this.translations.completeMessage.EN,
-      buttons: [
-        {
-          text: isTC ? this.translations.cancel.TC : this.translations.cancel.EN,
-          role: 'cancel'
-        },
-        {
-          text: isTC ? this.translations.confirm.TC : this.translations.confirm.EN,
-          handler: async () => {
-            await this.updateBookingStatus(booking, 'completed', isTC);
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  // Update booking status via service
-  private async updateBookingStatus(booking: Booking, newStatus: Booking['status'], isTC: boolean): Promise<void> {
-    const loading = await this.loadingController.create({
-      message: isTC ? '更新中...' : 'Updating...',
-      spinner: 'crescent'
-    });
-    await loading.present();
-
-    this.bookingService.updateBooking(booking.id!, { status: newStatus })
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: async () => {
-          await loading.dismiss();
-
-          const toast = await this.toastController.create({
-            message: isTC ? this.translations.actionSuccess.TC : this.translations.actionSuccess.EN,
-            duration: 2000,
-            color: 'success'
-          });
-          await toast.present();
-
-          // Refresh bookings
-          this.loadBookings(true);
-        },
-        error: async (err) => {
-          await loading.dismiss();
-
-          const toast = await this.toastController.create({
-            message: err.message || (isTC ? this.translations.actionError.TC : this.translations.actionError.EN),
-            duration: 3000,
-            color: 'danger'
-          });
-          await toast.present();
-        }
-      });
-  }
-
-  // Handle pull-to-refresh
-  async doRefresh(event: any): Promise<void> {
-    this.loadBookings(true);
-    setTimeout(() => {
-      event.target.complete();
-    }, 1000);
+    await toast.present();
   }
 
   // Check if user is logged in
@@ -511,9 +813,43 @@ export class StorePage implements OnInit, OnDestroy {
     return this.restaurantId !== null && this.restaurant !== null;
   }
 
-  // Clean up on destroy
+  // Get display keyword list
+  getKeywordDisplay(lang: 'EN' | 'TC'): string {
+    if (lang === 'TC' && this.editedInfo.Keyword_TC.length) {
+      return this.editedInfo.Keyword_TC.join(', ');
+    }
+    if (this.editedInfo.Keyword_EN.length) {
+      return this.editedInfo.Keyword_EN.join(', ');
+    }
+    return lang === 'TC' ? '未選擇' : 'Not selected';
+  }
+
+  // Get display payment methods
+  getPaymentDisplay(lang: 'EN' | 'TC'): string {
+    if (!this.editedInfo.Payments.length) {
+      return lang === 'TC' ? '未選擇' : 'Not selected';
+    }
+
+    return this.editedInfo.Payments.map(p => {
+      const method = this.paymentMethods.find(m => m.en === p);
+      return method ? (lang === 'TC' ? method.tc : method.en) : p;
+    }).join(', ');
+  }
+
+  // Pull-to-refresh handler
+  async doRefresh(event: any): Promise<void> {
+    this.loadRestaurant();
+    this.loadMenu();
+    this.loadBookings();
+    setTimeout(() => {
+      event.target.complete();
+    }, 1000);
+  }
+
+  // Cleanup
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    this.destroyMap();
   }
 }
