@@ -140,24 +140,10 @@ export class UserPage implements OnInit, OnDestroy {
     this.subscriptions.push(combinedSubscription);
   }
 
-  // Format a modifiedAt value (supports Firestore Timestamp with toDate(), Date, string)
+  // Format a modifiedAt value (supports ISO 8601 strings, Firestore Timestamps, Date objects)
   formatModifiedAt(value: any): string {
-    if (!value) return 'N/A';
-    try {
-      // If Firestore Timestamp object that has toDate()
-      if (typeof value?.toDate === 'function') {
-        const date = value.toDate();
-        return date instanceof Date ? date.toLocaleString() : new Date(date).toLocaleString();
-      }
-      // If already a Date instance
-      if (value instanceof Date) return value.toLocaleString();
-      // Try parsing strings / numbers
-      const date = new Date(value);
-      if (isNaN(date.getTime())) return 'N/A';
-      return date.toLocaleString();
-    } catch {
-      return 'N/A';
-    }
+    const date = UserService.toDate(value);
+    return date ? date.toLocaleString() : 'N/A';
   }
 
   // Flag is reset when leaving view so prompt can appear again on next entry
@@ -442,28 +428,23 @@ export class UserPage implements OnInit, OnDestroy {
 
   // Formatted member since date is retrieved
   public get memberSince(): string {
-    if (!this.profile?.createdAt) return 'Unknown';
-    try {
-      const date = this.profile.createdAt.toDate?.() || new Date(this.profile.createdAt);
-      return date.toLocaleDateString();
-    } catch { return 'Unknown'; }
+    const date = UserService.toDate(this.profile?.createdAt);
+    return date ? date.toLocaleDateString() : 'Unknown';
   }
 
   // Formatted last login date is retrieved
   public get lastLogin(): string {
-    if (!this.profile?.lastLoginAt) return 'Never';
-    try { const date = new Date(this.profile.lastLoginAt); return date.toLocaleString(); } catch { return 'Unknown'; }
+    const date = UserService.toDate(this.profile?.lastLoginAt);
+    return date ? date.toLocaleString() : 'Never';
   }
 
   // Days active calculation is retrieved
   public get daysActive(): number {
-    if (!this.profile?.createdAt) return 0;
-    try {
-      const createdDate = this.profile.createdAt.toDate?.() || new Date(this.profile.createdAt);
-      const now = new Date();
-      const diffTime = Math.abs(now.getTime() - createdDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays;
-    } catch { return 0; }
+    const createdDate = UserService.toDate(this.profile?.createdAt);
+    if (!createdDate) return 0;
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   }
 }
