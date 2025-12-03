@@ -35,7 +35,7 @@
         {{ lang === 'TC' ? '需要登入' : 'Login Required' }}
       </h3>
       <p *ngIf="lang$ | async as lang">
-        {{ lang === 'TC' ? '請登入以與餐廳聊天' : 'Please login to chat with the restaurant' }}
+        {{ lang === 'TC' ? '請登入以與餐廳擁有者聊天' : 'Please login to chat with the restaurant owner' }}
       </p>
       <ion-button expand="block" (click)="goToLogin()">
         <ion-icon name="log-in-outline" slot="start"></ion-icon>
