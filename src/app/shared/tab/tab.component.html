@@ -29,7 +29,7 @@
           <ng-container *ngIf="isRestaurantUser$ | async as isRestaurant">
             <ion-tab-button routerLink="/store" *ngIf="isRestaurant">
               <ion-icon name="storefront"></ion-icon>
-              <ion-label>{{ (lang$ | async) === 'TC' ? '商店' : 'Store' }}</ion-label>
+              <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
             </ion-tab-button>
             <ion-tab-button routerLink="/bookings" *ngIf="!isRestaurant">
               <ion-icon name="calendar"></ion-icon>

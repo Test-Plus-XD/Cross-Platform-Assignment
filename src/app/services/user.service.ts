@@ -156,7 +156,7 @@ export class UserService {
           lastLoginAt: response.lastLoginAt,
           loginCount: response.loginCount || 0,
           type: response.type || null, // Ensure 'type' is mapped correctly
-          restaurantId: response.restaurantId || null // FIXED: Missing restaurantId mapping
+          restaurantId: response.restaurantId || null
         };
         console.log('UserService: Profile mapped with restaurantId:', profile.restaurantId);
         this.currentProfileSubject.next(profile);

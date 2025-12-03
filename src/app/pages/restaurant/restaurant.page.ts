@@ -642,7 +642,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
             this.canClaimRestaurant = false;
 
             const successMessage = lang === 'TC'
-              ? '已成功認領餐廳！正在前往商店頁面...'
+              ? '已成功認領餐廳！正在前往商鋪頁面...'
               : 'Restaurant claimed successfully! Redirecting to store page...';
             await this.showToast(successMessage, 'success');
 
