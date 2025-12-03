@@ -25,6 +25,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   isConnected = false;
   isTyping = false;
   unreadCount = 0;
+  showLoginPrompt = false;
 
   // Language
   lang$ = this.languageService.lang$;
@@ -105,15 +106,27 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   toggleChat(): void {
     // Check if user is logged in
     if (!this.authService.currentUser) {
-      this.router.navigate(['/login']);
+      // Open chat window and show login prompt
+      this.isOpen = true;
+      this.showLoginPrompt = true;
       return;
     }
 
     this.isOpen = !this.isOpen;
+    this.showLoginPrompt = false;
     if (this.isOpen) {
       this.unreadCount = 0;
       setTimeout(() => this.scrollToBottom(), 100);
     }
+  }
+
+  /**
+   * Navigate to login page
+   */
+  goToLogin(): void {
+    this.isOpen = false;
+    this.showLoginPrompt = false;
+    this.router.navigate(['/login']);
   }
 
   /**
