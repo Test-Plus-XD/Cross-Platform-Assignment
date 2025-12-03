@@ -1,6 +1,6 @@
 // Store management page for Restaurant-type users
 // Provides functionality to view incoming bookings and manage restaurant details
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ToastController, LoadingController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
@@ -10,6 +10,7 @@ import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
+import { UserService } from '../../services/user.service';
 
 // Type for booking status filter tabs
 type BookingFilter = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'all';
@@ -95,7 +96,8 @@ export class StorePage implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly alertController: AlertController,
     private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController
+    private readonly loadingController: LoadingController,
+    private readonly injector: Injector
   ) { }
 
   ngOnInit(): void {
@@ -118,37 +120,100 @@ export class StorePage implements OnInit, OnDestroy {
   // Load restaurant data linked to current user
   private loadRestaurantData(): void {
     this.isRestaurantLoading = true;
+    console.log('StorePage: Starting loadRestaurantData');
 
-    // Get the current user's linked restaurant ID
-    // This assumes the user profile contains a restaurantId field
+    // Get the current user's UID from AuthService
     const currentUser = this.authService.currentUser;
-    if (currentUser && currentUser.restaurantId) {
-      this.restaurantId = currentUser.restaurantId;
+    console.log('StorePage: Current user from AuthService:', {
+      uid: currentUser?.uid,
+      email: currentUser?.email,
+      displayName: currentUser?.displayName,
+      restaurantId: currentUser?.restaurantId // This will be undefined
+    });
 
-      // Load restaurant details
-      this.restaurantsService.getRestaurantById(this.restaurantId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (restaurant) => {
-            this.restaurant = restaurant;
-            this.isRestaurantLoading = false;
-            // Load bookings for this restaurant
-            this.loadBookings();
-          },
-          error: (err) => {
-            console.error('StorePage: Error loading restaurant', err);
-            this.isRestaurantLoading = false;
-          }
-        });
-    } else {
+    if (!currentUser || !currentUser.uid) {
+      console.warn('StorePage: No authenticated user found');
       this.isRestaurantLoading = false;
       this.isLoading = false;
+      return;
     }
+
+    // Fetch the full user profile from Firestore to get restaurantId
+    // The AuthService only provides basic Firebase Auth fields
+    console.log('StorePage: Fetching full user profile for uid:', currentUser.uid);
+
+    const userService = this.injector.get(UserService);
+    userService.getUserProfile(currentUser.uid)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (userProfile) => {
+          console.log('StorePage: User profile fetched successfully:', {
+            uid: userProfile?.uid,
+            email: userProfile?.email,
+            displayName: userProfile?.displayName,
+            type: userProfile?.type,
+            restaurantId: userProfile?.restaurantId
+          });
+
+          if (!userProfile) {
+            console.warn('StorePage: User profile is null');
+            this.isRestaurantLoading = false;
+            this.isLoading = false;
+            return;
+          }
+
+          if (!userProfile.restaurantId || userProfile.restaurantId.trim() === '') {
+            console.warn('StorePage: User has no restaurantId set');
+            this.isRestaurantLoading = false;
+            this.isLoading = false;
+            return;
+          }
+
+          this.restaurantId = userProfile.restaurantId;
+          console.log('StorePage: Restaurant ID extracted:', this.restaurantId);
+
+          // Load restaurant details
+          console.log('StorePage: Loading restaurant details for id:', this.restaurantId);
+          this.restaurantsService.getRestaurantById(this.restaurantId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (restaurant) => {
+                console.log('StorePage: Restaurant loaded successfully:', {
+                  id: restaurant?.id,
+                  Name_EN: restaurant?.Name_EN,
+                  Name_TC: restaurant?.Name_TC
+                });
+                this.restaurant = restaurant;
+                this.isRestaurantLoading = false;
+                // Load bookings for this restaurant
+                this.loadBookings();
+              },
+              error: (err) => {
+                console.error('StorePage: Error loading restaurant:', {
+                  restaurantId: this.restaurantId,
+                  error: err.message,
+                  fullError: err
+                });
+                this.isRestaurantLoading = false;
+              }
+            });
+        },
+        error: (err) => {
+          console.error('StorePage: Error loading user profile:', {
+            uid: currentUser.uid,
+            error: err.message,
+            fullError: err
+          });
+          this.isRestaurantLoading = false;
+          this.isLoading = false;
+        }
+      });
   }
 
   // Load bookings for this restaurant
   loadBookings(forceRefresh: boolean = false): void {
     if (!this.restaurantId) {
+      console.warn('StorePage: Cannot load bookings - no restaurantId set');
       this.isLoading = false;
       return;
     }
@@ -156,17 +221,35 @@ export class StorePage implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = null;
 
+    console.log('StorePage: Loading bookings for restaurant:', {
+      restaurantId: this.restaurantId,
+      forceRefresh: forceRefresh
+    });
+
     // Fetch bookings for this restaurant (using restaurant-specific endpoint)
     this.bookingService.getRestaurantBookings(this.restaurantId, forceRefresh)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (bookings) => {
+          console.log('StorePage: Bookings loaded successfully:', {
+            restaurantId: this.restaurantId,
+            bookingsCount: bookings.length,
+            bookings: bookings.map(b => ({
+              id: b.id,
+              status: b.status,
+              dateTime: b.dateTime
+            }))
+          });
           this.bookings = bookings;
           this.applyFilter();
           this.isLoading = false;
         },
         error: (err) => {
-          console.error('StorePage: Error loading bookings', err);
+          console.error('StorePage: Error loading bookings:', {
+            restaurantId: this.restaurantId,
+            error: err.message,
+            fullError: err
+          });
           this.errorMessage = err.message || 'Failed to load bookings';
           this.isLoading = false;
         }
