@@ -46,13 +46,21 @@ const routes: Routes = [
   },
   {
     path: 'store',
-    data: { title: { Header_EN: 'Store', Header_TC: '鋪戶' } },
+    data: { title: { Header_EN: 'Store', Header_TC: '商店' } },
+    canActivate: [AuthGuard],
     loadChildren: () => import('./pages/store/store.module').then( m => m.StorePageModule)
   },
   {
     path: 'chat/:id',
     data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
+    canActivate: [AuthGuard],
     loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
+  },
+  {
+    path: 'bookings',
+    data: { title: { Header_EN: 'Bookings', Header_TC: '預約' } },
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./pages/bookings/bookings.module').then( m => m.BookingsPageModule)
   },
 ];
 
