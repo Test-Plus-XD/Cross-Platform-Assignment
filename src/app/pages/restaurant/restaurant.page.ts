@@ -567,7 +567,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Check if restaurant has no owner
-    if (this.restaurant?.ownerID) {
+    if (this.restaurant?.ownerId) {
       this.canClaimRestaurant = false;
       return;
     }
@@ -617,14 +617,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
       // Update restaurant with current user as owner
       this.restaurantsService.updateRestaurant(this.restaurant.id, {
-        ownerID: user.uid
+        ownerId: user.uid
       }).pipe(takeUntil(this.destroy$)).subscribe({
         next: async () => {
           console.log('RestaurantPage: Restaurant claimed successfully');
 
           // Update local restaurant object
           if (this.restaurant) {
-            this.restaurant.ownerID = user.uid;
+            this.restaurant.ownerId = user.uid;
           }
 
           // Update user profile with restaurantId

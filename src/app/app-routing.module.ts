@@ -42,6 +42,7 @@ const routes: Routes = [
   {
     path: 'booking',
     data: { title: { Header_EN: 'Booking', Header_TC: '預訂' } },
+    canActivate: [AuthGuard],
     loadChildren: () => import('./pages/booking/booking.module').then(m => m.BookingPageModule)
   },
   {
@@ -55,12 +56,6 @@ const routes: Routes = [
     data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
     canActivate: [AuthGuard],
     loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
-  },
-  {
-    path: 'bookings',
-    data: { title: { Header_EN: 'Bookings', Header_TC: '預約' } },
-    canActivate: [AuthGuard],
-    loadChildren: () => import('./pages/bookings/bookings.module').then( m => m.BookingsPageModule)
   },
 ];
 

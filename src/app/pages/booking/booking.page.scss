@@ -1,0 +1,222 @@
+.booking-page-content {
+  --background: var(--ion-background-color);
+
+  .page-container {
+    padding: 0;
+    min-height: 100vh;
+  }
+
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    gap: 1rem;
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+    }
+
+    p {
+      color: var(--ion-color-medium);
+      font-size: 1rem;
+    }
+  }
+
+  .booking-content {
+    padding: 16px;
+  }
+
+  .filter-tabs {
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    background: var(--ion-background-color);
+    z-index: 10;
+    padding: 8px 0;
+
+    ion-segment {
+      --background: var(--ion-color-light);
+
+      ion-segment-button {
+        --indicator-color: var(--ion-color-primary);
+        --color-checked: var(--ion-color-primary);
+        min-height: 48px;
+
+        ion-label {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+
+          ion-badge {
+            font-size: 0.75rem;
+          }
+        }
+      }
+    }
+  }
+
+  .booking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .booking-card {
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    margin: 0;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    ion-card-content {
+      padding: 16px;
+    }
+
+    .booking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+
+      .booking-info {
+        flex: 1;
+
+        .restaurant-name {
+          font-size: 1.125rem;
+          font-weight: 600;
+          margin: 0 0 8px 0;
+          color: var(--ion-color-dark);
+        }
+
+        .status-badge {
+          font-size: 0.75rem;
+          padding: 4px 8px;
+          border-radius: 12px;
+        }
+      }
+
+      .booking-actions {
+        display: flex;
+        gap: 4px;
+      }
+    }
+
+    .booking-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+
+      .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+
+        ion-icon {
+          font-size: 1.125rem;
+          color: var(--ion-color-primary);
+        }
+      }
+    }
+
+    .special-requests {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--ion-color-light-shade);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      ion-icon {
+        font-size: 1rem;
+        color: var(--ion-color-medium);
+        margin-right: 4px;
+      }
+
+      .request-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+      }
+
+      p {
+        margin: 4px 0 0 0;
+        font-size: 0.875rem;
+        color: var(--ion-text-color);
+        font-style: italic;
+      }
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 40vh;
+    gap: 16px;
+    text-align: center;
+
+    .empty-icon {
+      font-size: 80px;
+      color: var(--ion-color-medium);
+      opacity: 0.5;
+    }
+
+    h3 {
+      color: var(--ion-color-medium);
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin: 0;
+    }
+  }
+
+  .bottom-spacer {
+    height: 80px;
+  }
+
+  // Dark mode adjustments
+  @media (prefers-color-scheme: dark) {
+    .booking-card {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+
+      &:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+    }
+  }
+
+  // Responsive design
+  @media (min-width: 768px) {
+    .booking-content {
+      padding: 24px;
+    }
+
+    .booking-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .booking-content {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  }
+}

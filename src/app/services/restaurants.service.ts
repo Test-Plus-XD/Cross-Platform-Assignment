@@ -52,7 +52,7 @@ export interface Restaurant {
   Contacts?: Contacts | null;
   ImageUrl?: string | null;
   Payments?: string[] | null;
-  ownerID?: string | null;
+  ownerId?: string | null;
   reviewsId?: string[] | null;
   createdAt?: any;
   modifiedAt?: any;
@@ -157,7 +157,7 @@ export class RestaurantsService {
             Seats: h.Seats ?? null,
             Contacts: h.Contacts ?? null,
             ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-            ownerID: h.ownerID ?? h.Owner ?? null,
+            ownerId: h.ownerId ?? h.Owner ?? null,
             reviewsId: h.reviewsId ?? null
           }));
 
@@ -241,7 +241,7 @@ export class RestaurantsService {
           Seats: h.Seats ?? null,
           Contacts: h.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-          ownerID: h.ownerID ?? h.Owner ?? null,
+          ownerId: h.ownerId ?? h.Owner ?? null,
           Payments: h.Payments ?? null,
           reviewsId: h.reviewsId ?? null
         }));
@@ -305,7 +305,7 @@ export class RestaurantsService {
           Seats: response.Seats ?? null,
           Contacts: response.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
-          ownerID: response.ownerID ?? response.Owner ?? null,
+          ownerId: response.ownerId ?? response.ownerId ?? null,
           Payments: response.Payments ?? null,
           reviewsId: response.reviewsId ?? null,
           createdAt: response.createdAt,

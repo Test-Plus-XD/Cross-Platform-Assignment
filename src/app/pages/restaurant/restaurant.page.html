@@ -40,7 +40,7 @@
           {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') : (restaurant.District_EN || restaurant.District_TC || '') }}
         </p>
         <!-- Claim Restaurant Button -->
-        <ion-button *ngIf="canClaimRestaurant && !restaurant.Owner"
+        <ion-button *ngIf="canClaimRestaurant && !restaurant.ownerId"
                     class="claim-restaurant-button"
                     [disabled]="isClaimingRestaurant"
                     (click)="claimRestaurant()">
