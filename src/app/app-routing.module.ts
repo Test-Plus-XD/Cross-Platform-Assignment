@@ -37,7 +37,7 @@ const routes: Routes = [
   {
     path: 'login',
     data: { title: { Header_EN: 'Login', Header_TC: '登入' } },
-    loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)
+    loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
   },
   {
     path: 'booking',
@@ -47,9 +47,9 @@ const routes: Routes = [
   },
   {
     path: 'store',
-    data: { title: { Header_EN: 'Store', Header_TC: '商店' } },
+    data: { title: { Header_EN: 'Store', Header_TC: '商鋪' } },
     canActivate: [AuthGuard],
-    loadChildren: () => import('./pages/store/store.module').then( m => m.StorePageModule)
+    loadChildren: () => import('./pages/store/store.module').then(m => m.StorePageModule)
   },
   {
     path: 'chat/:id',

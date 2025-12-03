@@ -313,7 +313,7 @@
                           [color]="isEditing ? 'success' : 'primary'"
                           (click)="isEditing ? saveChanges() : startEditing()"
                           class="action-button">
-                <ion-icon [name]="isEditing ? 'save-outline' : 'create-outline'" slot="start"></ion-icon>
+                <ion-icon [name]="isEditing ? 'save-sharp' : 'create'" slot="start"></ion-icon>
                 {{
                   isEditing
                   ? ((lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN)

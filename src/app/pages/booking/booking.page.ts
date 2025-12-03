@@ -16,7 +16,7 @@ type BookingFilter = 'upcoming' | 'past' | 'cancelled' | 'all';
   selector: 'app-booking',
   templateUrl: './booking.page.html',
   styleUrls: ['./booking.page.scss'],
-  standalone: false
+  standalone: false,
 })
 export class BookingPage implements OnInit, OnDestroy {
   // Observables for template

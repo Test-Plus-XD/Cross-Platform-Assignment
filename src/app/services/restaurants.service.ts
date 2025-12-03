@@ -157,7 +157,7 @@ export class RestaurantsService {
             Seats: h.Seats ?? null,
             Contacts: h.Contacts ?? null,
             ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-            ownerId: h.ownerId ?? h.Owner ?? null,
+            ownerId: h.Owner ?? h.ownerId ?? null,
             reviewsId: h.reviewsId ?? null
           }));
 
@@ -305,7 +305,7 @@ export class RestaurantsService {
           Seats: response.Seats ?? null,
           Contacts: response.Contacts ?? null,
           ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
-          ownerId: response.ownerId ?? response.ownerId ?? null,
+          ownerId: response.ownerId ?? null,
           Payments: response.Payments ?? null,
           reviewsId: response.reviewsId ?? null,
           createdAt: response.createdAt,

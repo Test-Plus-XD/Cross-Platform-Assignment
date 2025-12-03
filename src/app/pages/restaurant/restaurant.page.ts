@@ -631,16 +631,13 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
             console.log('RestaurantPage: Restaurant claimed successfully:', response);
 
             // Update local restaurant object
-            if (this.restaurant) {
-              this.restaurant.ownerId = response.userId;
-            }
+            if (this.restaurant) this.restaurant.ownerId = response.userId;
 
             this.isClaimingRestaurant = false;
             this.canClaimRestaurant = false;
 
             const successMessage = lang === 'TC'
-              ? '已成功認領餐廳！'
-              : 'Restaurant claimed successfully!';
+              ? '已成功認領餐廳！' : 'Restaurant claimed successfully!';
             await this.showToast(successMessage, 'success');
 
             // Reload restaurant data
