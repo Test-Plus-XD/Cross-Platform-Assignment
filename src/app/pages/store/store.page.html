@@ -153,7 +153,7 @@
               <!-- Address (English) -->
               <div class="info-row">
                 <div class="info-label">
-                  <ion-icon name="navigate-outline"></ion-icon>
+                  <ion-icon name="map-sharp"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.addressEN.TC : translations.addressEN.EN }}
                 </div>
                 <div class="info-value" *ngIf="!isEditingInfo">
@@ -169,7 +169,7 @@
               <!-- Address (Chinese) -->
               <div class="info-row">
                 <div class="info-label">
-                  <ion-icon name="navigate-outline"></ion-icon>
+                  <ion-icon name="map-sharp"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.addressTC.TC : translations.addressTC.EN }}
                 </div>
                 <div class="info-value" *ngIf="!isEditingInfo">
@@ -308,7 +308,7 @@
                 <div *ngIf="isEditingInfo" class="edit-input-wrapper">
                   <ion-button fill="outline" size="small" (click)="showKeywordsSelector()">
                     <ion-icon name="add-outline" slot="start"></ion-icon>
-                    {{ getKeywordDisplay((lang$ | async) as 'EN' | 'TC') }}
+                    {{ getKeywordDisplay(currentLanguage) }}
                   </ion-button>
                 </div>
               </div>
@@ -340,7 +340,7 @@
                 <div *ngIf="isEditingInfo" class="edit-input-wrapper">
                   <ion-button fill="outline" size="small" (click)="showPaymentMethodsSelector()">
                     <ion-icon name="add-outline" slot="start"></ion-icon>
-                    {{ getPaymentDisplay((lang$ | async) as 'EN' | 'TC') }}
+                    {{ getPaymentDisplay(currentLanguage) }}
                   </ion-button>
                 </div>
               </div>
@@ -395,9 +395,9 @@
               <!-- Coordinates display -->
               <div class="coordinates-display" *ngIf="mapMarker">
                 <p>
-                  <ion-icon name="navigate-outline"></ion-icon>
+                  <ion-icon name="map-sharp"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? '緯度' : 'Latitude' }}: {{ mapMarker.lat.toFixed(6) }}<br>
-                  <ion-icon name="navigate-outline"></ion-icon>
+                  <ion-icon name="map-sharp"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? '經度' : 'Longitude' }}: {{ mapMarker.lng.toFixed(6) }}
                 </p>
               </div>

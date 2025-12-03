@@ -26,6 +26,8 @@ export class StorePage implements OnInit, OnDestroy {
   lang$ = this.languageService.lang$;
   isDark$ = this.themeService.isDark$;
   isMobile$: Observable<boolean>;
+  // Current language for template binding (updated from lang$ stream)
+  currentLanguage: 'EN' | 'TC' = 'EN';
 
   // Restaurant and data
   restaurant: Restaurant | null = null;
@@ -188,11 +190,16 @@ export class StorePage implements OnInit, OnDestroy {
     });
     globalThis.dispatchEvent(event);
 
+    // Subscribe to language changes to update currentLanguage property for template binding
+    this.lang$.pipe(takeUntil(this.destroy$)).subscribe(lang => {
+      this.currentLanguage = lang;
+    });
+
     // Load restaurant data
     this.loadRestaurantData();
   }
 
-  // Load restaurant data linked to current user
+  // Load restaurant data linked to current user.
   private loadRestaurantData(): void {
     this.isRestaurantLoading = true;
     console.log('StorePage: Starting loadRestaurantData');
@@ -240,7 +247,7 @@ export class StorePage implements OnInit, OnDestroy {
       });
   }
 
-  // Load restaurant details
+  // Load restaurant details from service by restaurant identifier.
   private loadRestaurant(): void {
     if (!this.restaurantId) return;
 
@@ -266,7 +273,7 @@ export class StorePage implements OnInit, OnDestroy {
       });
   }
 
-  // Initialize edited info from restaurant data
+  // Initialize edited info from restaurant data to ensure all types are correctly assigned.
   private initializeEditedInfo(restaurant: Restaurant): void {
     this.editedInfo = {
       Name_EN: restaurant.Name_EN || '',
@@ -275,18 +282,18 @@ export class StorePage implements OnInit, OnDestroy {
       Address_TC: restaurant.Address_TC || '',
       District_EN: restaurant.District_EN || '',
       District_TC: restaurant.District_TC || '',
-      Latitude: restaurant.Latitude,
-      Longitude: restaurant.Longitude,
+      Latitude: restaurant.Latitude ?? null,
+      Longitude: restaurant.Longitude ?? null,
       Keyword_EN: restaurant.Keyword_EN || [],
       Keyword_TC: restaurant.Keyword_TC || [],
-      Seats: restaurant.Seats,
+      Seats: restaurant.Seats ?? null,
       Contacts: {
         Phone: restaurant.Contacts?.Phone || '',
         Email: restaurant.Contacts?.Email || '',
         Website: restaurant.Contacts?.Website || ''
       },
       Payments: restaurant.Payments || [],
-      Opening_Hours: restaurant.Opening_Hours || {}
+      Opening_Hours: this.convertOpeningHoursToStringMap(restaurant.Opening_Hours)
     };
 
     // Set map marker if location exists
@@ -295,7 +302,24 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Load menu items
+  // Convert opening hours to string-only map format required by the editedInfo type definition.
+  private convertOpeningHoursToStringMap(openingHours: any): { [key: string]: string } {
+    if (!openingHours) return {};
+    const stringMap: { [key: string]: string } = {};
+    for (const [key, value] of Object.entries(openingHours)) {
+      if (typeof value === 'string') {
+        stringMap[key] = value;
+      } else if (value && typeof value === 'object') {
+        const openClose = value as { open?: string | null; close?: string | null };
+        if (openClose.open && openClose.close) {
+          stringMap[key] = `${openClose.open}-${openClose.close}`;
+        }
+      }
+    }
+    return stringMap;
+  }
+
+  // Load menu items for the current restaurant from the service.
   private loadMenu(): void {
     if (!this.restaurantId) return;
 
@@ -315,7 +339,7 @@ export class StorePage implements OnInit, OnDestroy {
       });
   }
 
-  // Load bookings
+  // Load bookings for the current restaurant from the booking service.
   private loadBookings(): void {
     if (!this.restaurantId) return;
 
@@ -335,7 +359,7 @@ export class StorePage implements OnInit, OnDestroy {
       });
   }
 
-  // Switch sections
+  // Switch between different page sections and cancel any ongoing edits.
   switchSection(section: 'info' | 'menu' | 'bookings'): void {
     this.currentSection = section;
 
@@ -348,7 +372,7 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Start editing restaurant info
+  // Start editing restaurant information and initialise the map component.
   startEditingInfo(): void {
     if (!this.restaurant) return;
     this.initializeEditedInfo(this.restaurant);
@@ -360,7 +384,7 @@ export class StorePage implements OnInit, OnDestroy {
     }, 300);
   }
 
-  // Cancel editing restaurant info
+  // Cancel editing restaurant info and restore original values from restaurant object.
   cancelEditingInfo(): void {
     this.isEditingInfo = false;
     if (this.restaurant) {
@@ -370,7 +394,7 @@ export class StorePage implements OnInit, OnDestroy {
     this.destroyMap();
   }
 
-  // Initialize Leaflet map
+  // Initialize Leaflet map component for location selection on the page.
   private initializeMap(): void {
     if (this.mapInitialized || this.map) {
       return;
@@ -383,14 +407,14 @@ export class StorePage implements OnInit, OnDestroy {
     }
 
     // Default center (Hong Kong)
-    const defaultLat = 22.3193;
-    const defaultLng = 114.1694;
+    const defaultLatitude = 22.3193;
+    const defaultLongitude = 114.1694;
 
-    const centerLat = this.editedInfo.Latitude || defaultLat;
-    const centerLng = this.editedInfo.Longitude || defaultLng;
+    const centerLatitude = this.editedInfo.Latitude || defaultLatitude;
+    const centerLongitude = this.editedInfo.Longitude || defaultLongitude;
 
     // Initialize map
-    this.map = L.map('store-map').setView([centerLat, centerLng], 13);
+    this.map = L.map('store-map').setView([centerLatitude, centerLongitude], 13);
 
     // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -404,22 +428,22 @@ export class StorePage implements OnInit, OnDestroy {
     }
 
     // Handle map click
-    this.map.on('click', (e: L.LeafletMouseEvent) => {
-      this.onMapClickHandler(e);
+    this.map.on('click', (Event: L.LeafletMouseEvent) => {
+      this.onMapClickHandler(Event);
     });
 
     this.mapInitialized = true;
     console.log('StorePage: Map initialized');
   }
 
-  // Handle map click event
+  // Handle map click event to update location coordinates and display marker.
   private onMapClickHandler(event: L.LeafletMouseEvent): void {
-    const lat = event.latlng.lat;
-    const lng = event.latlng.lng;
+    const latitude = event.latlng.lat;
+    const longitude = event.latlng.lng;
 
-    this.editedInfo.Latitude = lat;
-    this.editedInfo.Longitude = lng;
-    this.mapMarker = { lat, lng };
+    this.editedInfo.Latitude = latitude;
+    this.editedInfo.Longitude = longitude;
+    this.mapMarker = { lat: latitude, lng: longitude };
 
     // Clear existing markers
     if (this.map) {
@@ -430,11 +454,11 @@ export class StorePage implements OnInit, OnDestroy {
       });
 
       // Add new marker
-      L.marker([lat, lng]).addTo(this.map);
+      L.marker([latitude, longitude]).addTo(this.map);
     }
   }
 
-  // Destroy map instance
+  // Destroy map instance and clean up Leaflet resources to prevent memory leaks.
   private destroyMap(): void {
     if (this.map) {
       this.map.remove();
@@ -444,13 +468,13 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Save restaurant info
+  // Save restaurant information to the backend service with validation and user feedback.
   async saveRestaurantInfo(): Promise<void> {
     if (!this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
     const loading = await this.loadingController.create({
-      message: this.translations.saving[lang],
+      message: this.translations.saving[language],
       spinner: null
     });
     await loading.present();
@@ -480,33 +504,33 @@ export class StorePage implements OnInit, OnDestroy {
 
       await this.restaurantsService.updateRestaurant(this.restaurantId, payload).toPromise();
 
-      await this.showToast(this.translations.updateSuccess[lang], 'success');
+      await this.showToast(this.translations.updateSuccess[language], 'success');
       this.isEditingInfo = false;
 
       // Reload restaurant data
       this.loadRestaurant();
     } catch (error: any) {
       console.error('StorePage: Error saving restaurant info:', error);
-      await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+      await this.showToast(error.message || this.translations.updateFailed[language], 'danger');
     } finally {
       await loading.dismiss();
     }
   }
 
-  // Show district selector
+  // Display district selection dialog with radio button inputs for user selection.
   async showDistrictSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.selectDistrict[lang],
-      inputs: this.districts.map(d => ({
+      header: this.translations.selectDistrict[language],
+      inputs: this.districts.map(district => ({
         type: 'radio' as const,
-        label: lang === 'TC' ? d.tc : d.en,
-        value: d.en,
-        checked: this.editedInfo.District_EN === d.en
+        label: language === 'TC' ? district.tc : district.en,
+        value: district.en,
+        checked: this.editedInfo.District_EN === district.en
       })),
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
           text: 'OK',
           handler: (value: string) => {
@@ -522,27 +546,27 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Show keywords selector
+  // Display keywords selection dialog with checkbox inputs for multiple selection.
   async showKeywordsSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.selectKeywords[lang],
-      inputs: this.keywords.map(k => ({
+      header: this.translations.selectKeywords[language],
+      inputs: this.keywords.map(keyword => ({
         type: 'checkbox' as const,
-        label: lang === 'TC' ? k.tc : k.en,
-        value: k.en,
-        checked: this.editedInfo.Keyword_EN.includes(k.en)
+        label: language === 'TC' ? keyword.tc : keyword.en,
+        value: keyword.en,
+        checked: this.editedInfo.Keyword_EN.includes(keyword.en)
       })),
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
           text: 'OK',
           handler: (values: string[]) => {
             this.editedInfo.Keyword_EN = values;
-            this.editedInfo.Keyword_TC = values.map(val => {
-              const keyword = this.keywords.find(k => k.en === val);
-              return keyword ? keyword.tc : val;
+            this.editedInfo.Keyword_TC = values.map(value => {
+              const keyword = this.keywords.find(k => k.en === value);
+              return keyword ? keyword.tc : value;
             });
           }
         }
@@ -551,20 +575,20 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Show payment methods selector
+  // Display payment methods selection dialog with checkbox inputs for multiple selection.
   async showPaymentMethodsSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.selectPayments[lang],
-      inputs: this.paymentMethods.map(p => ({
+      header: this.translations.selectPayments[language],
+      inputs: this.paymentMethods.map(paymentMethod => ({
         type: 'checkbox' as const,
-        label: lang === 'TC' ? p.tc : p.en,
-        value: p.en,
-        checked: this.editedInfo.Payments.includes(p.en)
+        label: language === 'TC' ? paymentMethod.tc : paymentMethod.en,
+        value: paymentMethod.en,
+        checked: this.editedInfo.Payments.includes(paymentMethod.en)
       })),
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
           text: 'OK',
           handler: (values: string[]) => {
@@ -576,10 +600,10 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Update opening hours for a day
+  // Display opening hours input dialog for a specific weekday with text input.
   async updateOpeningHours(day: string): Promise<void> {
-    const lang = await this.getCurrentLanguage();
-    const dayLabel = lang === 'TC'
+    const language = await this.getCurrentLanguage();
+    const dayLabel = language === 'TC'
       ? this.weekdays.find(w => w.en === day)?.tc
       : day;
 
@@ -589,12 +613,12 @@ export class StorePage implements OnInit, OnDestroy {
         {
           name: 'hours',
           type: 'text',
-          placeholder: lang === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed',
+          placeholder: language === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed',
           value: this.editedInfo.Opening_Hours[day] || ''
         }
       ],
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
           text: 'OK',
           handler: (data) => {
@@ -610,20 +634,20 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Map click handler (placeholder - will be implemented with Leaflet)
+  // Map click handler placeholder for future implementation with Leaflet.
   onMapClick(event: any): void {
     // This will be connected to Leaflet map click event
-    const lat = event.latlng?.lat;
-    const lng = event.latlng?.lng;
+    const latitude = event.latlng?.lat;
+    const longitude = event.latlng?.lng;
 
-    if (lat && lng) {
-      this.editedInfo.Latitude = lat;
-      this.editedInfo.Longitude = lng;
-      this.mapMarker = { lat, lng };
+    if (latitude && longitude) {
+      this.editedInfo.Latitude = latitude;
+      this.editedInfo.Longitude = longitude;
+      this.mapMarker = { lat: latitude, lng: longitude };
     }
   }
 
-  // Start adding new menu item
+  // Start adding a new menu item and reset the editing form.
   startAddingMenuItem(): void {
     this.editingMenuItemId = null;
     this.editedMenuItem = {
@@ -636,7 +660,7 @@ export class StorePage implements OnInit, OnDestroy {
     this.isEditingMenu = true;
   }
 
-  // Start editing existing menu item
+  // Start editing an existing menu item by populating the form with its current data.
   startEditingMenuItem(item: MenuItem): void {
     this.editingMenuItemId = item.id || null;
     this.editedMenuItem = {
@@ -649,7 +673,7 @@ export class StorePage implements OnInit, OnDestroy {
     this.isEditingMenu = true;
   }
 
-  // Cancel editing menu item
+  // Cancel editing menu item and restore the form to its initial empty state.
   cancelEditingMenu(): void {
     this.isEditingMenu = false;
     this.editingMenuItemId = null;
@@ -662,20 +686,20 @@ export class StorePage implements OnInit, OnDestroy {
     };
   }
 
-  // Save menu item (create or update)
+  // Save menu item to backend service, handling both create and update operations.
   async saveMenuItem(): Promise<void> {
     if (!this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     // Validation
     if (!this.editedMenuItem.Name_EN && !this.editedMenuItem.Name_TC) {
-      await this.showToast(lang === 'TC' ? '請輸入名稱' : 'Please enter a name', 'warning');
+      await this.showToast(language === 'TC' ? '請輸入名稱' : 'Please enter a name', 'warning');
       return;
     }
 
     const loading = await this.loadingController.create({
-      message: this.translations.saving[lang],
+      message: this.translations.saving[language],
       spinner: null
     });
     await loading.present();
@@ -692,51 +716,51 @@ export class StorePage implements OnInit, OnDestroy {
       if (this.editingMenuItemId) {
         // Update existing item
         await this.restaurantsService.updateMenuItem(this.restaurantId, this.editingMenuItemId, payload).toPromise();
-        await this.showToast(this.translations.updateSuccess[lang], 'success');
+        await this.showToast(this.translations.updateSuccess[language], 'success');
       } else {
         // Create new item
         await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
-        await this.showToast(this.translations.createSuccess[lang], 'success');
+        await this.showToast(this.translations.createSuccess[language], 'success');
       }
 
       this.cancelEditingMenu();
       this.loadMenu();
     } catch (error: any) {
       console.error('StorePage: Error saving menu item:', error);
-      await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+      await this.showToast(error.message || this.translations.updateFailed[language], 'danger');
     } finally {
       await loading.dismiss();
     }
   }
 
-  // Delete menu item
+  // Delete a menu item after confirming the action with the user.
   async deleteMenuItem(item: MenuItem): Promise<void> {
     if (!this.restaurantId || !item.id) return;
 
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.confirmDelete[lang],
-      message: this.translations.confirmDeleteMessage[lang],
+      header: this.translations.confirmDelete[language],
+      message: this.translations.confirmDeleteMessage[language],
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
-          text: this.translations.delete[lang],
+          text: this.translations.delete[language],
           role: 'destructive',
           handler: async () => {
             const loading = await this.loadingController.create({
-              message: this.translations.saving[lang],
+              message: this.translations.saving[language],
               spinner: null
             });
             await loading.present();
 
             try {
               await this.restaurantsService.deleteMenuItem(this.restaurantId!, item.id!).toPromise();
-              await this.showToast(this.translations.deleteSuccess[lang], 'success');
+              await this.showToast(this.translations.deleteSuccess[language], 'success');
               this.loadMenu();
             } catch (error: any) {
               console.error('StorePage: Error deleting menu item:', error);
-              await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
+              await this.showToast(error.message || this.translations.updateFailed[language], 'danger');
             } finally {
               await loading.dismiss();
             }
@@ -747,37 +771,37 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Navigate to public restaurant page
+  // Navigate to the public restaurant page to view how customers see the restaurant.
   viewPublicPage(): void {
     if (this.restaurantId) {
       this.router.navigate(['/restaurant', this.restaurantId]);
     }
   }
 
-  // Get today's bookings count
+  // Calculate and return the count of bookings scheduled for today.
   getTodayBookingsCount(): number {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    return this.bookings.filter(b => {
-      const bookingDate = new Date(b.dateTime);
-      return bookingDate >= today && bookingDate < tomorrow && b.status !== 'cancelled';
+    return this.bookings.filter(booking => {
+      const bookingDate = new Date(booking.dateTime);
+      return bookingDate >= today && bookingDate < tomorrow && booking.status !== 'cancelled';
     }).length;
   }
 
-  // Get pending bookings count
+  // Calculate and return the count of pending bookings requiring confirmation.
   getPendingBookingsCount(): number {
-    return this.bookings.filter(b => b.status === 'pending').length;
+    return this.bookings.filter(booking => booking.status === 'pending').length;
   }
 
-  // Helper to get current language
+  // Get the current language setting from the language service stream.
   private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
     return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
   }
 
-  // Show toast notification
+  // Display a toast notification message to the user at the bottom of the screen.
   private async showToast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {
     const toast = await this.toastController.create({
       message,
@@ -788,40 +812,40 @@ export class StorePage implements OnInit, OnDestroy {
     await toast.present();
   }
 
-  // Check if user is logged in
+  // Check if the user is logged in via the authentication service.
   get isLoggedIn(): boolean {
     return this.authService.isLoggedIn;
   }
 
-  // Check if user has a linked restaurant
+  // Check if the user has a linked restaurant and the restaurant data has been loaded.
   get hasRestaurant(): boolean {
     return this.restaurantId !== null && this.restaurant !== null;
   }
 
-  // Get display keyword list
-  getKeywordDisplay(lang: 'EN' | 'TC'): string {
-    if (lang === 'TC' && this.editedInfo.Keyword_TC.length) {
+  // Generate a display string of keywords in the current language with comma separation.
+  getKeywordDisplay(language: 'EN' | 'TC'): string {
+    if (language === 'TC' && this.editedInfo.Keyword_TC.length) {
       return this.editedInfo.Keyword_TC.join(', ');
     }
     if (this.editedInfo.Keyword_EN.length) {
       return this.editedInfo.Keyword_EN.join(', ');
     }
-    return lang === 'TC' ? '未選擇' : 'Not selected';
+    return language === 'TC' ? '未選擇' : 'Not selected';
   }
 
-  // Get display payment methods
-  getPaymentDisplay(lang: 'EN' | 'TC'): string {
+  // Generate a display string of payment methods in the current language with comma separation.
+  getPaymentDisplay(language: 'EN' | 'TC'): string {
     if (!this.editedInfo.Payments.length) {
-      return lang === 'TC' ? '未選擇' : 'Not selected';
+      return language === 'TC' ? '未選擇' : 'Not selected';
     }
 
-    return this.editedInfo.Payments.map(p => {
-      const method = this.paymentMethods.find(m => m.en === p);
-      return method ? (lang === 'TC' ? method.tc : method.en) : p;
+    return this.editedInfo.Payments.map(paymentCode => {
+      const method = this.paymentMethods.find(methodItem => methodItem.en === paymentCode);
+      return method ? (language === 'TC' ? method.tc : method.en) : paymentCode;
     }).join(', ');
   }
 
-  // Pull-to-refresh handler
+  // Handle pull-to-refresh action by reloading all restaurant data.
   async doRefresh(event: any): Promise<void> {
     this.loadRestaurant();
     this.loadMenu();
@@ -831,19 +855,19 @@ export class StorePage implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  // Confirm a pending booking
+  // Display confirmation dialog to confirm a pending booking action.
   async confirmBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.confirmBookingTitle[lang],
-      message: this.translations.confirmBookingMessage[lang],
+      header: this.translations.confirmBookingTitle[language],
+      message: this.translations.confirmBookingMessage[language],
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
-          text: this.translations.confirmBooking[lang],
+          text: this.translations.confirmBooking[language],
           handler: async () => {
-            await this.updateBookingStatus(booking, 'confirmed', lang === 'TC');
+            await this.updateBookingStatus(booking, 'confirmed', language === 'TC');
           }
         }
       ]
@@ -851,20 +875,20 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Reject a pending booking
+  // Display confirmation dialog to reject a pending booking action.
   async rejectBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.rejectBookingTitle[lang],
-      message: this.translations.rejectBookingMessage[lang],
+      header: this.translations.rejectBookingTitle[language],
+      message: this.translations.rejectBookingMessage[language],
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
-          text: this.translations.rejectBooking[lang],
+          text: this.translations.rejectBooking[language],
           role: 'destructive',
           handler: async () => {
-            await this.updateBookingStatus(booking, 'cancelled', lang === 'TC');
+            await this.updateBookingStatus(booking, 'cancelled', language === 'TC');
           }
         }
       ]
@@ -872,19 +896,19 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Mark booking as completed
+  // Display confirmation dialog to mark a booking as completed.
   async markCompleteAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
-      header: this.translations.completeBookingTitle[lang],
-      message: this.translations.completeBookingMessage[lang],
+      header: this.translations.completeBookingTitle[language],
+      message: this.translations.completeBookingMessage[language],
       buttons: [
-        { text: this.translations.cancel[lang], role: 'cancel' },
+        { text: this.translations.cancel[language], role: 'cancel' },
         {
-          text: this.translations.markComplete[lang],
+          text: this.translations.markComplete[language],
           handler: async () => {
-            await this.updateBookingStatus(booking, 'completed', lang === 'TC');
+            await this.updateBookingStatus(booking, 'completed', language === 'TC');
           }
         }
       ]
@@ -892,7 +916,7 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Update booking status (helper method)
+  // Update the booking status in the backend service with loading state and user feedback.
   private async updateBookingStatus(booking: Booking, newStatus: Booking['status'], isTC: boolean): Promise<void> {
     const loading = await this.loadingController.create({
       message: isTC ? this.translations.saving.TC : this.translations.saving.EN,
@@ -901,9 +925,9 @@ export class StorePage implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      await this.bookingService.updateBooking(booking.id, { status: newStatus }).toPromise();
+      await this.bookingService.updateBooking(booking.id ?? '', { status: newStatus }).toPromise();
       await this.showToast(isTC ? this.translations.bookingUpdated.TC : this.translations.bookingUpdated.EN, 'success');
-      this.loadBookings(); // Reload bookings list
+      this.loadBookings();
     } catch (error: any) {
       console.error('StorePage: Error updating booking status:', error);
       await this.showToast(error.message || (isTC ? this.translations.updateFailed.TC : this.translations.updateFailed.EN), 'danger');
@@ -912,7 +936,7 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Cleanup
+  // Clean up subscriptions and resources when the component is destroyed.
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
