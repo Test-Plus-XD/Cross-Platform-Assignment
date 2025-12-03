@@ -83,6 +83,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     768: { slidesPerView: 2 },
     1024: { slidesPerView: 3 }
   };
+  // Image upload state for unclaimed restaurants
+  selectedRestaurantImage: File | null = null;
+  restaurantImagePreview: string | null = null;
+  isUploadingRestaurantImage: boolean = false;
+  // Check if current user can edit this restaurant (no owner or is owner)
+  canEditRestaurant: boolean = false;
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
@@ -151,6 +157,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         this.calculateDistance();
         // Check if user can claim this restaurant
         this.checkClaimEligibility();
+        // Check if user can edit this restaurant (no owner)
+        this.checkEditPermission();
         // Load menu items from sub-collection
         this.loadMenuItems(id);
         // Load reviews
@@ -754,6 +762,93 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   scrollToBooking(): void {
     this.selectedTab = 'overview';
     // Smooth scroll to booking section would be implemented here if needed
+  }
+
+  /// Check if current user can edit this restaurant (no owner)
+  checkEditPermission(): void {
+    // Allow editing if restaurant has no owner and user is logged in
+    this.canEditRestaurant = this.authService.isLoggedIn && !this.restaurant?.ownerId;
+  }
+
+  /// Handle restaurant image file selection
+  onRestaurantImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.showToast('Please select an image file', 'warning');
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        this.showToast('Image size must be less than 10MB', 'warning');
+        return;
+      }
+
+      this.selectedRestaurantImage = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        this.restaurantImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  /// Upload restaurant hero image (for unclaimed restaurants)
+  async uploadRestaurantImageInline(): Promise<void> {
+    if (!this.selectedRestaurantImage || !this.restaurant?.id) return;
+
+    const lang = await this.language.lang$.pipe(take(1)).toPromise();
+    this.isUploadingRestaurantImage = true;
+
+    try {
+      // Get auth token
+      const token = await this.authService.getIdToken();
+      if (!token) {
+        throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
+      }
+
+      // Upload image
+      const response = await this.restaurantsService.uploadRestaurantImage(
+        this.restaurant.id,
+        this.selectedRestaurantImage,
+        token
+      ).toPromise();
+
+      // Update restaurant with new image URL
+      if (response && response.imageUrl) {
+        if (this.restaurant) {
+          this.restaurant.ImageUrl = response.imageUrl;
+        }
+        await this.showToast(lang === 'TC' ? '圖片上傳成功' : 'Image uploaded successfully', 'success');
+
+        // Clear selection
+        this.selectedRestaurantImage = null;
+        this.restaurantImagePreview = null;
+      }
+    } catch (error: any) {
+      console.error('RestaurantPage: Error uploading restaurant image:', error);
+      await this.showToast(error.message || (lang === 'TC' ? '圖片上傳失敗' : 'Image upload failed'), 'danger');
+    } finally {
+      this.isUploadingRestaurantImage = false;
+    }
+  }
+
+  /// Clear restaurant image selection
+  clearRestaurantImageSelection(): void {
+    this.selectedRestaurantImage = null;
+    this.restaurantImagePreview = null;
+
+    // Reset file input
+    const fileInput = document.getElementById('restaurant-page-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   }
 
   /// Clean up on destroy

@@ -703,6 +703,83 @@
       color: var(--ion-text-color);
     }
   }
+  // === IMAGE UPLOAD (FOR UNCLAIMED RESTAURANTS) === //
+  .edit-image-card {
+    margin: 1rem;
+    border-radius: 12px;
+
+    ion-card-header {
+      ion-card-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        ion-icon {
+          font-size: 1.5rem;
+          color: var(--ion-color-primary);
+        }
+      }
+
+      ion-card-subtitle {
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--ion-color-medium);
+        font-style: italic;
+      }
+    }
+
+    ion-card-content {
+      .image-preview-container {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 1rem;
+        width: 100%;
+
+        img {
+          max-width: 100%;
+          max-height: 300px;
+          border-radius: 12px;
+          object-fit: cover;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+          display: block;
+          margin: 0 auto;
+        }
+
+        ion-button {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          --border-radius: 50%;
+          --padding-start: 8px;
+          --padding-end: 8px;
+          width: 36px;
+          height: 36px;
+
+          ion-icon {
+            font-size: 24px;
+          }
+        }
+      }
+
+      .upload-controls-inline {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
+      .image-hint {
+        margin: 0.75rem 0 0 0;
+        font-size: 0.8125rem;
+        color: var(--ion-color-medium);
+        font-style: italic;
+        text-align: center;
+      }
+    }
+  }
+
   // === BOTTOM SPACER === //
   .bottom-spacer {
     height: 2rem;

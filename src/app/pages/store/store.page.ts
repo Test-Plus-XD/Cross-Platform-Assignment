@@ -92,8 +92,16 @@ export class StorePage implements OnInit, OnDestroy {
     Name_TC: '',
     Description_EN: '',
     Description_TC: '',
-    Price: null
+    Price: null,
+    ImageUrl: null
   };
+
+  // Image upload state
+  selectedRestaurantImage: File | null = null;
+  restaurantImagePreview: string | null = null;
+  selectedMenuItemImage: File | null = null;
+  menuItemImagePreview: string | null = null;
+  isUploadingImage: boolean = false;
 
   // Map marker
   mapMarker: { lat: number; lng: number } | null = null;
@@ -713,17 +721,35 @@ export class StorePage implements OnInit, OnDestroy {
         Price: this.editedMenuItem.Price
       };
 
+      let menuItemId: string;
+
       if (this.editingMenuItemId) {
         // Update existing item
         await this.restaurantsService.updateMenuItem(this.restaurantId, this.editingMenuItemId, payload).toPromise();
-        await this.showToast(this.translations.updateSuccess[language], 'success');
+        menuItemId = this.editingMenuItemId;
       } else {
         // Create new item
-        await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
-        await this.showToast(this.translations.createSuccess[language], 'success');
+        const createResponse = await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
+        menuItemId = createResponse.id;
       }
 
+      // Upload image if selected
+      if (this.selectedMenuItemImage && menuItemId) {
+        const token = await this.authService.getIdToken();
+        if (token) {
+          await this.restaurantsService.uploadMenuItemImage(
+            this.restaurantId,
+            menuItemId,
+            this.selectedMenuItemImage,
+            token
+          ).toPromise();
+        }
+      }
+
+      await this.showToast(this.editingMenuItemId ? this.translations.updateSuccess[lang] : this.translations.createSuccess[lang], 'success');
+
       this.cancelEditingMenu();
+      this.clearMenuItemImageSelection();
       this.loadMenu();
     } catch (error: any) {
       console.error('StorePage: Error saving menu item:', error);
@@ -936,7 +962,148 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Clean up subscriptions and resources when the component is destroyed.
+  // Handle restaurant image file selection
+  onRestaurantImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.showToast('Please select an image file', 'warning');
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        this.showToast('Image size must be less than 10MB', 'warning');
+        return;
+      }
+
+      this.selectedRestaurantImage = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        this.restaurantImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Handle menu item image file selection
+  onMenuItemImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.showToast('Please select an image file', 'warning');
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        this.showToast('Image size must be less than 10MB', 'warning');
+        return;
+      }
+
+      this.selectedMenuItemImage = file;
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        this.menuItemImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Upload restaurant hero image
+  async uploadRestaurantImage(): Promise<void> {
+    if (!this.selectedRestaurantImage || !this.restaurantId) return;
+
+    const lang = await this.getCurrentLanguage();
+    this.isUploadingImage = true;
+
+    const loading = await this.loadingController.create({
+      message: lang === 'TC' ? '上傳圖片中...' : 'Uploading image...',
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      // Get auth token
+      const token = await this.authService.getIdToken();
+      if (!token) {
+        throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
+      }
+
+      // Upload image
+      const response = await this.restaurantsService.uploadRestaurantImage(
+        this.restaurantId,
+        this.selectedRestaurantImage,
+        token
+      ).toPromise();
+
+      // Update restaurant with new image URL
+      if (response && response.imageUrl) {
+        if (this.restaurant) {
+          this.restaurant.ImageUrl = response.imageUrl;
+        }
+        await this.showToast(lang === 'TC' ? '圖片上傳成功' : 'Image uploaded successfully', 'success');
+
+        // Clear selection
+        this.selectedRestaurantImage = null;
+        this.restaurantImagePreview = null;
+
+        // Reload restaurant data
+        this.loadRestaurant();
+      }
+    } catch (error: any) {
+      console.error('StorePage: Error uploading restaurant image:', error);
+      await this.showToast(error.message || (lang === 'TC' ? '圖片上傳失敗' : 'Image upload failed'), 'danger');
+    } finally {
+      this.isUploadingImage = false;
+      await loading.dismiss();
+    }
+  }
+
+  // Clear restaurant image selection
+  clearRestaurantImageSelection(): void {
+    this.selectedRestaurantImage = null;
+    this.restaurantImagePreview = null;
+
+    // Reset file input
+    const fileInput = document.getElementById('restaurant-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  // Clear menu item image selection
+  clearMenuItemImageSelection(): void {
+    this.selectedMenuItemImage = null;
+    this.menuItemImagePreview = null;
+
+    // Reset file input
+    const fileInput = document.getElementById('menu-item-image-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  // Update cancelEditingMenu to clear image selection
+  private originalCancelEditingMenu = this.cancelEditingMenu;
+
+  // Override cancelEditingMenu to also clear menu item image
+  cancelEditingMenuOverride(): void {
+    this.cancelEditingMenu();
+    this.clearMenuItemImageSelection();
+  }
+
+  // Cleanup
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
