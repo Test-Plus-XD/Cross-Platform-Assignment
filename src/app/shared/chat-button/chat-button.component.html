@@ -28,7 +28,22 @@
 
   <!-- Chat messages -->
   <div class="chat-messages">
-    <div *ngIf="messages.length === 0" class="empty-state">
+    <!-- Login prompt -->
+    <div *ngIf="showLoginPrompt" class="login-prompt">
+      <ion-icon name="lock-closed" class="login-icon"></ion-icon>
+      <h3 *ngIf="lang$ | async as lang">
+        {{ lang === 'TC' ? '需要登入' : 'Login Required' }}
+      </h3>
+      <p *ngIf="lang$ | async as lang">
+        {{ lang === 'TC' ? '請登入以與餐廳聊天' : 'Please login to chat with the restaurant' }}
+      </p>
+      <ion-button expand="block" (click)="goToLogin()">
+        <ion-icon name="log-in-outline" slot="start"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? '前往登入' : 'Go to Login' }}
+      </ion-button>
+    </div>
+
+    <div *ngIf="!showLoginPrompt && messages.length === 0" class="empty-state">
       <ion-icon name="chatbubbles-outline" class="empty-icon"></ion-icon>
       <p *ngIf="lang$ | async as lang">
         {{ lang === 'TC' ? '開始對話' : 'Start a conversation' }}
@@ -36,6 +51,7 @@
     </div>
 
     <div
+      *ngIf="!showLoginPrompt"
       *ngFor="let message of messages"
       class="message"
       [class.own]="isOwnMessage(message)"
@@ -47,14 +63,14 @@
       </div>
     </div>
 
-    <div *ngIf="isTyping" class="typing-indicator">
+    <div *ngIf="!showLoginPrompt && isTyping" class="typing-indicator">
       <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
       <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
     </div>
   </div>
 
   <!-- Chat input -->
-  <div class="chat-input">
+  <div class="chat-input" *ngIf="!showLoginPrompt">
     <textarea
       [(ngModel)]="newMessage"
       (input)="onTyping()"

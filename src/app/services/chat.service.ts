@@ -38,7 +38,7 @@ export interface TypingIndicator {
 })
 export class ChatService {
   private socket: Socket | null = null;
-  private readonly apiUrl = environment.apiUrl;
+  private readonly socketUrl = environment.socketUrl;
 
   // Connection state
   private connectionState = new BehaviorSubject<'disconnected' | 'connecting' | 'connected'>('disconnected');
@@ -92,10 +92,10 @@ export class ChatService {
       return;
     }
 
-    console.log('ChatService: Connecting to', this.apiUrl);
+    console.log('ChatService: Connecting to', this.socketUrl);
     this.connectionState.next('connecting');
 
-    this.socket = io(this.apiUrl, {
+    this.socket = io(this.socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,

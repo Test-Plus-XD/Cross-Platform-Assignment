@@ -239,12 +239,6 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
 
   /// Toggle chat window
   toggleChat(): void {
-    // Check if user is logged in
-    if (!this.isLoggedIn) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
     this.isOpen = !this.isOpen;
     this.isDimmed = false;
 
