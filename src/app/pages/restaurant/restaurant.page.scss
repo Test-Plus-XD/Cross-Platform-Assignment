@@ -336,6 +336,23 @@
       margin: 0 0 1rem 0;
     }
 
+    .distance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-secondary-tint));
+      color: var(--ion-color-primary-contrast);
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin: 0 1.5rem 0.75rem 3.25rem;
+
+      ion-icon {
+        font-size: 1.125rem;
+      }
+    }
+
     .map-link {
       display: inline-flex;
       align-items: center;
@@ -779,7 +796,6 @@
       }
     }
   }
-
   // === BOTTOM SPACER === //
   .bottom-spacer {
     height: 2rem;

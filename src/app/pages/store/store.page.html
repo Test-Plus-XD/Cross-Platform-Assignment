@@ -191,8 +191,8 @@
                 <div class="info-value" *ngIf="!isEditingInfo">
                   {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN || '—') : (restaurant?.District_EN || restaurant?.District_TC || '—') }}
                 </div>
-                <div *ngIf="isEditingInfo" class="edit-input-wrapper">
-                  <ion-button fill="outline" size="small" (click)="showDistrictSelector()">
+                <div *ngIf="isEditingInfo" class="edit-input-wrapper inline-selector">
+                  <ion-button fill="outline" size="small" class="selector-button" (click)="showDistrictSelector()">
                     {{ (lang$ | async) === 'TC' ? (editedInfo.District_TC || translations.selectDistrict.TC) : (editedInfo.District_EN || translations.selectDistrict.EN) }}
                     <ion-icon name="chevron-down-outline" slot="end"></ion-icon>
                   </ion-button>
@@ -358,18 +358,18 @@
             </ion-card-header>
             <ion-card-content>
 
+              <!-- Opening Hours -->
               <div *ngFor="let day of weekdays" class="info-row">
                 <div class="info-label">
                   {{ (lang$ | async) === 'TC' ? day.tc : day.en }}
                 </div>
                 <div class="info-value" *ngIf="!isEditingInfo">
-                  {{ restaurant?.Opening_Hours?.[day.en] || (lang$ | async) === 'TC' ? '未設定' : 'Not set' }}
+                  {{ restaurant?.Opening_Hours?.[day.en] || ((lang$ | async) === 'TC' ? '未設定' : 'Not set') }}
                 </div>
                 <div *ngIf="isEditingInfo" class="edit-input-wrapper">
-                  <ion-button fill="outline" size="small" (click)="updateOpeningHours(day.en)">
-                    {{ editedInfo.Opening_Hours[day.en] || ((lang$ | async) === 'TC' ? '點擊設定' : 'Click to set') }}
-                    <ion-icon name="create-outline" slot="end"></ion-icon>
-                  </ion-button>
+                  <ion-input [(ngModel)]="editedInfo.Opening_Hours[day.en]"
+                             [placeholder]="(lang$ | async) === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed'">
+                  </ion-input>
                 </div>
               </div>
 
@@ -671,13 +671,10 @@
               </ion-card-content>
             </ion-card>
           </ion-list>
-
         </div>
-
         <!-- Bottom spacer -->
         <div class="bottom-spacer"></div>
       </div>
-
     </div>
   </ng-container>
 </ion-content>

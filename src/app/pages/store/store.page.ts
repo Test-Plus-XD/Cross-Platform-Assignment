@@ -264,10 +264,8 @@ export class StorePage implements OnInit, OnDestroy {
           this.isLoading = false;
           this.cdr.markForCheck();
 
-          // Initialize edited values
-          if (restaurant) {
-            this.initializeEditedInfo(restaurant);
-          }
+          // Initialise edited values
+          if (restaurant) this.initializeEditedInfo(restaurant);
         },
         error: (err) => {
           console.error('StorePage: Error loading restaurant:', err);
@@ -278,7 +276,7 @@ export class StorePage implements OnInit, OnDestroy {
       });
   }
 
-  // Initialize edited info from restaurant data to ensure all types are correctly assigned.
+  // Initialise edited info from restaurant data to ensure all types are correctly assigned.
   private initializeEditedInfo(restaurant: Restaurant): void {
     this.editedInfo = {
       Name_EN: restaurant.Name_EN || '',
@@ -387,7 +385,7 @@ export class StorePage implements OnInit, OnDestroy {
     this.initializeEditedInfo(this.restaurant);
     this.isEditingInfo = true;
 
-    // Initialize map after a short delay to ensure DOM is ready
+    // Initialise map after a short delay to ensure DOM is ready
     setTimeout(() => {
       this.initializeMap();
     }, 300);
@@ -403,12 +401,9 @@ export class StorePage implements OnInit, OnDestroy {
     this.destroyMap();
   }
 
-  // Initialize Leaflet map component for location selection on the page.
+  // Initialise Leaflet map component for location selection on the page.
   private initializeMap(): void {
-    if (this.mapInitialized || this.map) {
-      return;
-    }
-
+    if (this.mapInitialized || this.map) return;
     const mapContainer = document.getElementById('store-map');
     if (!mapContainer) {
       console.warn('StorePage: Map container not found');
@@ -418,12 +413,14 @@ export class StorePage implements OnInit, OnDestroy {
     // Default center (Hong Kong)
     const defaultLatitude = 22.3193;
     const defaultLongitude = 114.1694;
-
     const centerLatitude = this.editedInfo.Latitude || defaultLatitude;
     const centerLongitude = this.editedInfo.Longitude || defaultLongitude;
 
-    // Initialize map
-    this.map = L.map('store-map').setView([centerLatitude, centerLongitude], 13);
+    // Initialise map
+    this.map = L.map('store-map', {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([centerLatitude, centerLongitude], 13);
 
     // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -431,18 +428,25 @@ export class StorePage implements OnInit, OnDestroy {
       maxZoom: 19
     }).addTo(this.map);
 
-    // Add marker if location exists
+    // Add existing marker if location exists
     if (this.mapMarker) {
       L.marker([this.mapMarker.lat, this.mapMarker.lng]).addTo(this.map);
     }
 
-    // Handle map click
-    this.map.on('click', (Event: L.LeafletMouseEvent) => {
-      this.onMapClickHandler(Event);
+    // Handle map click - properly bind the event
+    this.map.on('click', (event: L.LeafletMouseEvent) => {
+      this.onMapClickHandler(event);
+      this.cdr.markForCheck(); // Trigger change detection after map click
     });
-
     this.mapInitialized = true;
-    console.log('StorePage: Map initialized');
+
+    // Invalidate size to ensure proper rendering
+    setTimeout(() => {
+      if (this.map) {
+        this.map.invalidateSize();
+      }
+    }, 100);
+    console.log('StorePage: Map initialised successfully');
   }
 
   // Handle map click event to update location coordinates and display marker.
@@ -456,7 +460,7 @@ export class StorePage implements OnInit, OnDestroy {
 
     // Clear existing markers
     if (this.map) {
-      this.map.eachLayer((layer) => {
+      this.map.eachLayer((layer: L.Layer) => {
         if (layer instanceof L.Marker) {
           this.map?.removeLayer(layer);
         }
@@ -464,6 +468,7 @@ export class StorePage implements OnInit, OnDestroy {
 
       // Add new marker
       L.marker([latitude, longitude]).addTo(this.map);
+      console.log('StorePage: Location updated to:', latitude.toFixed(6), longitude.toFixed(6));
     }
   }
 
