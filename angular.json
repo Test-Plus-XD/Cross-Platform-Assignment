@@ -33,6 +33,7 @@
             ],
             "styles": [
               "node_modules/leaflet/dist/leaflet.css",
+              "node_modules/photoswipe/dist/photoswipe.css",
               "src/style/global.scss",
               "src/theme/variables.scss"
             ],

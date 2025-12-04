@@ -8,7 +8,6 @@ import { LanguageService } from '../../services/language.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
-import 'photoswipe/style.css';
 
 @Component({
   selector: 'app-chat-button',
