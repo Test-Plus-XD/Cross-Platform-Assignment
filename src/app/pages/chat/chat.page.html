@@ -13,71 +13,6 @@
       <h1>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</h1>
     </div>
 
-    <!-- Information Card for Diner Users -->
-    <ion-card class="info-card" *ngIf="isDiner()">
-      <ion-card-header>
-        <ion-icon name="information-circle" class="card-icon" color="primary"></ion-icon>
-        <ion-card-title>{{ (lang$ | async) === 'TC' ? '給食客的提示' : 'For Diners' }}</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <div class="info-content">
-          <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="primary"></ion-icon>
-          <p *ngIf="(lang$ | async) === 'TC'">
-            您可以在每個餐廳頁面與餐廳老闆聊天。尋找浮動聊天按鈕，與餐廳直接溝通，詢問菜單、預訂或任何問題。
-          </p>
-          <p *ngIf="(lang$ | async) === 'EN'">
-            You can chat with restaurant owners on each restaurant page. Look for the floating chat button to communicate directly with restaurants about menus, reservations, or any questions you may have.
-          </p>
-        </div>
-        <ion-button expand="block" [routerLink]="['/search']" class="action-button">
-          <ion-icon slot="start" name="search"></ion-icon>
-          {{ (lang$ | async) === 'TC' ? '搜尋餐廳' : 'Search Restaurants' }}
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Information Card for Restaurant Users -->
-    <ion-card class="info-card" *ngIf="isRestaurant()">
-      <ion-card-header>
-        <ion-icon name="information-circle" class="card-icon" color="success"></ion-icon>
-        <ion-card-title>{{ (lang$ | async) === 'TC' ? '給餐廳老闆的提示' : 'For Restaurant Owners' }}</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <div class="info-content">
-          <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="success"></ion-icon>
-          <p *ngIf="(lang$ | async) === 'TC'">
-            您將在您的餐廳頁面收到來自顧客的查詢。當顧客有問題或想要預訂時，他們可以使用聊天功能與您聯繫。請及時回覆以提供最佳服務！
-          </p>
-          <p *ngIf="(lang$ | async) === 'EN'">
-            You will receive customer queries on your restaurant page. When customers have questions or want to make reservations, they can reach you through the chat feature. Please respond promptly to provide the best service!
-          </p>
-        </div>
-        <ion-button expand="block" [routerLink]="['/store']" class="action-button">
-          <ion-icon slot="start" name="business"></ion-icon>
-          {{ (lang$ | async) === 'TC' ? '管理我的餐廳' : 'Manage My Restaurant' }}
-        </ion-button>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- General Information Card (if user type is neither Diner nor Restaurant) -->
-    <ion-card class="info-card" *ngIf="!isDiner() && !isRestaurant() && userProfile">
-      <ion-card-header>
-        <ion-icon name="information-circle" class="card-icon" color="medium"></ion-icon>
-        <ion-card-title>{{ (lang$ | async) === 'TC' ? '聊天功能' : 'Chat Feature' }}</ion-card-title>
-      </ion-card-header>
-      <ion-card-content>
-        <div class="info-content">
-          <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="medium"></ion-icon>
-          <p *ngIf="(lang$ | async) === 'TC'">
-            使用聊天功能與餐廳老闆溝通。在每個餐廳頁面尋找聊天按鈕以開始對話。
-          </p>
-          <p *ngIf="(lang$ | async) === 'EN'">
-            Use the chat feature to communicate with restaurant owners. Look for the chat button on each restaurant page to start a conversation.
-          </p>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
     <!-- Not Logged In Message -->
     <ion-card class="info-card" *ngIf="!userProfile">
       <ion-card-header>
@@ -98,16 +33,112 @@
       </ion-card-content>
     </ion-card>
 
-    <!-- Illustration Section -->
-    <div class="illustration-section">
-      <ion-icon name="chatbubbles-outline" class="large-icon"></ion-icon>
-      <h2>{{ (lang$ | async) === 'TC' ? '即時溝通' : 'Real-time Communication' }}</h2>
-      <p *ngIf="(lang$ | async) === 'TC'">
-        通過我們的即時聊天系統，讓餐廳和顧客輕鬆溝通
-      </p>
-      <p *ngIf="(lang$ | async) === 'EN'">
-        Connect restaurants and customers effortlessly through our real-time chat system
-      </p>
+    <!-- Chat Rooms List -->
+    <div class="chat-rooms-section" *ngIf="userProfile">
+      <!-- Empty State - No Chats -->
+      <ion-card class="info-card" *ngIf="chatRooms.length === 0">
+        <ion-card-header>
+          <ion-icon name="chatbubbles-outline" class="card-icon" color="primary"></ion-icon>
+          <ion-card-title>{{ (lang$ | async) === 'TC' ? '沒有對話' : 'No Conversations' }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p *ngIf="(lang$ | async) === 'TC'">
+            您還沒有任何對話。瀏覽餐廳並使用聊天按鈕開始與餐廳老闆溝通。
+          </p>
+          <p *ngIf="(lang$ | async) === 'EN'">
+            You don't have any conversations yet. Browse restaurants and use the chat button to start communicating with restaurant owners.
+          </p>
+          <ion-button expand="block" [routerLink]="['/search']" class="action-button">
+            <ion-icon slot="start" name="search"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '搜尋餐廳' : 'Search Restaurants' }}
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Chat Rooms List -->
+      <div class="chat-rooms-list" *ngIf="chatRooms.length > 0">
+        <h2 class="section-title">
+          {{ (lang$ | async) === 'TC' ? '您的對話' : 'Your Conversations' }}
+          <span class="count-badge">{{ chatRooms.length }}</span>
+        </h2>
+
+        <ion-card *ngFor="let room of chatRooms"
+                  class="chat-room-card"
+                  (click)="openChatRoom(room)">
+          <div class="room-card-content">
+            <!-- Avatar -->
+            <div class="room-avatar">
+              <img *ngIf="getRoomAvatar(room)"
+                   [src]="getRoomAvatar(room)"
+                   [alt]="getRoomDisplayName(room)" />
+              <ion-icon *ngIf="!getRoomAvatar(room)"
+                        name="restaurant"
+                        class="default-avatar-icon"></ion-icon>
+            </div>
+
+            <!-- Room Info -->
+            <div class="room-info">
+              <div class="room-header">
+                <h3 class="room-name">{{ getRoomDisplayName(room) }}</h3>
+                <span class="room-time">{{ formatTimestamp(room.lastMessageAt) }}</span>
+              </div>
+
+              <div class="room-preview">
+                <p class="last-message">
+                  {{ room.lastMessage || ((lang$ | async) === 'TC' ? '開始對話...' : 'Start conversation...') }}
+                </p>
+                <span class="message-count" *ngIf="room.messageCount && room.messageCount > 0">
+                  {{ room.messageCount }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Arrow Icon -->
+            <ion-icon name="chevron-forward" class="arrow-icon"></ion-icon>
+          </div>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Information Cards for Different User Types -->
+    <div class="info-section" *ngIf="userProfile && chatRooms.length === 0">
+      <!-- Diner Info -->
+      <ion-card class="info-card" *ngIf="isDiner()">
+        <ion-card-header>
+          <ion-icon name="information-circle" class="card-icon" color="primary"></ion-icon>
+          <ion-card-title>{{ (lang$ | async) === 'TC' ? '給食客的提示' : 'For Diners' }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="info-content">
+            <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="primary"></ion-icon>
+            <p *ngIf="(lang$ | async) === 'TC'">
+              您可以在每個餐廳頁面與餐廳老闆聊天。尋找浮動聊天按鈕，與餐廳直接溝通，詢問菜單、預訂或任何問題。
+            </p>
+            <p *ngIf="(lang$ | async) === 'EN'">
+              You can chat with restaurant owners on each restaurant page. Look for the floating chat button to communicate directly with restaurants about menus, reservations, or any questions you may have.
+            </p>
+          </div>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Restaurant Owner Info -->
+      <ion-card class="info-card" *ngIf="isRestaurant()">
+        <ion-card-header>
+          <ion-icon name="information-circle" class="card-icon" color="success"></ion-icon>
+          <ion-card-title>{{ (lang$ | async) === 'TC' ? '給餐廳老闆的提示' : 'For Restaurant Owners' }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <div class="info-content">
+            <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="success"></ion-icon>
+            <p *ngIf="(lang$ | async) === 'TC'">
+              您將在您的餐廳頁面收到來自顧客的查詢。當顧客有問題或想要預訂時,他們可以使用聊天功能與您聯繫。請及時回覆以提供最佳服務！
+            </p>
+            <p *ngIf="(lang$ | async) === 'EN'">
+              You will receive customer queries on your restaurant page. When customers have questions or want to make reservations, they can reach you through the chat feature. Please respond promptly to provide the best service!
+            </p>
+          </div>
+        </ion-card-content>
+      </ion-card>
     </div>
   </div>
 </ion-content>

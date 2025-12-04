@@ -8,7 +8,6 @@ export type Lang = 'EN' | 'TC';
 export class LanguageService {
   // BehaviourSubject that holds the current language
   private _lang = new BehaviorSubject<Lang>(this.getSaved());
-
   // Public observable the UI subscribes to
   lang$ = this._lang.asObservable();
 
@@ -18,15 +17,20 @@ export class LanguageService {
     return saved || 'EN';
   }
 
+  // Return the currently active language as a value, not an observable
+  getCurrentLanguage(): Lang {
+    return this._lang.value; // Return latest emitted language
+  }
+
   // Set a language and persist to localStorage, then emit it
   setLang(language: Lang) {
     localStorage.setItem('language', language);
-    this._lang.next(language);
+    this._lang.next(language); // Emit updated language
   }
 
   toggleLanguage() {
     const current = this._lang.value;
-    this.setLang(current === 'EN' ? 'TC' : 'EN');
+    this.setLang(current === 'EN' ? 'TC' : 'EN'); // Toggle between EN and TC
   }
 
   // Initialise service and sync with DOM on app start

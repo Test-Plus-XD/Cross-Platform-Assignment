@@ -1,4 +1,4 @@
-// Floating action button - matching Gemini button style
+// Floating action button
 .chat-fab {
   position: fixed;
   bottom: 80px;
@@ -42,8 +42,6 @@
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
-    overflow: hidden;
-    transition: all 0.3s ease;
   }
 
   .unread-badge {
@@ -64,7 +62,7 @@
   }
 }
 
-// Chat window - matching Gemini window size and position
+// Chat window
 .chat-window {
   position: fixed;
   bottom: 80px;
@@ -261,6 +259,28 @@
         opacity: 0.8;
       }
 
+      .message-image-link {
+        display: block;
+        margin: 8px 0;
+        cursor: pointer;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .message-image {
+          width: 100%;
+          height: auto;
+          max-height: 200px;
+          object-fit: cover;
+          display: block;
+          border-radius: 8px;
+          transition: transform 0.2s ease;
+
+          &:hover {
+            transform: scale(1.02);
+          }
+        }
+      }
+
       .message-text {
         margin: 0;
         font-size: 14px;
@@ -305,6 +325,7 @@
     opacity: 0.5;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.1);
@@ -314,12 +335,99 @@
 // Chat input
 .chat-input {
   padding: 12px 16px;
-  display: flex;
-  gap: 8px;
-  align-items: flex-end;
   background: var(--ion-background-color);
   border-top: 1px solid var(--ion-color-light);
-  z-index: 1000;
+
+  .image-preview-container {
+    margin-bottom: 8px;
+
+    .image-preview {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+
+      img {
+        max-width: 100%;
+        max-height: 150px;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+
+      .remove-image {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        ion-icon {
+          font-size: 20px;
+        }
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.8);
+        }
+      }
+    }
+
+    .upload-progress {
+      margin-top: 4px;
+      height: 2px;
+      background: var(--ion-color-light);
+      border-radius: 2px;
+      overflow: hidden;
+
+      .progress-bar {
+        height: 100%;
+        background: var(--ion-color-primary);
+        transition: width 0.3s ease;
+      }
+    }
+  }
+
+  .input-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .image-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: var(--ion-color-light);
+    color: var(--ion-color-medium);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    ion-icon {
+      font-size: 20px;
+    }
+
+    &:hover:not(:disabled) {
+      background: var(--ion-color-medium);
+      color: white;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
 
   textarea {
     flex: 1;
@@ -371,29 +479,6 @@
       opacity: 0.4;
       cursor: not-allowed;
     }
-  }
-}
-
-// Desktop/Web platform optimizations
-@media (min-width: 769px) {
-  .chat-fab {
-    // Ensure proper layering on desktop
-    z-index: 1000;
-
-    // Add hover effect for desktop
-    &:not(.open):hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    }
-  }
-
-  .chat-window {
-    // Ensure proper layering on desktop
-    z-index: 999;
-
-    // Better positioning for desktop
-    max-height: 700px;
-    height: 600px;
   }
 }
 

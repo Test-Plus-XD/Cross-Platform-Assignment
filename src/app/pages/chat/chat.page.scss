@@ -76,35 +76,147 @@
   }
 }
 
-// Illustration Section
-.illustration-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
+// Chat Rooms Section
+.chat-rooms-section {
+  margin-bottom: 24px;
 
-  .large-icon {
-    font-size: 120px;
-    color: var(--ion-color-medium);
-    opacity: 0.3;
-    margin-bottom: 20px;
-  }
-
-  h2 {
-    font-size: 24px;
+  .section-title {
+    font-size: 20px;
     font-weight: 600;
-    margin: 0 0 12px 0;
+    margin: 0 0 16px 0;
+    padding: 0 8px;
     color: var(--ion-text-color);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 8px;
+      border-radius: 14px;
+      background: var(--ion-color-primary);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  }
+}
+
+// Chat Room Card
+.chat-room-card {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
 
-  p {
-    font-size: 16px;
+  .room-card-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .room-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--ion-color-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .default-avatar-icon {
+      font-size: 32px;
+      color: var(--ion-color-medium);
+    }
+  }
+
+  .room-info {
+    flex: 1;
+    min-width: 0; // Allows text truncation to work
+    overflow: hidden;
+
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      gap: 8px;
+
+      .room-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        color: var(--ion-text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+
+      .room-time {
+        font-size: 12px;
+        color: var(--ion-color-medium);
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+    }
+
+    .room-preview {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+
+      .last-message {
+        font-size: 14px;
+        color: var(--ion-color-medium);
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+      }
+
+      .message-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 11px;
+        background: var(--ion-color-primary);
+        color: white;
+        font-size: 11px;
+        font-weight: 600;
+        flex-shrink: 0;
+      }
+    }
+  }
+
+  .arrow-icon {
+    font-size: 20px;
     color: var(--ion-color-medium);
-    margin: 0;
-    max-width: 500px;
-    line-height: 1.5;
+    flex-shrink: 0;
   }
 }
 
@@ -126,6 +238,11 @@
     color: var(--ion-color-medium);
     font-size: 14px;
   }
+}
+
+// Info Section
+.info-section {
+  margin-top: 24px;
 }
 
 // Responsive design
@@ -160,19 +277,36 @@
     }
   }
 
-  .illustration-section {
-    padding: 30px 16px;
-
-    .large-icon {
-      font-size: 80px;
+  .chat-room-card {
+    .room-card-content {
+      padding: 10px;
     }
 
-    h2 {
-      font-size: 20px;
+    .room-avatar {
+      width: 48px;
+      height: 48px;
+
+      .default-avatar-icon {
+        font-size: 28px;
+      }
     }
 
-    p {
-      font-size: 14px;
+    .room-info {
+      .room-header {
+        .room-name {
+          font-size: 15px;
+        }
+
+        .room-time {
+          font-size: 11px;
+        }
+      }
+
+      .room-preview {
+        .last-message {
+          font-size: 13px;
+        }
+      }
     }
   }
 }

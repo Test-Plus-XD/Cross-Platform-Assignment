@@ -43,6 +43,7 @@
       </ion-button>
     </div>
 
+    <!-- Empty state -->
     <div *ngIf="!showLoginPrompt && messages.length === 0" class="empty-state">
       <ion-icon name="chatbubbles-outline" class="empty-icon"></ion-icon>
       <p *ngIf="lang$ | async as lang">
@@ -50,20 +51,38 @@
       </p>
     </div>
 
+    <!-- Messages -->
     <ng-container *ngIf="!showLoginPrompt">
       <div
         *ngFor="let message of messages"
         class="message"
-        [class.own]="isOwnMessage(message)"
-      >
+        [class.own]="isOwnMessage(message)">
         <div class="message-content">
           <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
-          <p class="message-text">{{ message.message }}</p>
+          
+          <!-- Image message -->
+          <a 
+            *ngIf="hasImage(message)"
+            [href]="getImageUrl(message)"
+            [attr.data-pswp-width]="800"
+            [attr.data-pswp-height]="600"
+            class="message-image-link"
+            target="_blank">
+            <img 
+              [src]="getImageUrl(message)" 
+              alt="Image" 
+              class="message-image"
+              loading="lazy" />
+          </a>
+          
+          <!-- Text message -->
+          <p class="message-text" *ngIf="message.message">{{ message.message }}</p>
           <span class="message-time">{{ formatTime(message.timestamp) }}</span>
         </div>
       </div>
     </ng-container>
 
+    <!-- Typing indicator -->
     <div *ngIf="!showLoginPrompt && isTyping" class="typing-indicator">
       <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
       <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
@@ -72,20 +91,55 @@
 
   <!-- Chat input -->
   <div class="chat-input" *ngIf="!showLoginPrompt">
-    <textarea
-      [(ngModel)]="newMessage"
-      (input)="onTyping()"
-      (keydown.enter)="$event.preventDefault(); sendMessage()"
-      [placeholder]="(lang$ | async) === 'TC' ? '輸入訊息...' : 'Type a message...'"
-      rows="1"
-      [disabled]="!isConnected"
-    ></textarea>
-    <button
-      (click)="sendMessage()"
-      [disabled]="!newMessage.trim() || !isConnected"
-      class="send-button"
-    >
-      <ion-icon name="send"></ion-icon>
-    </button>
+    <!-- Image preview -->
+    <div class="image-preview-container" *ngIf="previewUrl">
+      <div class="image-preview">
+        <img [src]="previewUrl" alt="Preview" />
+        <button class="remove-image" (click)="clearImage()">
+          <ion-icon name="close-circle"></ion-icon>
+        </button>
+      </div>
+      <div class="upload-progress" *ngIf="isUploadingImage">
+        <div class="progress-bar" [style.width.%]="uploadProgress"></div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <!-- Image upload button -->
+      <button 
+        class="image-button" 
+        (click)="selectImage()"
+        [disabled]="!isConnected || isUploadingImage"
+        type="button">
+        <ion-icon name="image"></ion-icon>
+      </button>
+      
+      <!-- Hidden file input -->
+      <input 
+        #fileInput
+        type="file" 
+        accept="image/*" 
+        (change)="onImageSelected($event)"
+        style="display: none;"/>
+
+      <!-- Text input -->
+      <textarea
+        [(ngModel)]="newMessage"
+        (input)="onTyping()"
+        (keydown.enter)="$event.preventDefault(); sendMessage()"
+        [placeholder]="(lang$ | async) === 'TC' ? '輸入訊息...' : 'Type a message...'"
+        rows="1"
+        [disabled]="!isConnected || isUploadingImage" >
+      </textarea>
+
+      <!-- Send button -->
+      <button
+        (click)="sendMessage()"
+        [disabled]="(!newMessage.trim() && !selectedImage) || !isConnected || isUploadingImage"
+        class="send-button"
+        type="button">
+        <ion-icon [name]="isUploadingImage ? 'hourglass' : 'send'"></ion-icon>
+      </button>
+    </div>
   </div>
 </div>
