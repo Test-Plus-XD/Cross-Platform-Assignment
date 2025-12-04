@@ -208,7 +208,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
         success: boolean;
         imageUrl: string;
       }>(
-        `${environment.apiUrl}/API/Images/upload?folder=chat`,
+        `${environment.apiUrl}/API/Images/upload?folder=Chat`,
         formData,
         { headers }
       ).toPromise();
