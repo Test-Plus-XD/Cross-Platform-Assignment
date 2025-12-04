@@ -1,17 +1,13 @@
 // Store management page for Restaurant-type users
 // Provides restaurant info editing, menu management, and bookings overview
-import { Component, OnInit, OnDestroy, Injector, AfterViewInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
-import { BookingService, Booking } from '../../services/booking.service';
-import { AuthService } from '../../services/auth.service';
-import { LanguageService } from '../../services/language.service';
-import { ThemeService } from '../../services/theme.service';
-import { PlatformService } from '../../services/platform.service';
-import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
-import { UserService } from '../../services/user.service';
+import { Booking } from '../../services/booking.service';
+import { Restaurant, MenuItem } from '../../services/restaurants.service';
+import { StoreFeatureService } from '../../services/store-feature.service';
 import { District, Districts } from '../../constants/districts.const';
 import { Keyword, Keywords } from '../../constants/keywords.const';
 import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
@@ -27,8 +23,8 @@ import * as L from 'leaflet';
 })
 export class StorePage implements OnInit, OnDestroy {
   // Language and platform streams
-  lang$ = this.languageService.lang$;
-  isDark$ = this.themeService.isDark$;
+  lang$ = this.feature.language.lang$;
+  isDark$ = this.feature.theme.isDark$;
   isMobile$: Observable<boolean>;
   // Current language for template binding (updated from lang$ stream)
   currentLanguage: 'EN' | 'TC' = 'EN';
@@ -178,20 +174,15 @@ export class StorePage implements OnInit, OnDestroy {
   };
 
   constructor(
-    private readonly bookingService: BookingService,
-    private readonly authService: AuthService,
-    private readonly languageService: LanguageService,
-    private readonly themeService: ThemeService,
-    private readonly platformService: PlatformService,
-    private readonly restaurantsService: RestaurantsService,
+    private readonly feature: StoreFeatureService,
     private readonly router: Router,
     private readonly alertController: AlertController,
     private readonly toastController: ToastController,
     private readonly loadingController: LoadingController,
     private readonly modalController: ModalController,
-    private readonly injector: Injector
+    private readonly cdr: ChangeDetectorRef
   ) {
-    this.isMobile$ = this.platformService.isMobile$;
+    this.isMobile$ = this.feature.platform.isMobile$;
   }
 
   ngOnInit(): void {
@@ -216,19 +207,19 @@ export class StorePage implements OnInit, OnDestroy {
     this.isRestaurantLoading = true;
     console.log('StorePage: Starting loadRestaurantData');
 
-    const currentUser = this.authService.currentUser;
+    const currentUser = this.feature.auth.currentUser;
     console.log('StorePage: Current user:', currentUser?.uid);
 
     if (!currentUser || !currentUser.uid) {
       console.warn('StorePage: No authenticated user found');
       this.isRestaurantLoading = false;
       this.isLoading = false;
+      this.cdr.markForCheck();
       return;
     }
 
     // Fetch user profile to get restaurantId
-    const userService = this.injector.get(UserService);
-    userService.getUserProfile(currentUser.uid)
+    this.feature.user.getUserProfile(currentUser.uid)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (userProfile) => {
@@ -263,7 +254,7 @@ export class StorePage implements OnInit, OnDestroy {
   private loadRestaurant(): void {
     if (!this.restaurantId) return;
 
-    this.restaurantsService.getRestaurantById(this.restaurantId)
+    this.feature.restaurants.getRestaurantById(this.restaurantId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (restaurant) => {
@@ -271,6 +262,7 @@ export class StorePage implements OnInit, OnDestroy {
           this.restaurant = restaurant;
           this.isRestaurantLoading = false;
           this.isLoading = false;
+          this.cdr.markForCheck();
 
           // Initialize edited values
           if (restaurant) {
@@ -281,6 +273,7 @@ export class StorePage implements OnInit, OnDestroy {
           console.error('StorePage: Error loading restaurant:', err);
           this.isRestaurantLoading = false;
           this.isLoading = false;
+          this.cdr.markForCheck();
         }
       });
   }
@@ -336,17 +329,19 @@ export class StorePage implements OnInit, OnDestroy {
     if (!this.restaurantId) return;
 
     this.isMenuLoading = true;
-    this.restaurantsService.getMenuItems(this.restaurantId)
+    this.feature.restaurants.getMenuItems(this.restaurantId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
           console.log('StorePage: Menu loaded:', items.length, 'items');
           this.menuItems = items;
           this.isMenuLoading = false;
+          this.cdr.markForCheck();
         },
         error: (err) => {
           console.error('StorePage: Error loading menu:', err);
           this.isMenuLoading = false;
+          this.cdr.markForCheck();
         }
       });
   }
@@ -356,17 +351,19 @@ export class StorePage implements OnInit, OnDestroy {
     if (!this.restaurantId) return;
 
     this.isBookingsLoading = true;
-    this.bookingService.getRestaurantBookings(this.restaurantId, true)
+    this.feature.bookings.getRestaurantBookings(this.restaurantId, true)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (bookings) => {
           console.log('StorePage: Bookings loaded:', bookings.length);
           this.bookings = bookings;
           this.isBookingsLoading = false;
+          this.cdr.markForCheck();
         },
         error: (err) => {
           console.error('StorePage: Error loading bookings:', err);
           this.isBookingsLoading = false;
+          this.cdr.markForCheck();
         }
       });
   }
@@ -514,10 +511,11 @@ export class StorePage implements OnInit, OnDestroy {
         Opening_Hours: Object.keys(this.editedInfo.Opening_Hours).length ? this.editedInfo.Opening_Hours : null
       };
 
-      await this.restaurantsService.updateRestaurant(this.restaurantId, payload).toPromise();
+      await this.feature.restaurants.updateRestaurant(this.restaurantId, payload).toPromise();
 
       await this.showToast(this.translations.updateSuccess[language], 'success');
       this.isEditingInfo = false;
+      this.cdr.markForCheck();
 
       // Reload restaurant data
       this.loadRestaurant();
@@ -729,11 +727,11 @@ export class StorePage implements OnInit, OnDestroy {
 
       if (this.editingMenuItemId) {
         // Update existing item
-        await this.restaurantsService.updateMenuItem(this.restaurantId, this.editingMenuItemId, payload).toPromise();
+        await this.feature.restaurants.updateMenuItem(this.restaurantId, this.editingMenuItemId, payload).toPromise();
         menuItemId = this.editingMenuItemId;
       } else {
         // Create new item
-        const createResponse = await this.restaurantsService.createMenuItem(this.restaurantId, payload).toPromise();
+        const createResponse = await this.feature.restaurants.createMenuItem(this.restaurantId, payload).toPromise();
         if (!createResponse || !createResponse.id) {
           throw new Error('Failed to create menu item');
         }
@@ -742,9 +740,9 @@ export class StorePage implements OnInit, OnDestroy {
 
       // Upload image if selected
       if (this.selectedMenuItemImage && menuItemId) {
-        const token = await this.authService.getIdToken();
+        const token = await this.feature.auth.getIdToken();
         if (token) {
-          await this.restaurantsService.uploadMenuItemImage(
+          await this.feature.restaurants.uploadMenuItemImage(
             this.restaurantId,
             menuItemId,
             this.selectedMenuItemImage,
@@ -788,7 +786,7 @@ export class StorePage implements OnInit, OnDestroy {
             await loading.present();
 
             try {
-              await this.restaurantsService.deleteMenuItem(this.restaurantId!, item.id!).toPromise();
+              await this.feature.restaurants.deleteMenuItem(this.restaurantId!, item.id!).toPromise();
               await this.showToast(this.translations.deleteSuccess[language], 'success');
               this.loadMenu();
             } catch (error: any) {
@@ -859,7 +857,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Check if the user is logged in via the authentication service.
   get isLoggedIn(): boolean {
-    return this.authService.isLoggedIn;
+    return this.feature.auth.isLoggedIn;
   }
 
   // Check if the user has a linked restaurant and the restaurant data has been loaded.
@@ -970,7 +968,7 @@ export class StorePage implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      await this.bookingService.updateBooking(booking.id ?? '', { status: newStatus }).toPromise();
+      await this.feature.bookings.updateBooking(booking.id ?? '', { status: newStatus }).toPromise();
       await this.showToast(isTC ? this.translations.bookingUpdated.TC : this.translations.bookingUpdated.EN, 'success');
       this.loadBookings();
     } catch (error: any) {
@@ -1054,13 +1052,13 @@ export class StorePage implements OnInit, OnDestroy {
 
     try {
       // Get auth token
-      const token = await this.authService.getIdToken();
+      const token = await this.feature.auth.getIdToken();
       if (!token) {
         throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
       }
 
       // Upload image
-      const response = await this.restaurantsService.uploadRestaurantImage(
+      const response = await this.feature.restaurants.uploadRestaurantImage(
         this.restaurantId,
         this.selectedRestaurantImage,
         token
