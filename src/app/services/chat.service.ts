@@ -4,7 +4,7 @@ import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
-// Chat message interface
+/// Chat message interface defines the structure of messages exchanged in chat rooms
 export interface ChatMessage {
   messageId: string;
   roomId: string;
@@ -15,7 +15,7 @@ export interface ChatMessage {
   type?: 'text' | 'image' | 'file';
 }
 
-// Chat room interface
+/// Chat room interface defines the structure of chat rooms and their metadata
 export interface ChatRoom {
   roomId: string;
   name?: string;
@@ -25,7 +25,7 @@ export interface ChatRoom {
   unreadCount?: number;
 }
 
-// Typing indicator
+/// Typing indicator interface tracks which users are currently typing in a room
 export interface TypingIndicator {
   roomId: string;
   userId: string;
@@ -37,302 +37,257 @@ export interface TypingIndicator {
   providedIn: 'root'
 })
 export class ChatService {
-  private socket: Socket | null = null;
-  private readonly socketUrl = environment.socketUrl;
+  private Socket: Socket | null = null;
+  private readonly SocketUrl = environment.socketUrl;
+  // Connection state tracks the current Socket.IO connection status
+  private ConnectionState = new BehaviorSubject<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  public ConnectionState$ = this.ConnectionState.asObservable();
+  // Messages stream emits all incoming chat messages from rooms
+  private Messages = new Subject<ChatMessage>();
+  public Messages$ = this.Messages.asObservable();
+  // Private messages stream emits direct messages between users
+  private PrivateMessages = new Subject<ChatMessage>();
+  public PrivateMessages$ = this.PrivateMessages.asObservable();
+  // Typing indicators stream emits typing status updates for all rooms
+  private TypingIndicators = new Subject<TypingIndicator>();
+  public TypingIndicators$ = this.TypingIndicators.asObservable();
+  // Active rooms tracks which chat rooms the user has joined
+  private ActiveRooms = new BehaviorSubject<string[]>([]);
+  public ActiveRooms$ = this.ActiveRooms.asObservable();
+  // Online users map tracks the online/offline status of all known users
+  private OnlineUsers = new BehaviorSubject<Map<string, boolean>>(new Map());
+  public OnlineUsers$ = this.OnlineUsers.asObservable();
 
-  // Connection state
-  private connectionState = new BehaviorSubject<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  public connectionState$ = this.connectionState.asObservable();
-
-  // Messages stream
-  private messages = new Subject<ChatMessage>();
-  public messages$ = this.messages.asObservable();
-
-  // Private messages stream
-  private privateMessages = new Subject<ChatMessage>();
-  public privateMessages$ = this.privateMessages.asObservable();
-
-  // Typing indicators stream
-  private typingIndicators = new Subject<TypingIndicator>();
-  public typingIndicators$ = this.typingIndicators.asObservable();
-
-  // Active rooms
-  private activeRooms = new BehaviorSubject<string[]>([]);
-  public activeRooms$ = this.activeRooms.asObservable();
-
-  // User online status
-  private onlineUsers = new BehaviorSubject<Map<string, boolean>>(new Map());
-  public onlineUsers$ = this.onlineUsers.asObservable();
-
-  constructor(private readonly authService: AuthService) {
+  constructor(private readonly AuthService: AuthService) {
     console.log('ChatService: Initialised');
-
-    // Auto-connect when user logs in
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.connect();
-      } else {
-        this.disconnect();
-      }
+    // Auto-connect is triggered when user authentication state changes
+    this.AuthService.currentUser$.subscribe(User => {
+      if (User) this.connect();
+      else this.disconnect();
     });
   }
 
-  /**
-   * Connect to Socket.IO server
-   */
+  /// Establishes connection to the Socket.IO server with authentication
   connect(): void {
-    if (this.socket?.connected) {
+    if (this.Socket?.connected) {
       console.log('ChatService: Already connected');
       return;
     }
-
-    const user = this.authService.currentUser;
-    if (!user) {
+    const User = this.AuthService.currentUser;
+    if (!User) {
       console.warn('ChatService: Cannot connect without authenticated user');
       return;
     }
-
-    console.log('ChatService: Connecting to', this.socketUrl);
-    this.connectionState.next('connecting');
-
-    this.socket = io(this.socketUrl, {
+    console.log('ChatService: Connecting to', this.SocketUrl);
+    this.ConnectionState.next('connecting');
+    // Socket instance is created with reconnection settings for reliability
+    this.Socket = io(this.SocketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: 5
     });
-
     this.setupListeners();
   }
 
-  /**
-   * Setup Socket.IO event listeners
-   */
+  /// Configures all Socket.IO event listeners for connection, messages, and presence
   private setupListeners(): void {
-    if (!this.socket) return;
-
-    // Connection events
-    this.socket.on('connect', () => {
+    if (!this.Socket) return;
+    // Connection event indicates successful Socket.IO connection
+    this.Socket.on('connect', () => {
       console.log('ChatService: Connected to server');
-      this.connectionState.next('connected');
+      this.ConnectionState.next('connected');
       this.registerUser();
     });
-
-    this.socket.on('disconnect', (reason) => {
-      console.log('ChatService: Disconnected:', reason);
-      this.connectionState.next('disconnected');
+    // Disconnect event fires when connection to server is lost
+    this.Socket.on('disconnect', (Reason) => {
+      console.log('ChatService: Disconnected:', Reason);
+      this.ConnectionState.next('disconnected');
     });
-
-    this.socket.on('connect_error', (error) => {
-      console.error('ChatService: Connection error:', error);
-      this.connectionState.next('disconnected');
+    // Connection error event handles failed connection attempts
+    this.Socket.on('connect_error', (Error) => {
+      console.error('ChatService: Connection error:', Error);
+      this.ConnectionState.next('disconnected');
     });
-
-    // Registration response
-    this.socket.on('registered', (data: { success: boolean; userId: string; socketId: string }) => {
-      console.log('ChatService: Registered successfully', data);
+    // Registration response confirms user registration with server
+    this.Socket.on('registered', (Data: { success: boolean; userId: string; socketId: string }) => {
+      console.log('ChatService: Registered successfully', Data);
     });
-
-    // Room events
-    this.socket.on('joined-room', (data: { roomId: string; success: boolean }) => {
-      console.log('ChatService: Joined room', data.roomId);
-      if (data.success) {
-        const rooms = this.activeRooms.value;
-        if (!rooms.includes(data.roomId)) {
-          this.activeRooms.next([...rooms, data.roomId]);
-        }
+    // Joined room event confirms successful room join operation
+    this.Socket.on('joined-room', (Data: { roomId: string; success: boolean }) => {
+      console.log('ChatService: Joined room', Data.roomId);
+      if (Data.success) {
+        const Rooms = this.ActiveRooms.value;
+        if (!Rooms.includes(Data.roomId)) this.ActiveRooms.next([...Rooms, Data.roomId]);
       }
     });
-
-    this.socket.on('user-joined-room', (data: { roomId: string; userId: string; timestamp: string }) => {
-      console.log('ChatService: User joined room', data);
+    // User joined room event notifies when another user joins a room
+    this.Socket.on('user-joined-room', (Data: { roomId: string; userId: string; timestamp: string }) => {
+      console.log('ChatService: User joined room', Data);
     });
-
-    this.socket.on('user-left-room', (data: { roomId: string; userId: string; timestamp: string }) => {
-      console.log('ChatService: User left room', data);
+    // User left room event notifies when another user leaves a room
+    this.Socket.on('user-left-room', (Data: { roomId: string; userId: string; timestamp: string }) => {
+      console.log('ChatService: User left room', Data);
     });
-
-    // Message events
-    this.socket.on('new-message', (message: ChatMessage) => {
-      console.log('ChatService: New message received', message);
-      this.messages.next(message);
+    // New message event delivers incoming messages from chat rooms
+    this.Socket.on('new-message', (Message: ChatMessage) => {
+      console.log('ChatService: New message received', Message);
+      this.Messages.next(Message);
     });
-
-    this.socket.on('private-message', (message: {
+    // Private message event delivers direct messages between users
+    this.Socket.on('private-message', (Message: {
       fromUserId: string;
       fromDisplayName: string;
       message: string;
       timestamp: string;
       messageId: string;
     }) => {
-      console.log('ChatService: Private message received', message);
-      const chatMessage: ChatMessage = {
-        messageId: message.messageId,
-        roomId: `private-${message.fromUserId}`,
-        userId: message.fromUserId,
-        displayName: message.fromDisplayName,
-        message: message.message,
-        timestamp: message.timestamp
+      console.log('ChatService: Private message received', Message);
+      const ChatMessage: ChatMessage = {
+        messageId: Message.messageId,
+        roomId: `private-${Message.fromUserId}`,
+        userId: Message.fromUserId,
+        displayName: Message.fromDisplayName,
+        message: Message.message,
+        timestamp: Message.timestamp
       };
-      this.privateMessages.next(chatMessage);
+      this.PrivateMessages.next(ChatMessage);
     });
-
-    // Typing indicators
-    this.socket.on('user-typing', (data: TypingIndicator) => {
-      console.log('ChatService: User typing', data);
-      this.typingIndicators.next(data);
+    // User typing event indicates when users are actively typing
+    this.Socket.on('user-typing', (Data: TypingIndicator) => {
+      console.log('ChatService: User typing', Data);
+      this.TypingIndicators.next(Data);
     });
-
-    // User presence
-    this.socket.on('user-online', (data: { userId: string; displayName: string; timestamp: string }) => {
-      console.log('ChatService: User online', data.userId);
-      const users = this.onlineUsers.value;
-      users.set(data.userId, true);
-      this.onlineUsers.next(new Map(users));
+    // User online event updates presence status when users come online
+    this.Socket.on('user-online', (Data: { userId: string; displayName: string; timestamp: string }) => {
+      console.log('ChatService: User online', Data.userId);
+      const Users = this.OnlineUsers.value;
+      Users.set(Data.userId, true);
+      this.OnlineUsers.next(new Map(Users));
     });
-
-    this.socket.on('user-offline', (data: { userId: string; displayName: string; lastSeen: string }) => {
-      console.log('ChatService: User offline', data.userId);
-      const users = this.onlineUsers.value;
-      users.set(data.userId, false);
-      this.onlineUsers.next(new Map(users));
+    // User offline event updates presence status when users go offline
+    this.Socket.on('user-offline', (Data: { userId: string; displayName: string; lastSeen: string }) => {
+      console.log('ChatService: User offline', Data.userId);
+      const Users = this.OnlineUsers.value;
+      Users.set(Data.userId, false);
+      this.OnlineUsers.next(new Map(Users));
     });
   }
 
-  /**
-   * Register user with server
-   */
+  /// Registers the current user with the Socket.IO server for presence tracking
   private registerUser(): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket) return;
-
-    console.log('ChatService: Registering user', user.uid);
-    this.socket.emit('register', {
-      userId: user.uid,
-      displayName: user.displayName || user.email || 'Anonymous'
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket) return;
+    console.log('ChatService: Registering user', User.uid);
+    this.Socket.emit('register', {
+      userId: User.uid,
+      displayName: User.displayName || User.email || 'Anonymous'
     });
   }
 
-  /**
-   * Join a chat room
-   */
-  joinRoom(roomId: string): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket?.connected) {
+  /// Joins a chat room with authentication token for API verification
+  async joinRoom(RoomId: string): Promise<void> {
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket?.connected) {
       console.warn('ChatService: Cannot join room, not connected');
       return;
     }
-
-    console.log('ChatService: Joining room', roomId);
-    this.socket.emit('join-room', {
-      roomId,
-      userId: user.uid
+    // Firebase ID token is retrieved for API authentication
+    const AuthToken = await this.AuthService.getIdToken();
+    console.log('ChatService: Joining room', RoomId);
+    this.Socket.emit('join-room', {
+      roomId: RoomId,
+      userId: User.uid,
+      authToken: AuthToken
     });
   }
 
-  /**
-   * Leave a chat room
-   */
-  leaveRoom(roomId: string): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket?.connected) {
+  /// Leaves a chat room with authentication token for API verification
+  async leaveRoom(RoomId: string): Promise<void> {
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket?.connected) {
       console.warn('ChatService: Cannot leave room, not connected');
       return;
     }
-
-    console.log('ChatService: Leaving room', roomId);
-    this.socket.emit('leave-room', {
-      roomId,
-      userId: user.uid
+    // Firebase ID token is retrieved for API authentication
+    const AuthToken = await this.AuthService.getIdToken();
+    console.log('ChatService: Leaving room', RoomId);
+    this.Socket.emit('leave-room', {
+      roomId: RoomId,
+      userId: User.uid,
+      authToken: AuthToken
     });
-
-    // Remove from active rooms
-    const rooms = this.activeRooms.value.filter(r => r !== roomId);
-    this.activeRooms.next(rooms);
+    // Room is removed from active rooms list after leaving
+    const Rooms = this.ActiveRooms.value.filter(Room => Room !== RoomId);
+    this.ActiveRooms.next(Rooms);
   }
 
-  /**
-   * Send a message to a room
-   */
-    async sendMessage(roomId: string, message: string): Promise<void> {
-      const user = this.authService.currentUser;
-      if (!user || !this.socket?.connected) {
-        console.warn('ChatService: Cannot send message, not connected');
-        return;
-      }
-
-      // Retrieve the Firebase ID token for API authentication
-      const authToken = await this.authService.getIdToken();
-
-      console.log('ChatService: Sending message to room', roomId);
-      this.socket.emit('send-message', {
-        roomId,
-        userId: user.uid,
-        displayName: user.displayName || user.email || 'Anonymous',
-        message,
-        authToken // Include auth token for API persistence
-      });
+  /// Sends a message to a chat room with authentication token for API persistence
+  async sendMessage(RoomId: string, Message: string): Promise<void> {
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket?.connected) {
+      console.warn('ChatService: Cannot send message, not connected');
+      return;
     }
+    // Firebase ID token is retrieved for API authentication
+    const AuthToken = await this.AuthService.getIdToken();
+    console.log('ChatService: Sending message to room', RoomId);
+    this.Socket.emit('send-message', {
+      roomId: RoomId,
+      userId: User.uid,
+      displayName: User.displayName || User.email || 'Anonymous',
+      message: Message,
+      authToken: AuthToken
+    });
+  }
 
-  /**
-   * Send a private message to a user
-   */
-  sendPrivateMessage(toUserId: string, message: string): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket?.connected) {
+  /// Sends a private message directly to another user
+  sendPrivateMessage(ToUserId: string, Message: string): void {
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket?.connected) {
       console.warn('ChatService: Cannot send private message, not connected');
       return;
     }
-
-    console.log('ChatService: Sending private message to', toUserId);
-    this.socket.emit('private-message', {
-      toUserId,
-      fromUserId: user.uid,
-      fromDisplayName: user.displayName || user.email || 'Anonymous',
-      message
+    console.log('ChatService: Sending private message to', ToUserId);
+    this.Socket.emit('private-message', {
+      toUserId: ToUserId,
+      fromUserId: User.uid,
+      fromDisplayName: User.displayName || User.email || 'Anonymous',
+      message: Message
     });
   }
 
-  /**
-   * Send typing indicator
-   */
-  sendTypingIndicator(roomId: string, isTyping: boolean): void {
-    const user = this.authService.currentUser;
-    if (!user || !this.socket?.connected) return;
-
-    this.socket.emit('typing', {
-      roomId,
-      userId: user.uid,
-      displayName: user.displayName || user.email || 'Anonymous',
-      isTyping
+  /// Sends typing indicator to notify other users of typing activity
+  sendTypingIndicator(RoomId: string, IsTyping: boolean): void {
+    const User = this.AuthService.currentUser;
+    if (!User || !this.Socket?.connected) return;
+    this.Socket.emit('typing', {
+      roomId: RoomId,
+      userId: User.uid,
+      displayName: User.displayName || User.email || 'Anonymous',
+      isTyping: IsTyping
     });
   }
 
-  /**
-   * Disconnect from server
-   */
+  /// Disconnects from the Socket.IO server and clears connection state
   disconnect(): void {
-    if (this.socket) {
+    if (this.Socket) {
       console.log('ChatService: Disconnecting');
-      this.socket.disconnect();
-      this.socket = null;
-      this.connectionState.next('disconnected');
-      this.activeRooms.next([]);
+      this.Socket.disconnect();
+      this.Socket = null;
+      this.ConnectionState.next('disconnected');
+      this.ActiveRooms.next([]);
     }
   }
 
-  /**
-   * Check if user is online
-   */
-  isUserOnline(userId: string): boolean {
-    return this.onlineUsers.value.get(userId) || false;
+  /// Checks if a specific user is currently online
+  isUserOnline(UserId: string): boolean {
+    return this.OnlineUsers.value.get(UserId) || false;
   }
 
-  /**
-   * Get current connection status
-   */
+  /// Returns the current Socket.IO connection status
   get isConnected(): boolean {
-    return this.socket?.connected || false;
+    return this.Socket?.connected || false;
   }
 }
