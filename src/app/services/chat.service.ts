@@ -176,13 +176,16 @@ export class ChatService {
   }
 
   /// Registers the current user with the Socket.IO server for presence tracking
-  private registerUser(): void {
+  private async registerUser(): Promise<void> {
     const User = this.AuthService.currentUser;
+    // Firebase ID token is retrieved for API authentication
+    const AuthToken = await this.AuthService.getIdToken();
     if (!User || !this.Socket) return;
     console.log('ChatService: Registering user', User.uid);
     this.Socket.emit('register', {
       userId: User.uid,
-      displayName: User.displayName || User.email || 'Anonymous'
+      displayName: User.displayName || User.email || 'Anonymous',
+      authToken: AuthToken
     });
   }
 

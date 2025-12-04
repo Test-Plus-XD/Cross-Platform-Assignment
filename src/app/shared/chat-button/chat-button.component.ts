@@ -18,20 +18,25 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   @Input() restaurantName!: string;
   @Input() restaurantOwnerId?: string;
 
-  // Chat state
+  // Chat state tracks the current status of the chat interface
   isOpen = false;
+  // Messages array stores all chat messages for this restaurant room
   messages: ChatMessage[] = [];
+  // New message input holds the text being composed by the user
   newMessage = '';
+  // Connection status indicates whether Socket.IO is connected
   isConnected = false;
+  // Typing indicator shows when other users are typing in the room
   isTyping = false;
+  // Unread count tracks messages received whilst chat window was closed
   unreadCount = 0;
+  // Login prompt flag determines whether to display authentication request
   showLoginPrompt = false;
-
-  // Language
+  // Language observable provides reactive translations throughout component
   lang$ = this.languageService.lang$;
-
-  // Cleanup
+  // Destroy subject signals component destruction for subscription cleanup
   private destroy$ = new Subject<void>();
+  // Typing timeout handle manages the automatic cessation of typing indicators
   private typingTimeout: any;
 
   constructor(
@@ -40,150 +45,136 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     private readonly languageService: LanguageService,
     private readonly modalController: ModalController,
     private readonly router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    // Subscribe to connection state
-    this.chatService.connectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => {
+    // Connection state subscription monitors Socket.IO connectivity changes
+    this.chatService.ConnectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => {
       this.isConnected = state === 'connected';
+      // Room join is automatically triggered upon successful connection
       if (this.isConnected && this.restaurantId) {
         this.joinRoom();
       }
     });
-
-    // Subscribe to new messages
-    this.chatService.messages$.pipe(takeUntil(this.destroy$)).subscribe(message => {
+    // Messages subscription receives and displays new chat messages
+    this.chatService.Messages$.pipe(takeUntil(this.destroy$)).subscribe(message => {
+      // Message filtering ensures only relevant room messages are displayed
       if (message.roomId === this.getRoomId()) {
         this.messages.push(message);
+        // Unread counter increments when messages arrive whilst window is closed
         if (!this.isOpen) {
           this.unreadCount++;
         }
-        // Scroll to bottom after message is added
+        // Scroll animation is delayed to ensure DOM has updated with new message
         setTimeout(() => this.scrollToBottom(), 100);
       }
     });
-
-    // Subscribe to typing indicators
-    this.chatService.typingIndicators$.pipe(takeUntil(this.destroy$)).subscribe(indicator => {
+    // Typing indicators subscription shows when other users are composing messages
+    this.chatService.TypingIndicators$.pipe(takeUntil(this.destroy$)).subscribe(indicator => {
+      // Indicator filtering prevents showing user's own typing status
       if (indicator.roomId === this.getRoomId() && indicator.userId !== this.authService.currentUser?.uid) {
         this.isTyping = indicator.isTyping;
       }
     });
-
-    // Connect if not already connected
+    // Connection initialisation occurs if service is not already connected
     if (!this.chatService.isConnected) {
       this.chatService.connect();
     }
   }
 
   ngOnDestroy(): void {
+    // Destroy signal is emitted to complete all active subscriptions
     this.destroy$.next();
     this.destroy$.complete();
+    // Typing timeout is cleared to prevent memory leaks
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
   }
 
-  /**
-   * Get room ID for this chat (restaurant-specific)
-   */
+  /// Generates the unique room identifier for this restaurant's chat
   private getRoomId(): string {
     return `restaurant-${this.restaurantId}`;
   }
 
-  /**
-   * Join the restaurant chat room
-   */
+  /// Joins the restaurant-specific chat room via Socket.IO
   private joinRoom(): void {
     const roomId = this.getRoomId();
     console.log('ChatButton: Joining room', roomId);
     this.chatService.joinRoom(roomId);
   }
 
-  /**
-   * Toggle chat window
-   */
+  /// Toggles the visibility of the chat interface window
   toggleChat(): void {
-    // Check if user is logged in
+    // Authentication check prevents unauthenticated users from accessing chat
     if (!this.authService.currentUser) {
-      // Open chat window and show login prompt
+      // Chat window opens with login prompt for unauthenticated users
       this.isOpen = true;
       this.showLoginPrompt = true;
       return;
     }
-
+    // Chat visibility is toggled for authenticated users
     this.isOpen = !this.isOpen;
     this.showLoginPrompt = false;
+    // Unread counter resets and scroll occurs when chat opens
     if (this.isOpen) {
       this.unreadCount = 0;
       setTimeout(() => this.scrollToBottom(), 100);
     }
   }
 
-  /**
-   * Navigate to login page
-   */
+  /// Navigates user to login page for authentication
   goToLogin(): void {
     this.isOpen = false;
     this.showLoginPrompt = false;
     this.router.navigate(['/login']);
   }
 
-  /**
-   * Send message
-   */
+  /// Sends the composed message to the chat room via Socket.IO
   async sendMessage(): Promise<void> {
+    // Empty messages and disconnected states prevent message transmission
     if (!this.newMessage.trim() || !this.isConnected) return;
-
     const roomId = this.getRoomId();
-    // Await the async sendMessage call
+    // Message is transmitted asynchronously to the Socket.IO server
     await this.chatService.sendMessage(roomId, this.newMessage.trim());
     this.newMessage = '';
-
-    // Stop typing indicator
+    // Typing indicator is stopped immediately after message transmission
     this.chatService.sendTypingIndicator(roomId, false);
   }
 
-  /**
-   * Handle typing
-   */
+  /// Handles typing events and broadcasts typing indicators to other users
   onTyping(): void {
     const roomId = this.getRoomId();
+    // Typing indicator is broadcast to notify other room participants
     this.chatService.sendTypingIndicator(roomId, true);
-
-    // Clear existing timeout
+    // Existing timeout is cleared to reset the inactivity timer
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
-
-    // Stop typing after 2 seconds of inactivity
+    // Typing indicator automatically stops after two seconds of inactivity
     this.typingTimeout = setTimeout(() => {
       this.chatService.sendTypingIndicator(roomId, false);
     }, 2000);
   }
 
-  /**
-   * Scroll chat to bottom
-   */
+  /// Scrolls the message list to display the most recent message
   private scrollToBottom(): void {
     const messageList = document.querySelector('.chat-messages');
+    // Scroll position is set to maximum to reveal latest messages
     if (messageList) {
       messageList.scrollTop = messageList.scrollHeight;
     }
   }
 
-  /**
-   * Check if message is from current user
-   */
+  /// Determines whether a message was sent by the current user
   isOwnMessage(message: ChatMessage): boolean {
     return message.userId === this.authService.currentUser?.uid;
   }
 
-  /**
-   * Format timestamp
-   */
+  /// Formats message timestamps into human-readable time strings
   formatTime(timestamp: string): string {
     const date = new Date(timestamp);
+    // Time is formatted using locale-specific conventions
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }
