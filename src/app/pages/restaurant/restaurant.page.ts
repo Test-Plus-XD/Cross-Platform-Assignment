@@ -5,15 +5,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { take, takeUntil, tap, finalize } from 'rxjs/operators';
-import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
-import { ReviewsService, Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
-import { LanguageService } from '../../services/language.service';
-import { ThemeService } from '../../services/theme.service';
-import { PlatformService } from '../../services/platform.service';
-import { AuthService } from '../../services/auth.service';
-import { UserService, UserProfile } from '../../services/user.service';
-import { BookingService, CreateBookingRequest } from '../../services/booking.service';
-import { LocationService, DistanceResult } from '../../services/location.service';
+import { Restaurant, MenuItem } from '../../services/restaurants.service';
+import { Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
+import { UserProfile } from '../../services/user.service';
+import { CreateBookingRequest } from '../../services/booking.service';
+import { DistanceResult } from '../../services/location.service';
+import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
 import * as Leaflet from 'leaflet';
@@ -27,11 +24,11 @@ import * as Leaflet from 'leaflet';
 })
 export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   // Bilingual language stream
-  lang$ = this.language.lang$;
+  lang$ = this.feature.language.lang$;
   // Observable boolean that indicates whether dark theme is active
   isDark$: Observable<boolean>;
   // Platform detection for responsive UI
-  isMobile$ = this.platform.isMobile$;
+  isMobile$ = this.feature.platform.isMobile$;
   // Local restaurant model used by template
   restaurant: Restaurant | null = null;
   // Menu items loaded separately from sub-collection
@@ -92,28 +89,20 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   canEditRestaurant: boolean = false;
 
   constructor(
+    private readonly feature: RestaurantFeatureService,
     private readonly route: ActivatedRoute,
     private readonly router: Router,
-    private readonly restaurantsService: RestaurantsService,
-    private readonly reviewsService: ReviewsService,
-    private readonly language: LanguageService,
-    private readonly theme: ThemeService,
-    private readonly platform: PlatformService,
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-    private readonly bookingService: BookingService,
-    private readonly locationService: LocationService,
     private readonly modalController: ModalController,
     private readonly toastController: ToastController,
     private readonly alertController: AlertController,
     private readonly changeDetectionReference: ChangeDetectorRef
   ) {
-    this.isDark$ = this.theme.isDark$;
+    this.isDark$ = this.feature.theme.isDark$;
   }
 
   ngOnInit() {
     // Try to get user's location for distance calculation
-    this.locationService.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
+    this.feature.location.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
   }
 
   /// When view initialises, fetch restaurant ID and load all data
@@ -146,7 +135,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.changeDetectionReference.markForCheck();
 
     // Fetch restaurant basic information
-    this.restaurantsService.getRestaurantById(restaurantId).pipe(
+    this.feature.restaurants.getRestaurantById(restaurantId).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
         console.log('RestaurantPage: getRestaurantById observable completed');
@@ -209,7 +198,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.isMenuLoading = true;
     this.changeDetectionReference.markForCheck();
 
-    this.restaurantsService.getMenuItems(restaurantId).pipe(
+    this.feature.restaurants.getMenuItems(restaurantId).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
         console.log('RestaurantPage: getMenuItems observable completed');
@@ -238,8 +227,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
     // Load reviews and stats in parallel
     combineLatest([
-      this.reviewsService.getReviews(restaurantId),
-      this.reviewsService.getRestaurantStats(restaurantId)
+      this.feature.reviews.getReviews(restaurantId),
+      this.feature.reviews.getRestaurantStats(restaurantId)
     ]).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
@@ -280,7 +269,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    this.distanceResult = this.locationService.calculateDistanceFromCurrentLocation(
+    this.distanceResult = this.feature.location.calculateDistanceFromCurrentLocation(
       this.restaurant.Latitude,
       this.restaurant.Longitude
     );
@@ -289,7 +278,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Get distance colour for badge display
   getDistanceColour(): string {
     if (!this.distanceResult) return 'medium';
-    return this.locationService.getDistanceColour(this.distanceResult.distanceKm);
+    return this.feature.location.getDistanceColour(this.distanceResult.distanceKm);
   }
 
   /// Initialise a Leaflet map when coordinates are present
@@ -339,14 +328,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   async onBook(): Promise<void> {
     try {
       if (!this.bookingDateTime) {
-        const lang = await this.language.lang$.pipe(take(1)).toPromise();
+        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         await this.showToast(lang === 'TC' ? '請選擇預約日期和時間' : 'Please select a booking date and time', 'warning');
         return;
       }
 
       // Check if user is logged in
-      if (!this.authService.isLoggedIn) {
-        const lang = await this.language.lang$.pipe(take(1)).toPromise();
+      if (!this.feature.auth.isLoggedIn) {
+        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         const shouldLogin = await this.showLoginPrompt(lang === 'TC');
         if (shouldLogin) {
           // Navigate to login page with return URL
@@ -358,7 +347,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Confirm booking details
-      const lang = await this.language.lang$.pipe(take(1)).toPromise();
+      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
       const confirmed = await this.confirmBooking(lang === 'TC');
       if (!confirmed) return;
 
@@ -377,7 +366,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       };
 
       // Call booking service
-      this.bookingService.createBooking(bookingRequest).pipe(takeUntil(this.destroy$)).subscribe({
+      this.feature.bookings.createBooking(bookingRequest).pipe(takeUntil(this.destroy$)).subscribe({
         next: async (response) => {
           console.info('Booking created successfully:', response.id);
           this.isBookingLoading = false;
@@ -473,8 +462,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   async submitReview(): Promise<void> {
     try {
       // Check if user is logged in
-      if (!this.authService.isLoggedIn) {
-        const lang = await this.language.lang$.pipe(take(1)).toPromise();
+      if (!this.feature.auth.isLoggedIn) {
+        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         const shouldLogin = await this.showLoginPrompt(lang === 'TC');
         if (shouldLogin) {
           this.router.navigate(['/login'], {
@@ -484,7 +473,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      const lang = await this.language.lang$.pipe(take(1)).toPromise();
+      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
 
       // Validate rating
       if (this.newReviewRating < 1 || this.newReviewRating > 5) {
@@ -499,7 +488,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       };
 
       // Call reviews service
-      this.reviewsService.createReview(reviewRequest).pipe(takeUntil(this.destroy$)).subscribe({
+      this.feature.reviews.createReview(reviewRequest).pipe(takeUntil(this.destroy$)).subscribe({
         next: async (response) => {
           console.info('Review created successfully:', response.id);
 
@@ -572,7 +561,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       component: MenuModalComponent,
       componentProps: {
         menu: this.menuItems,
-        langStream: this.language.lang$
+        langStream: this.feature.language.lang$
       },
       cssClass: 'fullscreen-modal'
     });
@@ -619,18 +608,18 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
   /// Format rating as stars for display
   formatRatingStars(rating: number): string {
-    return this.reviewsService.formatRatingStars(rating);
+    return this.feature.reviews.formatRatingStars(rating);
   }
 
   /// Get rating colour
   getRatingColour(rating: number): string {
-    return this.reviewsService.getRatingColour(rating);
+    return this.feature.reviews.getRatingColour(rating);
   }
 
   /// Check if current user can claim this restaurant
   private checkClaimEligibility(): void {
     // Check if user is logged in
-    if (!this.authService.isLoggedIn) {
+    if (!this.feature.auth.isLoggedIn) {
       this.canClaimRestaurant = false;
       return;
     }
@@ -642,7 +631,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Get current user profile to check type
-    this.authService.currentUser$.pipe(take(1)).subscribe(user => {
+    this.feature.auth.currentUser$.pipe(take(1)).subscribe(user => {
       if (!user) {
         this.canClaimRestaurant = false;
         this.changeDetectionReference.markForCheck();
@@ -650,7 +639,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Get user profile to check type and restaurantId
-      this.userService.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
+      this.feature.user.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
         next: (profile: UserProfile | null) => {
           // User can claim if they have type 'Restaurant' (case insensitive) AND
           // they haven't claimed a restaurant yet (restaurantId is empty or null)
@@ -674,12 +663,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Claim ownership of this restaurant
   async claimRestaurant(): Promise<void> {
     try {
-      if (!this.restaurant || !this.authService.isLoggedIn) {
+      if (!this.restaurant || !this.feature.auth.isLoggedIn) {
         return;
       }
 
-      const lang = await this.language.lang$.pipe(take(1)).toPromise();
-      const user = await this.authService.currentUser$.pipe(take(1)).toPromise();
+      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
+      const user = await this.feature.auth.currentUser$.pipe(take(1)).toPromise();
 
       if (!user) {
         await this.showToast(lang === 'TC' ? '請先登入' : 'Please log in first', 'warning');
@@ -694,7 +683,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       this.changeDetectionReference.markForCheck();
 
       // Get authentication token
-      const authToken = await this.authService.getIdToken();
+      const authToken = await this.feature.auth.getIdToken();
       if (!authToken) {
         this.isClaimingRestaurant = false;
         this.changeDetectionReference.markForCheck();
@@ -703,7 +692,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Call claim API endpoint
-      this.restaurantsService.claimRestaurant(this.restaurant.id, authToken)
+      this.feature.restaurants.claimRestaurant(this.restaurant.id, authToken)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: async (response) => {
@@ -838,7 +827,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Check if current user can edit this restaurant (no owner)
   checkEditPermission(): void {
     // Allow editing if restaurant has no owner and user is logged in
-    this.canEditRestaurant = this.authService.isLoggedIn && !this.restaurant?.ownerId;
+    this.canEditRestaurant = this.feature.auth.isLoggedIn && !this.restaurant?.ownerId;
     this.changeDetectionReference.markForCheck();
   }
 
@@ -876,19 +865,19 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   async uploadRestaurantImageInline(): Promise<void> {
     if (!this.selectedRestaurantImage || !this.restaurant?.id) return;
 
-    const lang = await this.language.lang$.pipe(take(1)).toPromise();
+    const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
     this.isUploadingRestaurantImage = true;
     this.changeDetectionReference.markForCheck();
 
     try {
       // Get auth token
-      const token = await this.authService.getIdToken();
+      const token = await this.feature.auth.getIdToken();
       if (!token) {
         throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
       }
 
       // Upload image
-      const response = await this.restaurantsService.uploadRestaurantImage(
+      const response = await this.feature.restaurants.uploadRestaurantImage(
         this.restaurant.id,
         this.selectedRestaurantImage,
         token
