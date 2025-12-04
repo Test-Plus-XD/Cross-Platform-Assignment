@@ -32,7 +32,6 @@
               }
             ],
             "styles": [
-              "node_modules/photoswipe/dist/photoswipe.css",
               "node_modules/leaflet/dist/leaflet.css",
               "src/style/global.scss",
               "src/theme/variables.scss"
