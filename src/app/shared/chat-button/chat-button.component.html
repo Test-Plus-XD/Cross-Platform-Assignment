@@ -43,8 +43,16 @@
       </ion-button>
     </div>
 
+    <!-- Loading history -->
+    <div *ngIf="!showLoginPrompt && isLoadingHistory" class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p *ngIf="lang$ | async as lang">
+        {{ lang === 'TC' ? '載入對話記錄...' : 'Loading chat history...' }}
+      </p>
+    </div>
+
     <!-- Empty state -->
-    <div *ngIf="!showLoginPrompt && messages.length === 0" class="empty-state">
+    <div *ngIf="!showLoginPrompt && !isLoadingHistory && messages.length === 0" class="empty-state">
       <ion-icon name="chatbubbles-outline" class="empty-icon"></ion-icon>
       <p *ngIf="lang$ | async as lang">
         {{ lang === 'TC' ? '開始對話' : 'Start a conversation' }}
@@ -52,29 +60,26 @@
     </div>
 
     <!-- Messages -->
-    <ng-container *ngIf="!showLoginPrompt">
-      <div
-        *ngFor="let message of messages"
-        class="message"
-        [class.own]="isOwnMessage(message)">
+    <ng-container *ngIf="!showLoginPrompt && !isLoadingHistory">
+      <div *ngFor="let message of messages"
+           class="message"
+           [class.own]="isOwnMessage(message)">
         <div class="message-content">
           <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
-          
+
           <!-- Image message -->
-          <a 
-            *ngIf="hasImage(message)"
-            [href]="getImageUrl(message)"
-            [attr.data-pswp-width]="800"
-            [attr.data-pswp-height]="600"
-            class="message-image-link"
-            target="_blank">
-            <img 
-              [src]="getImageUrl(message)" 
-              alt="Image" 
-              class="message-image"
-              loading="lazy" />
+          <a *ngIf="hasImage(message)"
+             [href]="getImageUrl(message)"
+             [attr.data-pswp-width]="800"
+             [attr.data-pswp-height]="600"
+             class="message-image-link"
+             target="_blank">
+            <img [src]="getImageUrl(message)"
+                 alt="Image"
+                 class="message-image"
+                 loading="lazy" />
           </a>
-          
+
           <!-- Text message -->
           <p class="message-text" *ngIf="message.message">{{ message.message }}</p>
           <span class="message-time">{{ formatTime(message.timestamp) }}</span>
@@ -83,7 +88,7 @@
     </ng-container>
 
     <!-- Typing indicator -->
-    <div *ngIf="!showLoginPrompt && isTyping" class="typing-indicator">
+    <div *ngIf="!showLoginPrompt && !isLoadingHistory && isTyping" class="typing-indicator">
       <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
       <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
     </div>
@@ -106,38 +111,34 @@
 
     <div class="input-row">
       <!-- Image upload button -->
-      <button 
-        class="image-button" 
-        (click)="selectImage()"
-        [disabled]="!isConnected || isUploadingImage"
-        type="button">
+      <button class="image-button"
+              (click)="selectImage()"
+              [disabled]="!isConnected || isUploadingImage"
+              type="button">
         <ion-icon name="image"></ion-icon>
       </button>
-      
+
       <!-- Hidden file input -->
-      <input 
-        #fileInput
-        type="file" 
-        accept="image/*" 
-        (change)="onImageSelected($event)"
-        style="display: none;"/>
+      <input #fileInput
+             type="file"
+             accept="image/*"
+             (change)="onImageSelected($event)"
+             style="display: none;" />
 
       <!-- Text input -->
-      <textarea
-        [(ngModel)]="newMessage"
-        (input)="onTyping()"
-        (keydown.enter)="$event.preventDefault(); sendMessage()"
-        [placeholder]="(lang$ | async) === 'TC' ? '輸入訊息...' : 'Type a message...'"
-        rows="1"
-        [disabled]="!isConnected || isUploadingImage" >
+      <textarea [(ngModel)]="newMessage"
+                (input)="onTyping()"
+                (keydown.enter)="$event.preventDefault(); sendMessage()"
+                [placeholder]="(lang$ | async) === 'TC' ? '輸入訊息...' : 'Type a message...'"
+                rows="1"
+                [disabled]="!isConnected || isUploadingImage">
       </textarea>
 
       <!-- Send button -->
-      <button
-        (click)="sendMessage()"
-        [disabled]="(!newMessage.trim() && !selectedImage) || !isConnected || isUploadingImage"
-        class="send-button"
-        type="button">
+      <button (click)="sendMessage()"
+              [disabled]="(!newMessage.trim() && !selectedImage) || !isConnected || isUploadingImage"
+              class="send-button"
+              type="button">
         <ion-icon [name]="isUploadingImage ? 'hourglass' : 'send'"></ion-icon>
       </button>
     </div>

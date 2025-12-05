@@ -29,6 +29,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   isTyping = false;
   unreadCount = 0;
   showLoginPrompt = false;
+  isLoadingHistory = false;
 
   // Image upload state
   isUploadingImage = false;
@@ -41,6 +42,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private typingTimeout: any;
   private lightbox: PhotoSwipeLightbox | null = null;
+  private hasConnected = false; // Track if we've already connected in this session
 
   constructor(
     private readonly chatService: ChatService,
@@ -54,18 +56,37 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     // Connection state subscription
     this.chatService.ConnectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => {
       this.isConnected = state === 'connected';
-      if (this.isConnected && this.restaurantId) {
-        this.joinRoom();
+      console.log('ChatButton: Connection state changed to', state);
+
+      // When connected and registered, join the room
+      if (this.isConnected && this.isOpen) {
+        this.chatService.IsRegistered$.pipe(takeUntil(this.destroy$)).subscribe(registered => {
+          if (registered) {
+            console.log('ChatButton: User registered, joining room');
+            this.joinRoom();
+          }
+        });
       }
     });
 
-    // Messages subscription
+    // Messages subscription - for real-time messages
     this.chatService.Messages$.pipe(takeUntil(this.destroy$)).subscribe(message => {
       if (message.roomId === this.getRoomId()) {
+        console.log('ChatButton: Received real-time message', message.messageId);
         this.messages.push(message);
         if (!this.isOpen) {
           this.unreadCount++;
         }
+        setTimeout(() => this.scrollToBottom(), 100);
+      }
+    });
+
+    // Message history subscription - for loaded history
+    this.chatService.MessageHistory$.pipe(takeUntil(this.destroy$)).subscribe(data => {
+      if (data.roomId === this.getRoomId()) {
+        console.log('ChatButton: Received message history -', data.messages.length, 'messages');
+        this.messages = data.messages;
+        this.isLoadingHistory = false;
         setTimeout(() => this.scrollToBottom(), 100);
       }
     });
@@ -79,19 +100,21 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
     // Initialise PhotoSwipe
     this.initialisePhotoSwipe();
-
-    // Connect if not already connected
-    if (!this.chatService.isConnected) {
-      this.chatService.connect();
-    }
   }
 
   ngOnDestroy(): void {
+    // Clean up
+    if (this.isOpen) {
+      this.leaveRoom();
+    }
+
     this.destroy$.next();
     this.destroy$.complete();
+
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
+
     if (this.lightbox) {
       this.lightbox.destroy();
     }
@@ -112,27 +135,67 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     return `restaurant-${this.restaurantId}`;
   }
 
+  /// Connects to Socket.IO server and registers user
+  private async connectAndRegister(): Promise<void> {
+    if (!this.authService.currentUser) {
+      console.warn('ChatButton: Cannot connect without authenticated user');
+      return;
+    }
+
+    // Prevent duplicate connections
+    if (this.hasConnected && this.chatService.isConnected) {
+      console.log('ChatButton: Already connected and registered');
+      return;
+    }
+
+    console.log('ChatButton: Connecting to Socket.IO server');
+    this.chatService.connect();
+    this.hasConnected = true;
+  }
+
   /// Joins the restaurant-specific chat room via Socket.IO
   private joinRoom(): void {
     const roomId = this.getRoomId();
     console.log('ChatButton: Joining room', roomId);
+    this.isLoadingHistory = true;
     this.chatService.joinRoom(roomId);
   }
 
+  /// Leaves the current chat room
+  private leaveRoom(): void {
+    const roomId = this.getRoomId();
+    console.log('ChatButton: Leaving room', roomId);
+    this.chatService.leaveRoom(roomId);
+  }
+
   /// Toggles the visibility of the chat interface window
-  toggleChat(): void {
+  async toggleChat(): Promise<void> {
+    // Check if user is logged in
     if (!this.authService.currentUser) {
       this.isOpen = true;
       this.showLoginPrompt = true;
       return;
     }
 
+    // Toggle chat window
     this.isOpen = !this.isOpen;
     this.showLoginPrompt = false;
 
     if (this.isOpen) {
+      // Opening chat - connect and join room
       this.unreadCount = 0;
+      console.log('ChatButton: Opening chat, connecting to Socket.IO');
+      await this.connectAndRegister();
+
+      // If already connected, join room immediately
+      if (this.chatService.isConnected && this.chatService.isRegistered) {
+        this.joinRoom();
+      }
+
       setTimeout(() => this.scrollToBottom(), 100);
+    } else {
+      // Closing chat - leave room but keep connection
+      this.leaveRoom();
     }
   }
 
@@ -203,6 +266,13 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
         'x-api-passcode': 'PourRice'
       });
 
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        if (this.uploadProgress < 90) {
+          this.uploadProgress += 10;
+        }
+      }, 200);
+
       const response = await this.httpClient.post<{
         success: boolean;
         imageUrl: string;
@@ -211,6 +281,9 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
         formData,
         { headers }
       ).toPromise();
+
+      clearInterval(progressInterval);
+      this.uploadProgress = 100;
 
       if (!response || !response.success) {
         throw new Error('Image upload failed');
@@ -228,7 +301,10 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
   /// Sends the composed message (text and/or image) to the chat room
   async sendMessage(): Promise<void> {
-    if ((!this.newMessage.trim() && !this.selectedImage) || !this.isConnected) return;
+    if ((!this.newMessage.trim() && !this.selectedImage) || !this.isConnected) {
+      console.warn('ChatButton: Cannot send message - not connected or empty message');
+      return;
+    }
 
     const roomId = this.getRoomId();
     let imageUrl: string | undefined = undefined;
@@ -236,23 +312,28 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     try {
       // Upload image if selected
       if (this.selectedImage) {
+        console.log('ChatButton: Uploading image...');
         imageUrl = await this.uploadImage(this.selectedImage);
+        console.log('ChatButton: Image uploaded:', imageUrl);
         this.clearImage();
       }
 
       // Send message via Socket.IO
+      console.log('ChatButton: Sending message to room', roomId);
       await this.chatService.sendMessage(roomId, this.newMessage.trim(), imageUrl);
 
       this.newMessage = '';
       this.chatService.sendTypingIndicator(roomId, false);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('ChatButton: Error sending message:', error);
       alert('Failed to send message. Please try again.');
     }
   }
 
   /// Handles typing events and broadcasts typing indicators
   onTyping(): void {
+    if (!this.isConnected) return;
+
     const roomId = this.getRoomId();
     this.chatService.sendTypingIndicator(roomId, true);
 

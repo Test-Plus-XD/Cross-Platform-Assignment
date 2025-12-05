@@ -55,6 +55,10 @@ export class ChatService {
   private Messages = new Subject<ChatMessage>();
   public Messages$ = this.Messages.asObservable();
 
+  // Message history stream emits loaded message history for rooms
+  private MessageHistory = new Subject<{ roomId: string; messages: ChatMessage[] }>();
+  public MessageHistory$ = this.MessageHistory.asObservable();
+
   // Typing indicators stream emits typing status updates for all rooms
   private TypingIndicators = new Subject<TypingIndicator>();
   public TypingIndicators$ = this.TypingIndicators.asObservable();
@@ -67,19 +71,26 @@ export class ChatService {
   private OnlineUsers = new BehaviorSubject<Map<string, boolean>>(new Map());
   public OnlineUsers$ = this.OnlineUsers.asObservable();
 
+  // Registration state tracks whether user is registered with Socket.IO server
+  private IsRegistered = new BehaviorSubject<boolean>(false);
+  public IsRegistered$ = this.IsRegistered.asObservable();
+
   constructor(private readonly AuthService: AuthService) {
-    console.log('ChatService: Initialised');
-    // Auto-connect is triggered when user authentication state changes
-    this.AuthService.currentUser$.subscribe(User => {
-      if (User) this.connect();
-      else this.disconnect();
-    });
+    console.log('ChatService: Initialised (manual connect mode)');
+    // DO NOT auto-connect - connection is triggered manually when chat is opened
   }
 
   /// Establishes connection to the Socket.IO server with authentication
   connect(): void {
+    // Prevent duplicate connections
     if (this.Socket?.connected) {
       console.log('ChatService: Already connected');
+      return;
+    }
+
+    // Prevent connection if already connecting
+    if (this.ConnectionState.value === 'connecting') {
+      console.log('ChatService: Connection already in progress');
       return;
     }
 
@@ -110,7 +121,7 @@ export class ChatService {
 
     // Connection event indicates successful Socket.IO connection
     this.Socket.on('connect', () => {
-      console.log('ChatService: Connected to server');
+      console.log('ChatService: Connected to server, socket ID:', this.Socket?.id);
       this.ConnectionState.next('connected');
       this.registerUser();
     });
@@ -119,30 +130,42 @@ export class ChatService {
     this.Socket.on('disconnect', (Reason) => {
       console.log('ChatService: Disconnected:', Reason);
       this.ConnectionState.next('disconnected');
+      this.IsRegistered.next(false);
     });
 
     // Connection error event handles failed connection attempts
     this.Socket.on('connect_error', (Error) => {
       console.error('ChatService: Connection error:', Error);
       this.ConnectionState.next('disconnected');
+      this.IsRegistered.next(false);
     });
 
     // Registration response confirms user registration with server
     this.Socket.on('registered', (Data: { success: boolean; userId: string; socketId: string; error?: string }) => {
       if (Data.success) {
         console.log('ChatService: Registered successfully', Data);
+        this.IsRegistered.next(true);
       } else {
         console.error('ChatService: Registration failed', Data.error);
+        this.IsRegistered.next(false);
       }
     });
 
     // Joined room event confirms successful room join operation
-    this.Socket.on('joined-room', (Data: { roomId: string; success: boolean }) => {
-      console.log('ChatService: Joined room', Data.roomId);
+    this.Socket.on('joined-room', (Data: { roomId: string; success: boolean; error?: string }) => {
       if (Data.success) {
+        console.log('ChatService: Joined room', Data.roomId);
         const Rooms = this.ActiveRooms.value;
         if (!Rooms.includes(Data.roomId)) this.ActiveRooms.next([...Rooms, Data.roomId]);
+      } else {
+        console.error('ChatService: Failed to join room', Data.roomId, Data.error);
       }
+    });
+
+    // Message history event delivers loaded message history from Firestore
+    this.Socket.on('message-history', (Data: { roomId: string; messages: ChatMessage[] }) => {
+      console.log('ChatService: Received message history for', Data.roomId, '-', Data.messages.length, 'messages');
+      this.MessageHistory.next(Data);
     });
 
     // User joined room event notifies when another user joins a room
@@ -197,8 +220,13 @@ export class ChatService {
   private async registerUser(): Promise<void> {
     const User = this.AuthService.currentUser;
     if (!User || !this.Socket) return;
+
     // Firebase ID token is retrieved for API authentication
     const AuthToken = await this.AuthService.getIdToken();
+    if (!AuthToken) {
+      console.error('ChatService: Cannot register without auth token');
+      return;
+    }
 
     console.log('ChatService: Registering user', User.uid);
     this.Socket.emit('register', {
@@ -211,7 +239,12 @@ export class ChatService {
   /// Joins a chat room with authentication token for API verification
   async joinRoom(RoomId: string): Promise<void> {
     const User = this.AuthService.currentUser;
-    if (!User || !this.Socket?.connected) {
+    if (!User) {
+      console.warn('ChatService: Cannot join room, no user authenticated');
+      return;
+    }
+
+    if (!this.Socket?.connected) {
       console.warn('ChatService: Cannot join room, not connected');
       return;
     }
@@ -251,16 +284,18 @@ export class ChatService {
     }
 
     console.log('ChatService: Sending message to room', RoomId, 'with image:', !!ImageUrl);
-    // Image URL is only included if provided (matching Socket.IO server expectations)
+
+    // Message payload must include userId for Firestore API
     const MessagePayload: any = {
       roomId: RoomId,
-      userId: User.uid,
+      userId: User.uid,  // CRITICAL: userId is required
       displayName: User.displayName || User.email || 'Anonymous',
       message: Message
     };
 
     // Image URL is conditionally added to avoid sending undefined values
     if (ImageUrl) MessagePayload.imageUrl = ImageUrl;
+
     this.Socket.emit('send-message', MessagePayload);
   }
 
@@ -284,6 +319,7 @@ export class ChatService {
       this.Socket.disconnect();
       this.Socket = null;
       this.ConnectionState.next('disconnected');
+      this.IsRegistered.next(false);
       this.ActiveRooms.next([]);
     }
   }
@@ -296,6 +332,11 @@ export class ChatService {
   /// Returns the current Socket.IO connection status
   get isConnected(): boolean {
     return this.Socket?.connected || false;
+  }
+
+  /// Returns the current user registration status
+  get isRegistered(): boolean {
+    return this.IsRegistered.value;
   }
 }
 
