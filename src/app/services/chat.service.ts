@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
@@ -41,6 +42,7 @@ export interface TypingIndicator {
 @Injectable({
   providedIn: 'root'
 })
+
 export class ChatService {
   private Socket: Socket | null = null;
   private readonly SocketUrl = environment.socketUrl;
@@ -159,6 +161,15 @@ export class ChatService {
       this.Messages.next(Message);
     });
 
+    // Message sent confirmation event provides delivery status feedback
+    this.Socket.on('message-sent', (Data: { success: boolean; messageId: string; timestamp: string; error?: string }) => {
+      if (Data.success) {
+        console.log('ChatService: Message sent successfully', Data.messageId);
+      } else {
+        console.error('ChatService: Message failed to send', Data.error);
+      }
+    });
+
     // User typing event indicates when users are actively typing
     this.Socket.on('user-typing', (Data: TypingIndicator) => {
       console.log('ChatService: User typing', Data);
@@ -185,10 +196,9 @@ export class ChatService {
   /// Registers the current user with the Socket.IO server for presence tracking
   private async registerUser(): Promise<void> {
     const User = this.AuthService.currentUser;
+    if (!User || !this.Socket) return;
     // Firebase ID token is retrieved for API authentication
     const AuthToken = await this.AuthService.getIdToken();
-
-    if (!User || !this.Socket) return;
 
     console.log('ChatService: Registering user', User.uid);
     this.Socket.emit('register', {
@@ -240,14 +250,18 @@ export class ChatService {
       return;
     }
 
-    console.log('ChatService: Sending message to room', RoomId);
-    this.Socket.emit('send-message', {
+    console.log('ChatService: Sending message to room', RoomId, 'with image:', !!ImageUrl);
+    // Image URL is only included if provided (matching Socket.IO server expectations)
+    const MessagePayload: any = {
       roomId: RoomId,
       userId: User.uid,
       displayName: User.displayName || User.email || 'Anonymous',
-      message: Message,
-      imageUrl: ImageUrl
-    });
+      message: Message
+    };
+
+    // Image URL is conditionally added to avoid sending undefined values
+    if (ImageUrl) MessagePayload.imageUrl = ImageUrl;
+    this.Socket.emit('send-message', MessagePayload);
   }
 
   /// Sends typing indicator to notify other users of typing activity
@@ -282,5 +296,69 @@ export class ChatService {
   /// Returns the current Socket.IO connection status
   get isConnected(): boolean {
     return this.Socket?.connected || false;
+  }
+}
+
+export class ChatApiService {
+  private readonly ApiUrl = `${environment.apiUrl}/API/Chat`;
+
+  constructor(
+    private readonly HttpClient: HttpClient,
+    private readonly AuthService: AuthService
+  ) { }
+
+  // HTTP headers include authentication token for API requests
+  private async getHeaders(): Promise<HttpHeaders> {
+    const Token = await this.AuthService.getIdToken();
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'x-api-passcode': 'PourRice',
+      ...(Token && { 'Authorization': `Bearer ${Token}` })
+    });
+  }
+
+  /// Retrieves chat history for a specific room from the API
+  async getRoomMessages(RoomId: string, Limit: number = 50): Promise<Observable<any>> {
+    const Headers = await this.getHeaders();
+    return this.HttpClient.get(
+      `${this.ApiUrl}/Rooms/${RoomId}/Messages?limit=${Limit}`,
+      { headers: Headers }
+    );
+  }
+
+  /// Retrieves all chat records for a specific user
+  async getUserChatRecords(UserId: string): Promise<Observable<any>> {
+    const Headers = await this.getHeaders();
+    return this.HttpClient.get(
+      `${this.ApiUrl}/Records/${UserId}`,
+      { headers: Headers }
+    );
+  }
+
+  /// Retrieves all available chat rooms with participant data
+  async getAllRooms(): Promise<Observable<any>> {
+    const Headers = await this.getHeaders();
+    return this.HttpClient.get(
+      `${this.ApiUrl}/Rooms`,
+      { headers: Headers }
+    );
+  }
+
+  /// Retrieves public chat rooms (can be called without authentication)
+  getRoomsPublic(Limit: number = 50): Observable<any> {
+    return this.HttpClient.get(
+      `${this.ApiUrl}/RoomsPublic?limit=${Limit}`,
+      { headers: new HttpHeaders({ 'x-api-passcode': 'PourRice' }) }
+    );
+  }
+
+  /// Creates a new chat room with specified participants
+  async createRoom(RoomId: string, Participants: string[], RoomName?: string, Type?: 'private' | 'group'): Promise<Observable<any>> {
+    const Headers = await this.getHeaders();
+    return this.HttpClient.post(
+      `${this.ApiUrl}/Rooms`,
+      { roomId: RoomId, participants: Participants, roomName: RoomName, type: Type },
+      { headers: Headers }
+    );
   }
 }
