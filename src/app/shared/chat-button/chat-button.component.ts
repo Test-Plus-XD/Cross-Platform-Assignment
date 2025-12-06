@@ -19,9 +19,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   @Input() restaurantId!: string;
   @Input() restaurantName!: string;
   @Input() restaurantOwnerId?: string;
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput') FileInput!: ElementRef<HTMLInputElement>;
 
-  // Chat state
   isOpen = false;
   messages: ChatMessage[] = [];
   newMessage = '';
@@ -30,19 +29,19 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   unreadCount = 0;
   showLoginPrompt = false;
   isLoadingHistory = false;
-
-  // Image upload state
   isUploadingImage = false;
   uploadProgress = 0;
   selectedImage: File | null = null;
   previewUrl: string | null = null;
+  UploadedImageUrl: string | null = null;
+  UploadedImagePath: string | null = null;
 
-  // Language and cleanup
   lang$ = this.languageService.lang$;
-  private destroy$ = new Subject<void>();
-  private typingTimeout: any;
-  private lightbox: PhotoSwipeLightbox | null = null;
-  private hasConnected = false; // Track if we've already connected in this session
+  private Destroy$ = new Subject<void>();
+  private TypingTimeout: any;
+  private Lightbox: PhotoSwipeLightbox | null = null;
+  private HasConnected = false;
+  private HistoryTimeout: any;
 
   constructor(
     private readonly chatService: ChatService,
@@ -53,15 +52,15 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // Connection state subscription
-    this.chatService.ConnectionState$.pipe(takeUntil(this.destroy$)).subscribe(state => {
-      this.isConnected = state === 'connected';
-      console.log('ChatButton: Connection state changed to', state);
+    // Connection state subscription monitors Socket.IO connection status
+    this.chatService.ConnectionState$.pipe(takeUntil(this.Destroy$)).subscribe(State => {
+      this.isConnected = State === 'connected';
+      console.log('ChatButton: Connection state changed to', State);
 
-      // When connected and registered, join the room
+      // Room joining is triggered automatically when connection is established
       if (this.isConnected && this.isOpen) {
-        this.chatService.IsRegistered$.pipe(takeUntil(this.destroy$)).subscribe(registered => {
-          if (registered) {
+        this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
+          if (Registered) {
             console.log('ChatButton: User registered, joining room');
             this.joinRoom();
           }
@@ -69,65 +68,102 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Messages subscription - for real-time messages
-    this.chatService.Messages$.pipe(takeUntil(this.destroy$)).subscribe(message => {
-      if (message.roomId === this.getRoomId()) {
-        console.log('ChatButton: Received real-time message', message.messageId);
-        this.messages.push(message);
-        if (!this.isOpen) {
-          this.unreadCount++;
+    // messages subscription handles real-time message delivery from Socket.IO
+    this.chatService.Messages$.pipe(takeUntil(this.Destroy$)).subscribe(Message => {
+      const CurrentRoomId = this.getRoomId();
+      if (Message.roomId === CurrentRoomId) {
+        console.log('ChatButton: Received real-time message', Message.messageId);
+
+        // Duplicate messages are prevented by checking if message ID already exists
+        const MessageExists = this.messages.some(ExistingMessage =>
+          ExistingMessage.messageId === Message.messageId
+        );
+
+        if (!MessageExists) {
+          this.messages.push(Message);
+          console.log('ChatButton: Added new message, total:', this.messages.length);
         }
+
+        // Unread count is incremented only when chat window is closed
+        if (!this.isOpen) this.unreadCount++;
+
+        // Loading state is cleared when first message arrives
+        if (this.isLoadingHistory) this.isLoadingHistory = false;
+
+        // Scroll position is adjusted after DOM updates
         setTimeout(() => this.scrollToBottom(), 100);
       }
     });
 
-    // Message history subscription - for loaded history
-    this.chatService.MessageHistory$.pipe(takeUntil(this.destroy$)).subscribe(data => {
-      if (data.roomId === this.getRoomId()) {
-        console.log('ChatButton: Received message history -', data.messages.length, 'messages');
-        this.messages = data.messages;
+    // Message history subscription handles initial message loading
+    this.chatService.MessageHistory$.pipe(takeUntil(this.Destroy$)).subscribe(Data => {
+      const CurrentRoomId = this.getRoomId();
+      if (Data.roomId === CurrentRoomId) {
+        console.log('ChatButton: Received message history -', Data.messages.length, 'messages');
+
+        // History timeout is cleared as data has arrived
+        if (this.HistoryTimeout) clearTimeout(this.HistoryTimeout);
+
+        // Message list is replaced with historical messages
+        this.messages = Data.messages || [];
+
+        // Loading state is always cleared when history arrives
         this.isLoadingHistory = false;
+
+        console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
+
+        // Scroll position is adjusted to show most recent messages
         setTimeout(() => this.scrollToBottom(), 100);
       }
     });
 
-    // Typing indicators subscription
-    this.chatService.TypingIndicators$.pipe(takeUntil(this.destroy$)).subscribe(indicator => {
-      if (indicator.roomId === this.getRoomId() && indicator.userId !== this.authService.currentUser?.uid) {
-        this.isTyping = indicator.isTyping;
+    // Typing indicators subscription shows when other users are typing
+    this.chatService.TypingIndicators$.pipe(takeUntil(this.Destroy$)).subscribe(Indicator => {
+      const CurrentRoomId = this.getRoomId();
+      const CurrentUserId = this.authService.currentUser?.uid;
+
+      // Typing indicator is only shown for other users in the same room
+      if (Indicator.roomId === CurrentRoomId && Indicator.userId !== CurrentUserId) {
+        this.isTyping = Indicator.isTyping;
+
+        // Typing indicator automatically clears after 3 seconds
+        if (this.isTyping) {
+          setTimeout(() => {
+            this.isTyping = false;
+          }, 3000);
+        }
       }
     });
 
-    // Initialise PhotoSwipe
+    // PhotoSwipe is initialised for image lightbox functionality
     this.initialisePhotoSwipe();
   }
 
   ngOnDestroy(): void {
-    // Clean up
-    if (this.isOpen) {
-      this.leaveRoom();
+    // Uploaded images are deleted when component is destroyed without sending
+    if (this.UploadedImageUrl && this.UploadedImagePath) {
+      this.deleteUploadedImage(this.UploadedImagePath);
     }
 
-    this.destroy$.next();
-    this.destroy$.complete();
+    // Room is left if chat was open
+    if (this.isOpen) this.leaveRoom();
 
-    if (this.typingTimeout) {
-      clearTimeout(this.typingTimeout);
-    }
+    this.Destroy$.next();
+    this.Destroy$.complete();
 
-    if (this.lightbox) {
-      this.lightbox.destroy();
-    }
+    if (this.TypingTimeout) clearTimeout(this.TypingTimeout);
+    if (this.HistoryTimeout) clearTimeout(this.HistoryTimeout);
+    if (this.Lightbox) this.Lightbox.destroy();
   }
 
   /// Initialises PhotoSwipe lightbox for image previews
   private initialisePhotoSwipe(): void {
-    this.lightbox = new PhotoSwipeLightbox({
+    this.Lightbox = new PhotoSwipeLightbox({
       gallery: '.chat-messages',
       children: 'a.message-image-link',
       pswpModule: () => import('photoswipe')
     });
-    this.lightbox.init();
+    this.Lightbox.init();
   }
 
   /// Generates the unique room identifier for this restaurant's chat
@@ -142,59 +178,73 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Prevent duplicate connections
-    if (this.hasConnected && this.chatService.isConnected) {
+    // Duplicate connections are prevented
+    if (this.HasConnected && this.chatService.isConnected) {
       console.log('ChatButton: Already connected and registered');
       return;
     }
 
     console.log('ChatButton: Connecting to Socket.IO server');
     this.chatService.connect();
-    this.hasConnected = true;
+    this.HasConnected = true;
   }
 
   /// Joins the restaurant-specific chat room via Socket.IO
   private joinRoom(): void {
-    const roomId = this.getRoomId();
-    console.log('ChatButton: Joining room', roomId);
+    const RoomId = this.getRoomId();
+    console.log('ChatButton: Joining room', RoomId);
     this.isLoadingHistory = true;
-    this.chatService.joinRoom(roomId);
+
+    // Timeout is set to clear loading state if history doesn't arrive within 5 seconds
+    this.HistoryTimeout = setTimeout(() => {
+      if (this.isLoadingHistory) {
+        console.log('ChatButton: History timeout, clearing loading state');
+        this.isLoadingHistory = false;
+      }
+    }, 5000);
+
+    this.chatService.joinRoom(RoomId);
   }
 
   /// Leaves the current chat room
   private leaveRoom(): void {
-    const roomId = this.getRoomId();
-    console.log('ChatButton: Leaving room', roomId);
-    this.chatService.leaveRoom(roomId);
+    const RoomId = this.getRoomId();
+    console.log('ChatButton: Leaving room', RoomId);
+    this.chatService.leaveRoom(RoomId);
   }
 
   /// Toggles the visibility of the chat interface window
   async toggleChat(): Promise<void> {
-    // Check if user is logged in
+    // Uploaded images are deleted when chat is closed without sending
+    if (this.isOpen && this.UploadedImageUrl && this.UploadedImagePath) {
+      await this.deleteUploadedImage(this.UploadedImagePath);
+    }
+
+    // User authentication is checked before opening chat
     if (!this.authService.currentUser) {
       this.isOpen = true;
       this.showLoginPrompt = true;
       return;
     }
 
-    // Toggle chat window
+    // Chat window state is toggled
     this.isOpen = !this.isOpen;
     this.showLoginPrompt = false;
 
     if (this.isOpen) {
-      // Opening chat - connect and join room
+      // Opening chat triggers connection and room joining
       this.unreadCount = 0;
       console.log('ChatButton: Opening chat, connecting to Socket.IO');
       await this.connectAndRegister();
 
-      // If already connected, join room immediately
+      // Room is joined immediately if already connected
       if (this.chatService.isConnected && this.chatService.isRegistered) {
         this.joinRoom();
       }
 
       setTimeout(() => this.scrollToBottom(), 100);
     } else {
-      // Closing chat - leave room but keep connection
+      // Closing chat triggers room leaving
       this.leaveRoom();
     }
   }
@@ -208,124 +258,189 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
   /// Triggers file input dialogue for image selection
   selectImage(): void {
-    this.fileInput.nativeElement.click();
+    this.FileInput.nativeElement.click();
   }
 
-  /// Handles image file selection
-  async onImageSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+  /// Handles image file selection and uploads immediately
+  async onImageSelected(Event: Event): Promise<void> {
+    const Input = Event.target as HTMLInputElement;
+    const File = Input.files?.[0];
 
-    if (!file) return;
+    if (!File) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
+    // File type is validated
+    if (!File.type.startsWith('image/')) {
       alert('Please select a valid image file');
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // File size is validated (max 10MB)
+    if (File.size > 10 * 1024 * 1024) {
       alert('Image size must be less than 10MB');
       return;
     }
 
-    this.selectedImage = file;
+    this.selectedImage = File;
 
-    // Generate preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    // Preview is generated for user feedback
+    const Reader = new FileReader();
+    Reader.onload = (e) => {
       this.previewUrl = e.target?.result as string;
     };
-    reader.readAsDataURL(file);
+    Reader.readAsDataURL(File);
+
+    // Image is uploaded immediately in background
+    await this.uploadImageInBackground(File);
   }
 
-  /// Clears selected image and preview
-  clearImage(): void {
-    this.selectedImage = null;
-    this.previewUrl = null;
-    if (this.fileInput?.nativeElement) {
-      this.fileInput.nativeElement.value = '';
-    }
-  }
-
-  /// Uploads image to server and returns URL
-  private async uploadImage(file: File): Promise<string> {
+  /// Uploads image in background when selected (not when sending)
+  private async uploadImageInBackground(File: File): Promise<void> {
     this.isUploadingImage = true;
     this.uploadProgress = 0;
 
     try {
-      const token = await this.authService.getIdToken();
-      if (!token) throw new Error('No authentication token available');
+      const Token = await this.authService.getIdToken();
+      if (!Token) throw new Error('No authentication token available');
 
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', File);
 
-      const headers = new HttpHeaders({
-        'Authorization': `Bearer ${token}`,
+      const Headers = new HttpHeaders({
+        'Authorization': `Bearer ${Token}`,
         'x-api-passcode': 'PourRice'
       });
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        if (this.uploadProgress < 90) {
-          this.uploadProgress += 10;
-        }
+      // Progress simulation provides user feedback during upload
+      const ProgressInterval = setInterval(() => {
+        if (this.uploadProgress < 90) this.uploadProgress += 10;
       }, 200);
 
-      const response = await this.httpClient.post<{
+      const Response = await this.httpClient.post<{
         success: boolean;
         imageUrl: string;
+        fileName: string;
       }>(
         `${environment.apiUrl}/API/Images/upload?folder=Chat`,
-        formData,
-        { headers }
+        FormData,
+        { headers: Headers }
       ).toPromise();
 
-      clearInterval(progressInterval);
+      clearInterval(ProgressInterval);
       this.uploadProgress = 100;
 
-      if (!response || !response.success) {
+      if (!Response || !Response.success) {
         throw new Error('Image upload failed');
       }
 
-      return response.imageUrl;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      throw error;
+      // Uploaded URL and path are stored for later use when sending message
+      this.UploadedImageUrl = Response.imageUrl;
+      this.UploadedImagePath = Response.fileName;
+
+      console.log('ChatButton: Image uploaded in background:', this.UploadedImageUrl);
+      console.log('ChatButton: Image path stored:', this.UploadedImagePath);
+
+    } catch (Error) {
+      console.error('ChatButton: Image upload error:', Error);
+      alert('Failed to upload image. Please try again.');
+      this.clearImage();
     } finally {
       this.isUploadingImage = false;
       this.uploadProgress = 0;
     }
   }
 
-  /// Sends the composed message (text and/or image) to the chat room
+  /// Deletes uploaded image from storage using the stored file path
+  private async deleteUploadedImage(FilePath: string): Promise<void> {
+    try {
+      const Token = await this.authService.getIdToken();
+      if (!Token) {
+        console.warn('ChatButton: No auth token, cannot delete image');
+        return;
+      }
+
+      const Headers = new HttpHeaders({
+        'Authorization': `Bearer ${Token}`,
+        'x-api-passcode': 'PourRice'
+      });
+
+      console.log('ChatButton: Deleting unused image:', FilePath);
+
+      await this.httpClient.delete(
+        `${environment.apiUrl}/API/Images/delete`,
+        {
+          headers: Headers,
+          body: { filePath: FilePath }
+        }
+      ).toPromise();
+
+      console.log('ChatButton: Deleted unused image successfully');
+
+    } catch (Error) {
+      console.error('ChatButton: Error deleting image:', Error);
+    }
+  }
+
+  /// Clears selected image and preview
+  async clearImage(): Promise<void> {
+    // Uploaded image is deleted from storage if not yet sent
+    if (this.UploadedImagePath) {
+      await this.deleteUploadedImage(this.UploadedImagePath);
+    }
+
+    this.selectedImage = null;
+    this.previewUrl = null;
+    this.UploadedImageUrl = null;
+    this.UploadedImagePath = null;
+
+    if (this.FileInput?.nativeElement) {
+      this.FileInput.nativeElement.value = '';
+    }
+  }
+
+  /// Sends the composed message (text and/or image URL) to the chat room
   async sendMessage(): Promise<void> {
-    if ((!this.newMessage.trim() && !this.selectedImage) || !this.isConnected) {
+    const RoomId = this.getRoomId();
+
+    // Message validation ensures content exists (text or image)
+    if ((!this.newMessage.trim() && !this.UploadedImageUrl) || !this.isConnected) {
       console.warn('ChatButton: Cannot send message - not connected or empty message');
       return;
     }
 
-    const roomId = this.getRoomId();
-    let imageUrl: string | undefined = undefined;
-
     try {
-      // Upload image if selected
-      if (this.selectedImage) {
-        console.log('ChatButton: Uploading image...');
-        imageUrl = await this.uploadImage(this.selectedImage);
-        console.log('ChatButton: Image uploaded:', imageUrl);
-        this.clearImage();
+      // Message text is trimmed to remove whitespace
+      const messageText = this.newMessage.trim();
+
+      // Image URL becomes the message if no text was typed
+      const finalMessage = messageText || (this.UploadedImageUrl ? this.UploadedImageUrl : '');
+      const imageUrl = this.UploadedImageUrl ? this.UploadedImageUrl : '';
+
+      console.log('ChatButton: Sending message to room', RoomId);
+      console.log('ChatButton: Message text:', finalMessage);
+      console.log('ChatButton: Image URL:', imageUrl);
+
+      // Message is sent via Socket.IO with both text and image URL
+      await this.chatService.sendMessage(RoomId, finalMessage, imageUrl);
+
+      // Input fields are cleared after successful send
+      this.newMessage = '';
+      this.UploadedImageUrl = '';
+
+      // Image references are cleared (but not deleted as message is sent)
+      this.selectedImage = null;
+      this.previewUrl = null;
+      this.UploadedImageUrl = null;
+      this.UploadedImagePath = null;
+
+      if (this.FileInput?.nativeElement) {
+        this.FileInput.nativeElement.value = '';
       }
 
-      // Send message via Socket.IO
-      console.log('ChatButton: Sending message to room', roomId);
-      await this.chatService.sendMessage(roomId, this.newMessage.trim(), imageUrl);
+      // Typing indicator is stopped
+      this.chatService.sendTypingIndicator(RoomId, false);
 
-      this.newMessage = '';
-      this.chatService.sendTypingIndicator(roomId, false);
-    } catch (error) {
-      console.error('ChatButton: Error sending message:', error);
+    } catch (Error) {
+      console.error('ChatButton: Error sending message:', Error);
       alert('Failed to send message. Please try again.');
     }
   }
@@ -334,39 +449,46 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   onTyping(): void {
     if (!this.isConnected) return;
 
-    const roomId = this.getRoomId();
-    this.chatService.sendTypingIndicator(roomId, true);
+    const RoomId = this.getRoomId();
+    this.chatService.sendTypingIndicator(RoomId, true);
 
-    if (this.typingTimeout) {
-      clearTimeout(this.typingTimeout);
-    }
+    if (this.TypingTimeout) clearTimeout(this.TypingTimeout);
 
-    this.typingTimeout = setTimeout(() => {
-      this.chatService.sendTypingIndicator(roomId, false);
+    // Typing indicator is automatically stopped after 2 seconds
+    this.TypingTimeout = setTimeout(() => {
+      this.chatService.sendTypingIndicator(RoomId, false);
     }, 2000);
   }
 
   /// Scrolls the message list to display the most recent message
   private scrollToBottom(): void {
-    const messageList = document.querySelector('.chat-messages');
-    if (messageList) {
-      messageList.scrollTop = messageList.scrollHeight;
+    const MessageList = document.querySelector('.chat-messages');
+    if (MessageList) {
+      MessageList.scrollTop = MessageList.scrollHeight;
     }
   }
 
   /// Determines whether a message was sent by the current user
-  isOwnMessage(message: ChatMessage): boolean {
-    return message.userId === this.authService.currentUser?.uid;
+  isOwnMessage(Message: ChatMessage): boolean {
+    return Message.userId === this.authService.currentUser?.uid;
   }
 
-  /// Checks if message contains an image
-  hasImage(message: ChatMessage): boolean {
-    return !!(message as any).imageUrl;
+  /// Checks if message contains an image URL
+  hasImage(Message: ChatMessage): boolean {
+    return !!(Message as any).imageUrl;
   }
 
   /// Gets image URL from message
-  getImageUrl(message: ChatMessage): string {
-    return (message as any).imageUrl || '';
+  getImageUrl(Message: ChatMessage): string {
+    return (Message as any).imageUrl || '';
+  }
+
+  /// Checks if message text should be displayed (not Firebase Storage reference text)
+  shouldShowMessageText(Message: ChatMessage): boolean {
+    if (!Message.message) return false;
+
+    // Message text containing Firebase Storage URL is hidden
+    return !Message.message.includes('firebasestorage.googleapis.com');
   }
 
   /// Formats message timestamps into human-readable time strings

@@ -59,7 +59,7 @@
       </p>
     </div>
 
-    <!-- Messages -->
+    <!-- messages -->
     <ng-container *ngIf="!showLoginPrompt && !isLoadingHistory">
       <div *ngFor="let message of messages"
            class="message"
@@ -80,8 +80,8 @@
                  loading="lazy" />
           </a>
 
-          <!-- Text message -->
-          <p class="message-text" *ngIf="message.message">{{ message.message }}</p>
+          <!-- Text message (hidden if only contains Firebase Storage URL) -->
+          <p class="message-text" *ngIf="shouldShowMessageText(message)">{{ message.message }}</p>
           <span class="message-time">{{ formatTime(message.timestamp) }}</span>
         </div>
       </div>
