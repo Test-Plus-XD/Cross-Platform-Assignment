@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, NgZone, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -50,94 +50,118 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
     private readonly router: Router,
-    private readonly httpClient: HttpClient
+    private readonly httpClient: HttpClient,
+    private readonly ngZone: NgZone,
+    private readonly changeDetectorRef: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
     // Connection state subscription monitors Socket.IO connection status
     this.chatService.ConnectionState$.pipe(takeUntil(this.Destroy$)).subscribe(State => {
-      this.isConnected = State === 'connected';
-      console.log('ChatButton: Connection state changed to', State);
+      this.ngZone.run(() => {
+        this.isConnected = State === 'connected';
+        console.log('ChatButton: Connection state changed to', State);
 
-      // Room joining is triggered automatically when connection is established
-      if (this.isConnected && this.isOpen) {
-        this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
-          if (Registered) {
-            console.log('ChatButton: User registered, joining room');
-            this.joinRoom();
-          }
-        });
-      }
+        // Room joining is triggered automatically when connection is established
+        if (this.isConnected && this.isOpen) {
+          this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
+            if (Registered) {
+              console.log('ChatButton: User registered, joining room');
+              this.joinRoom();
+            }
+          });
+        }
+
+        // Trigger change detection to update UI
+        this.changeDetectorRef.markForCheck();
+      });
     });
 
     // Messages subscription handles real-time message delivery from Socket.IO
     this.chatService.Messages$.pipe(takeUntil(this.Destroy$)).subscribe(Message => {
-      const CurrentRoomId = this.getRoomId();
-      if (Message.roomId === CurrentRoomId) {
-        console.log('ChatButton: Received real-time message', Message.messageId);
+      this.ngZone.run(() => {
+        const CurrentRoomId = this.getRoomId();
+        if (Message.roomId === CurrentRoomId) {
+          console.log('ChatButton: Received real-time message', Message.messageId);
 
-        // Duplicate messages are prevented by checking if message ID already exists
-        const MessageExists = this.messages.some(ExistingMessage =>
-          ExistingMessage.messageId === Message.messageId
-        );
+          // Duplicate messages are prevented by checking if message ID already exists
+          const MessageExists = this.messages.some(ExistingMessage =>
+            ExistingMessage.messageId === Message.messageId
+          );
 
-        if (!MessageExists) {
-          this.messages.push(Message);
-          console.log('ChatButton: Added new message, total:', this.messages.length);
+          if (!MessageExists) {
+            // Create new array reference to trigger Angular change detection
+            this.messages = [...this.messages, Message];
+            console.log('ChatButton: Added new message, total:', this.messages.length);
+
+            // Trigger change detection
+            this.changeDetectorRef.markForCheck();
+          }
+
+          // Unread count is incremented only when chat window is closed
+          if (!this.isOpen) this.unreadCount++;
+
+          // Loading state is cleared when first message arrives after joining
+          if (this.isLoadingHistory) {
+            console.log('ChatButton: Clearing loading state due to new message');
+            this.clearLoadingState();
+          }
+
+          // Scroll position is adjusted after DOM updates
+          setTimeout(() => this.scrollToBottom(), 100);
         }
-
-        // Unread count is incremented only when chat window is closed
-        if (!this.isOpen) this.unreadCount++;
-
-        // Loading state is cleared when first message arrives after joining
-        if (this.isLoadingHistory) {
-          console.log('ChatButton: Clearing loading state due to new message');
-          this.clearLoadingState();
-        }
-
-        // Scroll position is adjusted after DOM updates
-        setTimeout(() => this.scrollToBottom(), 100);
-      }
+      });
     });
 
     // Message history subscription handles initial message loading
     this.chatService.MessageHistory$.pipe(takeUntil(this.Destroy$)).subscribe(Data => {
-      const CurrentRoomId = this.getRoomId();
-      if (Data.roomId === CurrentRoomId) {
-        console.log('ChatButton: Received message history -', Data.messages?.length || 0, 'messages');
+      this.ngZone.run(() => {
+        const CurrentRoomId = this.getRoomId();
+        if (Data.roomId === CurrentRoomId) {
+          console.log('ChatButton: Received message history -', Data.messages?.length || 0, 'messages');
 
-        // History flag is set to indicate successful history load
-        this.HasReceivedHistory = true;
+          // History flag is set to indicate successful history load
+          this.HasReceivedHistory = true;
 
-        // Message list is replaced with historical messages (can be empty array)
-        this.messages = Data.messages || [];
+          // Message list is replaced with historical messages (create new array reference)
+          this.messages = [...(Data.messages || [])];
 
-        // Loading state is always cleared when history arrives (even if empty)
-        this.clearLoadingState();
+          // Loading state is always cleared when history arrives (even if empty)
+          this.clearLoadingState();
 
-        console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
+          console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
 
-        // Scroll position is adjusted to show most recent messages
-        setTimeout(() => this.scrollToBottom(), 100);
-      }
+          // Trigger change detection
+          this.changeDetectorRef.markForCheck();
+
+          // Scroll position is adjusted to show most recent messages
+          setTimeout(() => this.scrollToBottom(), 100);
+        }
+      });
     });
 
     // Typing indicators subscription shows when other users are typing
     this.chatService.TypingIndicators$.pipe(takeUntil(this.Destroy$)).subscribe(Indicator => {
-      const CurrentRoomId = this.getRoomId();
-      const CurrentUserId = this.authService.currentUser?.uid;
+      this.ngZone.run(() => {
+        const CurrentRoomId = this.getRoomId();
+        const CurrentUserId = this.authService.currentUser?.uid;
 
-      // Typing indicator is only shown for other users in the same room
-      if (Indicator.roomId === CurrentRoomId && Indicator.userId !== CurrentUserId) {
-        this.isTyping = Indicator.isTyping;
+        // Typing indicator is only shown for other users in the same room
+        if (Indicator.roomId === CurrentRoomId && Indicator.userId !== CurrentUserId) {
+          this.isTyping = Indicator.isTyping;
 
-        // Typing indicator automatically clears after 3 seconds
-        if (this.isTyping) {
-          setTimeout(() => {
-            this.isTyping = false;
-          }, 3000);
+          // Typing indicator automatically clears after 3 seconds
+          if (this.isTyping) {
+            setTimeout(() => {
+              this.isTyping = false;
+              this.changeDetectorRef.markForCheck();
+            }, 3000);
+          }
+
+          // Trigger change detection
+          this.changeDetectorRef.markForCheck();
         }
-      }
+      });
     });
 
     // PhotoSwipe is initialised for image lightbox functionality
@@ -169,6 +193,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       this.HistoryTimeout = null;
     }
     this.isLoadingHistory = false;
+    this.changeDetectorRef.markForCheck();
   }
 
   /// Initialises PhotoSwipe lightbox for image previews
@@ -212,13 +237,16 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     // Loading state is only set if history hasn't been received yet
     if (!this.HasReceivedHistory) {
       this.isLoadingHistory = true;
+      this.changeDetectorRef.markForCheck();
 
       // Timeout is set to clear loading state if history doesn't arrive within 8 seconds
       this.HistoryTimeout = setTimeout(() => {
-        if (this.isLoadingHistory && !this.HasReceivedHistory) {
-          console.log('ChatButton: History timeout reached, clearing loading state');
-          this.clearLoadingState();
-        }
+        this.ngZone.run(() => {
+          if (this.isLoadingHistory && !this.HasReceivedHistory) {
+            console.log('ChatButton: History timeout reached, clearing loading state');
+            this.clearLoadingState();
+          }
+        });
       }, 8000);
     }
 
@@ -243,6 +271,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     if (!this.authService.currentUser) {
       this.isOpen = true;
       this.showLoginPrompt = true;
+      this.changeDetectorRef.markForCheck();
       return;
     }
 
@@ -266,6 +295,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       // Closing chat triggers room leaving
       this.leaveRoom();
     }
+
+    this.changeDetectorRef.markForCheck();
   }
 
   /// Navigates user to login page
@@ -304,7 +335,10 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     // Preview is generated for user feedback
     const Reader = new FileReader();
     Reader.onload = (e) => {
-      this.previewUrl = e.target?.result as string;
+      this.ngZone.run(() => {
+        this.previewUrl = e.target?.result as string;
+        this.changeDetectorRef.markForCheck();
+      });
     };
     Reader.readAsDataURL(File);
 
@@ -314,8 +348,11 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
   /// Uploads image in background when selected (not when sending)
   private async uploadImageInBackground(File: File): Promise<void> {
-    this.isUploadingImage = true;
-    this.uploadProgress = 0;
+    this.ngZone.run(() => {
+      this.isUploadingImage = true;
+      this.uploadProgress = 0;
+      this.changeDetectorRef.markForCheck();
+    });
 
     try {
       const Token = await this.authService.getIdToken();
@@ -329,11 +366,15 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
       // Progress simulation provides user feedback during upload
       const ProgressInterval = setInterval(() => {
-        if (this.uploadProgress < 90) this.uploadProgress += 10;
+        this.ngZone.run(() => {
+          if (this.uploadProgress < 90) {
+            this.uploadProgress += 10;
+            this.changeDetectorRef.markForCheck();
+          }
+        });
       }, 200);
 
-      // HTTP request is made with the FormData instance (not the class constructor)
-      // Note: HttpClient automatically sets Content-Type for FormData, so we don't include it
+      // HTTP request is made with the FormData instance
       const Response = await this.httpClient.post<{
         success: boolean;
         imageUrl: string;
@@ -350,18 +391,24 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       ).toPromise();
 
       clearInterval(ProgressInterval);
-      this.uploadProgress = 100;
+
+      this.ngZone.run(() => {
+        this.uploadProgress = 100;
+        this.changeDetectorRef.markForCheck();
+      });
 
       if (!Response || !Response.success) {
         throw new Error(Response ? 'Image upload failed' : 'No response from server');
       }
 
       // Uploaded URL and path are stored for later use when sending message
-      this.UploadedImageUrl = Response.imageUrl;
-      this.UploadedImagePath = Response.fileName;
-
-      console.log('ChatButton: Image uploaded successfully:', this.UploadedImageUrl);
-      console.log('ChatButton: Image path stored:', this.UploadedImagePath);
+      this.ngZone.run(() => {
+        this.UploadedImageUrl = Response.imageUrl;
+        this.UploadedImagePath = Response.fileName;
+        console.log('ChatButton: Image uploaded successfully:', this.UploadedImageUrl);
+        console.log('ChatButton: Image path stored:', this.UploadedImagePath);
+        this.changeDetectorRef.markForCheck();
+      });
 
     } catch (error) {
       console.error('ChatButton: Image upload error:', error);
@@ -382,8 +429,11 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       alert(`Failed to upload image: ${ErrorMessage}. Please try again.`);
       this.clearImage();
     } finally {
-      this.isUploadingImage = false;
-      this.uploadProgress = 0;
+      this.ngZone.run(() => {
+        this.isUploadingImage = false;
+        this.uploadProgress = 0;
+        this.changeDetectorRef.markForCheck();
+      });
     }
   }
 
@@ -425,14 +475,18 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       await this.deleteUploadedImage(this.UploadedImagePath);
     }
 
-    this.selectedImage = null;
-    this.previewUrl = null;
-    this.UploadedImageUrl = null;
-    this.UploadedImagePath = null;
+    this.ngZone.run(() => {
+      this.selectedImage = null;
+      this.previewUrl = null;
+      this.UploadedImageUrl = null;
+      this.UploadedImagePath = null;
 
-    if (this.FileInput?.nativeElement) {
-      this.FileInput.nativeElement.value = '';
-    }
+      if (this.FileInput?.nativeElement) {
+        this.FileInput.nativeElement.value = '';
+      }
+
+      this.changeDetectorRef.markForCheck();
+    });
   }
 
   /// Sends the composed message (text and/or image URL) to the chat room
@@ -461,17 +515,21 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       await this.chatService.sendMessage(RoomId, FinalMessage, ImageUrl);
 
       // Input fields are cleared after successful send
-      this.newMessage = '';
+      this.ngZone.run(() => {
+        this.newMessage = '';
 
-      // Image references are cleared (but not deleted as message is sent)
-      this.selectedImage = null;
-      this.previewUrl = null;
-      this.UploadedImageUrl = null;
-      this.UploadedImagePath = null;
+        // Image references are cleared (but not deleted as message is sent)
+        this.selectedImage = null;
+        this.previewUrl = null;
+        this.UploadedImageUrl = null;
+        this.UploadedImagePath = null;
 
-      if (this.FileInput?.nativeElement) {
-        this.FileInput.nativeElement.value = '';
-      }
+        if (this.FileInput?.nativeElement) {
+          this.FileInput.nativeElement.value = '';
+        }
+
+        this.changeDetectorRef.markForCheck();
+      });
 
       // Typing indicator is stopped
       this.chatService.sendTypingIndicator(RoomId, false);

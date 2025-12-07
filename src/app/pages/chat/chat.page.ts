@@ -180,20 +180,43 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   /// Opens a specific chat room
-  openChatRoom(Room: ChatRoom): void {
+  async openChatRoom(Room: ChatRoom): Promise<void> {
     this.selectedRoom = Room;
 
     console.log('ChatPage: Opening chat room', Room.roomId);
 
+    // Ensure Socket.IO is connected before joining room
+    if (!this.chatService.isConnected) {
+      console.log('ChatPage: Socket not connected, connecting now');
+      this.chatService.connect();
+
+      // Wait for connection before proceeding
+      await new Promise<void>((resolve) => {
+        const subscription = this.chatService.ConnectionState$.subscribe(state => {
+          if (state === 'connected') {
+            console.log('ChatPage: Socket connected successfully');
+            subscription.unsubscribe();
+            resolve();
+          }
+        });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          subscription.unsubscribe();
+          resolve();
+        }, 5000);
+      });
+    }
+
     // Socket.IO room is joined for real-time updates
-    this.chatService.joinRoom(Room.roomId);
+    await this.chatService.joinRoom(Room.roomId);
 
     // Navigation is handled based on room type
     if (Room.roomId.startsWith('restaurant-')) {
-      // Restaurant chat rooms navigate to restaurant page
+      // Restaurant chat rooms navigate to restaurant page (SINGULAR not plural)
       const RestaurantId = Room.roomId.replace('restaurant-', '');
       console.log('ChatPage: Navigating to restaurant page:', RestaurantId);
-      this.router.navigate(['/restaurants', RestaurantId]);
+      this.router.navigate(['/restaurant', RestaurantId]); // Fixed: Changed from '/restaurants' to '/restaurant'
     } else {
       // Other room types could be handled here in future
       console.log('ChatPage: Room type not yet supported for navigation');
