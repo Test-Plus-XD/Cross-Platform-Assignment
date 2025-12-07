@@ -86,7 +86,6 @@ export class StorePage implements OnInit, OnDestroy {
     Opening_Hours: {} as { [key: string]: string }
   };
 
-  // Edited menu item
   editedMenuItem: Partial<MenuItem> = {
     Name_EN: '',
     Name_TC: '',
@@ -102,6 +101,15 @@ export class StorePage implements OnInit, OnDestroy {
   selectedMenuItemImage: File | null = null;
   menuItemImagePreview: string | null = null;
   isUploadingImage: boolean = false;
+
+  // DocuPipe bulk menu import state
+  isImportingMenu: boolean = false;
+  selectedMenuDocument: File | null = null;
+  docuPipeJobId: string | null = null;
+  docuPipeDocumentId: string | null = null;
+  extractedMenuItems: Partial<MenuItem>[] = [];
+  isPollingDocuPipe: boolean = false;
+  showExtractedItemsReview: boolean = false;
 
   // Map marker
   mapMarker: { lat: number; lng: number } | null = null;
@@ -807,13 +815,13 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  /// Click handler for restaurant image upload button
+  // Click handler for restaurant image upload button
   clickRestaurantImageUploadButton(): void {
     const fileInput = document.getElementById('restaurant-image-input') as HTMLInputElement;
     fileInput?.click();
   }
 
-  /// Click handler for menu item image upload button
+  // Click handler for menu item image upload button
   clickMenuItemImageUploadButton(): void {
     const fileInput = document.getElementById('menu-item-image-input') as HTMLInputElement;
     fileInput?.click();
@@ -1123,6 +1131,331 @@ export class StorePage implements OnInit, OnDestroy {
   cancelEditingMenuOverride(): void {
     this.cancelEditingMenu();
     this.clearMenuItemImageSelection();
+  }
+
+  // Click handler for menu document upload button
+  clickMenuDocumentUploadButton(): void {
+    const fileInput = document.getElementById('menu-document-input') as HTMLInputElement;
+    fileInput?.click();
+  }
+
+  // Handle menu document file selection for DocuPipe processing
+  onMenuDocumentSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+
+      // Validate file type (accept PDF, images, and text files)
+      const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'text/plain', 'application/json'];
+      if (!validTypes.includes(file.type)) {
+        this.showToast('Please select a PDF, image, or text file', 'warning');
+        return;
+      }
+
+      // Validate file size (10MB max)
+      if (file.size > 10 * 1024 * 1024) {
+        this.showToast('File size must be less than 10MB', 'warning');
+        return;
+      }
+
+      this.selectedMenuDocument = file;
+      console.log('StorePage: Menu document selected:', file.name);
+    }
+  }
+
+  // Upload menu document to DocuPipe for extraction
+  async uploadMenuDocument(): Promise<void> {
+    if (!this.selectedMenuDocument || !this.restaurantId) return;
+
+    const lang = await this.getCurrentLanguage();
+    this.isImportingMenu = true;
+    this.isPollingDocuPipe = true;
+
+    const loading = await this.loadingController.create({
+      message: lang === 'TC' ? '上傳文件中...' : 'Uploading document...',
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      // Get auth token
+      const token = await this.feature.auth.getIdToken();
+      if (!token) {
+        throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
+      }
+
+      // Prepare form data for DocuPipe upload
+      const formData = new FormData();
+      formData.append('file', this.selectedMenuDocument);
+
+      // Upload document to DocuPipe extract-menu endpoint
+      const uploadResponse = await fetch(`${this.feature.restaurants['apiUrl']}/API/DocuPipe/extract-menu`, {
+        method: 'POST',
+        headers: {
+          'x-api-passcode': 'PourRice',
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+
+      const uploadResult = await uploadResponse.json();
+      this.docuPipeJobId = uploadResult.jobId;
+      this.docuPipeDocumentId = uploadResult.documentId;
+
+      console.log('StorePage: DocuPipe upload successful. JobID:', this.docuPipeJobId);
+
+      await loading.dismiss();
+      await this.showToast(lang === 'TC' ? '文件已上傳，正在處理中...' : 'Document uploaded, processing...', 'success');
+
+      // Start polling for job completion
+      this.pollDocuPipeJob();
+    } catch (error: any) {
+      console.error('StorePage: Error uploading menu document:', error);
+      await loading.dismiss();
+      await this.showToast(error.message || (lang === 'TC' ? '文件上傳失敗' : 'Document upload failed'), 'danger');
+      this.isImportingMenu = false;
+      this.isPollingDocuPipe = false;
+    }
+  }
+
+  // Poll DocuPipe job status until completion
+  private async pollDocuPipeJob(attempt: number = 0): Promise<void> {
+    if (!this.docuPipeJobId || attempt >= 30) {
+      // Stop after 30 attempts (about 2 minutes with exponential backoff)
+      if (attempt >= 30) {
+        const lang = await this.getCurrentLanguage();
+        await this.showToast(lang === 'TC' ? '處理超時，請重試' : 'Processing timeout, please retry', 'warning');
+      }
+      this.isPollingDocuPipe = false;
+      this.isImportingMenu = false;
+      return;
+    }
+
+    try {
+      const token = await this.feature.auth.getIdToken();
+      if (!token) return;
+
+      // Check job status
+      const statusResponse = await fetch(`${this.feature.restaurants['apiUrl']}/API/DocuPipe/job/${this.docuPipeJobId}`, {
+        method: 'GET',
+        headers: {
+          'x-api-passcode': 'PourRice',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!statusResponse.ok) {
+        throw new Error('Failed to check job status');
+      }
+
+      const statusResult = await statusResponse.json();
+      console.log('StorePage: DocuPipe job status:', statusResult.status);
+
+      if (statusResult.status === 'completed') {
+        // Job completed, retrieve document results
+        await this.retrieveExtractedMenuItems();
+      } else if (statusResult.status === 'processing') {
+        // Continue polling with exponential backoff
+        const delay = Math.min(2000 * Math.pow(1.5, attempt), 16000);
+        setTimeout(() => this.pollDocuPipeJob(attempt + 1), delay);
+      } else {
+        // Job failed or unknown status
+        const lang = await this.getCurrentLanguage();
+        await this.showToast(lang === 'TC' ? '文件處理失敗' : 'Document processing failed', 'danger');
+        this.isPollingDocuPipe = false;
+        this.isImportingMenu = false;
+      }
+    } catch (error: any) {
+      console.error('StorePage: Error polling DocuPipe job:', error);
+      this.isPollingDocuPipe = false;
+      this.isImportingMenu = false;
+    }
+  }
+
+  // Retrieve and parse extracted menu items from DocuPipe
+  private async retrieveExtractedMenuItems(): Promise<void> {
+    if (!this.docuPipeDocumentId) return;
+
+    const lang = await this.getCurrentLanguage();
+
+    try {
+      const token = await this.feature.auth.getIdToken();
+      if (!token) return;
+
+      // Retrieve document results
+      const documentResponse = await fetch(`${this.feature.restaurants['apiUrl']}/API/DocuPipe/document/${this.docuPipeDocumentId}`, {
+        method: 'GET',
+        headers: {
+          'x-api-passcode': 'PourRice',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!documentResponse.ok) {
+        throw new Error('Failed to retrieve document');
+      }
+
+      const documentResult = await documentResponse.json();
+      console.log('StorePage: DocuPipe document retrieved:', documentResult);
+
+      // Parse menu items from the document result
+      // The exact structure depends on the DocuPipe schema, but typically it will be in result.data or result.workflowResponse
+      this.extractedMenuItems = this.parseDocuPipeMenuItems(documentResult);
+
+      if (this.extractedMenuItems.length === 0) {
+        await this.showToast(lang === 'TC' ? '未能提取到菜單項目' : 'No menu items extracted', 'warning');
+      } else {
+        await this.showToast(lang === 'TC' ? `成功提取 ${this.extractedMenuItems.length} 個菜單項目` : `Successfully extracted ${this.extractedMenuItems.length} menu items`, 'success');
+        this.showExtractedItemsReview = true;
+      }
+
+      this.isPollingDocuPipe = false;
+      this.isImportingMenu = false;
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      console.error('StorePage: Error retrieving extracted menu items:', error);
+      await this.showToast(error.message || (lang === 'TC' ? '提取菜單失敗' : 'Failed to extract menu'), 'danger');
+      this.isPollingDocuPipe = false;
+      this.isImportingMenu = false;
+    }
+  }
+
+  // Parse DocuPipe response to extract menu items
+  private parseDocuPipeMenuItems(documentResult: any): Partial<MenuItem>[] {
+    const items: Partial<MenuItem>[] = [];
+
+    // Check for workflow response which may contain structured data
+    const workflowData = documentResult.workflowResponse?.data || documentResult.result?.data;
+
+    if (workflowData && Array.isArray(workflowData)) {
+      // If data is already an array of menu items
+      for (const item of workflowData) {
+        items.push({
+          Name_EN: item.name_en || item.name || item.Name_EN || null,
+          Name_TC: item.name_tc || item.Name_TC || null,
+          Description_EN: item.description_en || item.description || item.Description_EN || null,
+          Description_TC: item.description_tc || item.Description_TC || null,
+          Price: this.parsePrice(item.price || item.Price)
+        });
+      }
+    } else {
+      // Fallback: Parse from document text
+      const text = documentResult.result?.text || '';
+      const lines = text.split('\n').filter((line: string) => line.trim());
+
+      // Simple parser: look for lines with prices
+      for (const line of lines) {
+        const priceMatch = line.match(/\$?(\d+(?:\.\d{2})?)/);
+        if (priceMatch) {
+          const price = parseFloat(priceMatch[1]);
+          const name = line.replace(priceMatch[0], '').trim();
+
+          if (name.length > 0) {
+            items.push({
+              Name_EN: name,
+              Name_TC: null,
+              Description_EN: null,
+              Description_TC: null,
+              Price: price
+            });
+          }
+        }
+      }
+    }
+
+    return items;
+  }
+
+  // Parse price string to number
+  private parsePrice(priceStr: any): number | null {
+    if (typeof priceStr === 'number') return priceStr;
+    if (typeof priceStr !== 'string') return null;
+
+    const cleaned = priceStr.replace(/[^0-9.]/g, '');
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
+  }
+
+  // Remove an item from the extracted menu items list
+  removeExtractedItem(index: number): void {
+    this.extractedMenuItems.splice(index, 1);
+    this.cdr.markForCheck();
+  }
+
+  // Update an extracted menu item field
+  updateExtractedItem(index: number, field: keyof MenuItem, value: any): void {
+    if (this.extractedMenuItems[index]) {
+      (this.extractedMenuItems[index] as any)[field] = value;
+    }
+  }
+
+  // Cancel the menu import process
+  cancelMenuImport(): void {
+    this.showExtractedItemsReview = false;
+    this.extractedMenuItems = [];
+    this.selectedMenuDocument = null;
+    this.docuPipeJobId = null;
+    this.docuPipeDocumentId = null;
+    this.isImportingMenu = false;
+
+    // Reset file input
+    const fileInput = document.getElementById('menu-document-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  // Save all extracted menu items to the database
+  async saveExtractedMenuItems(): Promise<void> {
+    if (!this.restaurantId || this.extractedMenuItems.length === 0) return;
+
+    const lang = await this.getCurrentLanguage();
+
+    const loading = await this.loadingController.create({
+      message: lang === 'TC' ? '儲存菜單項目中...' : 'Saving menu items...',
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      let successCount = 0;
+      let failCount = 0;
+
+      // Save each menu item sequentially
+      for (const item of this.extractedMenuItems) {
+        try {
+          await this.feature.restaurants.createMenuItem(this.restaurantId, item).toPromise();
+          successCount++;
+        } catch (error) {
+          console.error('StorePage: Failed to save menu item:', item, error);
+          failCount++;
+        }
+      }
+
+      await loading.dismiss();
+
+      if (successCount > 0) {
+        await this.showToast(
+          lang === 'TC' ? `成功儲存 ${successCount} 個項目${failCount > 0 ? `，${failCount} 個失敗` : ''}` : `Successfully saved ${successCount} items${failCount > 0 ? `, ${failCount} failed` : ''}`,
+          failCount > 0 ? 'warning' : 'success'
+        );
+      } else {
+        await this.showToast(lang === 'TC' ? '儲存失敗' : 'Failed to save items', 'danger');
+      }
+
+      // Reload menu and reset import state
+      this.loadMenu();
+      this.cancelMenuImport();
+    } catch (error: any) {
+      console.error('StorePage: Error saving extracted menu items:', error);
+      await loading.dismiss();
+      await this.showToast(error.message || (lang === 'TC' ? '儲存失敗' : 'Save failed'), 'danger');
+    }
   }
 
   // Cleanup

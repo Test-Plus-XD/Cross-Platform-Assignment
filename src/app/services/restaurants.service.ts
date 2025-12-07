@@ -68,6 +68,8 @@ export class RestaurantsService {
   private readonly algoliaClient: SearchClient;
   // Local cache to reduce network calls
   private readonly restaurantsCache = new BehaviorSubject<Restaurant[] | null>(null);
+  // API URL exposed for direct fetch calls (e.g. DocuPipe)
+  public readonly apiUrl = environment.apiUrl;
 
   constructor(private readonly dataService: DataService) {
     console.log('RestaurantsService: Initialised');

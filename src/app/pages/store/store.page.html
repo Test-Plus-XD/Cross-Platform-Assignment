@@ -348,7 +348,7 @@
             </ion-card-content>
           </ion-card>
 
-          <!-- Opening Hours -->
+          <!-- Opening Hour -->
           <ion-card class="info-card">
             <ion-card-header>
               <ion-card-title>
@@ -359,7 +359,7 @@
             <ion-card-content>
 
               <!-- Opening Hours -->
-              <div *ngFor="let day of weekdays" class="info-row">
+              <div *ngFor="let day of weekdays" class="info-row opening-hours-row">
                 <div class="info-label">
                   {{ (lang$ | async) === 'TC' ? day.tc : day.en }}
                 </div>
@@ -368,7 +368,7 @@
                 </div>
                 <div *ngIf="isEditingInfo" class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedInfo.Opening_Hours[day.en]"
-                             [placeholder]="(lang$ | async) === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed'">
+                             [placeholder]="(lang$ | async)= = ='TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed' ">
                   </ion-input>
                 </div>
               </div>
@@ -429,7 +429,7 @@
               </div>
 
               <!-- Upload controls -->
-              <div class="upload-controls" *ngIf="!isEditingInfo">
+              <div class="upload-controls" *ngIf="isEditingInfo">
                 <input type="file"
                        id="restaurant-image-input"
                        accept="image/*"
@@ -459,13 +459,96 @@
         </div>
 
         <!-- SECTION 2: Menu Management -->
-        <div *ngIf="currentSection === 'menu'" class="section-content">
+        <div *ngIf="currentSection = = ='menu' " class="section-content">
 
-          <!-- Add menu item button -->
-          <ion-button expand="block" (click)="startAddingMenuItem()" *ngIf="!isEditingMenu">
-            <ion-icon name="add-outline" slot="start"></ion-icon>
-            {{ (lang$ | async) === 'TC' ? translations.addMenuItem.TC : translations.addMenuItem.EN }}
-          </ion-button>
+          <!-- Action buttons -->
+          <div class="menu-action-buttons" *ngIf="!isEditingMenu && !showExtractedItemsReview">
+            <ion-button expand="block" (click)="startAddingMenuItem()">
+              <ion-icon name="add-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.addMenuItem.TC : translations.addMenuItem.EN }}
+            </ion-button>
+
+            <ion-button expand="block" fill="outline" (click)="clickMenuDocumentUploadButton()" [disabled]="isImportingMenu">
+              <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? '批量匯入菜單' : 'Bulk Import Menu' }}
+            </ion-button>
+
+            <!-- Hidden file input for menu document upload -->
+            <input type="file"
+                   id="menu-document-input"
+                   accept=".pdf,image/*,.txt,.json"
+                   (change)="onMenuDocumentSelected($event)"
+                   style="display: none;">
+          </div>
+
+          <!-- DocuPipe import status -->
+          <ion-card *ngIf="selectedMenuDocument && !showExtractedItemsReview" class="import-status-card">
+            <ion-card-content>
+              <p><strong>{{ (lang$ | async) === 'TC' ? '已選擇文件' : 'Selected File' }}:</strong> {{ selectedMenuDocument.name }}</p>
+              <ion-button expand="block"
+                          [disabled]="isImportingMenu"
+                          (click)="uploadMenuDocument()">
+                <ion-icon name="send-outline" slot="start"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '開始處理' : 'Start Processing' }}
+              </ion-button>
+              <p *ngIf="isPollingDocuPipe" class="processing-text">
+                <ion-spinner name="dots"></ion-spinner>
+                {{ (lang$ | async) === 'TC' ? '正在提取菜單項目...' : 'Extracting menu items...' }}
+              </p>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Extracted items review -->
+          <ion-card *ngIf="showExtractedItemsReview" class="extracted-items-card">
+            <ion-card-header>
+              <ion-card-title>
+                <ion-icon name="document-text-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? '提取的菜單項目' : 'Extracted Menu Items' }}
+              </ion-card-title>
+              <p class="review-subtitle">{{ (lang$ | async) === 'TC' ? '請檢查並編輯項目，然後儲存' : 'Please review and edit items before saving' }}</p>
+            </ion-card-header>
+            <ion-card-content>
+
+              <!-- Extracted items table -->
+              <div class="extracted-items-table">
+                <div *ngFor="let item of extractedMenuItems; let i=index" class="extracted-item-row">
+                  <div class="item-number">{{ i + 1 }}</div>
+                  <div class="item-fields">
+                    <ion-input [(ngModel)]="item.Name_EN"
+                               [placeholder]="(lang$ | async)= = ='TC' ? '英文名稱' : 'English Name' ">
+                    </ion-input>
+                    <ion-input [(ngModel)]="item.Name_TC"
+                               [placeholder]="(lang$ | async)= = ='TC' ? '中文名稱' : 'Chinese Name' ">
+                    </ion-input>
+                    <ion-input [(ngModel)]="item.Price"
+                               type="number"
+                               [placeholder]="(lang$ | async)= = ='TC' ? '價格' : 'Price' ">
+                    </ion-input>
+                  </div>
+                  <ion-button fill="clear" size="small" color="danger" (click)="removeExtractedItem(i)">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+
+                <p *ngIf="extractedMenuItems.length = = =0" class="no-items-text">
+                  {{ (lang$ | async) === 'TC' ? '未提取到項目' : 'No items extracted' }}
+                </p>
+              </div>
+
+              <!-- Action buttons -->
+              <div class="extracted-items-actions">
+                <ion-button expand="block" color="success" (click)="saveExtractedMenuItems()" [disabled]="extractedMenuItems.length===0">
+                  <ion-icon name="save-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? `儲存全部 (${extractedMenuItems.length})` : `Save All (${extractedMenuItems.length})` }}
+                </ion-button>
+                <ion-button expand="block" fill="outline" (click)="cancelMenuImport()">
+                  <ion-icon name="close-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+                </ion-button>
+              </div>
+
+            </ion-card-content>
+          </ion-card>"
 
           <!-- Menu item editor -->
           <ion-card class="info-card" *ngIf="isEditingMenu">
