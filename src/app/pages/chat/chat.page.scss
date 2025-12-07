@@ -76,6 +76,55 @@
   }
 }
 
+// Error Container
+.error-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 20px;
+
+  .error-card {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+    ion-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 8px;
+
+      .error-icon {
+        font-size: 32px;
+      }
+
+      ion-card-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--ion-color-danger);
+      }
+    }
+
+    ion-card-content {
+      .error-message {
+        margin: 0 0 20px 0;
+        padding: 12px;
+        background: var(--ion-color-light);
+        border-radius: 8px;
+        color: var(--ion-text-color);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .retry-button {
+        margin-top: 16px;
+      }
+    }
+  }
+}
+
 // Chat Rooms Section
 .chat-rooms-section {
   margin-bottom: 24px;
@@ -304,6 +353,18 @@
 
       .room-preview {
         .last-message {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .error-container {
+    padding: 16px;
+
+    .error-card {
+      ion-card-content {
+        .error-message {
           font-size: 13px;
         }
       }

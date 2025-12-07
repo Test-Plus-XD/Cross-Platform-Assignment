@@ -42,6 +42,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   private Lightbox: PhotoSwipeLightbox | null = null;
   private HasConnected = false;
   private HistoryTimeout: any;
+  // Flag to track whether message history has been loaded at least once
+  private HasReceivedHistory = false;
 
   constructor(
     private readonly chatService: ChatService,
@@ -68,7 +70,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       }
     });
 
-    // messages subscription handles real-time message delivery from Socket.IO
+    // Messages subscription handles real-time message delivery from Socket.IO
     this.chatService.Messages$.pipe(takeUntil(this.Destroy$)).subscribe(Message => {
       const CurrentRoomId = this.getRoomId();
       if (Message.roomId === CurrentRoomId) {
@@ -87,8 +89,11 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
         // Unread count is incremented only when chat window is closed
         if (!this.isOpen) this.unreadCount++;
 
-        // Loading state is cleared when first message arrives
-        if (this.isLoadingHistory) this.isLoadingHistory = false;
+        // Loading state is cleared when first message arrives after joining
+        if (this.isLoadingHistory) {
+          console.log('ChatButton: Clearing loading state due to new message');
+          this.clearLoadingState();
+        }
 
         // Scroll position is adjusted after DOM updates
         setTimeout(() => this.scrollToBottom(), 100);
@@ -99,16 +104,16 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     this.chatService.MessageHistory$.pipe(takeUntil(this.Destroy$)).subscribe(Data => {
       const CurrentRoomId = this.getRoomId();
       if (Data.roomId === CurrentRoomId) {
-        console.log('ChatButton: Received message history -', Data.messages.length, 'messages');
+        console.log('ChatButton: Received message history -', Data.messages?.length || 0, 'messages');
 
-        // History timeout is cleared as data has arrived
-        if (this.HistoryTimeout) clearTimeout(this.HistoryTimeout);
+        // History flag is set to indicate successful history load
+        this.HasReceivedHistory = true;
 
-        // Message list is replaced with historical messages
+        // Message list is replaced with historical messages (can be empty array)
         this.messages = Data.messages || [];
 
-        // Loading state is always cleared when history arrives
-        this.isLoadingHistory = false;
+        // Loading state is always cleared when history arrives (even if empty)
+        this.clearLoadingState();
 
         console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
 
@@ -156,6 +161,16 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     if (this.Lightbox) this.Lightbox.destroy();
   }
 
+  /// Clears the loading state and any associated timeouts
+  private clearLoadingState(): void {
+    // History timeout is cleared to prevent race conditions
+    if (this.HistoryTimeout) {
+      clearTimeout(this.HistoryTimeout);
+      this.HistoryTimeout = null;
+    }
+    this.isLoadingHistory = false;
+  }
+
   /// Initialises PhotoSwipe lightbox for image previews
   private initialisePhotoSwipe(): void {
     this.Lightbox = new PhotoSwipeLightbox({
@@ -193,15 +208,19 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   private joinRoom(): void {
     const RoomId = this.getRoomId();
     console.log('ChatButton: Joining room', RoomId);
-    this.isLoadingHistory = true;
 
-    // Timeout is set to clear loading state if history doesn't arrive within 5 seconds
-    this.HistoryTimeout = setTimeout(() => {
-      if (this.isLoadingHistory) {
-        console.log('ChatButton: History timeout, clearing loading state');
-        this.isLoadingHistory = false;
-      }
-    }, 5000);
+    // Loading state is only set if history hasn't been received yet
+    if (!this.HasReceivedHistory) {
+      this.isLoadingHistory = true;
+
+      // Timeout is set to clear loading state if history doesn't arrive within 8 seconds
+      this.HistoryTimeout = setTimeout(() => {
+        if (this.isLoadingHistory && !this.HasReceivedHistory) {
+          console.log('ChatButton: History timeout reached, clearing loading state');
+          this.clearLoadingState();
+        }
+      }, 8000);
+    }
 
     this.chatService.joinRoom(RoomId);
   }
@@ -302,46 +321,65 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
       const Token = await this.authService.getIdToken();
       if (!Token) throw new Error('No authentication token available');
 
-      const formData = new FormData();
-      formData.append('image', File);
+      // FormData instance is created with correct variable name
+      const UploadFormData = new FormData();
+      UploadFormData.append('image', File);
 
-      const Headers = new HttpHeaders({
-        'Authorization': `Bearer ${Token}`,
-        'x-api-passcode': 'PourRice'
-      });
+      console.log('ChatButton: Starting image upload, file size:', File.size, 'bytes');
 
       // Progress simulation provides user feedback during upload
       const ProgressInterval = setInterval(() => {
         if (this.uploadProgress < 90) this.uploadProgress += 10;
       }, 200);
 
+      // HTTP request is made with the FormData instance (not the class constructor)
+      // Note: HttpClient automatically sets Content-Type for FormData, so we don't include it
       const Response = await this.httpClient.post<{
         success: boolean;
         imageUrl: string;
         fileName: string;
       }>(
         `${environment.apiUrl}/API/Images/upload?folder=Chat`,
-        FormData,
-        { headers: Headers }
+        UploadFormData,
+        {
+          headers: new HttpHeaders({
+            'Authorization': `Bearer ${Token}`,
+            'x-api-passcode': 'PourRice'
+          })
+        }
       ).toPromise();
 
       clearInterval(ProgressInterval);
       this.uploadProgress = 100;
 
       if (!Response || !Response.success) {
-        throw new Error('Image upload failed');
+        throw new Error(Response ? 'Image upload failed' : 'No response from server');
       }
 
       // Uploaded URL and path are stored for later use when sending message
       this.UploadedImageUrl = Response.imageUrl;
       this.UploadedImagePath = Response.fileName;
 
-      console.log('ChatButton: Image uploaded in background:', this.UploadedImageUrl);
+      console.log('ChatButton: Image uploaded successfully:', this.UploadedImageUrl);
       console.log('ChatButton: Image path stored:', this.UploadedImagePath);
 
-    } catch (Error) {
-      console.error('ChatButton: Image upload error:', Error);
-      alert('Failed to upload image. Please try again.');
+    } catch (error) {
+      console.error('ChatButton: Image upload error:', error);
+      let ErrorMessage = 'Unknown error occurred';
+
+      if (error instanceof Error) {
+        ErrorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // HTTP error response handling
+        const HttpError = error as any;
+        if (HttpError.error?.error) {
+          ErrorMessage = HttpError.error.error;
+        } else if (HttpError.message) {
+          ErrorMessage = HttpError.message;
+        }
+      }
+
+      alert(`Failed to upload image: ${ErrorMessage}. Please try again.`);
       this.clearImage();
     } finally {
       this.isUploadingImage = false;
@@ -409,22 +447,21 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
 
     try {
       // Message text is trimmed to remove whitespace
-      const messageText = this.newMessage.trim();
+      const MessageText = this.newMessage.trim();
 
       // Image URL becomes the message if no text was typed
-      const finalMessage = messageText || (this.UploadedImageUrl ? this.UploadedImageUrl : '');
-      const imageUrl = this.UploadedImageUrl ? this.UploadedImageUrl : '';
+      const FinalMessage = MessageText || (this.UploadedImageUrl ? this.UploadedImageUrl : '');
+      const ImageUrl = this.UploadedImageUrl ? this.UploadedImageUrl : '';
 
       console.log('ChatButton: Sending message to room', RoomId);
-      console.log('ChatButton: Message text:', finalMessage);
-      console.log('ChatButton: Image URL:', imageUrl);
+      console.log('ChatButton: Message text:', FinalMessage);
+      console.log('ChatButton: Image URL:', ImageUrl);
 
       // Message is sent via Socket.IO with both text and image URL
-      await this.chatService.sendMessage(RoomId, finalMessage, imageUrl);
+      await this.chatService.sendMessage(RoomId, FinalMessage, ImageUrl);
 
       // Input fields are cleared after successful send
       this.newMessage = '';
-      this.UploadedImageUrl = '';
 
       // Image references are cleared (but not deleted as message is sent)
       this.selectedImage = null;
@@ -492,8 +529,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   }
 
   /// Formats message timestamps into human-readable time strings
-  formatTime(timestamp: string): string {
-    const date = new Date(timestamp);
+  formatTime(Timestamp: string): string {
+    const date = new Date(Timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   }
 }

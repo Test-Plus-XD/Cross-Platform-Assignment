@@ -5,8 +5,25 @@
     <p>{{ (lang$ | async) === 'TC' ? '載入中...' : 'Loading...' }}</p>
   </div>
 
+  <!-- Error State -->
+  <div class="error-container" *ngIf="!isLoading && loadError">
+    <ion-card class="error-card">
+      <ion-card-header>
+        <ion-icon name="alert-circle" class="error-icon" color="danger"></ion-icon>
+        <ion-card-title>{{ (lang$ | async) === 'TC' ? '載入錯誤' : 'Loading Error' }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p class="error-message">{{ loadError }}</p>
+        <ion-button expand="block" (click)="retryLoad()" class="retry-button">
+          <ion-icon slot="start" name="refresh"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
   <!-- Chat Page Content -->
-  <div class="chat-page-container" *ngIf="!isLoading">
+  <div class="chat-page-container" *ngIf="!isLoading && !loadError">
     <!-- Page Header -->
     <div class="page-header">
       <ion-icon name="chatbubbles" class="header-icon"></ion-icon>
@@ -112,7 +129,7 @@
           <div class="info-content">
             <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="primary"></ion-icon>
             <p *ngIf="(lang$ | async) === 'TC'">
-              您可以在每個餐廳頁面與餐廳老闆聊天。尋找浮動聊天按鈕，與餐廳直接溝通，詢問菜單、預訂或任何問題。
+              您可以在每個餐廳頁面與餐廳老闆聊天。尋找浮動聊天按鈕,與餐廳直接溝通,詢問菜單、預訂或任何問題。
             </p>
             <p *ngIf="(lang$ | async) === 'EN'">
               You can chat with restaurant owners on each restaurant page. Look for the floating chat button to communicate directly with restaurants about menus, reservations, or any questions you may have.
@@ -131,7 +148,7 @@
           <div class="info-content">
             <ion-icon name="chatbox-ellipses-sharp" class="chat-icon" color="success"></ion-icon>
             <p *ngIf="(lang$ | async) === 'TC'">
-              您將在您的餐廳頁面收到來自顧客的查詢。當顧客有問題或想要預訂時,他們可以使用聊天功能與您聯繫。請及時回覆以提供最佳服務！
+              您將在您的餐廳頁面收到來自顧客的查詢。當顧客有問題或想要預訂時,他們可以使用聊天功能與您聯繫。請及時回覆以提供最佳服務!
             </p>
             <p *ngIf="(lang$ | async) === 'EN'">
               You will receive customer queries on your restaurant page. When customers have questions or want to make reservations, they can reach you through the chat feature. Please respond promptly to provide the best service!
