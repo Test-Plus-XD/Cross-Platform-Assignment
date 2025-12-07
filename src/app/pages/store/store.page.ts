@@ -1169,7 +1169,7 @@ export class StorePage implements OnInit, OnDestroy {
 
     const lang = await this.getCurrentLanguage();
     this.isImportingMenu = true;
-    this.isPollingDocuPipe = true;
+    this.isPollingDocuPipe = false; // Set to false since server handles polling.
 
     const loading = await this.loadingController.create({
       message: lang === 'TC' ? '上傳文件中...' : 'Uploading document...',
@@ -1178,17 +1178,15 @@ export class StorePage implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      // Get auth token
       const token = await this.feature.auth.getIdToken();
       if (!token) {
         throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
       }
 
-      // Prepare form data for DocuPipe upload
       const formData = new FormData();
       formData.append('file', this.selectedMenuDocument);
 
-      // Upload document to DocuPipe extract-menu endpoint
+      // Upload to unified endpoint which handles everything server-side.
       const uploadResponse = await fetch(`${this.feature.restaurants['apiUrl']}/API/DocuPipe/extract-menu`, {
         method: 'POST',
         headers: {
@@ -1203,23 +1201,36 @@ export class StorePage implements OnInit, OnDestroy {
         throw new Error(`Upload failed: ${errorText}`);
       }
 
-      const uploadResult = await uploadResponse.json();
-      this.docuPipeJobId = uploadResult.jobId;
-      this.docuPipeDocumentId = uploadResult.documentId;
+      const extractedData = await uploadResponse.json();
+      console.log('StorePage: DocuPipe extraction successful. Extracted items:', extractedData);
 
-      console.log('StorePage: DocuPipe upload successful. JobID:', this.docuPipeJobId);
+      // Parse response directly without polling.
+      this.extractedMenuItems = this.parseDocuPipeMenuItems(extractedData);
 
       await loading.dismiss();
-      await this.showToast(lang === 'TC' ? '文件已上傳，正在處理中...' : 'Document uploaded, processing...', 'success');
 
-      // Start polling for job completion
-      this.pollDocuPipeJob();
+      if (this.extractedMenuItems.length === 0) {
+        await this.showToast(lang === 'TC' ? '未能提取到菜單項目' : 'No menu items extracted', 'warning');
+      } else {
+        await this.showToast(
+          lang === 'TC'
+            ? `成功提取 ${this.extractedMenuItems.length} 個菜單項目`
+            : `Successfully extracted ${this.extractedMenuItems.length} menu items`,
+          'success'
+        );
+        this.showExtractedItemsReview = true;
+      }
+
+      this.isImportingMenu = false;
+      this.cdr.markForCheck();
     } catch (error: any) {
       console.error('StorePage: Error uploading menu document:', error);
       await loading.dismiss();
-      await this.showToast(error.message || (lang === 'TC' ? '文件上傳失敗' : 'Document upload failed'), 'danger');
+      await this.showToast(
+        error.message || (lang === 'TC' ? '文件上傳失敗' : 'Document upload failed'),
+        'danger'
+      );
       this.isImportingMenu = false;
-      this.isPollingDocuPipe = false;
     }
   }
 
@@ -1399,11 +1410,9 @@ export class StorePage implements OnInit, OnDestroy {
     this.showExtractedItemsReview = false;
     this.extractedMenuItems = [];
     this.selectedMenuDocument = null;
-    this.docuPipeJobId = null;
-    this.docuPipeDocumentId = null;
     this.isImportingMenu = false;
 
-    // Reset file input
+    // Reset file input.
     const fileInput = document.getElementById('menu-document-input') as HTMLInputElement;
     if (fileInput) {
       fileInput.value = '';

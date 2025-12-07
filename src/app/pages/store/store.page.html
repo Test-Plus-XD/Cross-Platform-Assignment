@@ -368,7 +368,7 @@
                 </div>
                 <div *ngIf="isEditingInfo" class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedInfo.Opening_Hours[day.en]"
-                             [placeholder]="(lang$ | async)= = ='TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed' ">
+                             [placeholder]="(lang$ | async) === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed' ">
                   </ion-input>
                 </div>
               </div>
@@ -459,7 +459,7 @@
         </div>
 
         <!-- SECTION 2: Menu Management -->
-        <div *ngIf="currentSection = = ='menu' " class="section-content">
+        <div *ngIf="currentSection  === 'menu' " class="section-content">
 
           <!-- Action buttons -->
           <div class="menu-action-buttons" *ngIf="!isEditingMenu && !showExtractedItemsReview">
@@ -515,14 +515,14 @@
                   <div class="item-number">{{ i + 1 }}</div>
                   <div class="item-fields">
                     <ion-input [(ngModel)]="item.Name_EN"
-                               [placeholder]="(lang$ | async)= = ='TC' ? '英文名稱' : 'English Name' ">
+                               [placeholder]="(lang$ | async) === 'TC' ? '英文名稱' : 'English Name' ">
                     </ion-input>
                     <ion-input [(ngModel)]="item.Name_TC"
-                               [placeholder]="(lang$ | async)= = ='TC' ? '中文名稱' : 'Chinese Name' ">
+                               [placeholder]="(lang$ | async) === 'TC' ? '中文名稱' : 'Chinese Name' ">
                     </ion-input>
                     <ion-input [(ngModel)]="item.Price"
                                type="number"
-                               [placeholder]="(lang$ | async)= = ='TC' ? '價格' : 'Price' ">
+                               [placeholder]="(lang$ | async) === 'TC' ? '價格' : 'Price' ">
                     </ion-input>
                   </div>
                   <ion-button fill="clear" size="small" color="danger" (click)="removeExtractedItem(i)">
@@ -530,7 +530,7 @@
                   </ion-button>
                 </div>
 
-                <p *ngIf="extractedMenuItems.length = = =0" class="no-items-text">
+                <p *ngIf="extractedMenuItems.length  === 0" class="no-items-text">
                   {{ (lang$ | async) === 'TC' ? '未提取到項目' : 'No items extracted' }}
                 </p>
               </div>
@@ -548,7 +548,7 @@
               </div>
 
             </ion-card-content>
-          </ion-card>"
+          </ion-card>
 
           <!-- Menu item editor -->
           <ion-card class="info-card" *ngIf="isEditingMenu">
