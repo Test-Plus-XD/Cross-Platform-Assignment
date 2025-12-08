@@ -44,8 +44,7 @@
       <!-- Submit Button -->
       <ion-button expand="block"
                   type="submit"
-                  class="ion-margin-top"
-                  style="background-color: var(--accent); color: whitesmoke">
+                  class="ion-margin-top submit-button">
         {{ (lang$ | async) === 'TC' ? (isLoginMode ? translations.login.TC : translations.createAccount.TC) : (isLoginMode ? translations.login.EN : translations.createAccount.EN) }}
       </ion-button>
     </form>

@@ -43,3 +43,11 @@ ion-item {
   --background: transparent;
   margin-bottom: 0.5rem;
 }
+
+.submit-button {
+  --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  --color: #ffffff;
+  font-weight: 600;
+  text-transform: none;
+  --border-radius: 12px;
+}

@@ -135,7 +135,7 @@
             <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '付款方式' : 'Payment Methods' }}</h3>
             <div class="info-content">
               <div class="payment-methods">
-                <ion-chip *ngFor="let payment of restaurant.Payments" color="primary" outline="true">
+                <ion-chip *ngFor="let payment of restaurant.Payments" class="payment-chip green-badge">
                   {{ payment }}
                 </ion-chip>
               </div>

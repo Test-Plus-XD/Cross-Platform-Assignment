@@ -17,7 +17,7 @@
           <div class="profile-header-content">
             <div class="avatar-container">
               <img [src]="photoURL" [alt]="displayName" class="profile-avatar">
-              <ion-badge class="user-type-badge" *ngIf="profile?.type" color="primary">
+              <ion-badge class="user-type-badge green-badge" *ngIf="profile?.type">
                 {{ userTypeDisplay }}
               </ion-badge>
             </div>

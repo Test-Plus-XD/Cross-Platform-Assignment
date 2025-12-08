@@ -149,8 +149,8 @@
       margin-bottom: 1rem;
 
       .dietary-tag {
-        background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
-        color: #ffffff;
+        background: rgb(232, 255, 234);
+        color: rgb(0, 100, 0);
         border-radius: 20px;
         font-size: 0.875rem;
         font-weight: 500;
@@ -204,6 +204,23 @@
 
         .payment-methods {
           font-weight: 500;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+
+          .payment-chip {
+            font-size: 0.875rem;
+            margin: 0;
+          }
+
+          .green-badge {
+            background: rgb(232, 255, 234);
+            color: rgb(0, 100, 0);
+
+            ion-label {
+              color: rgb(0, 100, 0);
+            }
+          }
         }
 
         .seats-number {
@@ -799,5 +816,22 @@
   // === BOTTOM SPACER === //
   .bottom-spacer {
     height: 2rem;
+  }
+}
+
+// Dark mode adjustments
+:host-context(.dark) {
+  .dietary-tag {
+    background: rgb(36, 66, 41) !important;
+    color: rgb(200, 255, 205) !important;
+  }
+
+  .payment-methods .green-badge {
+    background: rgb(36, 66, 41) !important;
+    color: rgb(200, 255, 205) !important;
+
+    ion-label {
+      color: rgb(200, 255, 205) !important;
+    }
   }
 }

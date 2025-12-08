@@ -244,6 +244,8 @@
       margin-top: 8px;
       --border-radius: 12px;
       font-weight: 600;
+      --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+      --color: #ffffff;
     }
   }
 
