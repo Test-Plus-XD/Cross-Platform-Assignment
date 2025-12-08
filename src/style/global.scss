@@ -265,7 +265,7 @@ ion-card {
   }
 }
 
-// Buttons
+// Buttons with gradient for primary/purple buttons
 ion-button {
   --border-radius: 12px;
   --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -274,6 +274,28 @@ ion-button {
 
   &:hover {
     --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  // Apply gradient to primary colored buttons (filled)
+  &[color="primary"]:not([fill="outline"]):not([fill="clear"]) {
+    --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+    --background-activated: linear-gradient(135deg, var(--ion-color-primary-shade), var(--ion-color-secondary-shade));
+    --background-hover: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-secondary-tint));
+  }
+
+  // Apply gradient border to outline buttons
+  &[color="primary"][fill="outline"] {
+    border: 2px solid transparent;
+    background: linear-gradient(var(--ion-background-color), var(--ion-background-color)) padding-box,
+                linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary)) border-box;
+    --border-color: transparent;
+
+    ion-label {
+      background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
   }
 }
 
@@ -317,18 +339,56 @@ p {
   transition-duration: 150ms;
 }
 
-// Modern loading states
+// Modern loading states - Use Eclipse.gif instead of spinners
 .custom-loading {
   --backdrop-opacity: 0.3;
   --spinner-color: var(--ion-color-primary);
 }
 
-// Improved badges
+// Hide all ion-spinner elements and replace with Eclipse.gif
+ion-spinner {
+  display: none !important;
+
+  &::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 40px;
+    background-image: url('/assets/icon/Eclipse.gif');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+}
+
+// Alternative: Show Eclipse.gif for loading states
+.loading-spinner-replacement {
+  width: 40px;
+  height: 40px;
+  background-image: url('/assets/icon/Eclipse.gif');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: 0 auto;
+}
+
+// Improved badges with green color (30% more green than card background)
 ion-badge {
   padding: 6px 12px;
   border-radius: 20px;
   font-weight: 600;
   font-size: 12px;
+  background: rgb(232, 255, 234);
+  color: var(--ion-text-color);
+}
+
+// Dark mode badge color
+html.dark,
+.dark {
+  ion-badge {
+    background: rgb(36, 66, 41);
+    color: var(--ion-text-color);
+  }
 }
 
 // Modern chip styling

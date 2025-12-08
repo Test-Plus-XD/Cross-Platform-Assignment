@@ -1,5 +1,5 @@
-<!-- Floating chat button -->
-<div class="chat-fab" [class.open]="isOpen" (click)="toggleChat()">
+<!-- Floating chat button (hidden when Gemini is open) -->
+<div class="chat-fab" [class.open]="isOpen" [class.hidden]="geminiButtonOpen$ | async" (click)="toggleChat()">
   <div class="chat-icon-wrapper">
     <ion-icon name="chatbubbles" class="chat-icon"></ion-icon>
   </div>

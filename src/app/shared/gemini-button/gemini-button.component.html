@@ -1,9 +1,10 @@
-<!-- Floating AI assistant button -->
+<!-- Floating AI assistant button (hidden when Chat is open) -->
 <div
   *ngIf="isVisible && isLoggedIn"
   class="gemini-fab"
   [class.dimmed]="isDimmed"
   [class.open]="isOpen"
+  [class.hidden]="chatButtonOpen$ | async"
   (click)="toggleChat()"
 >
   <div class="gemini-icon">
