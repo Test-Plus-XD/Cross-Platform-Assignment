@@ -1340,7 +1340,22 @@ export class StorePage implements OnInit, OnDestroy {
   private parseDocuPipeMenuItems(documentResult: any): Partial<MenuItem>[] {
     const items: Partial<MenuItem>[] = [];
 
-    // Check for workflow response which may contain structured data
+    // Handle new API format with menu_items array wrapper
+    if (documentResult.menu_items && Array.isArray(documentResult.menu_items)) {
+      for (const item of documentResult.menu_items) {
+        items.push({
+          Name_EN: item.Name_EN || null,
+          Name_TC: item.Name_TC || null,
+          Description_EN: item.Description_EN || null,
+          Description_TC: item.Description_TC || null,
+          Price: this.parsePrice(item.price),
+          ImageUrl: item.image || null
+        });
+      }
+      return items;
+    }
+
+    // Fallback: Check for workflow response which may contain structured data
     const workflowData = documentResult.workflowResponse?.data || documentResult.result?.data;
 
     if (workflowData && Array.isArray(workflowData)) {
@@ -1351,7 +1366,8 @@ export class StorePage implements OnInit, OnDestroy {
           Name_TC: item.name_tc || item.Name_TC || null,
           Description_EN: item.description_en || item.description || item.Description_EN || null,
           Description_TC: item.description_tc || item.Description_TC || null,
-          Price: this.parsePrice(item.price || item.Price)
+          Price: this.parsePrice(item.price || item.Price),
+          ImageUrl: item.image || item.ImageUrl || null
         });
       }
     } else {
@@ -1372,7 +1388,8 @@ export class StorePage implements OnInit, OnDestroy {
               Name_TC: null,
               Description_EN: null,
               Description_TC: null,
-              Price: price
+              Price: price,
+              ImageUrl: null
             });
           }
         }
