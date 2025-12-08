@@ -23,8 +23,10 @@ A full-stack, bilingual (English/Traditional Chinese) restaurant discovery and b
 - **Authentication:** Firebase Admin SDK 13.5.0
 - **Search Indexing:** Algolia 5.44.0
 - **AI Integration:** Google Gemini 2.5 (1.30.0)
+- **Real-time Chat:** Socket.IO 4.8.1 (server and client)
 - **File Upload:** Multer 2.0.2 (memory storage for serverless)
-- **Deployment:** Vercel (serverless functions)
+- **Deployment (REST API):** Vercel (https://vercel-express-api-alpha.vercel.app)
+- **Deployment (Socket.IO):** Railway (https://railway-socket-production.up.railway.app)
 
 ## Core Features
 
@@ -32,12 +34,21 @@ A full-stack, bilingual (English/Traditional Chinese) restaurant discovery and b
 - **Restaurant Search:** Algolia-powered full-text search with district/keyword filtering
 - **Booking System:** Create, view, update, and cancel reservations with ownership verification
 - **Review System:** User reviews with aggregate statistics per restaurant
-- **Chat Functionality:** Real-time messaging with Socket.IO integration
+- **Real-time Chat:** Socket.IO-powered live messaging between diners and restaurant owners
+  - Dedicated chat button on restaurant pages for customer-owner communication (login required)
+  - Real-time message delivery with typing indicators
+  - Image upload support with Firebase Storage integration
+  - Message history persistence and retrieval
+- **AI Assistant:** Google Gemini-powered AI chatbot for general assistance
+  - Global AI assistant button (bottom-left) available to all users without login
+  - Restaurant-specific context awareness
+  - Menu item recommendations and general dining queries
 - **Authentication:** Email/password and Google OAuth via Firebase
 - **Progressive Web App:** Offline support with service worker
 - **Interactive Maps:** Leaflet-based restaurant location visualisation
-- **AI Content Generation:** Gemini-powered description generation
+- **Restaurant Claiming:** Restaurant owners can claim unclaimed restaurants to manage them
 - **Dark Mode:** System preference detection with manual toggle
+- **Responsive Design:** Adaptive layouts for mobile and web with automatic platform detection
 
 ## Installation
 
@@ -100,11 +111,16 @@ export const environment = {
     messagingSenderId: '123456789',
     appId: '1:123456789:web:abcdef'
   },
-  apiUrl: 'http://localhost:3000',
+  apiUrl: 'http://localhost:3000', // REST API (Vercel in production)
+  socketUrl: 'http://localhost:3000', // Socket.IO server (Railway in production)
   algoliaAppId: 'YOUR_APP_ID',
   algoliaSearchKey: 'YOUR_SEARCH_KEY'
 };
 ```
+
+**Production Environment:**
+- `apiUrl`: `https://vercel-express-api-alpha.vercel.app` (REST API on Vercel)
+- `socketUrl`: `https://railway-socket-production.up.railway.app` (Socket.IO on Railway)
 
 ## Development
 
@@ -117,12 +133,14 @@ npm run dev
 
 ### Start Services Independently
 ```bash
-# Frontend only
+# Frontend only (connects to production API by default)
 npm start
 
-# Backend only
+# Backend only (if running locally - requires separate backend setup)
 npm run start:api
 ```
+
+**Note:** The application is configured to use the production API and Socket.IO servers by default. Local backend setup is optional and requires separate configuration.
 
 ### Build Commands
 ```bash
@@ -148,6 +166,10 @@ src/app/
 ```
 
 ### Backend Structure
+
+**Note:** The backend is deployed externally and not included in this repository.
+
+**REST API (Vercel):**
 ```
 API/
 ├── index.ts        # Express application entry point
@@ -162,8 +184,13 @@ API/
     ├── Images.ts
     ├── Algolia.ts
     ├── Gemini.ts
-    └── Chat.ts
+    └── Chat.ts (HTTP endpoints for chat room management)
 ```
+
+**Socket.IO Server (Railway):**
+- Dedicated WebSocket server for real-time chat functionality
+- Handles room management, message broadcasting, typing indicators
+- Independent deployment from REST API for scalability
 
 ### Data Flow
 ```

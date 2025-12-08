@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, HostListener, Input } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { GeminiService } from '../../services/gemini.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
+import { ChatVisibilityService } from '../../services/chat-visibility.service';
 import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 
 interface Message {
@@ -35,6 +36,9 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   // Language
   lang$ = this.languageService.lang$;
   currentLang: 'EN' | 'TC' = 'EN';
+
+  // Chat visibility
+  chatButtonOpen$: Observable<boolean>;
 
   // Auto-dim
   private dimTimeout: any;
@@ -84,11 +88,14 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     private readonly geminiService: GeminiService,
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
+    private readonly chatVisibilityService: ChatVisibilityService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly restaurantsService: RestaurantsService,
     private readonly sanitizer: DomSanitizer
-  ) { }
+  ) {
+    this.chatButtonOpen$ = this.chatVisibilityService.chatButtonOpen$;
+  }
 
   ngOnInit(): void {
     // Subscribe to language changes
@@ -241,6 +248,9 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   toggleChat(): void {
     this.isOpen = !this.isOpen;
     this.isDimmed = false;
+
+    // Update visibility service
+    this.chatVisibilityService.setGeminiButtonOpen(this.isOpen);
 
     if (this.isOpen) {
       setTimeout(() => this.scrollToBottom(), 100);

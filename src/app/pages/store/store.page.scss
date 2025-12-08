@@ -187,6 +187,21 @@
       flex-direction: row !important;
       align-items: center;
     }
+
+    // Special layout for opening hours: weekday name 20%, time data 80%
+    .info-label {
+      width: 20% !important;
+      min-width: 20% !important;
+      max-width: 20% !important;
+      flex-shrink: 0;
+    }
+
+    .info-value,
+    .edit-input-wrapper {
+      width: 80% !important;
+      flex: 0 0 80% !important;
+      text-align: left !important;
+    }
   }
 
    .info-label {

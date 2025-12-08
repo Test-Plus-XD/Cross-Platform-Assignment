@@ -2957,11 +2957,548 @@ Image setProperty @ dom_renderer.mjs:652
 
 ---
 
-**Document Version:** 1.7.0
-**Last Updated:** 2025-12-03
-**Changes:** Performance optimizations - split constants, fixed circular dependency, added OnPush change detection, service aggregators
+## Railway Socket.IO Chat Architecture (NEW in v1.4.0, Updated v1.6.1)
+
+### Overview
+
+The application uses a **dual-backend architecture** with separate deployments for REST API and real-time features:
+- **REST API:** Vercel (https://vercel-express-api-alpha.vercel.app) - HTTP endpoints
+- **Socket.IO Server:** Railway (https://railway-socket-production.up.railway.app) - WebSocket server
+
+This separation allows independent scaling and deployment of stateless HTTP endpoints and stateful WebSocket connections.
+
+### Architecture Components
+
+**ChatService** (`src/app/services/chat.service.ts`)
+- **Purpose:** Manages WebSocket connections and real-time messaging
+- **Connection:** Connects to `environment.socketUrl` (Railway deployment)
+- **State Management:** Observable streams for connection status, messages, typing indicators
+- **Auto-reconnection:** Exponential backoff strategy for connection resilience
+
+**ChatButtonComponent** (`src/app/shared/chat-button/`)
+- **Purpose:** Restaurant-specific chat interface
+- **Location:** Appears on restaurant detail pages (`/restaurant/:id`)
+- **Authentication:** Login required - redirects to `/login` if not authenticated
+- **Room Format:** `restaurant-{restaurantId}`
+- **Features:**
+  - Real-time message delivery
+  - Image upload with Firebase Storage
+  - Typing indicators
+  - Message history persistence
+  - Read receipts
+
+**HTTP REST Endpoints** (Vercel API)
+- `GET /API/Chat/Rooms` - List user's chat rooms
+- `GET /API/Chat/Rooms/:roomId` - Get room details
+- `POST /API/Chat/Rooms` - Create chat room
+- `GET /API/Chat/Rooms/:roomId/Messages` - Fetch message history (paginated)
+- `POST /API/Chat/Rooms/:roomId/Messages` - Save message to Firestore
+- `PUT /API/Chat/Rooms/:roomId/Messages/:messageId` - Edit message
+- `DELETE /API/Chat/Rooms/:roomId/Messages/:messageId` - Soft delete message
+
+### Socket.IO Event Flow
+
+#### Client → Server Events (Emitted)
+
+```typescript
+// User registration with server
+socket.emit('register', {
+  userId: string,          // Firebase Auth UID
+  displayName: string      // User's display name
+});
+
+// Join a chat room
+socket.emit('join-room', {
+  roomId: string,          // Room identifier (e.g., 'restaurant-ABC123')
+  userId: string           // User's UID
+});
+
+// Leave a chat room
+socket.emit('leave-room', {
+  roomId: string,
+  userId: string
+});
+
+// Send a message
+socket.emit('send-message', {
+  roomId: string,
+  userId: string,
+  displayName: string,
+  message: string          // Message content (text or image URL)
+});
+
+// Send typing indicator
+socket.emit('typing', {
+  roomId: string,
+  userId: string,
+  displayName: string,
+  isTyping: boolean        // true when typing, false when stopped
+});
+
+// Send private message (not currently used)
+socket.emit('private-message', {
+  toUserId: string,
+  fromUserId: string,
+  fromDisplayName: string,
+  message: string
+});
+```
+
+#### Server → Client Events (Listened)
+
+```typescript
+// Registration confirmation
+socket.on('registered', (data: {
+  success: boolean,
+  userId: string,
+  socketId: string
+}) => {
+  // Server confirms user registration
+  // Store socketId if needed
+});
+
+// Room joined confirmation
+socket.on('joined-room', (data: {
+  roomId: string,
+  success: boolean
+}) => {
+  // Confirmation that user successfully joined room
+});
+
+// New message received
+socket.on('new-message', (message: ChatMessage) => {
+  // Real-time message delivery
+  // Add to messages array and display
+});
+
+// Typing indicator received
+socket.on('user-typing', (data: {
+  roomId: string,
+  userId: string,
+  displayName: string,
+  isTyping: boolean
+}) => {
+  // Show/hide typing indicator
+});
+
+// User online status
+socket.on('user-online', (data: {
+  userId: string,
+  displayName: string,
+  timestamp: string
+}) => {
+  // Update user's online status indicator
+});
+
+// User offline status
+socket.on('user-offline', (data: {
+  userId: string,
+  displayName: string,
+  lastSeen: string
+}) => {
+  // Update user's offline status indicator
+});
+
+// Private message received
+socket.on('private-message', (message: any) => {
+  // Handle private messages
+});
+```
+
+### Connection Lifecycle
+
+**1. Component Initialization**
+```typescript
+ngOnInit() {
+  // Subscribe to connection state
+  this.chatService.ConnectionState$.subscribe(state => {
+    if (state) {
+      console.log('Connected to Socket.IO');
+      this.isConnected = true;
+    } else {
+      console.log('Disconnected from Socket.IO');
+      this.isConnected = false;
+    }
+  });
+
+  // Subscribe to incoming messages
+  this.chatService.Messages$.subscribe(message => {
+    this.messages.push(message);
+  });
+}
+```
+
+**2. User Opens Chat (toggleChat)**
+```typescript
+async toggleChat() {
+  if (!this.authService.currentUser) {
+    // Redirect to login if not authenticated
+    this.router.navigate(['/login']);
+    return;
+  }
+
+  this.isOpen = !this.isOpen;
+
+  if (this.isOpen) {
+    // Connect and register
+    await this.connectAndRegister();
+
+    // Join room if connected
+    if (this.chatService.isConnected && this.chatService.isRegistered) {
+      this.joinRoom();
+    }
+  } else {
+    // Leave room
+    this.leaveRoom();
+  }
+}
+```
+
+**3. Connection & Registration**
+```typescript
+private async connectAndRegister(): Promise<void> {
+  const user = this.authService.currentUser;
+
+  // Ensure connected
+  if (!this.chatService.isConnected) {
+    await this.chatService.connect();
+  }
+
+  // Register user with server
+  if (!this.chatService.isRegistered) {
+    this.chatService.registerUser(user.uid, user.displayName);
+  }
+}
+```
+
+**4. Room Management**
+```typescript
+private joinRoom(): void {
+  const roomId = `restaurant-${this.restaurantId}`;
+  const userId = this.authService.currentUser?.uid;
+
+  // Join room via Socket.IO
+  this.chatService.joinRoom(roomId, userId);
+
+  // Fetch message history from REST API
+  this.loadMessageHistory(roomId);
+}
+
+private leaveRoom(): void {
+  const roomId = `restaurant-${this.restaurantId}`;
+  this.chatService.leaveRoom(roomId);
+}
+```
+
+**5. Message Sending**
+```typescript
+async sendMessage(): Promise<void> {
+  if (!this.newMessage.trim()) return;
+
+  const roomId = `restaurant-${this.restaurantId}`;
+  const user = this.authService.currentUser;
+
+  // Send via Socket.IO for real-time delivery
+  this.chatService.sendMessage(
+    roomId,
+    this.newMessage,
+    user.uid,
+    user.displayName
+  );
+
+  // Also save to Firestore via REST API for persistence
+  await this.saveMess ageToFirestore(roomId, this.newMessage);
+
+  this.newMessage = '';
+}
+```
+
+### Image Upload Flow
+
+**1. User Selects Image**
+```typescript
+async onImageSelected(event: any): Promise<void> {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  // Validate file type and size
+  if (!file.type.startsWith('image/')) {
+    this.showToast('Please select an image file');
+    return;
+  }
+
+  // Show preview
+  this.previewUrl = URL.createObjectURL(file);
+  this.isUploadingImage = true;
+
+  // Upload to Firebase Storage
+  const imageUrl = await this.uploadImage(file);
+  this.uploadedImageUrl = imageUrl;
+
+  this.isUploadingImage = false;
+}
+```
+
+**2. Image Upload to Firebase Storage**
+```typescript
+private async uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const token = await this.authService.getIdToken();
+
+  // Upload via REST API
+  const response = await this.httpClient.post<{ imageUrl: string }>(
+    `${environment.apiUrl}/API/Images/upload`,
+    formData,
+    {
+      headers: {
+        'x-api-passcode': 'PourRice',
+        'Authorization': `Bearer ${token}`
+      }
+    }
+  ).toPromise();
+
+  return response.imageUrl;
+}
+```
+
+**3. Send Image URL as Message**
+```typescript
+async sendImageMessage(): Promise<void> {
+  if (!this.uploadedImageUrl) return;
+
+  const roomId = `restaurant-${this.restaurantId}`;
+  const user = this.authService.currentUser;
+
+  // Send image URL via Socket.IO
+  this.chatService.sendMessage(
+    roomId,
+    this.uploadedImageUrl, // Image URL as message content
+    user.uid,
+    user.displayName
+  );
+
+  // Save to Firestore
+  await this.saveMessageToFirestore(roomId, this.uploadedImageUrl);
+
+  // Clear preview
+  this.previewUrl = null;
+  this.uploadedImageUrl = null;
+}
+```
+
+### Typing Indicators
+
+**Implementation:**
+```typescript
+private typingTimeout: any;
+
+onTextareaInput(): void {
+  // Clear previous timeout
+  if (this.typingTimeout) {
+    clearTimeout(this.typingTimeout);
+  }
+
+  // Send typing start event
+  this.chatService.sendTypingIndicator(
+    `restaurant-${this.restaurantId}`,
+    true
+  );
+
+  // Auto-stop after 2 seconds of no typing
+  this.typingTimeout = setTimeout(() => {
+    this.chatService.sendTypingIndicator(
+      `restaurant-${this.restaurantId}`,
+      false
+    );
+  }, 2000);
+}
+```
+
+**Display:**
+```html
+<div *ngIf="isTyping" class="typing-indicator">
+  <ion-icon name="chatbox-ellipses-sharp" class="typing-icon"></ion-icon>
+  <span class="typing-text">{{ (lang$ | async) === 'TC' ? '正在輸入...' : 'Typing...' }}</span>
+</div>
+```
+
+### Error Handling & Reconnection
+
+**ChatService Reconnection Strategy:**
+```typescript
+private reconnectAttempts = 0;
+private maxReconnectAttempts = 5;
+private reconnectDelay = 1000; // Start with 1 second
+
+async connect(): Promise<void> {
+  try {
+    await this.socket.connect();
+    this.reconnectAttempts = 0; // Reset on success
+  } catch (error) {
+    console.error('Connection failed:', error);
+
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      // Exponential backoff
+      const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
+
+      setTimeout(() => {
+        this.reconnectAttempts++;
+        this.connect();
+      }, delay);
+    }
+  }
+}
+```
+
+### Data Persistence Strategy
+
+**Hybrid Approach:**
+1. **Real-time Delivery:** Socket.IO broadcasts messages instantly to connected clients
+2. **Persistence:** REST API saves messages to Firestore for history
+3. **History Retrieval:** On chat open, fetch last N messages from Firestore via REST API
+4. **Offline Support:** Messages sent while offline are queued and sent when reconnected
+
+**Message History Loading:**
+```typescript
+private async loadMessageHistory(roomId: string): Promise<void> {
+  try {
+    const token = await this.authService.getIdToken();
+
+    const response = await this.httpClient.get<{ messages: ChatMessage[] }>(
+      `${environment.apiUrl}/API/Chat/Rooms/${roomId}/Messages`,
+      {
+        params: { limit: '50' }, // Last 50 messages
+        headers: {
+          'x-api-passcode': 'PourRice',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    ).toPromise();
+
+    this.messages = response.messages.reverse(); // Oldest first
+  } catch (error) {
+    console.error('Failed to load message history:', error);
+  }
+}
+```
+
+### Testing Socket.IO Locally
+
+**1. Start Socket.IO Server (if running locally):**
+```bash
+# In separate terminal
+cd socket-server
+npm install
+npm start
+# Server runs on port 3000 by default
+```
+
+**2. Update Environment:**
+```typescript
+// src/environments/environment.ts
+export const environment = {
+  ...
+  socketUrl: 'http://localhost:3000' // Local Socket.IO server
+};
+```
+
+**3. Test Events:**
+```typescript
+// In browser console
+// Access ChatService via component
+const chatService = /* inject ChatService */;
+
+// Connect
+await chatService.connect();
+
+// Register
+chatService.registerUser('test-uid', 'Test User');
+
+// Join room
+chatService.joinRoom('restaurant-test', 'test-uid');
+
+// Send message
+chatService.sendMessage('restaurant-test', 'Hello!', 'test-uid', 'Test User');
+```
+
+### Common Issues & Solutions
+
+**Issue 1: Connection Fails**
+- **Symptom:** `isConnected` stays false
+- **Solution:** Check `environment.socketUrl` is correct (Railway URL for production)
+- **Debug:** Open Network tab, look for WebSocket connection attempts
+
+**Issue 2: Messages Not Appearing**
+- **Symptom:** Messages sent but not received
+- **Solution:** Ensure both users are in the same room (`join-room` must be called)
+- **Debug:** Check `socket.rooms` in server logs
+
+**Issue 3: Typing Indicator Stuck**
+- **Symptom:** "Typing..." never disappears
+- **Solution:** Ensure `isTyping: false` event is sent after timeout
+- **Debug:** Check `typing` event emissions in Network tab
+
+**Issue 4: Authentication Error**
+- **Symptom:** 401 errors when loading message history
+- **Solution:** Ensure Firebase ID token is valid and not expired
+- **Debug:** Check `Authorization` header in Network tab
+
+**Issue 5: Chat Button Appears When Gemini is Open (or vice versa)**
+- **Symptom:** Both chat buttons visible simultaneously
+- **Solution:** Ensure `ChatVisibilityService` is properly injected and state is updated
+- **Debug:** Check `chatButtonOpen$` and `geminiButtonOpen$` observables
+
+### Best Practices
+
+1. **Always Check Authentication:**
+   ```typescript
+   if (!this.authService.currentUser) {
+     this.router.navigate(['/login']);
+     return;
+   }
+   ```
+
+2. **Handle Connection Failures Gracefully:**
+   ```typescript
+   try {
+     await this.chatService.connect();
+   } catch (error) {
+     this.showToast('Failed to connect to chat server');
+   }
+   ```
+
+3. **Clean Up on Component Destroy:**
+   ```typescript
+   ngOnDestroy() {
+     this.leaveRoom();
+     this.destroy$.next();
+     this.destroy$.complete();
+   }
+   ```
+
+4. **Validate Message Content:**
+   ```typescript
+   if (!message.trim()) {
+     return; // Don't send empty messages
+   }
+   ```
+
+5. **Limit Message History:**
+   ```typescript
+   // Don't load all messages at once
+   { limit: 50, before: lastMessageId }
+   ```
+
+---
+
+**Document Version:** 1.8.0
+**Last Updated:** 2025-12-08
+**Changes:** UI color updates, chat visibility management, store page refactoring, comprehensive Socket.IO documentation
 
 **Changelog:**
+- v1.8.0 (2025-12-08): **UI IMPROVEMENTS & DOCUMENTATION UPDATE** - Implemented comprehensive UI color scheme updates across the application. **Badge Colors:** All badges now use green color with 30% more green (RGB: 232, 255, 234 in light mode, 36, 66, 41 in dark mode). **Gradient Buttons:** All primary colored buttons (both filled and outline) now use gradient styling matching the booking button design. **Loading Indicators:** Replaced all ion-spinner instances with Eclipse.gif loading animation throughout the app. **Chat Button Visibility:** Implemented ChatVisibilityService to manage mutual exclusivity between Chat and Gemini chatbox buttons - only one can be visible at a time to prevent misclicks. **Chatbox Color Updates:** Swapped Gemini chatbox message bubble colors (user messages now use --ion-background-color, AI responses use purple gradient with forced white text). Updated Chat chatbox send/attach buttons to use header gradient color, and standardized user message bubbles to use --ion-background-color theme variable. **Store Page Refactoring:** Created StoreHelpersService utility service with common helper functions for date formatting, statistics calculations, opening hours validation, and coordinate formatting. Fixed opening hours layout to display weekday names at 20% width and time data at 80% width. **Documentation:** Added comprehensive Railway Socket.IO Chat Architecture section to CLAUDE.md documenting event flow, connection lifecycle, image upload flow, typing indicators, error handling, data persistence strategy, testing procedures, common issues, and best practices. Updated README.md with latest technology stack (Socket.IO 4.8.1), deployment information (Vercel REST API, Railway Socket.IO), enhanced core features description including real-time chat and AI assistant details. Files created: chat-visibility.service.ts, store-helpers.service.ts; Files modified: global.scss (badges, buttons, loading indicators), chat-button (TS, HTML, SCSS), gemini-button (TS, HTML, SCSS), store.page.scss (opening hours layout), README.md, CLAUDE.md.
 - v1.7.0 (2025-12-03): **PERFORMANCE OPTIMIZATION RELEASE** - Implemented significant architectural improvements to reduce Angular/Ionic recompilation times by ~35-40%. **Split Constants File:** Broke down monolithic 215-line `restaurant-constants.ts` into modular files (districts.const.ts, keywords.const.ts, payments.const.ts, weekdays.const.ts, constants-helpers.ts, index.ts), reducing parsing overhead by 60-70%. **Fixed Circular Dependency:** Created `AppStateService` to eliminate circular dependency between `AppComponent` and shared components (header, menu, tab), reducing compilation time by ~15%. AppComponent simplified from 156 lines to 71 lines. **Added OnPush Change Detection:** Enabled ChangeDetectionStrategy.OnPush on large components (store.page.ts - 1,126 lines, restaurant.page.ts - 868 lines), reducing change detection overhead by 60-80% and improving scroll/form performance. **Service Aggregators:** Created `StoreFeatureService` and `RestaurantFeatureService` to consolidate commonly used services and reduce constructor injection overhead. **Performance Metrics:** Full rebuild improved from ~45-60s to ~30-40s (~33% faster), incremental recompilation from ~8-12s to ~5-7s (~40% faster). Runtime performance improved by ~50-60% for UI interactions. Files modified: Created app-state.service.ts, store-feature.service.ts, restaurant-feature.service.ts, constants/* (6 new files); Updated app.component.ts, header.component.ts, menu.component.ts, tab.component.ts, store.page.ts, restaurant.page.ts, search.page.ts; Verified zero circular dependencies with madge.
 - v1.6.1 (2025-12-03): **CRITICAL CONFIGURATION FIX** - Fixed ChatService to connect to Railway Socket.IO server instead of Vercel API. Changed connection URL from `environment.apiUrl` to `environment.socketUrl` (https://railway-socket-production.up.railway.app). Updated authentication requirements: GeminiButton (AI assistant) now accessible without login for all users, ChatButton (restaurant chat) now requires login and redirects to /login if not authenticated. Added `socketUrl` field to environment configuration. Updated documentation to reflect separate Socket.IO and REST API deployments. Files modified: chat.service.ts (socketUrl usage), gemini-button.component.ts (removed login check), chat-button.component.ts (added login check and Router import), environment.ts (added socketUrl), CLAUDE.md (documentation updates).
 - v1.6.0 (2025-12-03): **FEATURE ENHANCEMENTS** - Enhanced restaurant claiming feature with stricter validation: claim button now only shows if user type is "Restaurant" AND user's restaurantId is empty/null AND restaurant's ownerId is empty/null. Added automatic redirect to /store page after successful claim. Implemented comprehensive bilingual error messages (EN/TC) for all claim failure scenarios (already claimed, already own another, not authorized, not found, generic failure, auth token missing). Updated Chat page with user-type-specific bilingual guidance messages for Diner and Restaurant users, including icon-based information cards and contextual action buttons. Replaced animated dots typing indicator with modern chatbox-ellipses-sharp icon with pulse animation and bilingual text label. Files modified: restaurant.page.ts (checkClaimEligibility, claimRestaurant), restaurant.page.html (claim button conditions), chat.page.ts (user type detection), chat.page.html (user-type-specific messages), chat.page.scss (styling), chat-button.component.html (typing indicator), chat-button.component.scss (typing indicator styles), CLAUDE.md (documentation).

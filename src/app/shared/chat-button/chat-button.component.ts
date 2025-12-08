@@ -1,10 +1,11 @@
 import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, NgZone, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject } from 'rxjs';
+import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ChatService, ChatMessage } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
+import { ChatVisibilityService } from '../../services/chat-visibility.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
@@ -37,6 +38,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   UploadedImagePath: string | null = null;
 
   lang$ = this.languageService.lang$;
+  geminiButtonOpen$: Observable<boolean>;
   private Destroy$ = new Subject<void>();
   private TypingTimeout: any;
   private Lightbox: PhotoSwipeLightbox | null = null;
@@ -49,11 +51,14 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     private readonly chatService: ChatService,
     private readonly authService: AuthService,
     private readonly languageService: LanguageService,
+    private readonly chatVisibilityService: ChatVisibilityService,
     private readonly router: Router,
     private readonly httpClient: HttpClient,
     private readonly ngZone: NgZone,
     private readonly changeDetectorRef: ChangeDetectorRef
-  ) { }
+  ) {
+    this.geminiButtonOpen$ = this.chatVisibilityService.geminiButtonOpen$;
+  }
 
   ngOnInit(): void {
     // Connection state subscription monitors Socket.IO connection status
@@ -271,6 +276,7 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     if (!this.authService.currentUser) {
       this.isOpen = true;
       this.showLoginPrompt = true;
+      this.chatVisibilityService.setChatButtonOpen(true);
       this.changeDetectorRef.markForCheck();
       return;
     }
@@ -278,6 +284,9 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     // Chat window state is toggled
     this.isOpen = !this.isOpen;
     this.showLoginPrompt = false;
+
+    // Update visibility service
+    this.chatVisibilityService.setChatButtonOpen(this.isOpen);
 
     if (this.isOpen) {
       // Opening chat triggers connection and room joining

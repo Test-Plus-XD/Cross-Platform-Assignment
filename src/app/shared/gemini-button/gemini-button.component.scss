@@ -35,6 +35,12 @@
     pointer-events: none;
   }
 
+  &.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.8) translateX(-90%) translateY(120%);
+  }
+
   .gemini-icon {
     width: 24px;
     height: 24px;
@@ -211,18 +217,23 @@
       flex-direction: row-reverse;
 
       .message-content {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: var(--ion-background-color);
+        color: var(--ion-text-color);
         border-radius: 18px 18px 4px 18px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
       }
     }
 
     &.assistant {
       .message-content {
-        background: var(--ion-background-color);
-        color: var(--ion-text-color);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
         border-radius: 18px 18px 18px 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+        // Force white text for all child elements in Gemini's responses
+        * {
+          color: white !important;
+        }
       }
     }
 
