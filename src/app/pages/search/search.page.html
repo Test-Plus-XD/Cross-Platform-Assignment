@@ -45,8 +45,7 @@
 
           <!-- District Tags -->
           <ion-chip *ngFor="let district of selectedDistrictTokens"
-                    color="primary"
-                    class="filter-tag">
+                    class="filter-tag green-badge">
             <ion-label>{{ getDistrictLabel(district) }}</ion-label>
             <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
           </ion-chip>
@@ -67,8 +66,7 @@
 
           <!-- Keyword Tags -->
           <ion-chip *ngFor="let keyword of selectedKeywordTokens"
-                    color="primary"
-                    class="filter-tag">
+                    class="filter-tag green-badge">
             <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
             <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
           </ion-chip>
