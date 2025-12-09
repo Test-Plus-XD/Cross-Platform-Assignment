@@ -12,6 +12,7 @@ import { District, Districts } from '../../constants/districts.const';
 import { Keyword, Keywords } from '../../constants/keywords.const';
 import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
 import { Weekday, Weekdays } from '../../constants/weekdays.const';
+import { MenuItemFieldLabels } from '../../constants/menu-fields.const';
 import * as L from 'leaflet';
 
 @Component({
@@ -63,6 +64,7 @@ export class StorePage implements OnInit, OnDestroy {
   keywords = Keywords;
   paymentMethods = PaymentMethods;
   weekdays = Weekdays;
+  menuItemFieldLabels = MenuItemFieldLabels;
 
   // Edited restaurant info
   editedInfo = {
@@ -178,17 +180,7 @@ export class StorePage implements OnInit, OnDestroy {
     rejectBookingMessage: { EN: 'Reject this booking?', TC: '拒絕此預約？' },
     completeBookingTitle: { EN: 'Complete Booking', TC: '完成預約' },
     completeBookingMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為完成？' },
-    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' },
-    // Menu item field labels (user-friendly names)
-    menuItemFieldLabels: {
-      Name_EN: { EN: 'Item Name (English)', TC: '菜品名稱（英文）' },
-      Name_TC: { EN: 'Item Name (Chinese)', TC: '菜品名稱（中文）' },
-      Description_EN: { EN: 'Item Description (English)', TC: '菜品描述（英文）' },
-      Description_TC: { EN: 'Item Description (Chinese)', TC: '菜品描述（中文）' },
-      price: { EN: 'Price', TC: '價格' },
-      image: { EN: 'Item Image', TC: '菜品圖片' },
-      imageUrl: { EN: 'Item Image', TC: '菜品圖片' }
-    }
+    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' }
   };
 
   constructor(
@@ -913,7 +905,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Get user-friendly field label for menu item fields
   getMenuItemFieldLabel(fieldName: string, language: 'EN' | 'TC'): string {
-    const labels = this.translations.menuItemFieldLabels as any;
+    const labels = this.menuItemFieldLabels as any;
     if (labels && labels[fieldName]) {
       return labels[fieldName][language] || fieldName;
     }
