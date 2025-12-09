@@ -9,11 +9,6 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'test',
-    data: { title: { Header_EN: 'Test', Header_TC: '測試' } },
-    loadChildren: () => import('./pages/test/test.module').then(m => m.TestPageModule)
-  },
-  {
     path: 'home',
     data: { title: { Header_EN: 'Home', Header_TC: '主頁' } },
     loadChildren: () => import('./pages/home/home.module').then(m => m.HomePageModule)
