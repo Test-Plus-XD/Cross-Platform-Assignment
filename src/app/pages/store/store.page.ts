@@ -178,7 +178,17 @@ export class StorePage implements OnInit, OnDestroy {
     rejectBookingMessage: { EN: 'Reject this booking?', TC: '拒絕此預約？' },
     completeBookingTitle: { EN: 'Complete Booking', TC: '完成預約' },
     completeBookingMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為完成？' },
-    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' }
+    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' },
+    // Menu item field labels (user-friendly names)
+    menuItemFieldLabels: {
+      Name_EN: { EN: 'Item Name (English)', TC: '菜品名稱（英文）' },
+      Name_TC: { EN: 'Item Name (Chinese)', TC: '菜品名稱（中文）' },
+      Description_EN: { EN: 'Item Description (English)', TC: '菜品描述（英文）' },
+      Description_TC: { EN: 'Item Description (Chinese)', TC: '菜品描述（中文）' },
+      price: { EN: 'Price', TC: '價格' },
+      image: { EN: 'Item Image', TC: '菜品圖片' },
+      imageUrl: { EN: 'Item Image', TC: '菜品圖片' }
+    }
   };
 
   constructor(
@@ -899,6 +909,52 @@ export class StorePage implements OnInit, OnDestroy {
       const method = this.paymentMethods.find(methodItem => methodItem.en === paymentCode);
       return method ? (language === 'TC' ? method.tc : method.en) : paymentCode;
     }).join(', ');
+  }
+
+  // Get user-friendly field label for menu item fields
+  getMenuItemFieldLabel(fieldName: string, language: 'EN' | 'TC'): string {
+    const labels = this.translations.menuItemFieldLabels as any;
+    if (labels && labels[fieldName]) {
+      return labels[fieldName][language] || fieldName;
+    }
+    return fieldName;
+  }
+
+  // Get image URL from menu item, handling both 'image' and 'imageUrl' properties
+  getMenuItemImageUrl(item: MenuItem): string | null {
+    const imageUrl = (item as any).imageUrl || (item as any).image;
+    if (imageUrl && imageUrl !== '—' && imageUrl !== 'null') {
+      return imageUrl;
+    }
+    return null;
+  }
+
+  // Get all non-null field entries for a menu item
+  getMenuItemFields(item: MenuItem): Array<{ key: string; value: any; type: 'text' | 'textarea' | 'number' | 'image' }> {
+    const fields: Array<{ key: string; value: any; type: 'text' | 'textarea' | 'number' | 'image' }> = [];
+
+    // Order: names, descriptions, price, image
+    if (item.Name_EN && item.Name_EN !== '—') {
+      fields.push({ key: 'Name_EN', value: item.Name_EN, type: 'text' });
+    }
+    if (item.Name_TC && item.Name_TC !== '—') {
+      fields.push({ key: 'Name_TC', value: item.Name_TC, type: 'text' });
+    }
+    if (item.Description_EN && item.Description_EN !== '—') {
+      fields.push({ key: 'Description_EN', value: item.Description_EN, type: 'textarea' });
+    }
+    if (item.Description_TC && item.Description_TC !== '—') {
+      fields.push({ key: 'Description_TC', value: item.Description_TC, type: 'textarea' });
+    }
+    if (item.price !== null && item.price !== undefined) {
+      fields.push({ key: 'price', value: item.price, type: 'number' });
+    }
+    const imageUrl = this.getMenuItemImageUrl(item);
+    if (imageUrl) {
+      fields.push({ key: 'image', value: imageUrl, type: 'image' });
+    }
+
+    return fields;
   }
 
   // Handle pull-to-refresh action by reloading all restaurant data.
