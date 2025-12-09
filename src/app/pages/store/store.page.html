@@ -101,7 +101,7 @@
                 <ion-icon name="save-outline" slot="start"></ion-icon>
                 {{ (lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
               </ion-button>
-              <ion-button expand="block" fill="outline" (click)="cancelEditingInfo()">
+              <ion-button expand="block" color="warning" fill="outline" (click)="cancelEditingInfo()">
                 <ion-icon name="close-outline" slot="start"></ion-icon>
                 {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
               </ion-button>
@@ -584,7 +584,7 @@
                   <ion-icon name="save-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? `儲存全部 (${extractedMenuItems.length})` : `Save All (${extractedMenuItems.length})` }}
                 </ion-button>
-                <ion-button expand="block" fill="outline" (click)="cancelMenuImport()">
+                <ion-button expand="block" color="warning" fill="outline" (click)="cancelMenuImport()">
                   <ion-icon name="close-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
                 </ion-button>
@@ -607,8 +607,7 @@
               <!-- Name_EN -->
               <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <div class="field-label">{{ lang === 'TC' ? translations.nameEN.TC : translations.nameEN.EN }}</div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('Name_EN', lang) }}</div>
+                  <div class="field-label">{{ getMenuItemFieldLabel('Name_EN', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedMenuItem.Name_EN"
@@ -620,8 +619,7 @@
               <!-- Name_TC -->
               <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <div class="field-label">{{ lang === 'TC' ? translations.nameTC.TC : translations.nameTC.EN }}</div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('Name_TC', lang) }}</div>
+                  <div class="field-label">{{ getMenuItemFieldLabel('Name_TC', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedMenuItem.Name_TC"
@@ -633,8 +631,7 @@
               <!-- Description_EN -->
               <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <div class="field-label">{{ lang === 'TC' ? '描述（英文）' : 'Description (English)' }}</div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('Description_EN', lang) }}</div>
+                  <div class="field-label">{{ getMenuItemFieldLabel('Description_EN', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
                   <ion-textarea [(ngModel)]="editedMenuItem.Description_EN"
@@ -647,8 +644,7 @@
               <!-- Description_TC -->
               <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <div class="field-label">{{ lang === 'TC' ? '描述（中文）' : 'Description (Chinese)' }}</div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('Description_TC', lang) }}</div>
+                  <div class="field-label">{{ getMenuItemFieldLabel('Description_TC', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
                   <ion-textarea [(ngModel)]="editedMenuItem.Description_TC"
@@ -661,8 +657,7 @@
               <!-- Price -->
               <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <div class="field-label">{{ lang === 'TC' ? translations.price.TC : translations.price.EN }}</div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('price', lang) }}</div>
+                  <div class="field-label">{{ getMenuItemFieldLabel('price', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedMenuItem.price"
@@ -676,10 +671,8 @@
               <div class="info-row menu-field-row">
                 <div class="info-label">
                   <div class="field-label">
-                    <ion-icon name="image-outline"></ion-icon>
-                    {{ lang === 'TC' ? '菜品圖片' : 'Item Image' }}
+                    {{ getMenuItemFieldLabel('imageUrl', lang) }}
                   </div>
-                  <div class="field-code">{{ getMenuItemFieldLabel('imageUrl', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
 
@@ -715,7 +708,7 @@
                   <ion-icon name="save-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
                 </ion-button>
-                <ion-button expand="block" fill="outline" (click)="cancelEditingMenu(); clearMenuItemImageSelection()">
+                <ion-button expand="block" color="warning" fill="outline" (click)="cancelEditingMenu(); clearMenuItemImageSelection()">
                   <ion-icon name="close-outline" slot="start"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
                 </ion-button>

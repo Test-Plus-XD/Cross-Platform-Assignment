@@ -12,7 +12,7 @@ import { District, Districts } from '../../constants/districts.const';
 import { Keyword, Keywords } from '../../constants/keywords.const';
 import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
 import { Weekday, Weekdays } from '../../constants/weekdays.const';
-import { MenuItemFieldLabels } from '../../constants/menu-fields.const';
+import { MenuItemFieldLabels } from '../../constants/restaurant-constants';
 import * as L from 'leaflet';
 
 @Component({
