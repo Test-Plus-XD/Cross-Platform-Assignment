@@ -1366,8 +1366,8 @@ export class StorePage implements OnInit, OnDestroy {
           Name_TC: item.name_tc || item.Name_TC || null,
           Description_EN: item.description_en || item.description || item.Description_EN || null,
           Description_TC: item.description_tc || item.Description_TC || null,
-          price: this.parsePrice(item.price || item.Price),
-          imageUrl: item.image || item.ImageUrl || null
+          price: this.parsePrice(item.price || item.price),
+          imageUrl: item.image || item.imageUrl || null
         });
       }
     } else {

@@ -236,8 +236,8 @@
           <div *ngIf="!isMenuLoading && menuItems.length > 0" class="menu-list">
             <div *ngFor="let item of menuItems" class="menu-item">
               <div class="menu-item-price">
-                <span *ngIf="item.Price">${{ item.Price }}</span>
-                <span *ngIf="!item.Price">—</span>
+                <span *ngIf="item.price">${{ item.price }}</span>
+                <span *ngIf="!item.price">—</span>
               </div>
               <div class="menu-item-info">
                 <h4 class="menu-item-name">

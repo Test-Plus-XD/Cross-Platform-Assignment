@@ -344,7 +344,7 @@ export class RestaurantsService {
         // Sanitise ImageUrl for each menu item
         return (response.data || []).map(item => ({
           ...item,
-          ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
+          ImageUrl: this.sanitizeImageUrl(item.imageUrl)
         }));
       }),
       tap(items => {
@@ -370,7 +370,7 @@ export class RestaurantsService {
         // Sanitise ImageUrl for the menu item
         return {
           ...item,
-          ImageUrl: this.sanitizeImageUrl(item.ImageUrl)
+          ImageUrl: this.sanitizeImageUrl(item.imageUrl)
         };
       }),
       catchError(err => {
@@ -502,7 +502,7 @@ export class RestaurantsService {
       tap(response => {
         console.log('RestaurantsService: Menu item image uploaded successfully:', response.imageUrl);
         // Update the menu item with the new image URL
-        this.updateMenuItem(restaurantId, menuItemId, { ImageUrl: response.imageUrl }).subscribe({
+        this.updateMenuItem(restaurantId, menuItemId, { imageUrl: response.imageUrl }).subscribe({
           next: () => console.log('RestaurantsService: Menu item updated with new image URL'),
           error: (err) => console.error('RestaurantsService: Failed to update menu item with image URL:', err)
         });

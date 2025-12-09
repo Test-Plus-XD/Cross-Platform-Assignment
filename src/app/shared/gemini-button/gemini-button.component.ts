@@ -298,7 +298,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
           ? (item.Description_TC || item.Description_EN || '')
           : (item.Description_EN || item.Description_TC || '');
 
-        const priceText = item.Price ? `$${item.Price}` : '';
+        const priceText = item.price ? `$${item.price}` : '';
 
         return `- ${itemName}${priceText ? ' (' + priceText + ')' : ''}${itemDescription ? ': ' + itemDescription : ''}`;
       }).join('\n');

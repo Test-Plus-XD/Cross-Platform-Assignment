@@ -16,7 +16,7 @@ import { Observable } from 'rxjs';
         <ion-item *ngFor="let item of (menu || [])">
           <ion-label>
             <div class="font-medium">{{ (langStream | async) === 'TC' ? (item?.Name_TC ?? item?.Name_EN ?? '-') : (item?.Name_EN ?? item?.Name_TC ?? '-') }}</div>
-            <div class="muted small">{{ item?.Price != null ? ('$' + item.Price) : '-' }}</div>
+            <div class="muted small">{{ item?.Price != null ? ('$' + item.price) : '-' }}</div>
             <div class="muted small">{{ (langStream | async) === 'TC' ? (item?.Description_TC ?? item?.Description_EN ?? '') : (item?.Description_EN ?? item?.Description_TC ?? '') }}</div>
           </ion-label>
         </ion-item>
