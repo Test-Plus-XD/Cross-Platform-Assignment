@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.service';
 import { UserService, UserProfile } from '../../services/user.service';
 import { LanguageService } from '../../services/language.service';
 import { ChatService, ChatRoom } from '../../services/chat.service';
+import { ChatButtonComponent } from '../../shared/chat-button/chat-button.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -16,6 +17,9 @@ import { environment } from '../../../environments/environment';
   standalone: false,
 })
 export class ChatPage implements OnInit, OnDestroy {
+  // ViewChild reference to ChatButton component
+  @ViewChild(ChatButtonComponent) chatButton?: ChatButtonComponent;
+
   // Language stream
   lang$ = this.languageService.lang$;
 
@@ -27,6 +31,11 @@ export class ChatPage implements OnInit, OnDestroy {
   // Chat rooms
   chatRooms: ChatRoom[] = [];
   selectedRoom: ChatRoom | null = null;
+
+  // Selected chat room data for ChatButton
+  selectedRestaurantId: string | null = null;
+  selectedRestaurantName: string | null = null;
+  selectedRestaurantOwnerId: string | null = null;
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -179,47 +188,35 @@ export class ChatPage implements OnInit, OnDestroy {
     }
   }
 
-  /// Opens a specific chat room
+  /// Opens a specific chat room by opening the ChatButton chatbox
   async openChatRoom(Room: ChatRoom): Promise<void> {
     this.selectedRoom = Room;
 
     console.log('ChatPage: Opening chat room', Room.roomId);
 
-    // Ensure Socket.IO is connected before joining room
-    if (!this.chatService.isConnected) {
-      console.log('ChatPage: Socket not connected, connecting now');
-      this.chatService.connect();
-
-      // Wait for connection before proceeding
-      await new Promise<void>((resolve) => {
-        const subscription = this.chatService.ConnectionState$.subscribe(state => {
-          if (state === 'connected') {
-            console.log('ChatPage: Socket connected successfully');
-            subscription.unsubscribe();
-            resolve();
-          }
-        });
-
-        // Timeout after 5 seconds
-        setTimeout(() => {
-          subscription.unsubscribe();
-          resolve();
-        }, 5000);
-      });
-    }
-
-    // Socket.IO room is joined for real-time updates
-    await this.chatService.joinRoom(Room.roomId);
-
-    // Navigation is handled based on room type
+    // Extract restaurant data from room
     if (Room.roomId.startsWith('restaurant-')) {
-      // Restaurant chat rooms navigate to restaurant page (SINGULAR not plural)
       const RestaurantId = Room.roomId.replace('restaurant-', '');
-      console.log('ChatPage: Navigating to restaurant page:', RestaurantId);
-      this.router.navigate(['/restaurant', RestaurantId]); // Fixed: Changed from '/restaurants' to '/restaurant'
+
+      // Set restaurant data for ChatButton component
+      this.selectedRestaurantId = RestaurantId;
+      this.selectedRestaurantName = Room.name || this.getRoomDisplayName(Room);
+      this.selectedRestaurantOwnerId = Room.participantsData?.[0]?.uid || null;
+
+      console.log('ChatPage: Opening chatbox for restaurant:', this.selectedRestaurantId);
+
+      // Wait for view to update with new inputs
+      setTimeout(() => {
+        // Programmatically open the ChatButton chatbox
+        if (this.chatButton) {
+          this.chatButton.toggleChat();
+        } else {
+          console.warn('ChatPage: ChatButton component not found');
+        }
+      }, 100);
     } else {
       // Other room types could be handled here in future
-      console.log('ChatPage: Room type not yet supported for navigation');
+      console.log('ChatPage: Room type not yet supported');
     }
   }
 

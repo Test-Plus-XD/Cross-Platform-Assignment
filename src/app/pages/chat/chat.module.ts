@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
 import { ChatPageRoutingModule } from './chat-routing.module';
+import { SharedModule } from '../../shared/shared.module';
 
 import { ChatPage } from './chat.page';
 
@@ -13,7 +14,8 @@ import { ChatPage } from './chat.page';
     CommonModule,
     FormsModule,
     IonicModule,
-    ChatPageRoutingModule
+    ChatPageRoutingModule,
+    SharedModule
   ],
   declarations: [ChatPage]
 })
