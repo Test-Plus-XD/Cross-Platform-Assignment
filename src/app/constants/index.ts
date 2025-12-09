@@ -6,4 +6,5 @@ export * from './districts.const';
 export * from './keywords.const';
 export * from './payments.const';
 export * from './weekdays.const';
+export * from './menu-fields.const';
 export * from './constants-helpers';

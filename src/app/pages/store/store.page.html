@@ -510,30 +510,73 @@
             <ion-card-content>
 
               <!-- Extracted items table -->
-              <div class="extracted-items-table">
-                <div *ngFor="let item of extractedMenuItems; let i=index" class="extracted-item-row">
-                  <div class="item-number">{{ i + 1 }}</div>
-                  <div class="item-fields">
-                    <ion-input [(ngModel)]="item.Name_EN"
-                               [placeholder]="(lang$ | async) === 'TC' ? '英文名稱' : 'English Name' ">
-                    </ion-input>
-                    <ion-input [(ngModel)]="item.Name_TC"
-                               [placeholder]="(lang$ | async) === 'TC' ? '中文名稱' : 'Chinese Name' ">
-                    </ion-input>
-                    <ion-input [(ngModel)]="item.price"
-                               type="number"
-                               [placeholder]="(lang$ | async) === 'TC' ? '價格' : 'Price' ">
-                    </ion-input>
-                  </div>
-                  <ion-button fill="clear" size="small" color="danger" (click)="removeExtractedItem(i)">
-                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-                  </ion-button>
-                </div>
+              <ng-container *ngIf="lang$ | async as lang">
+                <div class="extracted-items-table">
+                  <div *ngFor="let item of extractedMenuItems; let i=index" class="extracted-item-row">
+                    <div class="item-number">{{ i + 1 }}</div>
+                    <div class="item-fields">
+                      <!-- Name_EN -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('Name_EN', lang) }}</label>
+                        <ion-input [(ngModel)]="item.Name_EN"
+                                   [placeholder]="getMenuItemFieldLabel('Name_EN', lang)">
+                        </ion-input>
+                      </div>
 
-                <p *ngIf="extractedMenuItems.length  === 0" class="no-items-text">
-                  {{ (lang$ | async) === 'TC' ? '未提取到項目' : 'No items extracted' }}
-                </p>
-              </div>
+                      <!-- Name_TC -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('Name_TC', lang) }}</label>
+                        <ion-input [(ngModel)]="item.Name_TC"
+                                   [placeholder]="getMenuItemFieldLabel('Name_TC', lang)">
+                        </ion-input>
+                      </div>
+
+                      <!-- Description_EN -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('Description_EN', lang) }}</label>
+                        <ion-textarea [(ngModel)]="item.Description_EN"
+                                      rows="2"
+                                      [placeholder]="getMenuItemFieldLabel('Description_EN', lang)">
+                        </ion-textarea>
+                      </div>
+
+                      <!-- Description_TC -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('Description_TC', lang) }}</label>
+                        <ion-textarea [(ngModel)]="item.Description_TC"
+                                      rows="2"
+                                      [placeholder]="getMenuItemFieldLabel('Description_TC', lang)">
+                        </ion-textarea>
+                      </div>
+
+                      <!-- Price -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('price', lang) }}</label>
+                        <ion-input [(ngModel)]="item.price"
+                                   type="number"
+                                   [placeholder]="getMenuItemFieldLabel('price', lang)">
+                        </ion-input>
+                      </div>
+
+                      <!-- ImageUrl -->
+                      <div class="field-group">
+                        <label class="field-label-small">{{ getMenuItemFieldLabel('imageUrl', lang) }}</label>
+                        <ion-input [(ngModel)]="item.imageUrl"
+                                   type="url"
+                                   [placeholder]="getMenuItemFieldLabel('imageUrl', lang)">
+                        </ion-input>
+                      </div>
+                    </div>
+                    <ion-button fill="clear" size="small" color="danger" (click)="removeExtractedItem(i)">
+                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                  </div>
+
+                  <p *ngIf="extractedMenuItems.length === 0" class="no-items-text">
+                    {{ lang === 'TC' ? '未提取到項目' : 'No items extracted' }}
+                  </p>
+                </div>
+              </ng-container>
 
               <!-- Action buttons -->
               <div class="extracted-items-actions">
@@ -696,65 +739,62 @@
             </div>
 
             <!-- Menu items -->
-            <ion-card *ngFor="let item of menuItems" class="menu-item-card">
-              <ion-card-content>
-                <div class="menu-item-header">
-                  <h3>{{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN) : (item.Name_EN || item.Name_TC) }}</h3>
-                  <div class="menu-item-actions">
-                    <ion-button fill="clear" size="small" (click)="startEditingMenuItem(item)">
-                      <ion-icon name="create-outline" slot="icon-only"></ion-icon>
-                    </ion-button>
-                    <ion-button fill="clear" size="small" color="danger" (click)="deleteMenuItem(item)">
-                      <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-                    </ion-button>
-                  </div>
-                </div>
-
-                <!-- Display all non-null values with bilingual support -->
-                <div class="menu-item-details">
-                  <!-- Current language name (larger, on top) -->
-                  <div class="menu-item-field current-language-name">
-                    <span class="field-value-primary">
-                      {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN) : (item.Name_EN || item.Name_TC) }}
-                    </span>
+            <ng-container *ngIf="lang$ | async as lang">
+              <ion-card *ngFor="let item of menuItems" class="menu-item-card">
+                <ion-card-content>
+                  <div class="menu-item-header">
+                    <div class="menu-item-actions">
+                      <ion-button fill="clear" size="small" (click)="startEditingMenuItem(item)">
+                        <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+                      </ion-button>
+                      <ion-button fill="clear" size="small" color="danger" (click)="deleteMenuItem(item)">
+                        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                      </ion-button>
+                    </div>
                   </div>
 
-                  <!-- Other language name if available -->
-                  <div class="menu-item-field other-language-name" *ngIf="(lang$ | async) === 'TC' ? (item.Name_EN && item.Name_EN !== item.Name_TC) : (item.Name_TC && item.Name_TC !== item.Name_EN)">
-                    <span class="field-label">{{ (lang$ | async) === 'TC' ? 'English' : '中文' }}:</span>
-                    <span class="field-value-secondary">
-                      {{ (lang$ | async) === 'TC' ? item.Name_EN : item.Name_TC }}
-                    </span>
-                  </div>
+                  <!-- Display all non-null values with field labels -->
+                  <div class="menu-item-details">
 
-                  <!-- Current language description (larger) -->
-                  <div class="menu-item-field current-language-description" *ngIf="(lang$ | async) === 'TC' ? item.Description_TC : item.Description_EN">
-                    <p class="field-value-primary">
-                      {{ (lang$ | async) === 'TC' ? item.Description_TC : item.Description_EN }}
-                    </p>
-                  </div>
+                    <!-- Name_EN (if not null) -->
+                    <div class="menu-item-field" *ngIf="item.Name_EN && item.Name_EN !== '—'">
+                      <span class="field-label">{{ getMenuItemFieldLabel('Name_EN', lang) }}</span>
+                      <span class="field-value">{{ item.Name_EN }}</span>
+                    </div>
 
-                  <!-- Other language description if available -->
-                  <div class="menu-item-field other-language-description" *ngIf="(lang$ | async) === 'TC' ? (item.Description_EN && item.Description_EN !== item.Description_TC) : (item.Description_TC && item.Description_TC !== item.Description_EN)">
-                    <span class="field-label">{{ (lang$ | async) === 'TC' ? 'English' : '中文' }}:</span>
-                    <p class="field-value-secondary">
-                      {{ (lang$ | async) === 'TC' ? item.Description_EN : item.Description_TC }}
-                    </p>
-                  </div>
+                    <!-- Name_TC (if not null) -->
+                    <div class="menu-item-field" *ngIf="item.Name_TC && item.Name_TC !== '—'">
+                      <span class="field-label">{{ getMenuItemFieldLabel('Name_TC', lang) }}</span>
+                      <span class="field-value">{{ item.Name_TC }}</span>
+                    </div>
 
-                  <!-- Price -->
-                  <div class="menu-item-field price" *ngIf="item.price !== null && item.price !== undefined">
-                    <span class="field-label">{{ (lang$ | async) === 'TC' ? '價格' : 'Price' }}:</span>
-                    <span class="field-value-secondary price-value">${{ item.price }}</span>
-                  </div>
+                    <!-- Description_EN (if not null) -->
+                    <div class="menu-item-field" *ngIf="item.Description_EN && item.Description_EN !== '—'">
+                      <span class="field-label">{{ getMenuItemFieldLabel('Description_EN', lang) }}</span>
+                      <p class="field-value">{{ item.Description_EN }}</p>
+                    </div>
 
-                  <!-- Image -->
-                  <div class="menu-item-field image" *ngIf="getMenuItemImageUrl(item)">
-                    <img [src]="getMenuItemImageUrl(item)" alt="Menu item image" class="menu-item-image">
+                    <!-- Description_TC (if not null) -->
+                    <div class="menu-item-field" *ngIf="item.Description_TC && item.Description_TC !== '—'">
+                      <span class="field-label">{{ getMenuItemFieldLabel('Description_TC', lang) }}</span>
+                      <p class="field-value">{{ item.Description_TC }}</p>
+                    </div>
+
+                    <!-- Price (if not null) -->
+                    <div class="menu-item-field" *ngIf="item.price !== null && item.price !== undefined">
+                      <span class="field-label">{{ getMenuItemFieldLabel('price', lang) }}</span>
+                      <span class="field-value price-value">${{ item.price }}</span>
+                    </div>
+
+                    <!-- Image (if not null) -->
+                    <div class="menu-item-field image-field" *ngIf="getMenuItemImageUrl(item)">
+                      <span class="field-label">{{ getMenuItemFieldLabel('imageUrl', lang) }}</span>
+                      <img [src]="getMenuItemImageUrl(item)" alt="Menu item image" class="menu-item-image">
+                    </div>
                   </div>
-                </div>
-              </ion-card-content>
-            </ion-card>
+                </ion-card-content>
+              </ion-card>
+            </ng-container>
 
           </div>
 
