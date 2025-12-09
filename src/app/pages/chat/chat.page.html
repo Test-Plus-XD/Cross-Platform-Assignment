@@ -158,4 +158,12 @@
       </ion-card>
     </div>
   </div>
+
+  <!-- ChatButton Component - Opens when user clicks a chat room -->
+  <app-chat-button
+    *ngIf="selectedRestaurantId"
+    [restaurantId]="selectedRestaurantId"
+    [restaurantName]="selectedRestaurantName || ''"
+    [restaurantOwnerId]="selectedRestaurantOwnerId || ''">
+  </app-chat-button>
 </ion-content>
