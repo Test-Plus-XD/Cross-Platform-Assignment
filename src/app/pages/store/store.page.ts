@@ -91,8 +91,8 @@ export class StorePage implements OnInit, OnDestroy {
     Name_TC: '',
     Description_EN: '',
     Description_TC: '',
-    Price: null,
-    ImageUrl: null
+    price: null,
+    imageUrl: null
   };
 
   // Image upload state
@@ -678,7 +678,7 @@ export class StorePage implements OnInit, OnDestroy {
       Name_TC: '',
       Description_EN: '',
       Description_TC: '',
-      Price: null
+      price: null
     };
     this.isEditingMenu = true;
   }
@@ -691,7 +691,7 @@ export class StorePage implements OnInit, OnDestroy {
       Name_TC: item.Name_TC || '',
       Description_EN: item.Description_EN || '',
       Description_TC: item.Description_TC || '',
-      Price: item.Price
+      price: item.price
     };
     this.isEditingMenu = true;
   }
@@ -705,7 +705,7 @@ export class StorePage implements OnInit, OnDestroy {
       Name_TC: '',
       Description_EN: '',
       Description_TC: '',
-      Price: null
+      price: null
     };
   }
 
@@ -733,7 +733,7 @@ export class StorePage implements OnInit, OnDestroy {
         Name_TC: this.editedMenuItem.Name_TC?.trim() || null,
         Description_EN: this.editedMenuItem.Description_EN?.trim() || null,
         Description_TC: this.editedMenuItem.Description_TC?.trim() || null,
-        Price: this.editedMenuItem.Price
+        price: this.editedMenuItem.price
       };
 
       let menuItemId: string;
@@ -1348,8 +1348,8 @@ export class StorePage implements OnInit, OnDestroy {
           Name_TC: item.Name_TC || null,
           Description_EN: item.Description_EN || null,
           Description_TC: item.Description_TC || null,
-          Price: this.parsePrice(item.price),
-          ImageUrl: item.image || null
+          price: this.parsePrice(item.price),
+          imageUrl: item.image || null
         });
       }
       return items;
@@ -1366,8 +1366,8 @@ export class StorePage implements OnInit, OnDestroy {
           Name_TC: item.name_tc || item.Name_TC || null,
           Description_EN: item.description_en || item.description || item.Description_EN || null,
           Description_TC: item.description_tc || item.Description_TC || null,
-          Price: this.parsePrice(item.price || item.Price),
-          ImageUrl: item.image || item.ImageUrl || null
+          price: this.parsePrice(item.price || item.Price),
+          imageUrl: item.image || item.ImageUrl || null
         });
       }
     } else {
@@ -1388,8 +1388,8 @@ export class StorePage implements OnInit, OnDestroy {
               Name_TC: null,
               Description_EN: null,
               Description_TC: null,
-              Price: price,
-              ImageUrl: null
+              price: price,
+              imageUrl: null
             });
           }
         }

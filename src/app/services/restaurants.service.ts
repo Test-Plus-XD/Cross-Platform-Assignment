@@ -13,10 +13,10 @@ export interface MenuItem {
   id?: string;
   Name_EN?: string | null;
   Name_TC?: string | null;
-  Price?: number | null;
+  price?: number | null;
   Description_EN?: string | null;
   Description_TC?: string | null;
-  ImageUrl?: string | null;
+  imageUrl?: string | null;
   createdAt?: any;
   modifiedAt?: any;
 }

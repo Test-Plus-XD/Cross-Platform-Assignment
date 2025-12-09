@@ -520,7 +520,7 @@
                     <ion-input [(ngModel)]="item.Name_TC"
                                [placeholder]="(lang$ | async) === 'TC' ? '中文名稱' : 'Chinese Name' ">
                     </ion-input>
-                    <ion-input [(ngModel)]="item.Price"
+                    <ion-input [(ngModel)]="item.price"
                                type="number"
                                [placeholder]="(lang$ | async) === 'TC' ? '價格' : 'Price' ">
                     </ion-input>
@@ -581,7 +581,7 @@
               <div class="info-row">
                 <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.price.TC : translations.price.EN }}</div>
                 <div class="edit-input-wrapper">
-                  <ion-input [(ngModel)]="editedMenuItem.Price"
+                  <ion-input [(ngModel)]="editedMenuItem.price"
                              type="number"
                              [placeholder]="(lang$ | async) === 'TC' ? '輸入價格' : 'Enter price'">
                   </ion-input>
@@ -687,8 +687,8 @@
                 <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
                   {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN) : (item.Description_EN || item.Description_TC) }}
                 </p>
-                <p class="menu-item-price" *ngIf="item.Price">
-                  ${{ item.Price }}
+                <p class="menu-item-price" *ngIf="item.price">
+                  ${{ item.price }}
                 </p>
               </ion-card-content>
             </ion-card>
