@@ -560,59 +560,83 @@
             </ion-card-header>
             <ion-card-content>
 
-              <div class="info-row">
-                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.nameEN.TC : translations.nameEN.EN }}</div>
+              <ng-container *ngIf="lang$ | async as lang">
+              <!-- Name_EN -->
+              <div class="info-row menu-field-row">
+                <div class="info-label">
+                  <div class="field-label">{{ lang === 'TC' ? translations.nameEN.TC : translations.nameEN.EN }}</div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('Name_EN', lang) }}</div>
+                </div>
                 <div class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedMenuItem.Name_EN"
-                             [placeholder]="(lang$ | async) === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
+                             [placeholder]="lang === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
                   </ion-input>
                 </div>
               </div>
 
-              <div class="info-row">
-                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.nameTC.TC : translations.nameTC.EN }}</div>
+              <!-- Name_TC -->
+              <div class="info-row menu-field-row">
+                <div class="info-label">
+                  <div class="field-label">{{ lang === 'TC' ? translations.nameTC.TC : translations.nameTC.EN }}</div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('Name_TC', lang) }}</div>
+                </div>
                 <div class="edit-input-wrapper">
                   <ion-input [(ngModel)]="editedMenuItem.Name_TC"
-                             [placeholder]="(lang$ | async) === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
+                             [placeholder]="lang === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
                   </ion-input>
                 </div>
               </div>
 
-              <div class="info-row">
-                <div class="info-label">{{ (lang$ | async) === 'TC' ? translations.price.TC : translations.price.EN }}</div>
-                <div class="edit-input-wrapper">
-                  <ion-input [(ngModel)]="editedMenuItem.price"
-                             type="number"
-                             [placeholder]="(lang$ | async) === 'TC' ? '輸入價格' : 'Enter price'">
-                  </ion-input>
+              <!-- Description_EN -->
+              <div class="info-row menu-field-row">
+                <div class="info-label">
+                  <div class="field-label">{{ lang === 'TC' ? '描述（英文）' : 'Description (English)' }}</div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('Description_EN', lang) }}</div>
                 </div>
-              </div>
-
-              <div class="info-row">
-                <div class="info-label">{{ (lang$ | async) === 'TC' ? '描述（英文）' : 'Description (EN)' }}</div>
                 <div class="edit-input-wrapper">
                   <ion-textarea [(ngModel)]="editedMenuItem.Description_EN"
                                 rows="3"
-                                [placeholder]="(lang$ | async) === 'TC' ? '輸入英文描述' : 'Enter description in English'">
+                                [placeholder]="lang === 'TC' ? '輸入英文描述' : 'Enter description in English'">
                   </ion-textarea>
                 </div>
               </div>
 
-              <div class="info-row">
-                <div class="info-label">{{ (lang$ | async) === 'TC' ? '描述（中文）' : 'Description (TC)' }}</div>
+              <!-- Description_TC -->
+              <div class="info-row menu-field-row">
+                <div class="info-label">
+                  <div class="field-label">{{ lang === 'TC' ? '描述（中文）' : 'Description (Chinese)' }}</div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('Description_TC', lang) }}</div>
+                </div>
                 <div class="edit-input-wrapper">
                   <ion-textarea [(ngModel)]="editedMenuItem.Description_TC"
                                 rows="3"
-                                [placeholder]="(lang$ | async) === 'TC' ? '輸入中文描述' : 'Enter description in Chinese'">
+                                [placeholder]="lang === 'TC' ? '輸入中文描述' : 'Enter description in Chinese'">
                   </ion-textarea>
+                </div>
+              </div>
+
+              <!-- Price -->
+              <div class="info-row menu-field-row">
+                <div class="info-label">
+                  <div class="field-label">{{ lang === 'TC' ? translations.price.TC : translations.price.EN }}</div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('price', lang) }}</div>
+                </div>
+                <div class="edit-input-wrapper">
+                  <ion-input [(ngModel)]="editedMenuItem.price"
+                             type="number"
+                             [placeholder]="lang === 'TC' ? '輸入價格' : 'Enter price'">
+                  </ion-input>
                 </div>
               </div>
 
               <!-- Menu Item Image Upload -->
-              <div class="info-row">
+              <div class="info-row menu-field-row">
                 <div class="info-label">
-                  <ion-icon name="image-outline"></ion-icon>
-                  {{ (lang$ | async) === 'TC' ? '菜品圖片' : 'Item Image' }}
+                  <div class="field-label">
+                    <ion-icon name="image-outline"></ion-icon>
+                    {{ lang === 'TC' ? '菜品圖片' : 'Item Image' }}
+                  </div>
+                  <div class="field-code">{{ getMenuItemFieldLabel('imageUrl', lang) }}</div>
                 </div>
                 <div class="edit-input-wrapper">
 
@@ -641,6 +665,7 @@
                   </p>
                 </div>
               </div>
+              </ng-container>
 
               <div class="edit-actions">
                 <ion-button expand="block" color="success" (click)="saveMenuItem()">
@@ -684,12 +709,50 @@
                     </ion-button>
                   </div>
                 </div>
-                <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
-                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN) : (item.Description_EN || item.Description_TC) }}
-                </p>
-                <p class="menu-item-price" *ngIf="item.price">
-                  ${{ item.price }}
-                </p>
+
+                <!-- Display all non-null values with bilingual support -->
+                <div class="menu-item-details">
+                  <!-- Current language name (larger, on top) -->
+                  <div class="menu-item-field current-language-name">
+                    <span class="field-value-primary">
+                      {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN) : (item.Name_EN || item.Name_TC) }}
+                    </span>
+                  </div>
+
+                  <!-- Other language name if available -->
+                  <div class="menu-item-field other-language-name" *ngIf="(lang$ | async) === 'TC' ? (item.Name_EN && item.Name_EN !== item.Name_TC) : (item.Name_TC && item.Name_TC !== item.Name_EN)">
+                    <span class="field-label">{{ (lang$ | async) === 'TC' ? 'English' : '中文' }}:</span>
+                    <span class="field-value-secondary">
+                      {{ (lang$ | async) === 'TC' ? item.Name_EN : item.Name_TC }}
+                    </span>
+                  </div>
+
+                  <!-- Current language description (larger) -->
+                  <div class="menu-item-field current-language-description" *ngIf="(lang$ | async) === 'TC' ? item.Description_TC : item.Description_EN">
+                    <p class="field-value-primary">
+                      {{ (lang$ | async) === 'TC' ? item.Description_TC : item.Description_EN }}
+                    </p>
+                  </div>
+
+                  <!-- Other language description if available -->
+                  <div class="menu-item-field other-language-description" *ngIf="(lang$ | async) === 'TC' ? (item.Description_EN && item.Description_EN !== item.Description_TC) : (item.Description_TC && item.Description_TC !== item.Description_EN)">
+                    <span class="field-label">{{ (lang$ | async) === 'TC' ? 'English' : '中文' }}:</span>
+                    <p class="field-value-secondary">
+                      {{ (lang$ | async) === 'TC' ? item.Description_EN : item.Description_TC }}
+                    </p>
+                  </div>
+
+                  <!-- Price -->
+                  <div class="menu-item-field price" *ngIf="item.price !== null && item.price !== undefined">
+                    <span class="field-label">{{ (lang$ | async) === 'TC' ? '價格' : 'Price' }}:</span>
+                    <span class="field-value-secondary price-value">${{ item.price }}</span>
+                  </div>
+
+                  <!-- Image -->
+                  <div class="menu-item-field image" *ngIf="getMenuItemImageUrl(item)">
+                    <img [src]="getMenuItemImageUrl(item)" alt="Menu item image" class="menu-item-image">
+                  </div>
+                </div>
               </ion-card-content>
             </ion-card>
 
