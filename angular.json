@@ -53,8 +53,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "4kb"
+                  "maximumWarning": "256kb",
+                  "maximumError": "1mb"
                 }
               ],
               "fileReplacements": [
@@ -77,6 +77,9 @@
               "progress": false
             }
           },
+          "allowedCommonJsDependencies": [
+            "leaflet"
+          ],
           "defaultConfiguration": "production"
         },
         "serve": {
@@ -120,7 +123,10 @@
                 "output": "./svg"
               }
             ],
-            "styles": ["src/global.scss", "src/theme/variables.scss"],
+            "styles": [
+              "src/style/global.scss",
+              "src/theme/variables.scss"
+            ],
             "scripts": []
           },
           "configurations": {
