@@ -15,6 +15,14 @@ import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
 import * as Leaflet from 'leaflet';
 
+// Configure Leaflet default icon with proper asset paths
+delete (Leaflet.Icon.Default.prototype as any)._getIconUrl;
+Leaflet.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'assets/leaflet/marker-icon-2x.png',
+  iconUrl: 'assets/leaflet/marker-icon.png',
+  shadowUrl: 'assets/leaflet/marker-shadow.png',
+});
+
 @Component({
   selector: 'app-restaurant',
   templateUrl: './restaurant.page.html',

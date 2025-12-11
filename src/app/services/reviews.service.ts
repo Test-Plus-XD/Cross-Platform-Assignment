@@ -5,10 +5,12 @@ import { map, catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 
-// Interface representing a restaurant review
+// Interface representing a restaurant review with enriched user information
 export interface Review {
   id: string;
   userId: string;
+  userDisplayName?: string | null;
+  userPhotoURL?: string | null;
   restaurantId: string;
   rating: number;
   comment?: string;
@@ -36,7 +38,7 @@ export interface ReviewStats {
   totalReviews: number;
   averageRating: number;
   //ratingDistribution: { [key: number]: number };
-  ratingDistribution: { 1: number;2: number;3: number;4: number;5: number; };
+  ratingDistribution: { 1: number; 2: number; 3: number; 4: number; 5: number; };
 }
 
 @Injectable({
@@ -48,7 +50,7 @@ export class ReviewsService {
 
   constructor(
     private readonly dataService: DataService,
-    private readonly authService: AuthService // Inject authentication service
+    private readonly authService: AuthService
   ) { console.log('ReviewsService: Initialised'); }
 
   /**
@@ -63,33 +65,34 @@ export class ReviewsService {
   // The userId is automatically extracted from the authentication token on the backend
   createReview(reviewData: CreateReviewRequest): Observable<{ id: string }> {
     console.log('ReviewsService: Creating review for restaurant:', reviewData.restaurantId);
-    
+
     // Get auth token first, then make the request
     return from(this.getAuthToken()).pipe(
-      switchMap(token => 
+      switchMap(token =>
         this.dataService.post<{ id: string }>(
           this.reviewsEndpoint,
           reviewData,
-          token // Pass the actual token instead of boolean true
+          token
         )
       )
     );
   }
 
   // Get all reviews with optional filtering by restaurantId or userId
+  // Reviews now include userDisplayName and userPhotoURL from the backend
   getReviews(restaurantId?: string, userId?: string): Observable<Review[]> {
     let endpoint = this.reviewsEndpoint;
     const params: string[] = [];
-    
+
     // Build query parameters for filtering
     if (restaurantId) params.push(`restaurantId=${encodeURIComponent(restaurantId)}`);
     if (userId) params.push(`userId=${encodeURIComponent(userId)}`);
-    
+
     // Append query parameters if any exist
     if (params.length > 0) {
       endpoint += `?${params.join('&')}`;
     }
-    
+
     console.log('ReviewsService: Fetching reviews from:', endpoint);
     // No authentication required for reading reviews
     return this.dataService.get<{ count: number; data: Review[] }>(endpoint).pipe(
@@ -98,6 +101,7 @@ export class ReviewsService {
   }
 
   // Get a single review by ID
+  // Returns review with userDisplayName and userPhotoURL included
   getReviewById(reviewId: string): Observable<Review> {
     console.log('ReviewsService: Fetching review:', reviewId);
     return this.dataService.get<Review>(`${this.reviewsEndpoint}/${reviewId}`);
@@ -113,7 +117,7 @@ export class ReviewsService {
         this.dataService.put<void>(
           `${this.reviewsEndpoint}/${reviewId}`,
           updates,
-          token // Pass the toke
+          token
         )
       )
     );
@@ -128,7 +132,7 @@ export class ReviewsService {
       switchMap(token =>
         this.dataService.delete<void>(
           `${this.reviewsEndpoint}/${reviewId}`,
-          token // Pass the token
+          token
         )
       )
     );
@@ -148,7 +152,7 @@ export class ReviewsService {
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-    
+
     let stars = '★'.repeat(fullStars);
     if (hasHalfStar) stars += '½';
     stars += '☆'.repeat(emptyStars);

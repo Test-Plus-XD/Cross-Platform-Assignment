@@ -281,8 +281,14 @@
               <div class="review-card">
                 <div class="review-header">
                   <div class="reviewer-info">
-                    <ion-icon name="person-circle-outline" class="avatar-icon"></ion-icon>
-                    <span class="reviewer-id">{{ review.userId.substring(0, 8) }}...</span>
+                    <img *ngIf="review.userPhotoURL"
+                         [src]="review.userPhotoURL"
+                         [alt]="review.userDisplayName || 'User'"
+                         class="avatar-image">
+                    <ion-icon *ngIf="!review.userPhotoURL"
+                              name="person-circle-outline"
+                              class="avatar-icon"></ion-icon>
+                    <span class="reviewer-name">{{ review.userDisplayName || 'Anonymous User' }}</span>
                   </div>
                   <div class="review-rating">
                     {{ formatRatingStars(review.rating) }}

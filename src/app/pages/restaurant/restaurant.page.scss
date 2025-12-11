@@ -124,7 +124,7 @@
       ion-segment-button {
         --color: var(--muted);
         --color-checked: var(--ion-color-primary);
-        --indicator-color: var(--ion-color-primary); // Purple gradient start
+        --indicator-color: var(--ion-color-primary);
         --indicator-height: 3px;
         font-weight: 600;
         text-transform: none;
@@ -548,6 +548,19 @@
                 color: var(--ion-color-primary);
               }
 
+              .avatar-image {
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                object-fit: cover;
+                border: 2px solid var(--ion-color-primary-tint);
+              }
+
+              .reviewer-name {
+                font-weight: 600;
+                color: var(--ion-text-color);
+              }
+
               .reviewer-id {
                 font-weight: 600;
                 color: var(--ion-text-color);
@@ -593,6 +606,7 @@
       border-radius: 12px;
       padding: 1.5rem;
       margin-bottom: 2rem;
+      overflow: hidden;
 
       h3 {
         font-size: 1.25rem;
@@ -602,28 +616,36 @@
       }
 
       .rating-selector {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
 
         ion-label {
           display: block;
           font-weight: 600;
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.75rem;
           color: var(--ion-text-color);
         }
 
         .star-buttons {
           display: flex;
-          gap: 0.25rem;
+          gap: 0.5rem;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding: 0.25rem 0;
 
           ion-button {
             --color: var(--ion-color-medium);
+            --padding-start: 0.5rem;
+            --padding-end: 0.5rem;
+            margin: 0;
+            min-width: 48px;
+            flex-shrink: 0;
 
             &.selected {
               --color: var(--ion-color-warning);
             }
 
             ion-icon {
-              font-size: 2rem;
+              font-size: 1.75rem;
             }
           }
         }
@@ -692,6 +714,18 @@
 
       .menu-item-price {
         text-align: left;
+      }
+    }
+
+    .review-tab .review-form .rating-selector .star-buttons {
+      justify-content: flex-start;
+
+      ion-button {
+        min-width: 40px;
+
+        ion-icon {
+          font-size: 1.5rem;
+        }
       }
     }
   }
