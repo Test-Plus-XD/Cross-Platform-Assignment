@@ -14,6 +14,7 @@ export interface Review {
   restaurantId: string;
   rating: number;
   comment?: string;
+  imageUrl?: string | null;  // Review image (optional)
   dateTime: string;
   createdAt?: any;
   modifiedAt?: any;
@@ -24,12 +25,14 @@ export interface CreateReviewRequest {
   restaurantId: string;
   rating: number;
   comment?: string;
+  imageUrl?: string;  // Optional review image
 }
 
 // Interface for updating an existing review
 export interface UpdateReviewRequest {
   rating?: number;
   comment?: string;
+  imageUrl?: string;  // Optional review image
 }
 
 // Interface for review statistics aggregated by restaurant

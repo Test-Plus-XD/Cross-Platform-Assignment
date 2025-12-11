@@ -155,6 +155,12 @@
                     <p class="review-info">{{ review.meta }}</p>
                   </div>
                 </div>
+                <!-- Review Image (if available) -->
+                <div class="review-image-container" *ngIf="review.imageUrl">
+                  <img [src]="review.imageUrl"
+                       [alt]="'Review image'"
+                       class="review-image">
+                </div>
                 <p class="review-text">{{ review.text }}</p>
                 <div class="review-rating">
                   <ion-icon name="star" *ngFor="let star of [1,2,3,4,5]"
