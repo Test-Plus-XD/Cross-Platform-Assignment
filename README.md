@@ -34,6 +34,10 @@ A full-stack, bilingual (English/Traditional Chinese) restaurant discovery and b
 - **Restaurant Search:** Algolia-powered full-text search with district/keyword filtering
 - **Booking System:** Create, view, update, and cancel reservations with ownership verification
 - **Review System:** User reviews with aggregate statistics per restaurant
+  - Optional review image upload support (via Firebase Storage)
+  - Home page displays up to 10 genuine reviews from Firestore with automatic fallback to mock reviews
+  - Identical Swiper carousel styling on both home page and restaurant pages
+  - Time-ago formatting for review dates (today, yesterday, X days/weeks/months ago)
 - **Real-time Chat:** Socket.IO-powered live messaging between diners and restaurant owners
   - Dedicated chat button on restaurant pages for customer-owner communication (login required)
   - Real-time message delivery with typing indicators
@@ -243,10 +247,15 @@ Component → Service → DataService (HTTP) → API → Firebase/Algolia → Re
 ### Review Endpoints
 - `GET /API/Reviews` - List reviews (filterable by restaurantId/userId)
 - `GET /API/Reviews/:id` - Retrieve single review
-- `POST /API/Reviews` - Create review (Protected)
-- `PUT /API/Reviews/:id` - Update review (Protected, ownership verified)
+- `POST /API/Reviews` - Create review with optional imageUrl (Protected)
+- `PUT /API/Reviews/:id` - Update review with optional imageUrl (Protected, ownership verified)
 - `DELETE /API/Reviews/:id` - Delete review (Protected, ownership verified)
 - `GET /API/Reviews/Restaurant/:restaurantId/stats` - Review statistics
+
+**Review Data Model:**
+- `imageUrl` (optional): Firebase Storage URL for review images
+- Reviews enriched with user display name and photo URL from Users collection
+- Automatic timestamp management (dateTime, createdAt, modifiedAt)
 
 ### Image Endpoints
 - `POST /API/Images/upload` - Upload image to Firebase Storage (Protected)

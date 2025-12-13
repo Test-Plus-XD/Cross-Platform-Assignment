@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-12-03 (Performance Optimization Release)
-> **Project Version:** 1.7.0
+> **Last Updated:** 2025-12-11 (Review Images & Home Page Enhancements)
+> **Project Version:** 1.9.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
 > **REST API Backend:** Vercel (External Deployment)
@@ -451,6 +451,7 @@ Authorization: Bearer <firebase-id-token>
   restaurantId: string;    // Required
   rating: number;          // Required (typically 1-5)
   comment?: string;
+  imageUrl?: string;       // Optional review image URL
   // userId automatically set from auth token
   // dateTime automatically set to current time
 }
@@ -1027,7 +1028,13 @@ this.dataService.post('/API/Bookings', data, token).subscribe(...);
 **Provides:**
 - Sample offers
 - Sample articles
-- Sample reviews
+- Sample reviews (used as fallback on home page)
+
+**Home Page Review Strategy:**
+- Home page displays up to 10 genuine reviews from Firestore via `ReviewsService`
+- If fewer than 10 genuine reviews exist, mock reviews supplement to reach 10 total
+- Reviews include optional `imageUrl` field for review images
+- Reviews are displayed in identical Swiper carousel format as restaurant page
 
 ### 12. UIService (`UI.service.ts`)
 **Purpose:** UI utility functions
@@ -3493,11 +3500,12 @@ chatService.sendMessage('restaurant-test', 'Hello!', 'test-uid', 'Test User');
 
 ---
 
-**Document Version:** 1.8.0
-**Last Updated:** 2025-12-08
-**Changes:** UI color updates, chat visibility management, store page refactoring, comprehensive Socket.IO documentation
+**Document Version:** 1.9.0
+**Last Updated:** 2025-12-11
+**Changes:** Review images feature, genuine reviews on home page, API documentation updates
 
 **Changelog:**
+- v1.9.0 (2025-12-11): **REVIEW IMAGES & HOME PAGE ENHANCEMENTS** - Added support for review images in the Review data model and API. **Review Interface:** Updated Review interface to include optional `imageUrl` field (reviews.service.ts). Updated CreateReviewRequest and UpdateReviewRequest interfaces to support image URLs. **Restaurant Page:** Added review image display to restaurant page review cards with responsive image container (max-height 200px, rounded corners, object-fit cover). **Home Page:** Implemented genuine review fetching from Firestore - displays up to 10 latest reviews from database, supplements with mock reviews if fewer than 10 exist. Added time-ago formatting for review dates (today, yesterday, X days/weeks/months ago). Reviews now display identical styling on both home and restaurant pages with Swiper carousel support. **API Documentation:** Updated Review Routes documentation to include imageUrl field in POST request body. Updated MockDataService documentation to explain home page review fallback strategy. Files modified: reviews.service.ts (Review interface), restaurant.page.html/scss (review image display), home.page.ts (loadReviews, formatReviewMeta methods), home.page.html/scss (review image display), CLAUDE.md (API documentation, MockDataService section).
 - v1.8.0 (2025-12-08): **UI IMPROVEMENTS & DOCUMENTATION UPDATE** - Implemented comprehensive UI color scheme updates across the application. **Badge Colors:** All badges now use green color with 30% more green (RGB: 232, 255, 234 in light mode, 36, 66, 41 in dark mode). **Gradient Buttons:** All primary colored buttons (both filled and outline) now use gradient styling matching the booking button design. **Loading Indicators:** Replaced all ion-spinner instances with Eclipse.gif loading animation throughout the app. **Chat Button Visibility:** Implemented ChatVisibilityService to manage mutual exclusivity between Chat and Gemini chatbox buttons - only one can be visible at a time to prevent misclicks. **Chatbox Color Updates:** Swapped Gemini chatbox message bubble colors (user messages now use --ion-background-color, AI responses use purple gradient with forced white text). Updated Chat chatbox send/attach buttons to use header gradient color, and standardized user message bubbles to use --ion-background-color theme variable. **Store Page Refactoring:** Created StoreHelpersService utility service with common helper functions for date formatting, statistics calculations, opening hours validation, and coordinate formatting. Fixed opening hours layout to display weekday names at 20% width and time data at 80% width. **Documentation:** Added comprehensive Railway Socket.IO Chat Architecture section to CLAUDE.md documenting event flow, connection lifecycle, image upload flow, typing indicators, error handling, data persistence strategy, testing procedures, common issues, and best practices. Updated README.md with latest technology stack (Socket.IO 4.8.1), deployment information (Vercel REST API, Railway Socket.IO), enhanced core features description including real-time chat and AI assistant details. Files created: chat-visibility.service.ts, store-helpers.service.ts; Files modified: global.scss (badges, buttons, loading indicators), chat-button (TS, HTML, SCSS), gemini-button (TS, HTML, SCSS), store.page.scss (opening hours layout), README.md, CLAUDE.md.
 - v1.7.0 (2025-12-03): **PERFORMANCE OPTIMIZATION RELEASE** - Implemented significant architectural improvements to reduce Angular/Ionic recompilation times by ~35-40%. **Split Constants File:** Broke down monolithic 215-line `restaurant-constants.ts` into modular files (districts.const.ts, keywords.const.ts, payments.const.ts, weekdays.const.ts, constants-helpers.ts, index.ts), reducing parsing overhead by 60-70%. **Fixed Circular Dependency:** Created `AppStateService` to eliminate circular dependency between `AppComponent` and shared components (header, menu, tab), reducing compilation time by ~15%. AppComponent simplified from 156 lines to 71 lines. **Added OnPush Change Detection:** Enabled ChangeDetectionStrategy.OnPush on large components (store.page.ts - 1,126 lines, restaurant.page.ts - 868 lines), reducing change detection overhead by 60-80% and improving scroll/form performance. **Service Aggregators:** Created `StoreFeatureService` and `RestaurantFeatureService` to consolidate commonly used services and reduce constructor injection overhead. **Performance Metrics:** Full rebuild improved from ~45-60s to ~30-40s (~33% faster), incremental recompilation from ~8-12s to ~5-7s (~40% faster). Runtime performance improved by ~50-60% for UI interactions. Files modified: Created app-state.service.ts, store-feature.service.ts, restaurant-feature.service.ts, constants/* (6 new files); Updated app.component.ts, header.component.ts, menu.component.ts, tab.component.ts, store.page.ts, restaurant.page.ts, search.page.ts; Verified zero circular dependencies with madge.
 - v1.6.1 (2025-12-03): **CRITICAL CONFIGURATION FIX** - Fixed ChatService to connect to Railway Socket.IO server instead of Vercel API. Changed connection URL from `environment.apiUrl` to `environment.socketUrl` (https://railway-socket-production.up.railway.app). Updated authentication requirements: GeminiButton (AI assistant) now accessible without login for all users, ChatButton (restaurant chat) now requires login and redirects to /login if not authenticated. Added `socketUrl` field to environment configuration. Updated documentation to reflect separate Socket.IO and REST API deployments. Files modified: chat.service.ts (socketUrl usage), gemini-button.component.ts (removed login check), chat-button.component.ts (added login check and Router import), environment.ts (added socketUrl), CLAUDE.md (documentation updates).

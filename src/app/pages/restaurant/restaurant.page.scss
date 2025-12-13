@@ -573,6 +573,21 @@
             }
           }
 
+          .review-image-container {
+            width: 100%;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+
+            .review-image {
+              width: 100%;
+              height: auto;
+              max-height: 200px;
+              object-fit: cover;
+              display: block;
+            }
+          }
+
           .review-comment {
             font-size: 0.9375rem;
             line-height: 1.6;

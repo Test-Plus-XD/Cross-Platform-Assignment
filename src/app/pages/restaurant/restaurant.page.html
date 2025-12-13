@@ -294,6 +294,12 @@
                     {{ formatRatingStars(review.rating) }}
                   </div>
                 </div>
+                <!-- Review Image (if available) -->
+                <div class="review-image-container" *ngIf="review.imageUrl">
+                  <img [src]="review.imageUrl"
+                       [alt]="'Review image'"
+                       class="review-image">
+                </div>
                 <p class="review-comment" *ngIf="review.comment">{{ review.comment }}</p>
                 <p class="review-date">{{ review.dateTime | date:'mediumDate' }}</p>
               </div>
