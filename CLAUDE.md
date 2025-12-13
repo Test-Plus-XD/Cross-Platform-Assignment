@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-12-11 (Review Images & Home Page Enhancements)
+> **Last Updated:** 2025-12-13 (Comprehensive Documentation Analysis & Updates)
 > **Project Version:** 1.9.0
 > **Angular Version:** 20.3.3
 > **Ionic Version:** 8.7.9
@@ -71,7 +71,7 @@ Cross-Platform-Assignment/
 │   │   │   ├── store/          # Restaurant management (admin)
 │   │   │   ├── login/          # Authentication page
 │   │   │   └── test/           # Testing/development page
-│   │   ├── services/           # Core business logic (20 services)
+│   │   ├── services/           # Core business logic (22 services)
 │   │   │   ├── auth.service.ts              # Firebase authentication
 │   │   │   ├── app-state.service.ts         # Centralized app state (NEW in v1.7.0)
 │   │   │   ├── restaurants.service.ts       # Restaurant CRUD
@@ -91,7 +91,9 @@ Cross-Platform-Assignment/
 │   │   │   ├── UI.service.ts                # UI utilities
 │   │   │   ├── mock-data.service.ts         # Demo data
 │   │   │   ├── store-feature.service.ts     # Store page service aggregator (NEW in v1.7.0)
-│   │   │   └── restaurant-feature.service.ts # Restaurant page service aggregator (NEW in v1.7.0)
+│   │   │   ├── restaurant-feature.service.ts # Restaurant page service aggregator (NEW in v1.7.0)
+│   │   │   ├── chat-visibility.service.ts   # Chat/Gemini button visibility (NEW in v1.8.0)
+│   │   │   └── store-helpers.service.ts     # Store page utility helpers (NEW in v1.8.0)
 │   │   ├── constants/          # Application constants (NEW in v1.7.0)
 │   │   │   ├── districts.const.ts          # HK districts (18 districts)
 │   │   │   ├── keywords.const.ts           # Restaurant keywords (140+ keywords)
@@ -940,11 +942,43 @@ export const environment = {
 **Key Methods:**
 - `getUserProfile(uid)` - Fetch user profile
 - `createUserProfile(data)` - Create profile (auto after first login)
-- `updateUserProfile(uid, data)` - Update profile
+- `updateUserProfile(uid, data)` - Update profile (only provided fields)
 - `deleteUserProfile(uid)` - Delete profile
+- `getAllUsers()` - Fetch all user profiles
+- `updateLoginMetadata(uid)` - Update last login timestamp and increment login count
+- `updatePreferences(uid, preferences)` - Update user preferences (language, theme, notifications)
+- `profileExists(uid)` - Check if profile exists before creating
+- `setAuthToken(token)` - Store authentication token for API requests
+- `clearAuthToken()` - Clear token and cached profile
+- `clearCache()` - Clear cached profile
+- Static `toDate(timestamp)` - Convert timestamps from API (handles ISO 8601, Firestore Timestamp, Date objects)
 
 **State:**
-- Stores auth token for API requests
+- `currentProfile$: Observable<UserProfile | null>` - Current user profile stream
+- `currentProfile: UserProfile | null` - Cached profile (synchronous access)
+- `authToken` - Private auth token storage for API requests
+
+**User Profile Fields:**
+- `uid: string` - Firebase Auth UID (unique identifier)
+- `type?: string | null` - User type: 'Diner' or 'Restaurant' (case insensitive)
+- `restaurantId?: string | null` - ID of claimed restaurant (for Restaurant type users)
+- `email?: string | null` - User email
+- `displayName?: string | null` - Display name
+- `photoURL?: string | null` - Profile picture URL (sanitized to handle em dash)
+- `phoneNumber?: string | null` - Phone number
+- `bio?: string | null` - User biography
+- `emailVerified?: boolean` - Email verification status
+- `preferences?: object` - User preferences (language, theme, notifications)
+- `lastLoginAt?: Timestamp` - Last login timestamp (auto-updated)
+- `loginCount?: number` - Total login count (auto-tracked)
+- `createdAt?: Timestamp` - Account creation timestamp (auto-set by backend)
+- `modifiedAt?: Timestamp` - Last profile update timestamp (auto-updated by backend)
+
+**Features:**
+- Automatic image URL sanitization (handles backend em dash replacement)
+- Retry logic for new user profile creation (handles token propagation delays)
+- HTTP error handling with user-friendly messages
+- Supports both API responses and Firestore Timestamp objects
 
 ### 4. GuardService (`guard.service.ts`)
 **Purpose:** Route protection
@@ -1118,6 +1152,195 @@ Uses `environment.socketUrl` to connect to the dedicated Socket.IO server on Rai
 - Bilingual support (EN/TC)
 
 **Uses:** DataService for HTTP calls to `/API/Gemini` endpoints
+
+### 18. ChatVisibilityService (`chat-visibility.service.ts`) - NEW in v1.8.0
+**Purpose:** Manage mutual exclusivity between Chat and Gemini button visibility
+
+**Key Methods:**
+- `setChatButtonOpen(isOpen: boolean)` - Set Chat button open state (auto-closes Gemini)
+- `setGeminiButtonOpen(isOpen: boolean)` - Set Gemini button open state (auto-closes Chat)
+- `get isChatButtonOpen(): boolean` - Get current Chat button state (synchronous)
+- `get isGeminiButtonOpen(): boolean` - Get current Gemini button state (synchronous)
+
+**State:**
+- `chatButtonOpen$: Observable<boolean>` - Chat button visibility stream
+- `geminiButtonOpen$: Observable<boolean>` - Gemini button visibility stream
+
+**Features:**
+- Ensures only one chat interface is visible at a time
+- Prevents user confusion from overlapping chat boxes
+- Automatic state synchronization between Chat and Gemini buttons
+- Used by both ChatButtonComponent and GeminiButtonComponent
+
+### 19. StoreHelpersService (`store-helpers.service.ts`) - NEW in v1.8.0
+**Purpose:** Utility helper methods for store page operations
+
+**Key Methods:**
+- `getTodayBookingsCount(bookings: Booking[]): number` - Count bookings for today
+- `getPendingBookingsCount(bookings: Booking[]): number` - Count pending bookings
+- `formatBookingDate(dateTime, lang): string` - Format booking date for display (bilingual)
+- `findDistrictByName(name, lang): District` - Find district by EN/TC name
+- `findKeywordByName(name, lang): Keyword` - Find keyword by EN/TC name
+- `findPaymentMethodByName(name, lang): PaymentMethod` - Find payment method
+- `getWeekdayDisplayName(key, lang): string` - Get weekday display name
+- `formatOpeningHours(hours, lang): string` - Format opening hours string
+- `isValidTimeFormat(time): boolean` - Validate time format (HH:MM or HH:MM-HH:MM)
+- `sanitizeOpeningHours(hours): object` - Trim whitespace from opening hours
+- `isBookingEditable(booking): boolean` - Check if booking can be edited
+- `getBookingStatusColor(status): string` - Get badge color for booking status
+- `getInitials(name): string` - Generate initials from name
+- `isValidCoordinates(lat, lng): boolean` - Validate latitude/longitude
+- `formatCoordinates(lat, lng): string` - Format coordinates for display
+
+**Features:**
+- Date formatting with bilingual support (EN/TC)
+- Opening hours validation and formatting
+- Booking status utilities
+- Coordinate validation and formatting
+- Name to initials conversion
+- Integration with Constants (Districts, Keywords, PaymentMethods, Weekdays)
+
+**Dependencies:**
+- Uses: `Districts`, `Keywords`, `PaymentMethods`, `Weekdays` from constants
+
+---
+
+## Shared Components & Dynamic Navigation
+
+### Overview
+The application includes reusable shared components that are displayed across all pages. These components adapt their content based on user authentication status and user type (Diner vs Restaurant).
+
+### User Type System
+**User Types:**
+- `'Diner'` - Regular users who search and book restaurants
+- `'Restaurant'` - Restaurant owners who manage restaurant information
+
+**Type Detection:**
+- Stored in `UserProfile.type` field (case insensitive)
+- Checked via `UserService.currentProfile$` observable
+- Used to conditionally show/hide navigation items and features
+
+### MenuComponent (`shared/menu/menu.component.ts`)
+**Purpose:** Side navigation menu with dynamic content based on user status and type
+
+**Observable Properties:**
+- `lang$: Observable<'EN' | 'TC'>` - Current language from LanguageService
+- `isDark$: Observable<boolean>` - Dark mode status from ThemeService
+- `appState$: Observable<AppState>` - App authentication state from AppStateService
+- `userProfile$: Observable<UserProfile | null>` - Current user profile from UserService
+- `isRestaurantUser$: Observable<boolean>` - Computed: checks if user type is 'restaurant' (case insensitive)
+
+**Dynamic Menu Items:**
+- **Always Visible:**
+  - Home
+  - Search
+  - Account (User profile)
+  - Settings section (Language, Theme, More Settings)
+
+- **Visible When Logged In:**
+  - Chat (for all authenticated users)
+  - **Bookings** (only for Diner users, hidden for Restaurant users)
+  - **Store** (only for Restaurant users, hidden for Diner users)
+
+**Key Methods:**
+- `onMenuItemSelected(route: string)` - Close menu and navigate to route
+- `closeMenu()` - Close the side menu
+- `toggleTheme()` - Switch between light/dark mode
+- `toggleLanguage()` - Switch between EN/TC
+
+**HTML Bindings:**
+```html
+<!-- Conditional items based on login state -->
+<ng-container *ngIf="appState$ | async as appState">
+  <ng-container *ngIf="appState.isLoggedIn">
+    <!-- Bookings item - shown only for Diner users -->
+    <ion-item *ngIf="!(isRestaurantUser$ | async)">Bookings</ion-item>
+
+    <!-- Store item - shown only for Restaurant users -->
+    <ion-item *ngIf="isRestaurantUser$ | async">Store</ion-item>
+  </ng-container>
+</ng-container>
+```
+
+### TabComponent (`shared/tab/tab.component.ts`)
+**Purpose:** Bottom tab navigation with dynamic tabs based on user status and type
+
+**Observable Properties:**
+- `showTabs$: Observable<boolean>` - Tab bar visibility from UIService
+- `lang$: Observable<'EN' | 'TC'>` - Current language from LanguageService
+- `appState$: Observable<AppState>` - App authentication state from AppStateService
+- `userProfile$: Observable<UserProfile | null>` - Current user profile from UserService
+- `isRestaurantUser$: Observable<boolean>` - Computed: checks if user type is 'restaurant' (case insensitive)
+
+**Dynamic Tabs:**
+- **Always Visible:**
+  - Home tab
+  - Search tab
+  - Account tab
+
+- **Visible When Logged In:**
+  - **Bookings tab** (only for Diner users)
+  - **Store tab** (only for Restaurant users)
+  - Chat tab (for all authenticated users)
+
+**Implementation Pattern:**
+- Tabs are conditionally shown/hidden using `*ngIf` with `isRestaurantUser$` observable
+- Tab content updates reactively when user type changes
+- Tab bar visibility controlled by UIService (hidden on login page, shown elsewhere)
+
+**HTML Template Pattern:**
+```html
+<!-- Bookings tab - shown only for Diner users -->
+<ion-tab-button tab="booking" *ngIf="!(isRestaurantUser$ | async)">
+  <ion-icon name="calendar-outline"></ion-icon>
+  <ion-label>Bookings</ion-label>
+</ion-tab-button>
+
+<!-- Store tab - shown only for Restaurant users -->
+<ion-tab-button tab="store" *ngIf="isRestaurantUser$ | async">
+  <ion-icon name="storefront-outline"></ion-icon>
+  <ion-label>Store</ion-label>
+</ion-tab-button>
+```
+
+### ChatButtonComponent (`shared/chat-button/chat-button.component.ts`)
+**Purpose:** Floating chat button for restaurant-customer communication (Restaurant Page Only)
+
+**Features:**
+- Real-time messaging with restaurant owners
+- Typing indicators with `chatbox-ellipses-sharp` icon
+- Unread message badges
+- Image upload support
+- Bilingual UI (EN/TC)
+- Auto-dimming after 3 seconds of inactivity
+
+**Visibility:**
+- Appears on restaurant detail page (`/restaurant/:id`) only
+- Requires user authentication (redirects to `/login` if not authenticated)
+
+### GeminiButtonComponent (`shared/gemini-button/gemini-button.component.ts`)
+**Purpose:** Floating AI assistant button for all users (Global, Non-Login Pages)
+
+**Features:**
+- Conversational AI powered by Google Gemini
+- Chat history persistence
+- Quick suggestion chips
+- Loading states with typing indicators
+- Modern gradient UI (purple-blue theme)
+- Bilingual support (EN/TC)
+- Auto-dimming after 3 seconds of inactivity
+
+**Visibility:**
+- Appears on all pages except `/login`
+- **No login required** - Available to all users for general assistance
+- Positioned at bottom-left corner
+
+### Button Mutual Exclusivity
+**ChatVisibilityService** (`chat-visibility.service.ts`) ensures:
+- Only one chat interface (Chat or Gemini) is visible at a time
+- Opening Chat button automatically closes Gemini button
+- Opening Gemini button automatically closes Chat button
+- Prevents user confusion from overlapping chat boxes
 
 ---
 
@@ -2133,11 +2356,23 @@ npx cap sync             # Sync to native
 
 ---
 
-**Document Version:** 1.1
-**Last Updated:** 2025-11-27
+**Document Version:** 1.9.1
+**Last Updated:** 2025-12-13
 **Maintainer:** AI Assistant
 **Contact:** See README.md for project contacts
 **Changelog:**
+- v1.9.1 (2025-12-13): **COMPREHENSIVE DOCUMENTATION ANALYSIS** - Added missing services to documentation (ChatVisibilityService, StoreHelpersService). Updated service count from 20 to 22 in codebase structure. Enhanced UserService documentation with complete API reference including type/restaurantId fields, updateLoginMetadata, updatePreferences, profileExists, timestamp conversion, and image URL sanitization. Added new "Shared Components & Dynamic Navigation" section documenting Menu and Tab components' user-type-specific behavior (Diner vs Restaurant). Documented dynamic menu/tab visibility based on user.type field, isRestaurantUser$ computed observable pattern, ChatButton (login-required, restaurant page only), GeminiButtonComponent (global, no-login-required), and ChatVisibilityService mutual exclusivity. Files modified: CLAUDE.md (complete documentation overhaul).
+- v1.9.0 (2025-12-11): Review images feature, genuine reviews on home page, API documentation updates
+- v1.8.0 (2025-12-08): UI improvements & documentation update
+- v1.7.0 (2025-12-03): Performance optimization release
+- v1.6.1 (2025-12-03): Critical configuration fix
+- v1.6.0 (2025-12-03): Feature enhancements
+- v1.5.2 (2025-12-02): Critical bug fix
+- v1.5.1 (2025-11-30): Critical bug fix
+- v1.5.0 (2025-11-30): UI improvements
+- v1.4.0 (2025-11-29): Adaptive responsive layout
+- v1.3 (2025-11-27): Centralized app state
+- v1.2 (2025-11-27): Socket.IO and Gemini integration
 - v1.1 (2025-11-27): Updated loading states to use Eclipse.gif, removed all ion-spinner usage
 - v1.0 (2025-11-26): Initial comprehensive documentation
 
