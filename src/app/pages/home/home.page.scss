@@ -131,6 +131,13 @@
     width: 100%;
     padding: 0.5rem 0;
   }
+
+  // Reviews swiper specific styling to support fixed width cards
+  .reviews-swiper {
+    swiper-slide {
+      width: auto !important; // Allow slides to use card's fixed width
+    }
+  }
   // Card styling shared across all sections
   .offer-card,
   .article-card,
@@ -246,10 +253,15 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     height: 100%;
+    width: 280px; // Fixed width for consistent card sizing
 
-    &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
+    &.clickable {
+      cursor: pointer;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(167, 70, 240, 0.15);
+      }
     }
 
     .card-content {
@@ -390,6 +402,65 @@
       }
     }
   }
+  // Nearby section specific styling
+  .nearby-section {
+    .section-header {
+      .refresh-button {
+        --color: var(--ion-color-primary);
+      }
+    }
+
+    // Distance badge overlay on restaurant cards
+    .distance-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      z-index: 10;
+
+      &.badge-success {
+        background: rgba(16, 185, 129, 0.95); // Green
+      }
+
+      &.badge-warning {
+        background: rgba(245, 158, 11, 0.95); // Orange
+      }
+
+      &.badge-medium {
+        background: rgba(107, 114, 128, 0.95); // Grey
+      }
+
+      ion-icon {
+        font-size: 14px;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+
+      .empty-icon {
+        font-size: 48px;
+        color: var(--ion-color-medium);
+        margin-bottom: 1rem;
+      }
+
+      p {
+        color: var(--ion-color-medium);
+        margin-bottom: 1rem;
+      }
+    }
+  }
+
   // Bottom spacer for mobile navigation
   .bottom-spacer {
     height: 2rem;

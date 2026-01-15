@@ -111,6 +111,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit() {
     // Try to get user's location for distance calculation
     this.feature.location.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
+
+    // Check for tab query parameter
+    const tab = this.route.snapshot.queryParamMap.get('tab');
+    if (tab === 'review') {
+      this.selectedTab = 'review';
+    }
   }
 
   /// When view initialises, fetch restaurant ID and load all data

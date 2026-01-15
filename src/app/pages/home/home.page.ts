@@ -1,12 +1,15 @@
 // Import Observable utilities, Angular and Ionic lifecycle APIs and Rx utilities
 import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { Platform } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { Observable, of, forkJoin } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
 import { ReviewsService, Review } from '../../services/reviews.service';
+import { LocationService, Coordinates } from '../../services/location.service';
+import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 
 @Component({
   selector: 'app-home',
@@ -21,18 +24,25 @@ export class HomePage implements OnInit {
   public reviews$: Observable<any[]> = of([]);
   public restaurants$: Observable<any[]> = of([]);
   public ads$: Observable<any[]> = of([]);
+  public nearby$: Observable<any[]> = of([]);
   // Expose language stream for template
   public lang$ = this.languageService.lang$;
   // Expose platform detection for template
   public isMobile$ = this.platformService.isMobile$;
   // Featured image for offers (optional enhancement)
   public featuredImage: string | null = null;
+  // Nearby restaurants loading state
+  public isLoadingNearby = false;
+  public locationError: string | null = null;
 
   constructor(
     private readonly mockDataService: MockDataService,
     private readonly languageService: LanguageService,
     private readonly platformService: PlatformService,
-    private readonly reviewsService: ReviewsService
+    private readonly reviewsService: ReviewsService,
+    private readonly router: Router,
+    private readonly locationService: LocationService,
+    private readonly restaurantsService: RestaurantsService
   ) { }
 
   ngOnInit(): void {
@@ -54,6 +64,9 @@ export class HomePage implements OnInit {
 
     // Load genuine reviews from Firestore, supplemented with mock reviews if needed
     this.reviews$ = this.loadReviews();
+
+    // Load nearby restaurants from API with GPS sorting
+    this.loadNearbyRestaurants();
 
     // Optionally set a featured image from the first offer
     this.offers$.subscribe(offers => {
@@ -81,6 +94,7 @@ export class HomePage implements OnInit {
         // Convert genuine reviews to display format matching mock reviews
         const genuineFormatted = genuine.slice(0, 10).map((review: Review) => ({
           id: review.id,
+          restaurantId: review.restaurantId,  // Include for navigation
           name: review.userDisplayName || 'Anonymous User',
           avatar: review.userPhotoURL || 'assets/icon/Placeholder.png',
           meta: this.formatReviewMeta(review),
@@ -144,5 +158,83 @@ export class HomePage implements OnInit {
     if (imageUrl) {
       this.featuredImage = imageUrl;
     }
+  }
+
+  // Navigate to restaurant review section when review is clicked
+  public navigateToReview(review: any): void {
+    if (review.restaurantId) {
+      this.router.navigate(['/restaurant', review.restaurantId], { queryParams: { tab: 'review' } });
+    }
+  }
+
+  // Navigate to restaurant detail page
+  public navigateToRestaurant(restaurant: any): void {
+    const restaurantId = restaurant.id;
+    if (restaurantId) {
+      this.router.navigate(['/restaurant', restaurantId]);
+    }
+  }
+
+  // Load nearby restaurants from API and sort by GPS distance
+  private async loadNearbyRestaurants(): Promise<void> {
+    this.isLoadingNearby = true;
+    this.locationError = null;
+
+    try {
+      // Step 1: Get current location (request permission if needed)
+      const location = await this.locationService.getCurrentLocation(true).toPromise();
+
+      if (!location) {
+        throw new Error('Location not available');
+      }
+
+      // Step 2: Fetch all restaurants from Vercel API via RestaurantsService
+      const allRestaurants = await this.restaurantsService.getRestaurants().toPromise() || [];
+
+      // Step 3: Filter restaurants with valid coordinates
+      const restaurantsWithCoords = allRestaurants.filter(r =>
+        r.Latitude != null && r.Longitude != null
+      );
+
+      // Step 4: Sort by distance from current location
+      const sorted = this.locationService.sortByDistance(restaurantsWithCoords);
+
+      // Step 5: Take first 10 closest restaurants
+      this.nearby$ = of(sorted.slice(0, 10));
+      this.isLoadingNearby = false;
+    } catch (error) {
+      console.error('Error loading nearby restaurants:', error);
+      this.locationError = 'Unable to load nearby restaurants';
+      this.isLoadingNearby = false;
+      this.nearby$ = of([]);
+    }
+  }
+
+  // Get distance badge with color-coded indicator
+  public getDistanceBadge(restaurant: any): { text: string; color: string } | null {
+    if (!restaurant.Latitude || !restaurant.Longitude) return null;
+
+    const result = this.locationService.calculateDistanceFromCurrentLocation(
+      restaurant.Latitude,
+      restaurant.Longitude
+    );
+
+    if (!result) return null;
+
+    // Match Flutter app's color logic:
+    // < 500m = green, 500m-2km = orange, > 2km = grey
+    let color = 'medium'; // grey
+    if (result.distanceMeters < 500) {
+      color = 'success'; // green
+    } else if (result.distanceKm < 2) {
+      color = 'warning'; // orange
+    }
+
+    return { text: result.displayText, color };
+  }
+
+  // Refresh location and reload nearby restaurants
+  public async refreshLocation(): Promise<void> {
+    await this.loadNearbyRestaurants();
   }
 }

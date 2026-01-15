@@ -37,6 +37,65 @@
         </swiper-container>
       </div>
 
+      <!-- Nearby Restaurants Section -->
+      <section class="content-section nearby-section">
+        <div class="section-header">
+          <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '附近餐廳' : 'Nearby Restaurants' }}</h2>
+          <ion-button fill="clear" class="refresh-button" (click)="refreshLocation()" [disabled]="isLoadingNearby">
+            <ion-icon name="location-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-container" *ngIf="isLoadingNearby">
+          <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+          <p>{{ (lang$ | async) === 'TC' ? '載入中...' : 'Loading...' }}</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="empty-state" *ngIf="!isLoadingNearby && locationError">
+          <ion-icon name="location-off-outline" class="empty-icon"></ion-icon>
+          <p>{{ (lang$ | async) === 'TC' ? '無法取得附近餐廳。請啟用位置權限。' : 'Unable to load nearby restaurants. Please enable location.' }}</p>
+          <ion-button fill="outline" (click)="refreshLocation()">
+            {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
+          </ion-button>
+        </div>
+
+        <!-- Nearby Restaurants List -->
+        <swiper-container *ngIf="!isLoadingNearby && !locationError && (nearby$ | async)?.length"
+                          [class]="isMobile ? 'nearby-swiper mobile-peek' : 'nearby-swiper'"
+                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
+                          space-between="16"
+                          centered-slides="true"
+                          loop="true"
+                          autoplay-delay="7000"
+                          autoplay-disable-on-interaction="false"
+                          speed="600"
+                          breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+          <swiper-slide *ngFor="let restaurant of (nearby$ | async) || []">
+            <ion-card class="restaurant-card" (click)="navigateToRestaurant(restaurant)" button>
+              <div class="card-image-container">
+                <img [src]="restaurant.ImageUrl || 'assets/icon/Placeholder.png'"
+                     [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
+                     class="card-image">
+                <div class="card-overlay"></div>
+                <!-- Distance Badge -->
+                <div class="distance-badge"
+                     *ngIf="getDistanceBadge(restaurant) as badge"
+                     [class]="'badge-' + badge.color">
+                  <ion-icon name="location"></ion-icon>
+                  <span>{{ badge.text }}</span>
+                </div>
+              </div>
+              <ion-card-content class="card-content">
+                <h3 class="card-title">{{ (lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}</h3>
+                <p class="card-subtitle">{{ (lang$ | async) === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</p>
+              </ion-card-content>
+            </ion-card>
+          </swiper-slide>
+        </swiper-container>
+      </section>
+
       <!-- Featured Offers Section -->
       <section class="content-section offers-section">
         <div class="section-header">
@@ -127,24 +186,21 @@
       <section class="content-section reviews-section">
         <div class="section-header">
           <h2 class="section-title">{{ (lang$ | async) === 'TC' ? '最近評論' : 'Latest Reviews' }}</h2>
-          <ion-button fill="clear" routerLink="/reviews" class="see-all-button">
-            {{ (lang$ | async) === 'TC' ? '查看全部' : 'See All' }}
-            <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
-          </ion-button>
         </div>
 
         <swiper-container #reviewsSwiper
-                          [class]="isMobile ? 'reviews-swiper mobile-peek' : 'reviews-swiper'"
-                          [attr.slides-per-view]="isMobile ? '1.15' : '1.3'"
-                          space-between="16"
-                          centered-slides="true"
-                          loop="true"
+                          class="reviews-swiper"
+                          slides-per-view="auto"
+                          space-between="12"
+                          centered-slides="false"
+                          loop="false"
                           autoplay-delay="6000"
                           autoplay-disable-on-interaction="false"
-                          speed="600"
-                          breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
+                          speed="600">
           <swiper-slide *ngFor="let review of (reviews$ | async) || []">
-            <ion-card class="review-card">
+            <ion-card class="review-card"
+                      [class.clickable]="review.restaurantId"
+                      (click)="navigateToReview(review)">
               <ion-card-content class="card-content">
                 <div class="review-header">
                   <ion-avatar class="review-avatar">
@@ -194,7 +250,7 @@
                           speed="600"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
-            <ion-card class="restaurant-card" button>
+            <ion-card class="restaurant-card" button (click)="navigateToRestaurant(restaurant)">
               <div class="card-image-container">
                 <img [src]="restaurant.image || 'assets/icon/Placeholder.png'"
                      [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
