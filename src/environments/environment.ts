@@ -24,6 +24,7 @@ export const environment = {
   algoliaAppId: 'V9HMGL1VIZ',
   algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
   apiUrl: 'https://vercel-express-api-alpha.vercel.app',
+  placeholderImageUrl: 'https://firebasestorage.googleapis.com/v0/b/cross-platform-assignmen-b97cc.firebasestorage.app/o/Placeholder.jpg?alt=media&token=068887ee-1ac3-4107-a15a-210b268b5183',
   //apiUrl: 'http://localhost:3000',
   socketUrl: 'https://railway-socket-production.up.railway.app/'
 };

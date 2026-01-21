@@ -7,6 +7,7 @@ import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
 import { Districts } from '../../constants/districts.const';
 import { Keywords } from '../../constants/keywords.const';
+import { environment } from '../../../environments/environment';
 
 interface DistrictOption {
   district_en: string;
@@ -52,6 +53,7 @@ export class SearchPage implements OnInit, OnDestroy {
   public currentPage: number = 0;
   public totalPages: number = 0;
   public readonly resultsPerPage: number = 12;
+  public readonly placeholderImage: string = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
 
   // Available options (store bilingual objects)
   public availableDistricts: DistrictOption[] = [];

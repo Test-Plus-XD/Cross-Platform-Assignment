@@ -16,7 +16,7 @@
                           effect="fade">
           <swiper-slide *ngFor="let advertisement of (ads$ | async) || []">
             <div class="hero-slide">
-              <img [src]="advertisement.image || 'assets/icon/Placeholder.png'"
+              <img [src]="advertisement.image || placeholderImage"
                    [alt]="'Advertisement'"
                    class="hero-image">
               <div class="hero-overlay"></div>
@@ -75,7 +75,7 @@
           <swiper-slide *ngFor="let restaurant of (nearby$ | async) || []">
             <ion-card class="restaurant-card" (click)="navigateToRestaurant(restaurant)" button>
               <div class="card-image-container">
-                <img [src]="restaurant.ImageUrl || 'assets/icon/Placeholder.png'"
+                <img [src]="restaurant.ImageUrl || placeholderImage"
                      [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
                      class="card-image">
                 <div class="card-overlay"></div>
@@ -119,7 +119,7 @@
           <swiper-slide *ngFor="let offer of (offers$ | async) || []">
             <ion-card class="offer-card" (click)="setFeatured(offer.image)" button>
               <div class="card-image-container">
-                <img [src]="offer.image || 'assets/icon/Placeholder.png'"
+                <img [src]="offer.image || placeholderImage"
                      [alt]="offer.title"
                      class="card-image">
                 <div class="card-overlay"></div>
@@ -162,7 +162,7 @@
           <swiper-slide *ngFor="let article of (articles$ | async) || []">
             <ion-card class="article-card" button>
               <div class="card-image-container">
-                <img [src]="article.image || 'assets/icon/Placeholder.png'"
+                <img [src]="article.image || placeholderImage"
                      [alt]="(lang$ | async) === 'TC' ? article.title_TC : article.title_EN"
                      class="card-image">
                 <div class="card-overlay"></div>
@@ -204,7 +204,7 @@
               <ion-card-content class="card-content">
                 <div class="review-header">
                   <ion-avatar class="review-avatar">
-                    <img [src]="review.avatar || 'assets/icon/Placeholder.png'" [alt]="review.name">
+                    <img [src]="review.avatar || placeholderImage" [alt]="review.name">
                   </ion-avatar>
                   <div class="review-meta">
                     <h4 class="review-name">{{ review.name }}</h4>
@@ -252,7 +252,7 @@
           <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
             <ion-card class="restaurant-card" button (click)="navigateToRestaurant(restaurant)">
               <div class="card-image-container">
-                <img [src]="restaurant.image || 'assets/icon/Placeholder.png'"
+                <img [src]="restaurant.image || placeholderImage"
                      [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
                      class="card-image">
                 <div class="card-overlay"></div>

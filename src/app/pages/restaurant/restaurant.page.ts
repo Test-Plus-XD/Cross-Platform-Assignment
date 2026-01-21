@@ -14,6 +14,7 @@ import { RestaurantFeatureService } from '../../services/restaurant-feature.serv
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
 import * as Leaflet from 'leaflet';
+import { environment } from '../../../environments/environment';
 
 // Configure Leaflet default icon with proper asset paths
 delete (Leaflet.Icon.Default.prototype as any)._getIconUrl;
@@ -61,7 +62,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   // Distance result from user's location
   distanceResult: DistanceResult | null = null;
   // Placeholder image path when image is missing
-  readonly placeholderImage = '../assets/icon/Placeholder.png';
+  readonly placeholderImage = environment.placeholderImageUrl || '../assets/icon/Placeholder.png';
   // Subject used to unsubscribe on destroy
   private destroy$ = new Subject<void>();
   // Reference to Leaflet map instance

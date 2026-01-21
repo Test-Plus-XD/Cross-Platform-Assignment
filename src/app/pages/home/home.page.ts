@@ -10,6 +10,7 @@ import { PlatformService } from '../../services/platform.service';
 import { ReviewsService, Review } from '../../services/reviews.service';
 import { LocationService, Coordinates } from '../../services/location.service';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -34,6 +35,8 @@ export class HomePage implements OnInit {
   // Nearby restaurants loading state
   public isLoadingNearby = false;
   public locationError: string | null = null;
+  // Placeholder image path
+  public readonly placeholderImage = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
 
   constructor(
     private readonly mockDataService: MockDataService,
@@ -96,7 +99,7 @@ export class HomePage implements OnInit {
           id: review.id,
           restaurantId: review.restaurantId,  // Include for navigation
           name: review.userDisplayName || 'Anonymous User',
-          avatar: review.userPhotoURL || 'assets/icon/Placeholder.png',
+          avatar: review.userPhotoURL || this.placeholderImage,
           meta: this.formatReviewMeta(review),
           text: review.comment || '',
           rating: review.rating,

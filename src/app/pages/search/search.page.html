@@ -116,7 +116,7 @@
 
         <!-- Restaurant Image -->
         <div class="card-image-container">
-          <img [src]="restaurant.ImageUrl || 'assets/icon/Placeholder.png'"
+          <img [src]="restaurant.ImageUrl || placeholderImage"
                [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN"
                class="restaurant-image">
           <div class="image-overlay"></div>
