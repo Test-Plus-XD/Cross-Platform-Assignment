@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-01-15 | **Version:** 1.9.2 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2025-01-29 | **Version:** 1.10.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -36,8 +36,9 @@ Full-stack restaurant discovery and booking application with Angular/Ionic front
 - Interactive maps (Leaflet integration)
 - Real-time chat (Socket.IO for restaurant-customer communication)
 - AI assistant (Google Gemini integration)
+- Push notifications (Firebase Cloud Messaging)
 - Dark/light theming with system preference detection
-- Adaptive responsive layouts (mobile/web optimized)
+- Adaptive responsive layouts (mobile/web optimised)
 
 ---
 
@@ -55,7 +56,7 @@ src/app/
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
 │   └── test/                  # Development/testing
-├── services/                  # 22 core services
+├── services/                  # 23 core services
 │   ├── auth.service.ts                # Firebase authentication
 │   ├── app-state.service.ts           # Centralized state (v1.7.0)
 │   ├── restaurants.service.ts         # Restaurant CRUD
@@ -65,6 +66,7 @@ src/app/
 │   ├── location.service.ts            # GPS + distance calculations
 │   ├── chat.service.ts                # Socket.IO real-time chat
 │   ├── gemini.service.ts              # AI assistant
+│   ├── messaging.service.ts           # Firebase Cloud Messaging (v1.10.0)
 │   ├── guard.service.ts               # Route protection
 │   ├── theme.service.ts               # Dark/light mode
 │   ├── language.service.ts            # EN/TC switching
@@ -747,7 +749,49 @@ ngOnInit() {
 - `getBookingStatusColor(status)` - Get badge color for status
 - `isValidCoordinates(lat, lng)` - Validate coordinates
 
-### 11. Other Services
+### 11. MessagingService (`messaging.service.ts`) - v1.10.0
+**Purpose:** Firebase Cloud Messaging integration for push notifications
+
+**Key Methods:**
+- `requestPermission()` - Request notification permission and obtain FCM token
+- `getCurrentToken()` - Retrieve current FCM token (from memory or localStorage)
+- `getCurrentPermission()` - Get current notification permission status
+- `deleteCurrentToken()` - Delete current FCM token and remove from storage
+- `refreshToken()` - Refresh FCM token (delete and request new one)
+- `subscribeToTopic(token, topic)` - Subscribe to notification topic (requires backend)
+- `unsubscribeFromTopic(token, topic)` - Unsubscribe from topic (requires backend)
+- `generateNotification(type, params)` - Generate notification from template
+
+**State:**
+- `token$: Observable<string | null>` - FCM token changes
+- `message$: Observable<NotificationPayload | null>` - Incoming messages
+- `permission$: Observable<NotificationPermission>` - Permission status changes
+
+**Features:**
+- Foreground and background message handling
+- Browser notification display with click actions
+- Token persistence in localStorage
+- Notification templates for common use cases
+- Observable patterns for reactive updates
+
+**Exported Models:**
+- `NotificationPayload` - Notification structure
+- `NotificationData` - Notification metadata
+- `NotificationType` - Notification type enumeration
+- `FcmTokenInfo` - Token information
+- `SendNotificationRequest` - Backend request structure
+- `SendToTopicRequest` - Topic notification request
+- `SubscribeToTopicRequest` - Topic subscription request
+- `NotificationTemplate` - Template structure
+- `NOTIFICATION_TEMPLATES` - Pre-built notification templates
+
+**Service Worker:**
+`src/firebase-messaging-sw.js` handles background notifications when app is closed/minimised. Requires Firebase 12.5.0 compat libraries.
+
+**Environment Configuration:**
+`fcmVapidKey` must be configured in both `environment.ts` and `environment.prod.ts`. Obtain VAPID key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates.
+
+### 12. Other Services
 - **GuardService:** Route protection (CanActivate)
 - **ThemeService:** Dark/light mode (localStorage)
 - **LanguageService:** EN/TC switching (localStorage)
@@ -759,7 +803,7 @@ ngOnInit() {
 - **UIService:** Toast notifications, loading spinners, alert dialogs
 - **MockDataService:** Demo data (sample offers, articles, reviews)
 
-### 12. Service Aggregators (v1.7.0)
+### 13. Service Aggregators (v1.7.0)
 **StoreFeatureService:** Consolidates services for store page (restaurants, bookings, user, auth, language, theme, platform)
 
 **RestaurantFeatureService:** Consolidates services for restaurant page (restaurants, reviews, location, bookings, auth, user, language, theme, platform)
@@ -1438,10 +1482,11 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.9.2 | **Maintainer:** AI Assistant
+**Document Version:** 1.10.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
-- **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters while preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
+- **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.
+- **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters whilst preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
 - **v1.9.1** (2025-12-13): Added ChatVisibilityService, StoreHelpersService documentation. Enhanced UserService section with type/restaurantId fields, updateLoginMetadata, updatePreferences methods. Added dynamic navigation documentation (MenuComponent, TabComponent user-type-specific behavior).
 - **v1.9.0** (2025-12-11): Review images support (imageUrl field), genuine reviews on home page (fetches from Firestore, supplements with mock data if needed).
 - **v1.8.0** (2025-12-08): UI improvements (green badges, gradient buttons, Eclipse.gif loading). ChatVisibilityService for button mutual exclusivity. StoreHelpersService utility methods. Chat/Gemini chatbox color updates.

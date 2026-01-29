@@ -13,5 +13,6 @@ export const environment = {
   algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
   apiUrl: 'https://vercel-express-api-alpha.vercel.app',
   placeholderImageUrl: 'https://placehold.co/600x400?text=No+Image',
-  socketUrl: 'https://railway-socket-production.up.railway.app/'
+  socketUrl: 'https://railway-socket-production.up.railway.app/',
+  fcmVapidKey: 'YOUR_FIREBASE_VAPID_KEY_HERE' // Get from Firebase Console > Project Settings > Cloud Messaging
 };
