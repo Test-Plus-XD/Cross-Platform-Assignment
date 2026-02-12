@@ -6,6 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
 import { provideFirebaseApp, initializeApp } from '@angular/fire/app';
 import { provideAuth, getAuth } from '@angular/fire/auth';
+import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { SharedModule } from './shared/shared.module';
@@ -32,7 +33,9 @@ register();
     // Provide Firebase app instance
     provideFirebaseApp(() => initializeApp(environment.firebaseConfig)),
     // Provide Auth instance
-    provideAuth(() => getAuth())
+    provideAuth(() => getAuth()),
+    // Provide Messaging instance
+    provideMessaging(() => getMessaging())
   ],
   bootstrap: [AppComponent],
 })

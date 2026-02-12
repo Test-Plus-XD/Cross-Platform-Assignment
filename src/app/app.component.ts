@@ -1,5 +1,6 @@
 import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { HeaderComponent } from './shared/header/header.component';
@@ -9,6 +10,7 @@ import { LanguageService } from './services/language.service';
 import { PlatformService } from './services/platform.service';
 import { UIService } from './services/UI.service';
 import { AppStateService } from './services/app-state.service';
+import { MessagingService } from './services/messaging.service';
 
 @Component({
   selector: 'app-root',
@@ -29,7 +31,9 @@ export class AppComponent implements OnInit, OnDestroy {
         readonly platform: PlatformService,
         readonly UI: UIService,
         readonly appState: AppStateService,
-        readonly router: Router
+        readonly router: Router,
+        readonly messagingService: MessagingService,
+        private alertController: AlertController
     ) {
         // Ensure the initial theme is applied right away.
         // This re-applies whatever ThemeService computed in getInitialTheme().
@@ -62,6 +66,78 @@ export class AppComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
       // AppStateService now handles state management automatically
+
+      // Show notification permission prompt if not yet granted
+      this.promptNotificationPermission();
+    }
+
+    private async promptNotificationPermission(): Promise<void> {
+      try {
+        if (!this.messagingService?.isSupported()) return;
+
+        const permission = Notification.permission;
+
+        if (permission === 'granted') {
+          // Already granted — silently obtain token
+          this.messagingService.requestPermission().catch(() => {});
+          return;
+        }
+
+        // Don't show on every visit — check if user dismissed our prompt before
+        const dismissed = localStorage.getItem('fcmPromptDismissed');
+        if (dismissed && permission === 'denied') return;
+
+        const isTC = this.language.getCurrentLanguage() === 'TC';
+
+        if (permission === 'default') {
+          // Never asked — show custom prompt before triggering the browser popup
+          const alert = await this.alertController.create({
+            header: isTC ? '啟用通知' : 'Enable Notifications',
+            message: isTC
+              ? '接收預訂確認、新訊息和餐廳更新的推送通知。'
+              : 'Receive push notifications for booking confirmations, new messages, and restaurant updates.',
+            buttons: [
+              {
+                text: isTC ? '稍後再說' : 'Not Now',
+                role: 'cancel',
+                handler: () => {
+                  localStorage.setItem('fcmPromptDismissed', 'true');
+                }
+              },
+              {
+                text: isTC ? '允許' : 'Allow',
+                handler: () => {
+                  this.messagingService.requestPermission().then(token => {
+                    if (token) {
+                      console.log('[AppComponent] FCM token obtained.');
+                    }
+                  }).catch(() => {});
+                }
+              }
+            ]
+          });
+          await alert.present();
+        } else if (permission === 'denied') {
+          // Previously denied in browser — guide user to reset
+          const alert = await this.alertController.create({
+            header: isTC ? '通知已被封鎖' : 'Notifications Blocked',
+            message: isTC
+              ? '通知已在瀏覽器中被封鎖。如要啟用，請點擊網址列旁的鎖定圖示，將「通知」改為「允許」，然後重新載入頁面。'
+              : 'Notifications are blocked in your browser. To enable them, click the lock/tune icon next to the URL bar, change "Notifications" to "Allow", then reload the page.',
+            buttons: [
+              {
+                text: isTC ? '知道了' : 'Got It',
+                handler: () => {
+                  localStorage.setItem('fcmPromptDismissed', 'true');
+                }
+              }
+            ]
+          });
+          await alert.present();
+        }
+      } catch (err) {
+        console.error('[AppComponent] Notification prompt error:', err);
+      }
     }
 
     ngOnDestroy(): void {

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm start)",
+      "Bash(npx ng build)",
+      "Bash(npx ng build:*)",
+      "Bash(echo:*)"
     ]
   }
 }

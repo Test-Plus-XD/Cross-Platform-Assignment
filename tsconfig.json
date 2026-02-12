@@ -20,7 +20,7 @@
     "target": "es2022",
     "module": "es2020",
     "types": [
-      "@types/leaflet"
+      "google.maps"
     ],
     "lib": [
       "es2018",

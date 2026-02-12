@@ -1,11 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject, Optional } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { getMessaging, getToken, onMessage, deleteToken, Messaging, MessagePayload } from 'firebase/messaging';
+import { Messaging } from '@angular/fire/messaging';
+import { getToken, onMessage, deleteToken, MessagePayload } from 'firebase/messaging';
 import { environment } from '../../environments/environment';
 
-/**
- * Firebase Cloud Messaging Models
- */
+/// Firebase Cloud Messaging Models
 
 export interface NotificationPayload {
   title: string;
@@ -158,33 +157,40 @@ export class MessagingService {
   public message$ = this.messageSubject.asObservable();
   public permission$ = this.permissionSubject.asObservable();
 
-  constructor() {
-    this.initialiseMessaging();
+  constructor(@Optional() messaging: Messaging) {
+    this.initialiseMessaging(messaging);
   }
 
   /**
    * Initialise Firebase Cloud Messaging
    * Sets up the messaging instance and permission tracking
    */
-  private initialiseMessaging(): void {
+  private initialiseMessaging(messaging: Messaging | null): void {
     try {
       if (!environment.fcmVapidKey) {
-        console.warn('[Messaging] VAPID key not configured in environment');
+        console.warn('MessagingService VAPID key not configured in environment');
         return;
       }
 
       if (typeof window === 'undefined' || !('Notification' in window)) {
-        console.warn('[Messaging] Notifications not supported in this environment');
+        console.warn('MessagingService Notifications not supported in this environment');
         return;
       }
 
-      this.messaging = getMessaging();
+      if (!messaging) {
+        console.warn('MessagingService Messaging instance not available (provideMessaging may not be configured)');
+        return;
+      }
+
+      this.messaging = messaging;
       this.permissionSubject.next(Notification.permission);
 
       // Listen for foreground messages
       this.setupForegroundMessageListener();
+
+      console.log('MessagingService Messaging service initialised successfully');
     } catch (error) {
-      console.error('[Messaging] Initialisation error:', error);
+      console.error('MessagingService Initialisation error:', error);
     }
   }
 
@@ -195,7 +201,7 @@ export class MessagingService {
   async requestPermission(): Promise<string | null> {
     try {
       if (!this.messaging) {
-        console.error('[Messaging] Messaging not initialised');
+        console.error('MessagingService Messaging not initialised');
         return null;
       }
 
@@ -203,8 +209,11 @@ export class MessagingService {
       const permission = await Notification.requestPermission();
       this.permissionSubject.next(permission);
 
+      // Log the permission result for debugging/testing
+      console.log('MessagingService Notification permission result:', permission);
+
       if (permission !== 'granted') {
-        console.warn('[Messaging] Notification permission denied');
+        console.warn('MessagingService Notification permission denied');
         return null;
       }
 
@@ -214,7 +223,7 @@ export class MessagingService {
       });
 
       if (token) {
-        console.log('[Messaging] Token obtained:', token.substring(0, 20) + '...');
+        console.log('MessagingService Token obtained:', token.substring(0, 20) + '...');
         this.tokenSubject.next(token);
 
         // Store token in localStorage
@@ -222,11 +231,11 @@ export class MessagingService {
 
         return token;
       } else {
-        console.warn('[Messaging] No registration token available');
+        console.warn('MessagingService No registration token available');
         return null;
       }
     } catch (error) {
-      console.error('[Messaging] Error obtaining token:', error);
+      console.error('MessagingService Error obtaining token:', error);
       return null;
     }
   }
@@ -254,17 +263,17 @@ export class MessagingService {
   async deleteCurrentToken(): Promise<boolean> {
     try {
       if (!this.messaging) {
-        console.error('[Messaging] Messaging not initialised');
+        console.error('MessagingService Messaging not initialised');
         return false;
       }
 
       await deleteToken(this.messaging);
       this.tokenSubject.next(null);
       localStorage.removeItem('fcmToken');
-      console.log('[Messaging] Token deleted successfully');
+      console.log('MessagingService Token deleted successfully');
       return true;
     } catch (error) {
-      console.error('[Messaging] Error deleting token:', error);
+      console.error('MessagingService Error deleting token:', error);
       return false;
     }
   }
@@ -277,7 +286,7 @@ export class MessagingService {
     if (!this.messaging) return;
 
     onMessage(this.messaging, (payload: MessagePayload) => {
-      console.log('[Messaging] Foreground message received:', payload);
+      console.log('MessagingService Foreground message received:', payload);
 
       const notificationPayload: NotificationPayload = {
         title: payload.notification?.title || 'New Notification',
@@ -322,7 +331,7 @@ export class MessagingService {
         }
       };
     } catch (error) {
-      console.error('[Messaging] Error displaying notification:', error);
+      console.error('MessagingService Error displaying notification:', error);
     }
   }
 
@@ -353,10 +362,10 @@ export class MessagingService {
     try {
       // This requires a backend endpoint to call Firebase Admin SDK
       // POST /API/FCM/subscribe { token, topic }
-      console.log(`[Messaging] Subscribe to topic: ${topic} (requires backend implementation)`);
+      console.log(`MessagingService Subscribe to topic: ${topic} (requires backend implementation)`);
       return true;
     } catch (error) {
-      console.error('[Messaging] Error subscribing to topic:', error);
+      console.error('MessagingService Error subscribing to topic:', error);
       return false;
     }
   }
@@ -371,10 +380,10 @@ export class MessagingService {
     try {
       // This requires a backend endpoint to call Firebase Admin SDK
       // POST /API/FCM/unsubscribe { token, topic }
-      console.log(`[Messaging] Unsubscribe from topic: ${topic} (requires backend implementation)`);
+      console.log(`MessagingService Unsubscribe from topic: ${topic} (requires backend implementation)`);
       return true;
     } catch (error) {
-      console.error('[Messaging] Error unsubscribing from topic:', error);
+      console.error('MessagingService Error unsubscribing from topic:', error);
       return false;
     }
   }

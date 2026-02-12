@@ -73,14 +73,14 @@ export class ExamplePage implements OnInit {
   isSupported = false;
   isPermissionGranted = false;
 
-  constructor(private fcmService: FcmService) {}
+  constructor(private MessagingService: FcmService) {}
 
   ngOnInit() {
     // Check if FCM is supported
-    this.isSupported = this.fcmService.isSupported();
+    this.isSupported = this.MessagingService.isSupported();
 
     // Subscribe to token changes
-    this.fcmService.token$.subscribe(token => {
+    this.MessagingService.token$.subscribe(token => {
       this.fcmToken = token;
       if (token) {
         console.log('FCM Token:', token);
@@ -90,7 +90,7 @@ export class ExamplePage implements OnInit {
     });
 
     // Subscribe to incoming messages (foreground)
-    this.fcmService.message$.subscribe(message => {
+    this.MessagingService.message$.subscribe(message => {
       if (message) {
         console.log('Received message:', message);
         // Handle the message (show toast, update UI, etc.)
@@ -99,13 +99,13 @@ export class ExamplePage implements OnInit {
     });
 
     // Subscribe to permission changes
-    this.fcmService.permission$.subscribe(permission => {
+    this.MessagingService.permission$.subscribe(permission => {
       this.isPermissionGranted = permission === 'granted';
     });
   }
 
   async requestNotificationPermission() {
-    const token = await this.fcmService.requestPermission();
+    const token = await this.MessagingService.requestPermission();
     if (token) {
       console.log('Permission granted, token:', token);
     } else {
@@ -114,7 +114,7 @@ export class ExamplePage implements OnInit {
   }
 
   async deleteToken() {
-    const success = await this.fcmService.deleteCurrentToken();
+    const success = await this.MessagingService.deleteCurrentToken();
     if (success) {
       console.log('Token deleted successfully');
     }
@@ -204,7 +204,7 @@ async updateUserFcmToken(uid: string, fcmToken: string) {
 ```typescript
 // In your login component or auth service
 async onLoginSuccess(user: any) {
-  const fcmToken = await this.fcmService.requestPermission();
+  const fcmToken = await this.MessagingService.requestPermission();
   if (fcmToken) {
     await this.userService.updateUserFcmToken(user.uid, fcmToken);
   }

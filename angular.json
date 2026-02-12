@@ -34,11 +34,20 @@
                 "glob": "firebase-messaging-sw.js",
                 "input": "src",
                 "output": "/"
+              },
+              {
+                "glob": "manifest.webmanifest",
+                "input": "public",
+                "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "public/icons",
+                "output": "icons"
               }
             ],
             "styles": [
               "node_modules/photoswipe/dist/photoswipe.css",
-              "node_modules/leaflet/dist/leaflet.css",
               "src/style/global.scss",
               "src/theme/variables.scss"
             ],
@@ -82,9 +91,7 @@
               "progress": false
             }
           },
-          "allowedCommonJsDependencies": [
-            "leaflet"
-          ],
+          "allowedCommonJsDependencies": [],
           "defaultConfiguration": "production"
         },
         "serve": {
