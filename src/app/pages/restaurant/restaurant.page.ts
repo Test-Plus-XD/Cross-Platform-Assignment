@@ -13,16 +13,7 @@ import { DistanceResult } from '../../services/location.service';
 import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
-import * as Leaflet from 'leaflet';
 import { environment } from '../../../environments/environment';
-
-// Configure Leaflet default icon with proper asset paths
-delete (Leaflet.Icon.Default.prototype as any)._getIconUrl;
-Leaflet.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'assets/leaflet/marker-icon-2x.png',
-  iconUrl: 'assets/leaflet/marker-icon.png',
-  shadowUrl: 'assets/leaflet/marker-shadow.png',
-});
 
 @Component({
   selector: 'app-restaurant',
@@ -65,8 +56,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   readonly placeholderImage = environment.placeholderImageUrl || '../assets/icon/Placeholder.png';
   // Subject used to unsubscribe on destroy
   private destroy$ = new Subject<void>();
-  // Reference to Leaflet map instance
-  private map: Leaflet.Map | null = null;
+  // Reference to Google Maps instance
+  private map: google.maps.Map | null = null;
+  private marker: google.maps.Marker | null = null;
   // Touch tracking for double-tap detection
   private lastTapTime: number = 0;
   private readonly doubleTapThreshold: number = 300; // Milliseconds
@@ -296,7 +288,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     return this.feature.location.getDistanceColour(this.distanceResult.distanceKm);
   }
 
-  /// Initialise a Leaflet map when coordinates are present
+  /// Initialise a Google Map when coordinates are present
   private initialiseMapIfNeeded(): void {
     try {
       if (!this.restaurant) return;
@@ -313,25 +305,31 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         console.warn('RestaurantPage: Map container not found');
         return;
       }
+      if (this.marker) {
+        this.marker.setMap(null);
+        this.marker = null;
+      }
       if (this.map) {
-        this.map.remove();
         this.map = null;
       }
 
-      // Create Leaflet map and set view
-      this.map = Leaflet.map(mapContainer, { attributionControl: false }).setView([latitude, longitude], 15);
-
-      // Add OpenStreetMap tile layer
-      Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
+      // Create Google Map
+      this.map = new google.maps.Map(mapContainer, {
+        center: { lat: latitude, lng: longitude },
+        zoom: 15,
+        mapTypeControl: false,
+        fullscreenControl: false,
+        zoomControl: true,
+        streetViewControl: false
+      });
 
       // Add marker for the restaurant
-      Leaflet.marker([latitude, longitude]).addTo(this.map);
+      this.marker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: this.map,
+        title: this.restaurant.Name_EN || 'Restaurant'
+      });
 
-      // Invalidate size to ensure correct rendering in Ionic
-      setTimeout(() => this.map && this.map.invalidateSize(), 50);
       console.log('RestaurantPage: Map initialised successfully');
 
     } catch (error) {
@@ -942,8 +940,11 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.marker) {
+      this.marker.setMap(null);
+      this.marker = null;
+    }
     if (this.map) {
-      this.map.remove();
       this.map = null;
     }
   }

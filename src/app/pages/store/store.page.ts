@@ -13,7 +13,6 @@ import { Keyword, Keywords } from '../../constants/keywords.const';
 import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
 import { Weekday, Weekdays } from '../../constants/weekdays.const';
 import { MenuItemFieldLabels } from '../../constants/restaurant-constants';
-import * as L from 'leaflet';
 
 @Component({
   selector: 'app-store',
@@ -116,8 +115,9 @@ export class StorePage implements OnInit, OnDestroy {
   // Map marker
   mapMarker: { lat: number; lng: number } | null = null;
 
-  // Leaflet map instance
-  private map: L.Map | null = null;
+  // Google Maps instance
+  private map: google.maps.Map | null = null;
+  private marker: google.maps.Marker | null = null;
   private mapInitialized = false;
 
   // Translations
@@ -411,7 +411,7 @@ export class StorePage implements OnInit, OnDestroy {
     this.destroyMap();
   }
 
-  // Initialise Leaflet map component for location selection on the page.
+  // Initialise Google Map component for location selection on the page.
   private initializeMap(): void {
     if (this.mapInitialized || this.map) return;
     const mapContainer = document.getElementById('store-map');
@@ -426,66 +426,65 @@ export class StorePage implements OnInit, OnDestroy {
     const centerLatitude = this.editedInfo.Latitude || defaultLatitude;
     const centerLongitude = this.editedInfo.Longitude || defaultLongitude;
 
-    // Initialise map
-    this.map = L.map('store-map', {
+    // Initialise Google Map
+    this.map = new google.maps.Map(mapContainer, {
+      center: { lat: centerLatitude, lng: centerLongitude },
+      zoom: 13,
+      mapTypeControl: false,
+      fullscreenControl: false,
       zoomControl: true,
-      attributionControl: false
-    }).setView([centerLatitude, centerLongitude], 13);
-
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    }).addTo(this.map);
+      streetViewControl: false
+    });
 
     // Add existing marker if location exists
     if (this.mapMarker) {
-      L.marker([this.mapMarker.lat, this.mapMarker.lng]).addTo(this.map);
+      this.marker = new google.maps.Marker({
+        position: { lat: this.mapMarker.lat, lng: this.mapMarker.lng },
+        map: this.map
+      });
     }
 
     // Handle map click - properly bind the event
-    this.map.on('click', (event: L.LeafletMouseEvent) => {
-      this.onMapClickHandler(event);
-      this.cdr.markForCheck(); // Trigger change detection after map click
+    this.map.addListener('click', (event: google.maps.MapMouseEvent) => {
+      if (event.latLng) {
+        this.onMapClickHandler(event.latLng.lat(), event.latLng.lng());
+        this.cdr.markForCheck(); // Trigger change detection after map click
+      }
     });
     this.mapInitialized = true;
 
-    // Invalidate size to ensure proper rendering
-    setTimeout(() => {
-      if (this.map) {
-        this.map.invalidateSize();
-      }
-    }, 100);
     console.log('StorePage: Map initialised successfully');
   }
 
   // Handle map click event to update location coordinates and display marker.
-  private onMapClickHandler(event: L.LeafletMouseEvent): void {
-    const latitude = event.latlng.lat;
-    const longitude = event.latlng.lng;
-
+  private onMapClickHandler(latitude: number, longitude: number): void {
     this.editedInfo.Latitude = latitude;
     this.editedInfo.Longitude = longitude;
     this.mapMarker = { lat: latitude, lng: longitude };
 
-    // Clear existing markers
-    if (this.map) {
-      this.map.eachLayer((layer: L.Layer) => {
-        if (layer instanceof L.Marker) {
-          this.map?.removeLayer(layer);
-        }
-      });
+    // Clear existing marker
+    if (this.marker) {
+      this.marker.setMap(null);
+      this.marker = null;
+    }
 
-      // Add new marker
-      L.marker([latitude, longitude]).addTo(this.map);
+    // Add new marker
+    if (this.map) {
+      this.marker = new google.maps.Marker({
+        position: { lat: latitude, lng: longitude },
+        map: this.map
+      });
       console.log('StorePage: Location updated to:', latitude.toFixed(6), longitude.toFixed(6));
     }
   }
 
-  // Destroy map instance and clean up Leaflet resources to prevent memory leaks.
+  // Destroy map instance and clean up Google Maps resources to prevent memory leaks.
   private destroyMap(): void {
+    if (this.marker) {
+      this.marker.setMap(null);
+      this.marker = null;
+    }
     if (this.map) {
-      this.map.remove();
       this.map = null;
       this.mapInitialized = false;
       console.log('StorePage: Map destroyed');

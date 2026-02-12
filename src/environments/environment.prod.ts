@@ -14,5 +14,6 @@ export const environment = {
   apiUrl: 'https://vercel-express-api-alpha.vercel.app',
   placeholderImageUrl: 'https://placehold.co/600x400?text=No+Image',
   socketUrl: 'https://railway-socket-production.up.railway.app/',
-  fcmVapidKey: 'YOUR_FIREBASE_VAPID_KEY_HERE' // Get from Firebase Console > Project Settings > Cloud Messaging
+  fcmVapidKey: 'BEDBZEh6wzrgo0uI6SMui03I6IBJaurA-aFst3dLWC2hxuGhKjjWAXI9BlrQrbxNUgubkkxgOFJVacbpogSa7uc',
+  googleMapsApiKey: 'AIzaSyAun6GtoyZqdkzO55Cbc5DHIO-xL2oYlRI'
 };

@@ -1,7 +1,6 @@
-// Fullscreen modal that shows a Leaflet map for given coordinates
+// Fullscreen modal that shows a Google Map for given coordinates
 import { Component, AfterViewInit, OnDestroy } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import * as Leaflet from 'leaflet';
 
 @Component({
   template: `
@@ -44,7 +43,8 @@ import * as Leaflet from 'leaflet';
 export class MapModalComponent implements AfterViewInit, OnDestroy {
   latitude!: number;
   longitude!: number;
-  private map: Leaflet.Map | null = null;
+  private map: google.maps.Map | null = null;
+  private marker: google.maps.Marker | null = null;
   private mapInitialized = false;
   private mapContainer: HTMLElement | null = null;
 
@@ -69,29 +69,24 @@ export class MapModalComponent implements AfterViewInit, OnDestroy {
         return;
       }
 
-      // Initialise map with error handling
-      this.map = Leaflet.map(this.mapContainer, {
-        attributionControl: false,
-        zoomControl: true
-      }).setView([this.latitude, this.longitude], 16);
-
-      // Add tile layer
-      Leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(this.map);
+      // Initialise Google Map with error handling
+      this.map = new google.maps.Map(this.mapContainer, {
+        center: { lat: this.latitude, lng: this.longitude },
+        zoom: 16,
+        mapTypeControl: false,
+        fullscreenControl: true,
+        zoomControl: true,
+        streetViewControl: false
+      });
 
       // Add marker
-      Leaflet.marker([this.latitude, this.longitude]).addTo(this.map);
+      this.marker = new google.maps.Marker({
+        position: { lat: this.latitude, lng: this.longitude },
+        map: this.map,
+        title: 'Restaurant Location'
+      });
+
       this.mapInitialized = true;
-
-      // Invalidate size after a short delay to ensure proper rendering
-      setTimeout(() => {
-        if (this.map) {
-          this.map.invalidateSize();
-        }
-      }, 100);
-
       console.log('MapModalComponent: Map initialised successfully');
     } catch (err) {
       console.error('MapModalComponent initialisation error:', err);
@@ -99,7 +94,7 @@ export class MapModalComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // Clean up map instance to prevent memory leaks and crashes
+  // Clean up map instance to prevent memory leaks
   ngOnDestroy(): void {
     this.cleanupMap();
   }
@@ -122,14 +117,12 @@ export class MapModalComponent implements AfterViewInit, OnDestroy {
   // Centralised cleanup method
   private cleanupMap(): void {
     try {
-      if (this.map) {
-        // Remove all layers and event listeners
-        this.map.eachLayer((layer: Leaflet.Layer) => {
-          this.map?.removeLayer(layer);
-        });
+      if (this.marker) {
+        this.marker.setMap(null);
+        this.marker = null;
+      }
 
-        // Remove the map instance
-        this.map.remove();
+      if (this.map) {
         this.map = null;
         this.mapInitialized = false;
         console.log('MapModalComponent: Map cleaned up successfully');

@@ -13,7 +13,7 @@ A full-stack, bilingual (English/Traditional Chinese) restaurant discovery and b
 - **Language:** TypeScript 5.9.3
 - **Styling:** Tailwind CSS 4.1.14 + SCSS
 - **Search:** Algolia 5.42.0
-- **Maps:** Leaflet 1.9.4
+- **Maps:** Google Maps 3.58.1
 - **Authentication:** Firebase Auth 12.5.0
 - **Database:** Firestore 12.5.0
 - **Native:** Capacitor 7.4.3

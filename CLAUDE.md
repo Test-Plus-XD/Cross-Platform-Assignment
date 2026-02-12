@@ -33,7 +33,7 @@ Full-stack restaurant discovery and booking application with Angular/Ionic front
 - Restaurant search powered by Algolia with district/keyword filtering
 - User authentication (Firebase Auth + Google OAuth)
 - Booking management (create, view, manage reservations)
-- Interactive maps (Leaflet integration)
+- Interactive maps (Google Maps integration)
 - Real-time chat (Socket.IO for restaurant-customer communication)
 - AI assistant (Google Gemini integration)
 - Push notifications (Firebase Cloud Messaging)
@@ -126,7 +126,7 @@ If you need to add/modify endpoints or API functionality, update both:
 **State Management:** RxJS 7.8.2 (BehaviorSubjects)
 **Styling:** Tailwind CSS 4.1.14, SCSS
 **Search:** Algolia 5.42.0
-**Maps:** Leaflet 1.9.4
+**Maps:** Google Maps JavaScript API v3
 **Carousels:** Swiper 12.0.2
 **Native Bridge:** Capacitor 7.4.3
 **Auth:** Firebase Auth 12.5.0
@@ -566,6 +566,7 @@ export const environment = {
   socketUrl: 'https://railway-socket-production.up.railway.app', // v1.6.1
   algoliaAppId: 'V9HMGL1VIZ',
   algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
+  googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
   firebaseConfig: {
     apiKey: 'YOUR_API_KEY',
     authDomain: 'your-project.firebaseapp.com',
@@ -577,7 +578,7 @@ export const environment = {
 };
 ```
 
-**Important:** `apiUrl` points to Vercel REST API, `socketUrl` points to Railway Socket.IO server.
+**Important:** `apiUrl` points to Vercel REST API, `socketUrl` points to Railway Socket.IO server, `googleMapsApiKey` enables Google Maps JavaScript API integration.
 
 ---
 
@@ -1482,9 +1483,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.10.0 | **Maintainer:** AI Assistant
+**Document Version:** 1.11.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.11.0** (2026-02-12): Migrated from Leaflet to Google Maps JavaScript API v3. Updated MapModalComponent, RestaurantPage, and StorePage to use Google Maps. Removed Leaflet dependencies and assets. Added `googleMapsApiKey` to environment configuration. Google Maps script loaded in index.html.
 - **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.
 - **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters whilst preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
 - **v1.9.1** (2025-12-13): Added ChatVisibilityService, StoreHelpersService documentation. Enhanced UserService section with type/restaurantId fields, updateLoginMetadata, updatePreferences methods. Added dynamic navigation documentation (MenuComponent, TabComponent user-type-specific behavior).
