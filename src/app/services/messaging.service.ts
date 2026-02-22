@@ -1,7 +1,6 @@
-import { Injectable, inject, Optional } from '@angular/core';
+import { Injectable, Optional } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Messaging } from '@angular/fire/messaging';
-import { getToken, onMessage, deleteToken, MessagePayload } from 'firebase/messaging';
+import { Messaging, getToken, onMessage, deleteToken, MessagePayload } from '@angular/fire/messaging';
 import { environment } from '../../environments/environment';
 
 /// Firebase Cloud Messaging Models
@@ -217,9 +216,28 @@ export class MessagingService {
         return null;
       }
 
+      // Explicitly register the Firebase messaging service worker and pass it
+      // to getToken(). This prevents conflicts with Angular's PWA service worker
+      // (ngsw-worker.js) which is also registered at scope '/' in production.
+      // Without an explicit serviceWorkerRegistration, Firebase SDK auto-detects
+      // the SW — but ngsw-worker.js intercepts that lookup and token retrieval
+      // silently fails.
+      let serviceWorkerRegistration: ServiceWorkerRegistration | undefined;
+      if ('serviceWorker' in navigator) {
+        try {
+          serviceWorkerRegistration = await navigator.serviceWorker.register(
+            '/firebase-messaging-sw.js'
+          );
+          console.log('MessagingService Firebase SW registered:', serviceWorkerRegistration.scope);
+        } catch (swError) {
+          console.warn('MessagingService Failed to register Firebase SW:', swError);
+        }
+      }
+
       // Obtain FCM token
       const token = await getToken(this.messaging, {
-        vapidKey: environment.fcmVapidKey
+        vapidKey: environment.fcmVapidKey,
+        serviceWorkerRegistration
       });
 
       if (token) {
