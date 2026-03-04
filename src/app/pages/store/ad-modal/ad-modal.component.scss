@@ -1,0 +1,140 @@
+// Ad modal component styles
+.ad-modal-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+  }
+}
+
+.hidden {
+  display: none;
+}
+
+.form-container {
+  padding: 16px;
+}
+
+.language-section {
+  margin-bottom: 8px;
+}
+
+.language-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 0 4px;
+
+  ion-icon {
+    font-size: 1.2rem;
+    color: var(--ion-color-primary);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ion-color-dark);
+  }
+}
+
+.form-list {
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ion-card-background, var(--ion-background-color));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.form-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+
+  ion-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--ion-color-medium);
+    margin-bottom: 4px;
+  }
+
+  ion-input, ion-textarea {
+    --padding-top: 4px;
+    font-size: 0.95rem;
+  }
+}
+
+.image-item {
+  align-items: flex-start;
+
+  .image-upload-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    padding-top: 4px;
+    padding-bottom: 8px;
+  }
+}
+
+.image-preview {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+
+  .preview-img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--ion-color-light);
+  margin: 16px 0;
+}
+
+.fallback-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  margin: 16px 0 0 0;
+  padding: 0 4px;
+  line-height: 1.4;
+
+  ion-icon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+ion-footer ion-toolbar {
+  --padding-start: 0;
+  --padding-end: 0;
+  display: flex;
+
+  ion-button {
+    flex: 1;
+  }
+}

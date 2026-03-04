@@ -1,10 +1,13 @@
 // Store management page for Restaurant-type users
-// Provides restaurant info editing, menu management, and bookings overview
+// Provides restaurant info editing, menu management, bookings overview, and advertisement management
 import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
+import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
+import { AdModalComponent } from './ad-modal/ad-modal.component';
+import { DataService } from '../../services/data.service';
 import { Booking } from '../../services/booking.service';
 import { Restaurant, MenuItem } from '../../services/restaurants.service';
 import { StoreFeatureService } from '../../services/store-feature.service';
@@ -35,7 +38,11 @@ export class StorePage implements OnInit, OnDestroy {
   bookings: Booking[] = [];
 
   // Current section
-  currentSection: 'info' | 'menu' | 'bookings' = 'info';
+  currentSection: 'info' | 'menu' | 'bookings' | 'ads' = 'info';
+
+  // Advertisement management
+  advertisements: Advertisement[] = [];
+  isAdsLoading = false;
 
   // Loading states
   isLoading = true;
@@ -180,17 +187,32 @@ export class StorePage implements OnInit, OnDestroy {
     rejectBookingMessage: { EN: 'Reject this booking?', TC: '拒絕此預約？' },
     completeBookingTitle: { EN: 'Complete Booking', TC: '完成預約' },
     completeBookingMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為完成？' },
-    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' }
+    bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' },
+    advertisements: { EN: 'Advertisements', TC: '廣告' },
+    placeAd: { EN: 'Place New Advertisement', TC: '刊登新廣告' },
+    adCost: { EN: 'HK$10 per advertisement', TC: '每則廣告 HK$10' },
+    noAds: { EN: 'No advertisements yet', TC: '尚無廣告' },
+    noAdsHint: { EN: 'Place an advertisement to promote your restaurant in Featured Offers.', TC: '刊登廣告以在精選優惠中推廣您的餐廳。' },
+    adActive: { EN: 'Active', TC: '啟用中' },
+    adInactive: { EN: 'Inactive', TC: '已停用' },
+    deleteAd: { EN: 'Delete', TC: '刪除' },
+    confirmDeleteAd: { EN: 'Delete Advertisement', TC: '刪除廣告' },
+    confirmDeleteAdMessage: { EN: 'Delete this advertisement?', TC: '刪除此廣告？' },
+    adDeleted: { EN: 'Advertisement deleted', TC: '廣告已刪除' },
+    processingPayment: { EN: 'Processing payment...', TC: '處理付款中...' }
   };
 
   constructor(
     private readonly feature: StoreFeatureService,
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
     private readonly alertController: AlertController,
     private readonly toastController: ToastController,
     private readonly loadingController: LoadingController,
     private readonly modalController: ModalController,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly advertisementsService: AdvertisementsService,
+    private readonly dataService: DataService
   ) {
     this.isMobile$ = this.feature.platform.isMobile$;
   }
@@ -210,6 +232,24 @@ export class StorePage implements OnInit, OnDestroy {
 
     // Load restaurant data
     this.loadRestaurantData();
+
+    // Detect successful Stripe payment redirect and open the ad creation modal
+    this.route.queryParams.pipe(take(1)).subscribe(params => {
+      if (params['payment_success'] === 'true' && params['session_id']) {
+        const sessionId = params['session_id'];
+        // Clean URL params immediately so refreshing doesn't re-open the modal
+        this.router.navigate(['/store'], { replaceUrl: true });
+        // Wait until restaurant data is available before opening the modal
+        const checkReady = setInterval(() => {
+          if (!this.isRestaurantLoading && this.restaurantId) {
+            clearInterval(checkReady);
+            this.openAdModal(sessionId);
+          }
+        }, 300);
+        // Stop polling after 10 seconds as a safety measure
+        setTimeout(() => clearInterval(checkReady), 10000);
+      }
+    });
   }
 
   // Load restaurant data linked to current user.
@@ -251,6 +291,8 @@ export class StorePage implements OnInit, OnDestroy {
           this.loadMenu();
           // Load bookings
           this.loadBookings();
+          // Load advertisements
+          this.loadAdvertisements();
         },
         error: (err) => {
           console.error('StorePage: Error loading user profile:', err);
@@ -377,7 +419,7 @@ export class StorePage implements OnInit, OnDestroy {
   }
 
   // Switch between different page sections and cancel any ongoing edits.
-  switchSection(section: 'info' | 'menu' | 'bookings'): void {
+  switchSection(section: 'info' | 'menu' | 'bookings' | 'ads'): void {
     this.currentSection = section;
 
     // Cancel any ongoing edits
@@ -1529,6 +1571,103 @@ export class StorePage implements OnInit, OnDestroy {
       await loading.dismiss();
       await this.showToast(error.message || (lang === 'TC' ? '儲存失敗' : 'Save failed'), 'danger');
     }
+  }
+
+  // Load advertisements for the current restaurant.
+  private loadAdvertisements(): void {
+    if (!this.restaurantId) return;
+    this.isAdsLoading = true;
+    this.advertisementsService.getAdvertisements(this.restaurantId).subscribe({
+      next: (ads) => {
+        this.advertisements = ads;
+        this.isAdsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('StorePage: Error loading advertisements:', err);
+        this.isAdsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  // Initiate Stripe hosted checkout for an advertisement placement (HK$10).
+  async initiateAdPayment(): Promise<void> {
+    if (!this.restaurantId) return;
+    const lang = await this.getCurrentLanguage();
+    const loading = await this.loadingController.create({
+      message: lang === 'TC' ? this.translations.processingPayment.TC : this.translations.processingPayment.EN,
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      const successUrl = `${window.location.origin}/store?payment_success=true&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${window.location.origin}/store`;
+      const token = await this.feature.auth.getIdToken();
+      const response = await this.dataService.post<{ sessionId: string; url: string }>(
+        '/API/Stripe/create-checkout-session',
+        { restaurantId: this.restaurantId, successUrl, cancelUrl },
+        token
+      ).toPromise();
+
+      await loading.dismiss();
+      if (response?.url) {
+        window.location.href = response.url;
+      }
+    } catch (err: any) {
+      console.error('StorePage: Payment initiation failed', err);
+      await loading.dismiss();
+      await this.showToast(err.message || (await this.getCurrentLanguage() === 'TC' ? '付款失敗' : 'Payment failed'), 'danger');
+    }
+  }
+
+  // Open the AdModalComponent after a successful Stripe payment redirect.
+  async openAdModal(sessionId: string): Promise<void> {
+    const modal = await this.modalController.create({
+      component: AdModalComponent,
+      componentProps: { sessionId, restaurantId: this.restaurantId }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data?.created) {
+      this.loadAdvertisements();
+      const lang = await this.getCurrentLanguage();
+      await this.showToast(
+        lang === 'TC' ? '廣告已成功刊登！' : 'Advertisement published successfully!',
+        'success'
+      );
+    }
+  }
+
+  // Delete an advertisement after user confirmation.
+  async deleteAdvertisement(adId: string): Promise<void> {
+    const lang = await this.getCurrentLanguage();
+    const alert = await this.alertController.create({
+      header: lang === 'TC' ? this.translations.confirmDeleteAd.TC : this.translations.confirmDeleteAd.EN,
+      message: lang === 'TC' ? this.translations.confirmDeleteAdMessage.TC : this.translations.confirmDeleteAdMessage.EN,
+      buttons: [
+        { text: lang === 'TC' ? this.translations.cancel.TC : this.translations.cancel.EN, role: 'cancel' },
+        {
+          text: lang === 'TC' ? this.translations.deleteAd.TC : this.translations.deleteAd.EN,
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await this.advertisementsService.deleteAdvertisement(adId).toPromise();
+              await this.showToast(
+                lang === 'TC' ? this.translations.adDeleted.TC : this.translations.adDeleted.EN,
+                'success'
+              );
+              this.loadAdvertisements();
+            } catch (err: any) {
+              console.error('StorePage: Error deleting advertisement:', err);
+              await this.showToast(err.message || (lang === 'TC' ? '刪除失敗' : 'Delete failed'), 'danger');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 
   // Cleanup

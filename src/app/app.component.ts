@@ -79,7 +79,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
         if (permission === 'granted') {
           // Already granted — silently obtain token
-          this.messagingService.requestPermission().catch(() => {});
+          this.messagingService.requestPermission().catch(err => {
+            console.error('[AppComponent] FCM token error (auto):', err);
+          });
           return;
         }
 
@@ -107,11 +109,26 @@ export class AppComponent implements OnInit, OnDestroy {
               {
                 text: isTC ? '允許' : 'Allow',
                 handler: () => {
-                  this.messagingService.requestPermission().then(token => {
-                    if (token) {
-                      console.log('[AppComponent] FCM token obtained.');
+                  // Call Notification.requestPermission() DIRECTLY in the click
+                  // handler to preserve the transient user activation. Routing
+                  // through the async service method first can lose the gesture
+                  // context due to Ionic's overlay dismiss processing, causing
+                  // the browser to silently skip the native permission popup.
+                  Notification.requestPermission().then(permission => {
+                    console.log('[AppComponent] Browser permission result:', permission);
+                    if (permission === 'granted') {
+                      // Permission granted — now obtain FCM token via service
+                      this.messagingService.requestPermission().then(token => {
+                        if (token) {
+                          console.log('[AppComponent] FCM token obtained.');
+                        } else {
+                          console.warn('[AppComponent] Permission granted but no FCM token returned.');
+                        }
+                      }).catch(err => console.error('[AppComponent] FCM token error:', err));
+                    } else {
+                      console.warn('[AppComponent] Notification permission not granted:', permission);
                     }
-                  }).catch(() => {});
+                  }).catch(err => console.error('[AppComponent] Permission request error:', err));
                 }
               }
             ]

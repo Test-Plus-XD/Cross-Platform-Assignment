@@ -10,6 +10,7 @@ import { PlatformService } from '../../services/platform.service';
 import { ReviewsService, Review } from '../../services/reviews.service';
 import { LocationService, Coordinates } from '../../services/location.service';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
+import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -45,7 +46,8 @@ export class HomePage implements OnInit {
     private readonly reviewsService: ReviewsService,
     private readonly router: Router,
     private readonly locationService: LocationService,
-    private readonly restaurantsService: RestaurantsService
+    private readonly restaurantsService: RestaurantsService,
+    private readonly advertisementsService: AdvertisementsService
   ) { }
 
   ngOnInit(): void {
@@ -60,7 +62,7 @@ export class HomePage implements OnInit {
     // Subscribe to each data stream
     // Modern swiper web components work declaratively - they initialise themselves
     // when the DOM is ready, so we don't need manual initialisation logic
-    this.offers$ = this.mockDataService.offers$();
+    this.offers$ = this.loadOffers();
     this.articles$ = this.mockDataService.articles$();
     this.restaurants$ = this.mockDataService.restaurants$();
     this.ads$ = this.mockDataService.ads$();
@@ -73,8 +75,9 @@ export class HomePage implements OnInit {
 
     // Optionally set a featured image from the first offer
     this.offers$.subscribe(offers => {
-      if (offers && offers.length > 0 && offers[0].image) {
-        this.featuredImage = offers[0].image;
+      if (offers && offers.length > 0) {
+        const first = offers[0];
+        this.featuredImage = first.image_EN || first.image_TC || first.image || null;
       }
     });
   }
@@ -160,6 +163,37 @@ export class HomePage implements OnInit {
   public setFeatured(imageUrl?: string | null): void {
     if (imageUrl) {
       this.featuredImage = imageUrl;
+    }
+  }
+
+  // Load featured offers: real Firestore advertisements + mock offers as supplement
+  private loadOffers(): Observable<any[]> {
+    return forkJoin({
+      ads: this.advertisementsService.getAdvertisements().pipe(catchError(() => of([] as Advertisement[]))),
+      mock: this.mockDataService.offers$()
+    }).pipe(
+      map(({ ads, mock }) => {
+        const realOffers = ads.map((ad: Advertisement) => ({
+          id: ad.id,
+          title_EN: ad.Title_EN,
+          title_TC: ad.Title_TC,
+          content_EN: ad.Content_EN,
+          content_TC: ad.Content_TC,
+          image_EN: ad.Image_EN,
+          image_TC: ad.Image_TC,
+          restaurantId: ad.restaurantId,
+          isReal: true
+        }));
+        const mockOffers = mock.map((o: any) => ({ ...o, isReal: false, restaurantId: null }));
+        return [...realOffers, ...mockOffers];
+      })
+    );
+  }
+
+  // Navigate to restaurant page when an offer card is clicked
+  public navigateToOffer(offer: any): void {
+    if (offer.restaurantId) {
+      this.router.navigate(['/restaurant', offer.restaurantId]);
     }
   }
 

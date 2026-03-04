@@ -7,6 +7,7 @@ import { IonicModule } from '@ionic/angular';
 import { StorePageRoutingModule } from './store-routing.module';
 
 import { StorePage } from './store.page';
+import { AdModalComponent } from './ad-modal/ad-modal.component';
 
 @NgModule({
   imports: [
@@ -15,6 +16,6 @@ import { StorePage } from './store.page';
     IonicModule,
     StorePageRoutingModule
   ],
-  declarations: [StorePage]
+  declarations: [StorePage, AdModalComponent]
 })
 export class StorePageModule {}

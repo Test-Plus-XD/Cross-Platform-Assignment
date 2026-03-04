@@ -117,22 +117,18 @@
                           speed="600"
                           breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
           <swiper-slide *ngFor="let offer of (offers$ | async) || []">
-            <ion-card class="offer-card" (click)="setFeatured(offer.image)" button>
+            <ion-card class="offer-card" (click)="navigateToOffer(offer)" button>
               <div class="card-image-container">
-                <img [src]="offer.image || placeholderImage"
-                     [alt]="offer.title"
+                <img [src]="((lang$ | async) === 'TC' ? (offer.image_TC || offer.image_EN || offer.image) : (offer.image_EN || offer.image_TC || offer.image)) || placeholderImage"
+                     [alt]="(lang$ | async) === 'TC' ? (offer.title_TC || offer.title_EN || offer.title) : (offer.title_EN || offer.title_TC || offer.title)"
                      class="card-image">
                 <div class="card-overlay"></div>
               </div>
               <ion-card-content class="card-content">
-                <h3 class="card-title">{{ offer.title }}</h3>
-                <p class="card-subtitle">{{ offer.restaurant }}</p>
-                <div class="card-action">
-                  <ion-text color="primary" class="action-link">
-                    {{ (lang$ | async) === 'TC' ? '查看詳情' : 'View Details' }}
-                    <ion-icon name="arrow-forward-outline"></ion-icon>
-                  </ion-text>
-                </div>
+                <h3 class="card-title">{{ (lang$ | async) === 'TC' ? (offer.title_TC || offer.title_EN || offer.title) : (offer.title_EN || offer.title_TC || offer.title) }}</h3>
+                <p class="card-text" *ngIf="(lang$ | async) === 'TC' ? (offer.content_TC || offer.content_EN) : (offer.content_EN || offer.content_TC)">
+                  {{ (lang$ | async) === 'TC' ? (offer.content_TC || offer.content_EN) : (offer.content_EN || offer.content_TC) }}
+                </p>
               </ion-card-content>
             </ion-card>
           </swiper-slide>

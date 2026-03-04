@@ -85,6 +85,12 @@
               {{ (lang$ | async) === 'TC' ? translations.bookingsOverview.TC : translations.bookingsOverview.EN }}
             </ion-label>
           </ion-segment-button>
+          <ion-segment-button value="ads">
+            <ion-label>
+              <ion-icon name="megaphone-outline"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.advertisements.TC : translations.advertisements.EN }}
+            </ion-label>
+          </ion-segment-button>
         </ion-segment>
 
         <!-- SECTION 1: Restaurant Information -->
@@ -851,6 +857,63 @@
             </ion-card>
           </ion-list>
         </div>
+        <!-- SECTION 4: Advertisements -->
+        <div *ngIf="currentSection === 'ads'" class="section-content">
+
+          <!-- Place new ad button -->
+          <ion-card class="ad-cta-card">
+            <ion-card-content>
+              <p class="ad-cost-label">{{ (lang$ | async) === 'TC' ? translations.adCost.TC : translations.adCost.EN }}</p>
+              <ion-button expand="block" (click)="initiateAdPayment()">
+                <ion-icon name="megaphone-outline" slot="start"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.placeAd.TC : translations.placeAd.EN }}
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+
+          <!-- Loading state -->
+          <div class="loading-container" *ngIf="isAdsLoading">
+            <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+            <p>{{ (lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN }}</p>
+          </div>
+
+          <!-- Empty state -->
+          <div class="empty-state" *ngIf="!isAdsLoading && advertisements.length === 0">
+            <ion-icon name="megaphone-outline" class="empty-icon"></ion-icon>
+            <p>{{ (lang$ | async) === 'TC' ? translations.noAds.TC : translations.noAds.EN }}</p>
+            <p class="empty-hint">{{ (lang$ | async) === 'TC' ? translations.noAdsHint.TC : translations.noAdsHint.EN }}</p>
+          </div>
+
+          <!-- Advertisement list -->
+          <ion-list *ngIf="!isAdsLoading && advertisements.length > 0">
+            <ion-card *ngFor="let ad of advertisements" class="ad-card">
+              <img *ngIf="(lang$ | async) === 'TC' ? (ad.Image_TC || ad.Image_EN) : (ad.Image_EN || ad.Image_TC)"
+                   [src]="(lang$ | async) === 'TC' ? (ad.Image_TC || ad.Image_EN) : (ad.Image_EN || ad.Image_TC)"
+                   class="ad-image" alt="Advertisement image">
+              <ion-card-content>
+                <div class="ad-header">
+                  <h3 class="ad-title">
+                    {{ (lang$ | async) === 'TC' ? (ad.Title_TC || ad.Title_EN) : (ad.Title_EN || ad.Title_TC) }}
+                  </h3>
+                  <ion-badge [color]="ad.status === 'active' ? 'success' : 'medium'">
+                    {{ (lang$ | async) === 'TC'
+                        ? (ad.status === 'active' ? translations.adActive.TC : translations.adInactive.TC)
+                        : (ad.status === 'active' ? translations.adActive.EN : translations.adInactive.EN) }}
+                  </ion-badge>
+                </div>
+                <p class="ad-content" *ngIf="(lang$ | async) === 'TC' ? (ad.Content_TC || ad.Content_EN) : (ad.Content_EN || ad.Content_TC)">
+                  {{ (lang$ | async) === 'TC' ? (ad.Content_TC || ad.Content_EN) : (ad.Content_EN || ad.Content_TC) }}
+                </p>
+                <ion-button fill="outline" color="danger" size="small" (click)="deleteAdvertisement(ad.id!)">
+                  <ion-icon name="trash-outline" slot="start"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? translations.deleteAd.TC : translations.deleteAd.EN }}
+                </ion-button>
+              </ion-card-content>
+            </ion-card>
+          </ion-list>
+
+        </div>
+
         <!-- Bottom spacer -->
         <div class="bottom-spacer"></div>
       </div>

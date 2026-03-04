@@ -1,0 +1,170 @@
+<!-- Advertisement creation modal — shown after successful Stripe payment -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      {{ (lang$ | async) === 'TC' ? '刊登廣告' : 'Place Advertisement' }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()" [disabled]="isSubmitting">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ad-modal-content">
+
+  <!-- Loading overlay while submitting -->
+  <div class="loading-overlay" *ngIf="isSubmitting">
+    <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+    <p>{{ (lang$ | async) === 'TC' ? '正在發佈廣告...' : 'Publishing advertisement...' }}</p>
+  </div>
+
+  <div class="form-container" [class.hidden]="isSubmitting">
+
+    <!-- English Section -->
+    <div class="language-section">
+      <div class="language-header">
+        <ion-icon name="language-outline"></ion-icon>
+        <h3>{{ (lang$ | async) === 'TC' ? '英文內容' : 'English Content' }}</h3>
+      </div>
+
+      <ion-list lines="none" class="form-list">
+        <!-- EN Title -->
+        <ion-item class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '標題（英文）' : 'Title (English)' }}
+          </ion-label>
+          <ion-input
+            [(ngModel)]="titleEN"
+            [placeholder]="(lang$ | async) === 'TC' ? '輸入英文標題' : 'Enter English title'"
+            [disabled]="isSubmitting"
+            maxlength="100">
+          </ion-input>
+        </ion-item>
+
+        <!-- EN Content -->
+        <ion-item class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '內容（英文）' : 'Content (English)' }}
+          </ion-label>
+          <ion-textarea
+            [(ngModel)]="contentEN"
+            [placeholder]="(lang$ | async) === 'TC' ? '輸入英文廣告內容' : 'Enter English advertisement content'"
+            [disabled]="isSubmitting"
+            [autoGrow]="true"
+            rows="4"
+            maxlength="500">
+          </ion-textarea>
+        </ion-item>
+
+        <!-- EN Image -->
+        <ion-item class="form-item image-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '廣告圖片（英文）' : 'Advertisement Image (English)' }}
+          </ion-label>
+          <div class="image-upload-area">
+            <div class="image-preview" *ngIf="imagePreviewEN">
+              <img [src]="imagePreviewEN" alt="EN preview" class="preview-img">
+            </div>
+            <ion-button fill="outline" size="small" (click)="imageInputEN.click()" [disabled]="isSubmitting">
+              <ion-icon name="image-outline" slot="start"></ion-icon>
+              {{ imagePreviewEN
+                ? ((lang$ | async) === 'TC' ? '更換圖片' : 'Change Image')
+                : ((lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image') }}
+            </ion-button>
+            <input #imageInputEN
+                   type="file"
+                   accept="image/jpeg,image/png,image/gif,image/webp"
+                   (change)="onImageENSelected($event)"
+                   style="display:none">
+          </div>
+        </ion-item>
+      </ion-list>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Traditional Chinese Section -->
+    <div class="language-section">
+      <div class="language-header">
+        <ion-icon name="language-outline"></ion-icon>
+        <h3>{{ (lang$ | async) === 'TC' ? '中文內容' : 'Traditional Chinese Content' }}</h3>
+      </div>
+
+      <ion-list lines="none" class="form-list">
+        <!-- TC Title -->
+        <ion-item class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '標題（中文）' : 'Title (Traditional Chinese)' }}
+          </ion-label>
+          <ion-input
+            [(ngModel)]="titleTC"
+            [placeholder]="(lang$ | async) === 'TC' ? '輸入中文標題' : 'Enter Traditional Chinese title'"
+            [disabled]="isSubmitting"
+            maxlength="100">
+          </ion-input>
+        </ion-item>
+
+        <!-- TC Content -->
+        <ion-item class="form-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '內容（中文）' : 'Content (Traditional Chinese)' }}
+          </ion-label>
+          <ion-textarea
+            [(ngModel)]="contentTC"
+            [placeholder]="(lang$ | async) === 'TC' ? '輸入中文廣告內容' : 'Enter Traditional Chinese advertisement content'"
+            [disabled]="isSubmitting"
+            [autoGrow]="true"
+            rows="4"
+            maxlength="500">
+          </ion-textarea>
+        </ion-item>
+
+        <!-- TC Image -->
+        <ion-item class="form-item image-item">
+          <ion-label position="stacked">
+            {{ (lang$ | async) === 'TC' ? '廣告圖片（中文）' : 'Advertisement Image (Traditional Chinese)' }}
+          </ion-label>
+          <div class="image-upload-area">
+            <div class="image-preview" *ngIf="imagePreviewTC">
+              <img [src]="imagePreviewTC" alt="TC preview" class="preview-img">
+            </div>
+            <ion-button fill="outline" size="small" (click)="imageInputTC.click()" [disabled]="isSubmitting">
+              <ion-icon name="image-outline" slot="start"></ion-icon>
+              {{ imagePreviewTC
+                ? ((lang$ | async) === 'TC' ? '更換圖片' : 'Change Image')
+                : ((lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image') }}
+            </ion-button>
+            <input #imageInputTC
+                   type="file"
+                   accept="image/jpeg,image/png,image/gif,image/webp"
+                   (change)="onImageTCSelected($event)"
+                   style="display:none">
+          </div>
+        </ion-item>
+      </ion-list>
+    </div>
+
+    <!-- Language fallback note -->
+    <p class="fallback-note">
+      <ion-icon name="information-circle-outline"></ion-icon>
+      {{ (lang$ | async) === 'TC'
+        ? '提示：若任一語言的欄位留空，將自動複製另一語言的內容。'
+        : 'Note: Empty fields will automatically use the other language\'s content.' }}
+    </p>
+
+  </div>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar>
+    <ion-button expand="block" fill="outline" (click)="dismiss()" [disabled]="isSubmitting" slot="start" style="margin: 8px 4px 8px 8px;">
+      {{ (lang$ | async) === 'TC' ? '取消' : 'Cancel' }}
+    </ion-button>
+    <ion-button expand="block" (click)="submit()" [disabled]="isSubmitting" slot="end" style="margin: 8px 8px 8px 4px;">
+      <ion-icon name="megaphone-outline" slot="start"></ion-icon>
+      {{ (lang$ | async) === 'TC' ? '發佈廣告' : 'Publish Ad' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

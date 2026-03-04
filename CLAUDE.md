@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2025-01-29 | **Version:** 1.10.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-03-04 | **Version:** 1.11.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -37,6 +37,7 @@ Full-stack restaurant discovery and booking application with Angular/Ionic front
 - Real-time chat (Socket.IO for restaurant-customer communication)
 - AI assistant (Google Gemini integration)
 - Push notifications (Firebase Cloud Messaging)
+- Advertisement placement via Stripe payment (v1.11.0)
 - Dark/light theming with system preference detection
 - Adaptive responsive layouts (mobile/web optimised)
 
@@ -56,13 +57,14 @@ src/app/
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
 │   └── test/                  # Development/testing
-├── services/                  # 23 core services
+├── services/                  # 24 core services
 │   ├── auth.service.ts                # Firebase authentication
 │   ├── app-state.service.ts           # Centralized state (v1.7.0)
 │   ├── restaurants.service.ts         # Restaurant CRUD
 │   ├── user.service.ts                # User profile management
 │   ├── booking.service.ts             # Booking CRUD
 │   ├── reviews.service.ts             # Review CRUD + stats
+│   ├── advertisements.service.ts       # Advertisement CRUD (v1.11.0)
 │   ├── location.service.ts            # GPS + distance calculations
 │   ├── chat.service.ts                # Socket.IO real-time chat
 │   ├── gemini.service.ts              # AI assistant
@@ -374,6 +376,47 @@ Authorization: Bearer <firebase-id-token>
 | GET | `/metadata` | ❌ | Get image metadata |
 
 **Upload Response:** `{ imageUrl: string }` (Signed URL)
+
+#### Advertisements (`/API/Advertisements`) - v1.11.0
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | ❌ | List all ads; optional `?restaurantId=X` query param |
+| GET | `/:id` | ❌ | Get single ad |
+| POST | `/` | ✅ | Create ad (userId auto-set from token; restaurantId required in body) |
+| PUT | `/:id` | ✅ | Update ad (ownership: userId must match token) |
+| DELETE | `/:id` | ✅ | Delete ad (ownership: userId must match token) |
+
+**Advertisement Fields:**
+```typescript
+{
+  id: string;
+  Title_EN, Title_TC: string;      // Bilingual titles
+  Content_EN, Content_TC: string;  // Bilingual content
+  Image_EN, Image_TC: string;      // Bilingual image URLs
+  restaurantId: string;
+  userId: string;                  // Auto-set on creation
+  status: 'active' | 'inactive';
+  createdAt, modifiedAt: Timestamp;
+}
+```
+
+**Ownership pattern:** `userId` is set on creation, verified on PUT/DELETE operations.
+
+#### Stripe Payment (`/API/Stripe`) - v1.11.0
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/create-checkout-session` | ✅ | Create Stripe checkout session for ads (HK$10) |
+
+**Request Body:**
+```json
+{
+  "restaurantId": "rest123",
+  "successUrl": "https://app.example.com/store?payment_success=true&session_id={CHECKOUT_SESSION_ID}",
+  "cancelUrl": "https://app.example.com/store"
+}
+```
+
+**Response:** `{ sessionId: string, url: string }`
 
 #### Search (`/API/Algolia`)
 | Method | Endpoint | Auth | Description |
@@ -735,7 +778,52 @@ ngOnInit() {
 
 **Purpose:** Prevents overlapping chat interfaces, ensures only one is visible at a time.
 
-### 10. StoreHelpersService (`store-helpers.service.ts`) - v1.8.0
+### 10. AdvertisementsService (`advertisements.service.ts`) - v1.11.0
+**Purpose:** Advertisement CRUD and Firestore persistence management
+
+**Interface:**
+```typescript
+export interface Advertisement {
+  id?: string;
+  Title_EN?: string | null;
+  Title_TC?: string | null;
+  Content_EN?: string | null;
+  Content_TC?: string | null;
+  Image_EN?: string | null;
+  Image_TC?: string | null;
+  restaurantId?: string | null;
+  userId?: string | null;
+  status?: 'active' | 'inactive' | null;
+  createdAt?: any;
+  modifiedAt?: any;
+}
+
+export interface CreateAdvertisementRequest {
+  Title_EN?: string | null;
+  Title_TC?: string | null;
+  Content_EN?: string | null;
+  Content_TC?: string | null;
+  Image_EN?: string | null;
+  Image_TC?: string | null;
+  restaurantId: string;
+}
+```
+
+**Key Methods:**
+- `getAdvertisements(restaurantId?: string)` - Fetch all ads (optionally filtered by restaurant)
+- `getAdvertisement(id)` - Fetch single ad
+- `createAdvertisement(data)` - Create new ad (userId auto-set from token)
+- `updateAdvertisement(id, data)` - Update ad (ownership verified)
+- `deleteAdvertisement(id)` - Delete ad (ownership verified)
+
+**Features:**
+- Bilingual content support (EN/TC with automatic fallback)
+- Image URL handling (stored as Firebase Storage signed URLs)
+- Ownership verification (userId must match authenticated token)
+- Firestore `Advertisements` collection persistence
+- Async token retrieval via `switchMap` pattern
+
+### 11. StoreHelpersService (`store-helpers.service.ts`) - v1.8.0
 **Purpose:** Utility helper methods for store page operations
 
 **Key Methods:**
@@ -750,7 +838,7 @@ ngOnInit() {
 - `getBookingStatusColor(status)` - Get badge color for status
 - `isValidCoordinates(lat, lng)` - Validate coordinates
 
-### 11. MessagingService (`messaging.service.ts`) - v1.10.0
+### 12. MessagingService (`messaging.service.ts`) - v1.10.0
 **Purpose:** Firebase Cloud Messaging integration for push notifications
 
 **Key Methods:**
@@ -792,7 +880,7 @@ ngOnInit() {
 **Environment Configuration:**
 `fcmVapidKey` must be configured in both `environment.ts` and `environment.prod.ts`. Obtain VAPID key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates.
 
-### 12. Other Services
+### 13. Other Services
 - **GuardService:** Route protection (CanActivate)
 - **ThemeService:** Dark/light mode (localStorage)
 - **LanguageService:** EN/TC switching (localStorage)
@@ -804,7 +892,7 @@ ngOnInit() {
 - **UIService:** Toast notifications, loading spinners, alert dialogs
 - **MockDataService:** Demo data (sample offers, articles, reviews)
 
-### 13. Service Aggregators (v1.7.0)
+### 14. Service Aggregators (v1.7.0)
 **StoreFeatureService:** Consolidates services for store page (restaurants, bookings, user, auth, language, theme, platform)
 
 **RestaurantFeatureService:** Consolidates services for restaurant page (restaurants, reviews, location, bookings, auth, user, language, theme, platform)
@@ -1474,6 +1562,7 @@ npx cap sync             # Sync to native projects
 - `Users` - User profiles
 - `Bookings` - Reservations
 - `Reviews` - Restaurant reviews
+- `Advertisements` - Promoted restaurant ads (v1.11.0)
 
 ### Auth Flow
 ```
@@ -1486,7 +1575,7 @@ API (verify) → Extract UID → Ownership checks
 **Document Version:** 1.11.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
-- **v1.11.0** (2026-02-12): Migrated from Leaflet to Google Maps JavaScript API v3. Updated MapModalComponent, RestaurantPage, and StorePage to use Google Maps. Removed Leaflet dependencies and assets. Added `googleMapsApiKey` to environment configuration. Google Maps script loaded in index.html.
+- **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
 - **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.
 - **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters whilst preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
 - **v1.9.1** (2025-12-13): Added ChatVisibilityService, StoreHelpersService documentation. Enhanced UserService section with type/restaurantId fields, updateLoginMetadata, updatePreferences methods. Added dynamic navigation documentation (MenuComponent, TabComponent user-type-specific behavior).

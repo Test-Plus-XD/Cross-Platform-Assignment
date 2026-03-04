@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Messaging, getToken, onMessage, deleteToken, MessagePayload } from '@angular/fire/messaging';
 import { environment } from '../../environments/environment';
 
-/// Firebase Cloud Messaging Models
+// Firebase Cloud Messaging Models
 
 export interface NotificationPayload {
   title: string;
