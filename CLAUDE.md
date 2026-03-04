@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-03-04 | **Version:** 1.11.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-03-04 | **Version:** 1.12.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -318,10 +318,11 @@ Authorization: Bearer <firebase-id-token>
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | GET | `/` | ✅ | List bookings (auto-filtered by userId) |
+| GET | `/restaurant/:restaurantId` | ✅ | List all bookings for a restaurant (owner only); enriched with diner displayName/email/phoneNumber |
 | GET | `/:id` | ✅ | Get single booking |
-| POST | `/` | ✅ | Create booking (userId auto-set from token) |
-| PUT | `/:id` | ✅ | Update booking (own bookings only) |
-| DELETE | `/:id` | ✅ | Delete booking (own bookings only) |
+| POST | `/` | ✅ | Create booking (userId auto-set; status defaults to 'pending') |
+| PUT | `/:id` | ✅ | Dual-ownership: diner (pending only: dateTime/numberOfGuests/specialRequests/cancel) or restaurant owner (status: accepted/declined/completed + declineMessage) |
+| DELETE | `/:id` | ✅ | Delete booking record — only allowed if bookingDate is older than 30 days |
 
 **Booking Fields (POST):**
 ```typescript
@@ -332,13 +333,14 @@ Authorization: Bearer <firebase-id-token>
 }
 ```
 
-**Booking Fields (PUT):**
+**Booking Fields (PUT — Diner, pending only):**
 ```typescript
-{
-  dateTime, numberOfGuests,
-  status ('pending'|'confirmed'|'completed'|'cancelled'),
-  paymentStatus ('unpaid'|'paid'|'refunded'), specialRequests
-}
+{ dateTime, numberOfGuests, specialRequests, status: 'cancelled' }
+```
+
+**Booking Fields (PUT — Restaurant owner, pending only):**
+```typescript
+{ status: 'accepted' | 'declined' | 'completed', declineMessage?: string | null }
 ```
 
 #### Reviews (`/API/Reviews`)
@@ -565,10 +567,12 @@ curl -X POST https://vercel-express-api-alpha.vercel.app/API/Bookings \
   userId, restaurantId, restaurantName: string;
   dateTime: string (ISO 8601);
   numberOfGuests: number;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  paymentStatus: 'unpaid' | 'paid' | 'refunded';
+  status: 'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed';
+  declineMessage?: string | null;   // set by restaurant owner on decline
   specialRequests: string;
   createdAt, modifiedAt: Timestamp;
+  // diner enrichment (GET /restaurant/:id response only):
+  diner?: { displayName: string; email: string; phoneNumber: string };
 }
 ```
 
@@ -709,11 +713,15 @@ ngOnInit() {
 **Purpose:** Booking/reservation management
 
 **Key Methods:**
-- `getBookings()` - Fetch user's bookings (auto-filtered by userId)
+- `getUserBookings(forceRefresh?)` - Fetch user's own bookings (BehaviorSubject cache)
+- `getRestaurantBookings(restaurantId)` - Fetch all bookings for a restaurant (owner only; enriched with diner info)
 - `getBooking(id)` - Fetch single booking
 - `createBooking(data)` - Create new reservation
-- `updateBooking(id, data)` - Update booking
-- `deleteBooking(id)` - Cancel booking
+- `updateBooking(id, data)` - Update booking (dual-ownership, server-enforced field restrictions)
+- `deleteBooking(id)` - Delete booking record (server enforces 30-day rule)
+
+**Status values:** `'pending' | 'accepted' | 'declined' | 'cancelled' | 'completed'`
+**`paymentStatus` and `paymentIntentId` have been removed.**
 
 ### 6. ReviewsService (`reviews.service.ts`)
 **Purpose:** Restaurant review management
@@ -1592,9 +1600,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.11.1 | **Maintainer:** AI Assistant
+**Document Version:** 1.12.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.12.0** (2026-03-04): **Booking system overhaul — payment logic removed, accept/decline workflow added.** Status values changed from `pending/confirmed/cancelled` to `pending/accepted/declined/cancelled/completed`. `paymentStatus`/`paymentIntentId` removed from all booking operations. New `declineMessage` field (set by restaurant owner on decline). Added `GET /restaurant/:restaurantId` endpoint (owner-only, enriches each booking with diner displayName/email/phoneNumber). `PUT /:id` now supports dual-ownership: diners can edit/cancel pending bookings; restaurant owners can accept/decline/complete. `DELETE /:id` enforces 30-day rule. Diner booking page: added edit/delete actions, declined status tab, decline message display. Store page: added status filter tabs (Pending/Accepted/Declined/Cancelled/All), diner info per card, Accept/Decline buttons with optional decline message, chat button.
 - **v1.11.1** (2026-03-04): **Critical auth guard race condition fix.** Fixed spurious redirects to `/login` when refreshing or re-entering protected pages while logged in. **Root cause:** `AuthGuard.canActivate()` used `take(1)` on a BehaviorSubject initialized with `null`, firing before Firebase's `onAuthStateChanged` could restore the persisted session (~300-800ms delay). **Fixes:** (1) Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback. (2) Guard now waits for `authInitialized$` before checking auth state. (3) Guard passes `returnUrl` query param when redirecting, preserving deep links (esp. Stripe's `?payment_success=true&session_id=...`). (4) LoginPage now reads `returnUrl` and navigates there post-auth instead of always `/user`. (5) Added localStorage failsafe in StorePage: saves pending ad sessions to localStorage, allowing users to resume ad creation if modal is accidentally closed after Stripe payment. **Result:** Stripe payment flow now works reliably; all deep links preserved through auth redirects.
 - **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-ad-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
 - **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.

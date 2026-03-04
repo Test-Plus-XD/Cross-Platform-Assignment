@@ -37,17 +37,17 @@
 
           <ion-card class="stat-card">
             <ion-card-content>
-              <ion-icon name="close-circle-outline" color="danger"></ion-icon>
-              <div class="stat-value">{{ getCancelledCount() }}</div>
-              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}</div>
+              <ion-icon name="ban-outline" color="danger"></ion-icon>
+              <div class="stat-value">{{ getDeclinedCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}</div>
             </ion-card-content>
           </ion-card>
 
           <ion-card class="stat-card">
             <ion-card-content>
-              <ion-icon name="layers-outline" color="medium"></ion-icon>
-              <div class="stat-value">{{ getTotalCount() }}</div>
-              <div class="stat-label">{{ (lang$ | async) === 'TC' ? '全部' : 'Total' }}</div>
+              <ion-icon name="close-circle-outline" color="medium"></ion-icon>
+              <div class="stat-value">{{ getCancelledCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}</div>
             </ion-card-content>
           </ion-card>
         </div>
@@ -67,10 +67,22 @@
                 {{ (lang$ | async) === 'TC' ? translations.past.TC : translations.past.EN }}
               </ion-label>
             </ion-segment-button>
+            <ion-segment-button value="declined">
+              <ion-label>
+                <ion-icon name="ban-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}
+              </ion-label>
+            </ion-segment-button>
             <ion-segment-button value="cancelled">
               <ion-label>
                 <ion-icon name="close-outline"></ion-icon>
                 {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="all">
+              <ion-label>
+                <ion-icon name="layers-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.all.TC : translations.all.EN }}
               </ion-label>
             </ion-segment-button>
           </ion-segment>
@@ -85,12 +97,21 @@
                 <div class="restaurant-info">
                   <h3 class="restaurant-name">{{ booking.restaurantName }}</h3>
                   <ion-badge [color]="getStatusColor(booking.status)" class="status-badge">
-                    {{ (lang$ | async) === 'TC' ? translations[booking.status].TC : translations[booking.status].EN }}
+                    {{ (lang$ | async) === 'TC' ? translations[booking.status]?.TC : translations[booking.status]?.EN }}
                   </ion-badge>
                 </div>
-                <div class="card-actions" *ngIf="canCancel(booking)">
-                  <ion-button fill="clear" size="small" color="danger" (click)="cancelBooking(booking); $event.stopPropagation()" class="cancel-btn">
+                <div class="card-actions">
+                  <ion-button *ngIf="canEdit(booking)" fill="clear" size="small" color="primary"
+                    (click)="editBooking(booking); $event.stopPropagation()" class="action-btn">
+                    <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button *ngIf="canCancel(booking)" fill="clear" size="small" color="danger"
+                    (click)="cancelBooking(booking); $event.stopPropagation()" class="action-btn">
                     <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button *ngIf="canDelete(booking)" fill="clear" size="small" color="medium"
+                    (click)="deleteBooking(booking); $event.stopPropagation()" class="action-btn">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
                   </ion-button>
                 </div>
               </div>
@@ -100,7 +121,7 @@
                 <div class="detail-item">
                   <ion-icon name="calendar-outline"></ion-icon>
                   <div class="detail-text">
-                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? '日期' : 'Date' }}</span>
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.date.TC : translations.date.EN }}</span>
                     <span class="detail-value">{{ formatDate(booking.dateTime, (lang$ | async) === 'TC') }}</span>
                   </div>
                 </div>
@@ -108,7 +129,7 @@
                 <div class="detail-item">
                   <ion-icon name="time-outline"></ion-icon>
                   <div class="detail-text">
-                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? '時間' : 'Time' }}</span>
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.time.TC : translations.time.EN }}</span>
                     <span class="detail-value">{{ formatTime(booking.dateTime, (lang$ | async) === 'TC') }}</span>
                   </div>
                 </div>
@@ -116,7 +137,7 @@
                 <div class="detail-item">
                   <ion-icon name="people-outline"></ion-icon>
                   <div class="detail-text">
-                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? '人數' : 'Guests' }}</span>
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.numberOfGuests.TC : translations.numberOfGuests.EN }}</span>
                     <span class="detail-value">{{ booking.numberOfGuests }} {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN) : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN) }}</span>
                   </div>
                 </div>
@@ -130,6 +151,16 @@
                 </div>
                 <p class="request-text">{{ booking.specialRequests }}</p>
               </div>
+
+              <!-- Decline Message Section -->
+              <div class="decline-message-section" *ngIf="booking.status === 'declined' && booking.declineMessage">
+                <div class="requests-header">
+                  <ion-icon name="information-circle-outline" color="danger"></ion-icon>
+                  <span class="request-label" style="color: var(--ion-color-danger)">{{ (lang$ | async) === 'TC' ? translations.declineMessage.TC : translations.declineMessage.EN }}</span>
+                </div>
+                <p class="request-text decline-text">{{ booking.declineMessage }}</p>
+              </div>
+
             </ion-card-content>
           </ion-card>
         </div>
@@ -143,6 +174,9 @@
             </ng-container>
             <ng-container *ngIf="currentFilter === 'past'">
               {{ (lang$ | async) === 'TC' ? translations.noPast.TC : translations.noPast.EN }}
+            </ng-container>
+            <ng-container *ngIf="currentFilter === 'declined'">
+              {{ (lang$ | async) === 'TC' ? translations.noDeclined.TC : translations.noDeclined.EN }}
             </ng-container>
             <ng-container *ngIf="currentFilter === 'cancelled'">
               {{ (lang$ | async) === 'TC' ? translations.noCancelled.TC : translations.noCancelled.EN }}

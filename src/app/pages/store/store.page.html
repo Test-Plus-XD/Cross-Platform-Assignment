@@ -807,55 +807,133 @@
             <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
           </div>
 
-          <!-- Empty state -->
-          <div class="empty-state" *ngIf="!isBookingsLoading && bookings.length === 0">
-            <ion-icon name="calendar-outline"></ion-icon>
-            <p>{{ (lang$ | async) === 'TC' ? translations.noBookings.TC : translations.noBookings.EN }}</p>
-          </div>
+          <div *ngIf="!isBookingsLoading">
+            <!-- Status filter tabs -->
+            <ion-segment [(ngModel)]="bookingStatusFilter" class="booking-segment">
+              <ion-segment-button value="pending">
+                <ion-label>
+                  {{ (lang$ | async) === 'TC' ? translations.pending.TC : translations.pending.EN }}
+                  <ion-badge color="warning" *ngIf="getBookingTabCount('pending') > 0">{{ getBookingTabCount('pending') }}</ion-badge>
+                </ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="accepted">
+                <ion-label>
+                  {{ (lang$ | async) === 'TC' ? translations.accepted.TC : translations.accepted.EN }}
+                  <ion-badge color="success" *ngIf="getBookingTabCount('accepted') > 0">{{ getBookingTabCount('accepted') }}</ion-badge>
+                </ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="declined">
+                <ion-label>
+                  {{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}
+                  <ion-badge color="danger" *ngIf="getBookingTabCount('declined') > 0">{{ getBookingTabCount('declined') }}</ion-badge>
+                </ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="cancelled">
+                <ion-label>
+                  {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
+                </ion-label>
+              </ion-segment-button>
+              <ion-segment-button value="all">
+                <ion-label>{{ (lang$ | async) === 'TC' ? '全部' : 'All' }} ({{ bookings.length }})</ion-label>
+              </ion-segment-button>
+            </ion-segment>
 
-          <!-- Bookings list with management actions -->
-          <ion-list lines="none" *ngIf="!isBookingsLoading && bookings.length > 0">
-            <ion-card *ngFor="let booking of bookings" class="booking-card">
-              <ion-card-content>
-                <div class="booking-header">
-                  <div class="booking-date">
-                    {{ booking.dateTime | date: 'short' }}
+            <!-- Empty state (no bookings at all) -->
+            <div class="empty-state" *ngIf="bookings.length === 0">
+              <ion-icon name="calendar-outline"></ion-icon>
+              <p>{{ (lang$ | async) === 'TC' ? translations.noBookings.TC : translations.noBookings.EN }}</p>
+            </div>
+
+            <!-- Empty state for current filter -->
+            <div class="empty-state" *ngIf="bookings.length > 0 && filteredBookings.length === 0">
+              <ion-icon name="calendar-clear-outline"></ion-icon>
+              <p *ngIf="bookingStatusFilter === 'pending'">{{ (lang$ | async) === 'TC' ? translations.noBookingsPending.TC : translations.noBookingsPending.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'accepted'">{{ (lang$ | async) === 'TC' ? translations.noBookingsAccepted.TC : translations.noBookingsAccepted.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'declined'">{{ (lang$ | async) === 'TC' ? translations.noBookingsDeclined.TC : translations.noBookingsDeclined.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'cancelled'">{{ (lang$ | async) === 'TC' ? translations.noBookingsCancelled.TC : translations.noBookingsCancelled.EN }}</p>
+            </div>
+
+            <!-- Bookings list -->
+            <ion-list lines="none" *ngIf="filteredBookings.length > 0">
+              <ion-card *ngFor="let booking of filteredBookings" class="booking-card">
+                <ion-card-content>
+                  <!-- Header: date + status badge -->
+                  <div class="booking-header">
+                    <div class="booking-date">{{ booking.dateTime | date: 'dd MMM yyyy, HH:mm' }}</div>
+                    <ion-badge [color]="getBookingStatusColor(booking.status)">
+                      {{ (lang$ | async) === 'TC' ? translations[booking.status]?.TC : translations[booking.status]?.EN }}
+                    </ion-badge>
                   </div>
-                  <ion-badge [color]="booking.status === 'pending' ? 'warning' : booking.status === 'confirmed' ? 'success' : booking.status === 'completed' ? 'primary' : 'danger'">
-                    {{ booking.status | titlecase }}
-                  </ion-badge>
-                </div>
-                <p class="booking-guests">
-                  <ion-icon name="people-outline"></ion-icon>
-                  {{ booking.numberOfGuests }} {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? '位' : 'guest') : ((lang$ | async) === 'TC' ? '位' : 'guests') }}
-                </p>
-                <p class="booking-requests" *ngIf="booking.specialRequests">
-                  <ion-icon name="chatbubble-outline"></ion-icon>
-                  {{ booking.specialRequests }}
-                </p>
 
-                <!-- Action buttons for pending bookings -->
-                <div class="booking-actions" *ngIf="booking.status === 'pending'">
-                  <ion-button size="small" color="success" (click)="confirmBookingAction(booking)">
-                    <ion-icon name="checkmark-outline" slot="start"></ion-icon>
-                    {{ (lang$ | async) === 'TC' ? translations.confirmBooking.TC : translations.confirmBooking.EN }}
-                  </ion-button>
-                  <ion-button size="small" color="danger" fill="outline" (click)="rejectBookingAction(booking)">
-                    <ion-icon name="close-outline" slot="start"></ion-icon>
-                    {{ (lang$ | async) === 'TC' ? translations.rejectBooking.TC : translations.rejectBooking.EN }}
-                  </ion-button>
-                </div>
+                  <!-- Guests -->
+                  <p class="booking-guests">
+                    <ion-icon name="people-outline"></ion-icon>
+                    {{ booking.numberOfGuests }} {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? '位' : 'guest') : ((lang$ | async) === 'TC' ? '位' : 'guests') }}
+                  </p>
 
-                <!-- Action button for confirmed bookings -->
-                <div class="booking-actions" *ngIf="booking.status === 'confirmed'">
-                  <ion-button size="small" color="primary" expand="block" (click)="markCompleteAction(booking)">
-                    <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
-                    {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
-                  </ion-button>
-                </div>
-              </ion-card-content>
-            </ion-card>
-          </ion-list>
+                  <!-- Special requests -->
+                  <p class="booking-requests" *ngIf="booking.specialRequests">
+                    <ion-icon name="document-text-outline"></ion-icon>
+                    {{ booking.specialRequests }}
+                  </p>
+
+                  <!-- Diner info (from enriched response) -->
+                  <div class="diner-info" *ngIf="booking.diner && (booking.diner.displayName || booking.diner.email || booking.diner.phoneNumber)">
+                    <p class="diner-label">
+                      <ion-icon name="person-outline"></ion-icon>
+                      {{ (lang$ | async) === 'TC' ? translations.dinerInfo.TC : translations.dinerInfo.EN }}
+                    </p>
+                    <p *ngIf="booking.diner.displayName" class="diner-detail">{{ booking.diner.displayName }}</p>
+                    <p *ngIf="booking.diner.email" class="diner-detail">
+                      <ion-icon name="mail-outline"></ion-icon>
+                      {{ booking.diner.email }}
+                    </p>
+                    <p *ngIf="booking.diner.phoneNumber" class="diner-detail">
+                      <ion-icon name="call-outline"></ion-icon>
+                      {{ booking.diner.phoneNumber }}
+                    </p>
+                  </div>
+
+                  <!-- Decline reason -->
+                  <div class="decline-reason" *ngIf="booking.status === 'declined' && booking.declineMessage">
+                    <p class="diner-label" style="color: var(--ion-color-danger)">
+                      <ion-icon name="information-circle-outline"></ion-icon>
+                      {{ (lang$ | async) === 'TC' ? translations.declineReason.TC : translations.declineReason.EN }}
+                    </p>
+                    <p class="diner-detail">{{ booking.declineMessage }}</p>
+                  </div>
+
+                  <!-- Actions -->
+                  <div class="booking-actions">
+                    <!-- Pending: Accept + Decline -->
+                    <ng-container *ngIf="booking.status === 'pending'">
+                      <ion-button size="small" color="success" (click)="confirmBookingAction(booking)">
+                        <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+                        {{ (lang$ | async) === 'TC' ? translations.confirmBooking.TC : translations.confirmBooking.EN }}
+                      </ion-button>
+                      <ion-button size="small" color="danger" fill="outline" (click)="rejectBookingAction(booking)">
+                        <ion-icon name="close-outline" slot="start"></ion-icon>
+                        {{ (lang$ | async) === 'TC' ? translations.rejectBooking.TC : translations.rejectBooking.EN }}
+                      </ion-button>
+                    </ng-container>
+
+                    <!-- Accepted: Complete -->
+                    <ion-button *ngIf="booking.status === 'accepted'" size="small" color="primary" (click)="markCompleteAction(booking)">
+                      <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
+                      {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
+                    </ion-button>
+
+                    <!-- Chat button (always visible) -->
+                    <ion-button size="small" fill="outline" color="medium" (click)="navigateToChat()">
+                      <ion-icon name="chatbubbles-outline" slot="start"></ion-icon>
+                      {{ (lang$ | async) === 'TC' ? translations.chatWithDiner.TC : translations.chatWithDiner.EN }}
+                    </ion-button>
+                  </div>
+
+                </ion-card-content>
+              </ion-card>
+            </ion-list>
+          </div>
         </div>
         <!-- SECTION 4: Advertisements -->
         <div *ngIf="currentSection === 'ads'" class="section-content">

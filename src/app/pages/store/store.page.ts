@@ -37,6 +37,14 @@ export class StorePage implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [];
   bookings: Booking[] = [];
 
+  // Booking status filter for the bookings section
+  bookingStatusFilter: 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled' = 'pending';
+
+  get filteredBookings(): Booking[] {
+    if (this.bookingStatusFilter === 'all') return this.bookings;
+    return this.bookings.filter(b => b.status === this.bookingStatusFilter);
+  }
+
   // Current section
   currentSection: 'info' | 'menu' | 'bookings' | 'ads' = 'info';
 
@@ -178,16 +186,29 @@ export class StorePage implements OnInit, OnDestroy {
     enterValue: { EN: 'Enter value', TC: '輸入數值' },
     closed: { EN: 'Closed', tc: '休息' },
     open24h: { EN: 'Open 24h', tc: '24小時' },
-    confirmBooking: { EN: 'Confirm', TC: '確認' },
-    rejectBooking: { EN: 'Reject', TC: '拒絕' },
+    confirmBooking: { EN: 'Accept', TC: '接受' },
+    rejectBooking: { EN: 'Decline', TC: '拒絕' },
     markComplete: { EN: 'Complete', TC: '完成' },
-    confirmBookingTitle: { EN: 'Confirm Booking', TC: '確認預約' },
-    confirmBookingMessage: { EN: 'Confirm this booking?', TC: '確認此預約？' },
-    rejectBookingTitle: { EN: 'Reject Booking', TC: '拒絕預約' },
-    rejectBookingMessage: { EN: 'Reject this booking?', TC: '拒絕此預約？' },
+    confirmBookingTitle: { EN: 'Accept Booking', TC: '接受預約' },
+    confirmBookingMessage: { EN: 'Accept this booking?', TC: '接受此預約？' },
+    rejectBookingTitle: { EN: 'Decline Booking', TC: '拒絕預約' },
+    rejectBookingMessage: { EN: 'Decline this booking?', TC: '拒絕此預約？' },
+    declineMessagePlaceholder: { EN: 'Optional: reason for declining', TC: '可選：拒絕原因' },
     completeBookingTitle: { EN: 'Complete Booking', TC: '完成預約' },
     completeBookingMessage: { EN: 'Mark this booking as completed?', TC: '將此預約標記為完成？' },
     bookingUpdated: { EN: 'Booking updated successfully', TC: '預約已成功更新' },
+    chatWithDiner: { EN: 'Chat', TC: '聊天' },
+    noBookingsPending: { EN: 'No pending bookings', TC: '沒有待處理的預約' },
+    noBookingsAccepted: { EN: 'No accepted bookings', TC: '沒有已接受的預約' },
+    noBookingsDeclined: { EN: 'No declined bookings', TC: '沒有已拒絕的預約' },
+    noBookingsCancelled: { EN: 'No cancelled bookings', TC: '沒有已取消的預約' },
+    dinerInfo: { EN: 'Diner Info', TC: '用餐者資料' },
+    declineReason: { EN: 'Reason for Decline', TC: '拒絕原因' },
+    accepted: { EN: 'Accepted', TC: '已接受' },
+    declined: { EN: 'Declined', TC: '已拒絕' },
+    pending: { EN: 'Pending', TC: '待處理' },
+    cancelled: { EN: 'Cancelled', TC: '已取消' },
+    completed: { EN: 'Completed', TC: '已完成' },
     advertisements: { EN: 'Advertisements', TC: '廣告' },
     placeAd: { EN: 'Place New Advertisement', TC: '刊登新廣告' },
     adCost: { EN: 'HK$10 per advertisement', TC: '每則廣告 HK$10' },
@@ -1034,7 +1055,7 @@ export class StorePage implements OnInit, OnDestroy {
     }, 1000);
   }
 
-  // Display confirmation dialog to confirm a pending booking action.
+  // Display confirmation dialog to accept a pending booking.
   async confirmBookingAction(booking: Booking): Promise<void> {
     const language = await this.getCurrentLanguage();
 
@@ -1046,7 +1067,7 @@ export class StorePage implements OnInit, OnDestroy {
         {
           text: this.translations.confirmBooking[language],
           handler: async () => {
-            await this.updateBookingStatus(booking, 'confirmed', language === 'TC');
+            await this.updateBookingStatus(booking, 'accepted', language === 'TC');
           }
         }
       ]
@@ -1054,20 +1075,27 @@ export class StorePage implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Display confirmation dialog to reject a pending booking action.
+  // Display decline dialog with optional message textarea.
   async rejectBookingAction(booking: Booking): Promise<void> {
     const language = await this.getCurrentLanguage();
 
     const alert = await this.alertController.create({
       header: this.translations.rejectBookingTitle[language],
-      message: this.translations.rejectBookingMessage[language],
+      inputs: [
+        {
+          name: 'declineMessage',
+          type: 'textarea',
+          placeholder: this.translations.declineMessagePlaceholder[language],
+        }
+      ],
       buttons: [
         { text: this.translations.cancel[language], role: 'cancel' },
         {
           text: this.translations.rejectBooking[language],
           role: 'destructive',
-          handler: async () => {
-            await this.updateBookingStatus(booking, 'cancelled', language === 'TC');
+          handler: async (data) => {
+            const declineMessage = data.declineMessage?.trim() || null;
+            await this.updateBookingStatus(booking, 'declined', language === 'TC', declineMessage);
           }
         }
       ]
@@ -1096,15 +1124,18 @@ export class StorePage implements OnInit, OnDestroy {
   }
 
   // Update the booking status in the backend service with loading state and user feedback.
-  private async updateBookingStatus(booking: Booking, newStatus: Booking['status'], isTC: boolean): Promise<void> {
+  private async updateBookingStatus(booking: Booking, newStatus: Booking['status'], isTC: boolean, declineMessage?: string | null): Promise<void> {
     const loading = await this.loadingController.create({
       message: isTC ? this.translations.saving.TC : this.translations.saving.EN,
       spinner: null
     });
     await loading.present();
 
+    const updates: { status: Booking['status']; declineMessage?: string | null } = { status: newStatus };
+    if (declineMessage !== undefined) updates.declineMessage = declineMessage;
+
     try {
-      await this.feature.bookings.updateBooking(booking.id ?? '', { status: newStatus }).toPromise();
+      await this.feature.bookings.updateBooking(booking.id ?? '', updates).toPromise();
       await this.showToast(isTC ? this.translations.bookingUpdated.TC : this.translations.bookingUpdated.EN, 'success');
       this.loadBookings();
     } catch (error: any) {
@@ -1112,6 +1143,29 @@ export class StorePage implements OnInit, OnDestroy {
       await this.showToast(error.message || (isTC ? this.translations.updateFailed.TC : this.translations.updateFailed.EN), 'danger');
     } finally {
       await loading.dismiss();
+    }
+  }
+
+  // Navigate to the chat page.
+  navigateToChat(): void {
+    this.router.navigate(['/chat']);
+  }
+
+  // Return count of bookings for a given status tab.
+  getBookingTabCount(status: 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled'): number {
+    if (status === 'all') return this.bookings.length;
+    return this.bookings.filter(b => b.status === status).length;
+  }
+
+  // Get the Ionic color string for a booking status badge.
+  getBookingStatusColor(status: Booking['status']): string {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'accepted': return 'success';
+      case 'completed': return 'primary';
+      case 'declined': return 'danger';
+      case 'cancelled': return 'medium';
+      default: return 'medium';
     }
   }
 
