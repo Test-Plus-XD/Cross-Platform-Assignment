@@ -1,0 +1,127 @@
+.booking-modal-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.booking-section {
+  padding: 16px 16px 8px;
+  border-bottom: 1px solid var(--ion-color-light-shade);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.field-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ion-color-medium-shade);
+  margin: 0 0 10px;
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+.booking-datetime {
+  width: 100%;
+  --wheel-fade-background-rgb: var(--ion-background-color-rgb, 255, 255, 255);
+}
+
+/* Opening hours status badge */
+.hours-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 10px;
+
+  ion-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  &.hours-open {
+    background: rgba(var(--ion-color-success-rgb), 0.12);
+    color: var(--ion-color-success-shade);
+  }
+
+  &.hours-outside {
+    background: rgba(var(--ion-color-warning-rgb), 0.12);
+    color: var(--ion-color-warning-shade);
+  }
+
+  &.hours-unknown {
+    background: rgba(var(--ion-color-medium-rgb), 0.12);
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+/* Guest stepper */
+.guest-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 4px 0;
+}
+
+.stepper-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--ion-color-primary);
+  background: transparent;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+
+  &:not(:disabled):active {
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+  }
+
+  &:disabled {
+    border-color: var(--ion-color-medium-tint);
+    color: var(--ion-color-medium-tint);
+    cursor: not-allowed;
+  }
+}
+
+.guest-count {
+  font-size: 1.4rem;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: center;
+  color: var(--ion-color-dark);
+}
+
+.booking-textarea {
+  width: 100%;
+  margin-top: 2px;
+}
+
+/* Footer */
+.footer-toolbar {
+  padding: 8px 12px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.confirm-btn {
+  --border-radius: 10px;
+  margin: 0;
+  font-weight: 600;
+}

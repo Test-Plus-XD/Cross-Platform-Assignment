@@ -1,0 +1,75 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      {{ lang === 'TC' ? '預約訂座' : 'Make a Reservation' }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()" fill="clear" aria-label="Close">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="booking-modal-content">
+
+  <!-- Date & Time Picker -->
+  <div class="booking-section">
+    <p class="field-label">
+      <ion-icon name="calendar-outline"></ion-icon>
+      {{ lang === 'TC' ? '選擇日期及時間' : 'Select Date & Time' }}
+    </p>
+    <ion-datetime presentation="date-time" [min]="minBookingDate" [showDefaultButtons]="false" hour-cycle="h23"
+      locale="en-GB" timeZone="Asia/Hong_Kong" class="booking-datetime" (ionChange)="onDateTimeChange($event)">
+    </ion-datetime>
+
+    <!-- Opening Hours Status Badge -->
+    <div *ngIf="hoursMessage" class="hours-badge" [ngClass]="'hours-' + hoursStatus">
+      <ion-icon [name]="hoursStatus === 'open' ? 'checkmark-circle-outline'
+                      : hoursStatus === 'outside' ? 'warning-outline'
+                      : 'information-circle-outline'"></ion-icon>
+      <span>{{ hoursMessage }}</span>
+    </div>
+  </div>
+
+  <!-- Number of Guests -->
+  <div class="booking-section">
+    <p class="field-label">
+      <ion-icon name="people-outline"></ion-icon>
+      {{ lang === 'TC' ? '人數' : 'Number of Guests' }}
+    </p>
+    <div class="guest-stepper">
+      <button class="stepper-btn" [disabled]="numberOfGuests <= 1" (click)="decreaseGuests()"
+        aria-label="Decrease guests">
+        <ion-icon name="remove-outline"></ion-icon>
+      </button>
+      <span class="guest-count">{{ numberOfGuests }}</span>
+      <button class="stepper-btn" [disabled]="numberOfGuests >= 100" (click)="increaseGuests()"
+        aria-label="Increase guests">
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Special Requests -->
+  <div class="booking-section">
+    <p class="field-label">
+      <ion-icon name="chatbox-ellipses-outline"></ion-icon>
+      {{ lang === 'TC' ? '特別要求（選填）' : 'Special Requests (optional)' }}
+    </p>
+    <ion-textarea [(ngModel)]="specialRequests" fill="outline"
+      [placeholder]="lang === 'TC' ? '例如：嬰兒椅、生日蛋糕...' : 'e.g. high chair, birthday cake...'" [rows]="3"
+      class="booking-textarea">
+    </ion-textarea>
+  </div>
+
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar class="footer-toolbar">
+    <ion-button expand="block" class="confirm-btn" (click)="confirm()">
+      <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+      {{ lang === 'TC' ? '確認預約' : 'Confirm Booking' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

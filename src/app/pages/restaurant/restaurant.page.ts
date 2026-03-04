@@ -13,6 +13,7 @@ import { DistanceResult } from '../../services/location.service';
 import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
+import { BookingModalComponent } from './booking-modal.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -88,6 +89,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isUploadingRestaurantImage: boolean = false;
   // Check if current user can edit this restaurant (no owner or is owner)
   canEditRestaurant: boolean = false;
+  // Check if current user is the owner of this restaurant
+  isCurrentUserOwner: boolean = false;
 
   constructor(
     private readonly feature: RestaurantFeatureService,
@@ -180,6 +183,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         this.checkClaimEligibility();
         // Check if user can edit this restaurant (no owner)
         this.checkEditPermission();
+        // Check if current user is the owner
+        this.checkIfCurrentUserIsOwner();
         // Load menu items from sub-collection
         this.loadMenuItems(restaurantId);
         // Load reviews
@@ -830,11 +835,93 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     return lang === 'TC' ? this.translateDayName(dayName) : dayName;
   }
 
+  /// Increment guest count (max 10)
+  increaseGuests(): void {
+    if (this.numberOfGuests < 10) {
+      this.numberOfGuests++;
+      this.changeDetectionReference.markForCheck();
+    }
+  }
+
+  /// Decrement guest count (min 1)
+  decreaseGuests(): void {
+    if (this.numberOfGuests > 1) {
+      this.numberOfGuests--;
+      this.changeDetectionReference.markForCheck();
+    }
+  }
+
+  /// Open booking modal — checks login first, then presents BookingModalComponent
+  async openBookingModal(): Promise<void> {
+    const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
+    const isTC = lang === 'TC';
+
+    if (!this.feature.auth.isLoggedIn) {
+      const shouldLogin = await this.showLoginPrompt(isTC);
+      if (shouldLogin) {
+        this.router.navigate(['/login'], {
+          queryParams: { returnUrl: `/restaurant/${this.restaurant?.id}` }
+        });
+      }
+      return;
+    }
+
+    const modal = await this.modalController.create({
+      component: BookingModalComponent,
+      componentProps: {
+        restaurant: this.restaurant,
+        lang: lang
+      }
+    });
+
+    await modal.present();
+
+    const { data } = await modal.onDidDismiss();
+    if (!data) return;
+
+    this.isBookingLoading = true;
+    this.changeDetectionReference.markForCheck();
+
+    const bookingRequest: CreateBookingRequest = {
+      restaurantId: this.restaurant?.id || '',
+      restaurantName: isTC
+        ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
+        : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || ''),
+      dateTime: new Date(data.dateTime).toISOString(),
+      numberOfGuests: data.numberOfGuests,
+      specialRequests: data.specialRequests || null
+    };
+
+    this.feature.bookings.createBooking(bookingRequest).pipe(takeUntil(this.destroy$)).subscribe({
+      next: async (response) => {
+        console.info('Booking created:', response.id);
+        this.isBookingLoading = false;
+        this.changeDetectionReference.markForCheck();
+        const msg = isTC
+          ? `已成功預約！預約編號: ${response.id.substring(0, 8)}`
+          : `Booking confirmed! Booking ID: ${response.id.substring(0, 8)}`;
+        await this.showToast(msg, 'success');
+      },
+      error: async (error: any) => {
+        console.error('Booking failed:', error);
+        this.isBookingLoading = false;
+        this.changeDetectionReference.markForCheck();
+        await this.showToast(
+          error.message || (isTC ? '預約失敗，請重試' : 'Booking failed, please try again'),
+          'danger'
+        );
+      }
+    });
+  }
+
   /// Scroll to booking section (switches to overview tab if needed)
   scrollToBooking(): void {
     this.selectedTab = 'overview';
     this.changeDetectionReference.markForCheck();
-    // Smooth scroll to booking section would be implemented here if needed
+    setTimeout(() => {
+      const el = document.getElementById('booking-section');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   }
 
   /// Check if current user can edit this restaurant (no owner)
@@ -842,6 +929,20 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     // Allow editing if restaurant has no owner and user is logged in
     this.canEditRestaurant = this.feature.auth.isLoggedIn && !this.restaurant?.ownerId;
     this.changeDetectionReference.markForCheck();
+  }
+
+  /// Check if current user is the owner of this restaurant
+  checkIfCurrentUserIsOwner(): void {
+    if (!this.feature.auth.isLoggedIn || !this.restaurant?.ownerId) {
+      this.isCurrentUserOwner = false;
+      this.changeDetectionReference.markForCheck();
+      return;
+    }
+
+    this.feature.auth.currentUser$.pipe(take(1)).subscribe(user => {
+      this.isCurrentUserOwner = user?.uid === this.restaurant?.ownerId;
+      this.changeDetectionReference.markForCheck();
+    });
   }
 
   /// Handle restaurant image file selection

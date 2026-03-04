@@ -18,13 +18,14 @@
     </div>
 
     <!-- Restaurant Content -->
-    <div class="restaurant-page" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile" *ngIf="!isLoading && !errorMessage && restaurant">
+    <div class="restaurant-page" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile"
+      *ngIf="!isLoading && !errorMessage && restaurant">
 
       <!-- Hero Section with Full-width Background Image -->
       <div class="hero-section">
         <img [src]="imageUrlOrPlaceholder()"
-             [alt]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
-             class="hero-background" />
+          [alt]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
+          class="hero-background" />
         <div class="hero-overlay"></div>
         <div class="hero-content">
           <!-- Restaurant Name - English -->
@@ -37,15 +38,15 @@
           </h2>
           <!-- District -->
           <p class="restaurant-description" *ngIf="restaurant.District_EN || restaurant.District_TC">
-            {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') : (restaurant.District_EN || restaurant.District_TC || '') }}
+            {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') :
+            (restaurant.District_EN || restaurant.District_TC || '') }}
           </p>
           <!-- Claim Restaurant Button -->
-          <ion-button *ngIf="canClaimRestaurant && !restaurant.ownerId"
-                      class="claim-restaurant-button"
-                      [disabled]="isClaimingRestaurant"
-                      (click)="claimRestaurant()">
+          <ion-button *ngIf="canClaimRestaurant && !restaurant.ownerId" class="claim-restaurant-button"
+            [disabled]="isClaimingRestaurant" (click)="claimRestaurant()">
             <ion-icon slot="start" name="business-outline"></ion-icon>
-            {{ isClaimingRestaurant ? ((lang$ | async) === 'TC' ? '認領中...' : 'Claiming...') : ((lang$ | async) === 'TC' ? '認領此餐廳' : 'Claim This Restaurant') }}
+            {{ isClaimingRestaurant ? ((lang$ | async) === 'TC' ? '認領中...' : 'Claiming...') : ((lang$ | async) === 'TC'
+            ? '認領此餐廳' : 'Claim This Restaurant') }}
           </ion-button>
         </div>
       </div>
@@ -58,7 +59,8 @@
             {{ (lang$ | async) === 'TC' ? '編輯餐廳圖片' : 'Edit Restaurant Image' }}
           </ion-card-title>
           <ion-card-subtitle>
-            {{ (lang$ | async) === 'TC' ? '此餐廳尚未被認領,您可以幫助上傳圖片' : 'This restaurant is unclaimed. Help by uploading an image!' }}
+            {{ (lang$ | async) === 'TC' ? '此餐廳尚未被認領,您可以幫助上傳圖片' : 'This restaurant is unclaimed. Help by uploading an
+            image!' }}
           </ion-card-subtitle>
         </ion-card-header>
         <ion-card-content>
@@ -73,27 +75,24 @@
 
           <!-- Upload controls -->
           <div class="upload-controls-inline">
-            <input type="file"
-                   id="restaurant-page-image-input"
-                   accept="image/*"
-                   (change)="onRestaurantImageSelected($event)"
-                   style="display: none;">
+            <input type="file" id="restaurant-page-image-input" accept="image/*"
+              (change)="onRestaurantImageSelected($event)" style="display: none;">
 
             <ion-button expand="block" fill="outline" (click)="clickImageUploadButton()">
               <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
               {{ (lang$ | async) === 'TC' ? '選擇圖片' : 'Select Image' }}
             </ion-button>
 
-            <ion-button expand="block"
-                        [disabled]="!selectedRestaurantImage || isUploadingRestaurantImage"
-                        (click)="uploadRestaurantImageInline()">
+            <ion-button expand="block" [disabled]="!selectedRestaurantImage || isUploadingRestaurantImage"
+              (click)="uploadRestaurantImageInline()">
               <ion-icon name="checkmark-outline" slot="start"></ion-icon>
               {{ (lang$ | async) === 'TC' ? '上傳圖片' : 'Upload Image' }}
             </ion-button>
           </div>
 
           <p class="image-hint">
-          {{ (lang$ | async) === 'TC' ? '支援 JPEG、PNG、GIF、WebP 格式，最大 10MB' : 'Supports JPEG, PNG, GIF, WebP formats, max 10MB' }}
+            {{ (lang$ | async) === 'TC' ? '支援 JPEG、PNG、GIF、WebP 格式，最大 10MB' : 'Supports JPEG, PNG, GIF, WebP formats,
+            max 10MB' }}
           </p>
 
         </ion-card-content>
@@ -117,8 +116,9 @@
         <!-- Tags & Dietary Indicators -->
         <div class="dietary-tags-section" *ngIf="restaurant.Keyword_EN?.length || restaurant.Keyword_TC?.length">
           <div class="tags-container">
-            <ion-chip *ngFor="let keyword of ((lang$ | async) === 'TC' ? (restaurant.Keyword_TC || []) : (restaurant.Keyword_EN || []))"
-                      class="dietary-tag">
+            <ion-chip
+              *ngFor="let keyword of ((lang$ | async) === 'TC' ? (restaurant.Keyword_TC || []) : (restaurant.Keyword_EN || []))"
+              class="dietary-tag">
               {{ keyword }}
             </ion-chip>
           </div>
@@ -156,7 +156,8 @@
               </div>
               <div class="contact-item" *ngIf="restaurant.Contacts?.Website">
                 <ion-icon name="globe-outline"></ion-icon>
-                <a [href]="restaurant.Contacts!.Website" target="_blank" rel="noopener noreferrer">{{ (lang$ | async) === 'TC' ? '網站' : 'Website' }}</a>
+                <a [href]="restaurant.Contacts!.Website" target="_blank" rel="noopener noreferrer">{{ (lang$ | async)
+                  === 'TC' ? '網站' : 'Website' }}</a>
               </div>
             </div>
           </div>
@@ -189,7 +190,7 @@
               </ng-template>
             </ng-container>
           </div>
-          <ion-button expand="block" class="reserve-button" (click)="scrollToBooking()">
+          <ion-button *ngIf="!isCurrentUserOwner" expand="block" class="reserve-button" (click)="openBookingModal()">
             <ion-icon slot="start" name="calendar-outline"></ion-icon>
             {{ (lang$ | async) === 'TC' ? '訂座' : 'Reserve' }}
           </ion-button>
@@ -199,14 +200,13 @@
         <div class="address-map-section">
           <h3 class="section-title">{{ (lang$ | async) === 'TC' ? '地址' : 'Address' }}</h3>
           <p class="address-text">
-            {{ (lang$ | async) === 'TC' ? (restaurant.Address_TC || restaurant.Address_EN || '—') : (restaurant.Address_EN || restaurant.Address_TC || '—') }}
+            {{ (lang$ | async) === 'TC' ? (restaurant.Address_TC || restaurant.Address_EN || '—') :
+            (restaurant.Address_EN || restaurant.Address_TC || '—') }}
           </p>
 
-          <a *ngIf="hasCoordinates()"
-             target="_blank"
-             rel="noopener noreferrer"
-             [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant.Latitude + ',' + restaurant.Longitude"
-             class="map-link">
+          <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
+            [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant.Latitude + ',' + restaurant.Longitude"
+            class="map-link">
             <ion-icon name="map-sharp"></ion-icon>
             {{ (lang$ | async) === 'TC' ? '在地圖上查看' : 'See on the map' }}
           </a>
@@ -218,9 +218,7 @@
           </div>
 
           <!-- Embedded Map -->
-          <div *ngIf="hasCoordinates()" class="map-container"
-               (dblclick)="openMapModal()"
-               (touchend)="onMapTouchEnd()">
+          <div *ngIf="hasCoordinates()" class="map-container" (dblclick)="openMapModal()" (touchend)="onMapTouchEnd()">
             <div id="restaurant-map" class="leaflet-map"></div>
           </div>
         </div>
@@ -241,10 +239,12 @@
               </div>
               <div class="menu-item-info">
                 <h4 class="menu-item-name">
-                  {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC || '—') }}
+                  {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC ||
+                  '—') }}
                 </h4>
                 <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
-                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') : (item.Description_EN || item.Description_TC || '') }}
+                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') :
+                  (item.Description_EN || item.Description_TC || '') }}
                 </p>
               </div>
             </div>
@@ -254,6 +254,7 @@
             {{ (lang$ | async) === 'TC' ? '未提供菜單' : 'Menu not available' }}
           </p>
         </div>
+
       </div>
 
       <!-- Review Tab Content -->
@@ -272,22 +273,15 @@
 
         <!-- Review Carousel -->
         <div class="review-carousel-section" *ngIf="!isReviewsLoading && reviews.length > 0">
-          <swiper-container #reviewSwiper
-                            class="review-swiper"
-                            slides-per-view="1.1"
-                            space-between="16"
-                            [breakpoints]="ReviewSwiperBreakpoints">
+          <swiper-container #reviewSwiper class="review-swiper" slides-per-view="1.1" space-between="16"
+            [breakpoints]="ReviewSwiperBreakpoints">
             <swiper-slide *ngFor="let review of reviews">
               <div class="review-card">
                 <div class="review-header">
                   <div class="reviewer-info">
-                    <img *ngIf="review.userPhotoURL"
-                         [src]="review.userPhotoURL"
-                         [alt]="review.userDisplayName || 'User'"
-                         class="avatar-image">
-                    <ion-icon *ngIf="!review.userPhotoURL"
-                              name="person-circle-outline"
-                              class="avatar-icon"></ion-icon>
+                    <img *ngIf="review.userPhotoURL" [src]="review.userPhotoURL"
+                      [alt]="review.userDisplayName || 'User'" class="avatar-image">
+                    <ion-icon *ngIf="!review.userPhotoURL" name="person-circle-outline" class="avatar-icon"></ion-icon>
                     <span class="reviewer-name">{{ review.userDisplayName || 'Anonymous User' }}</span>
                   </div>
                   <div class="review-rating">
@@ -296,9 +290,7 @@
                 </div>
                 <!-- Review Image (if available) -->
                 <div class="review-image-container" *ngIf="review.imageUrl">
-                  <img [src]="review.imageUrl"
-                       [alt]="'Review image'"
-                       class="review-image">
+                  <img [src]="review.imageUrl" [alt]="'Review image'" class="review-image">
                 </div>
                 <p class="review-comment" *ngIf="review.comment">{{ review.comment }}</p>
                 <p class="review-date">{{ review.dateTime | date:'mediumDate' }}</p>
@@ -321,10 +313,8 @@
           <div class="rating-selector">
             <ion-label>{{ (lang$ | async) === 'TC' ? '評分' : 'Rating' }}</ion-label>
             <div class="star-buttons">
-              <ion-button *ngFor="let star of [1, 2, 3, 4, 5]"
-                          fill="clear"
-                          [class.selected]="newReviewRating >= star"
-                          (click)="newReviewRating = star">
+              <ion-button *ngFor="let star of [1, 2, 3, 4, 5]" fill="clear" [class.selected]="newReviewRating >= star"
+                (click)="newReviewRating = star">
                 <ion-icon [name]="newReviewRating >= star ? 'star' : 'star-outline'"></ion-icon>
               </ion-button>
             </div>
@@ -333,8 +323,7 @@
           <!-- Comment Input -->
           <ion-item lines="none">
             <ion-textarea [(ngModel)]="newReviewComment"
-                          [placeholder]="(lang$ | async) === 'TC' ? '分享您的用餐體驗...' : 'Share your experience...'"
-                          rows="4">
+              [placeholder]="(lang$ | async) === 'TC' ? '分享您的用餐體驗...' : 'Share your experience...'" rows="4">
             </ion-textarea>
           </ion-item>
 
@@ -361,8 +350,7 @@
     </div>
 
     <!-- Chat Button -->
-    <app-chat-button *ngIf="restaurant"
-                     [restaurantId]="restaurant.id"
-                     [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
+    <app-chat-button *ngIf="restaurant" [restaurantId]="restaurant.id"
+      [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
   </ng-container>
 </ion-content>

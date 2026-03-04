@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-03-04 | **Version:** 1.12.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-03-05 | **Version:** 1.13.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1426,6 +1426,52 @@ on('user-offline', { userId, displayName, lastSeen });
 
 ---
 
+## Booking Modal Feature (v1.13.0)
+
+**Component:** `BookingModalComponent` (`restaurant/booking-modal.component.ts|html|scss`)
+
+**Triggered by:** Reserve button on restaurant detail page (`restaurant.page.html` line 192)
+
+**UX Flow:**
+1. User taps **Reserve** button
+2. `openBookingModal()` checks login — redirects to login with `returnUrl` if needed
+3. Modal opens with 3 sections:
+   - **Date & Time Picker:** Inline `ion-datetime` (24h format, Asia/Hong_Kong timezone, no buttons wrapper)
+   - **Opening Hours Status Badge:** Live-updating indicator (green = within hours, amber = outside, grey = unknown)
+   - **Guest Stepper:** +/- buttons (1-10 guests)
+   - **Special Requests:** Optional textarea
+4. User confirms → modal dismisses with `{ dateTime, numberOfGuests, specialRequests }`
+5. Parent calls `createBooking()` API → success/error toast
+
+**Opening Hours Evaluation:**
+- Uses `Intl.DateTimeFormat` with `timeZone: 'Asia/Hong_Kong'` to extract HK weekday & time from any ISO string
+- Matches weekday case-insensitively to `Restaurant.Opening_Hours`
+- Parses both string format (`"11:30-21:30"`) and object format (`{ open: "11:30", close: "21:30" }`)
+- Supports dash variants: `-`, `–`, `~`
+- Badge updates on every datetime change, enabling real-time feedback
+
+**Key Technical Details:**
+- `presentation="date-time"` with `[showDefaultButtons]="false"` (values update live via `ionChange`)
+- `hour-cycle="h23"` for 24h display
+- `minBookingDate` computed with UTC+8 offset to prevent selecting past HK dates
+- `ChangeDetectionStrategy.OnPush` — `markForCheck()` on state mutations
+- Footer confirm button styled as `.confirm-btn` with rounded corners
+
+**Files:**
+- `booking-modal.component.ts` — component logic with opening hours evaluation
+- `booking-modal.component.html` — modal template with datetime, badge, stepper, textarea
+- `booking-modal.component.scss` — styles for 3-state badge, stepper buttons, datetime picker
+- `restaurant.module.ts` — `BookingModalComponent` registered in declarations
+- `restaurant.page.ts` — `openBookingModal()` method (login check → present modal → create booking)
+- `restaurant.page.html` — Reserve button wired to `openBookingModal()`, inline booking section removed
+
+**User Preferences:**
+- Modal language matches current lang setting (EN/TC)
+- Form inputs respect user's language choice in button/label text
+- Warning toast if booking outside hours (non-blocking — allows submission)
+
+---
+
 ## AI Assistant Guidelines
 
 ### Principles
@@ -1600,9 +1646,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.12.0 | **Maintainer:** AI Assistant
+**Document Version:** 1.13.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.13.0** (2026-03-05): **Booking modal with opening hours awareness.** Replaced inline booking form with `BookingModalComponent` modal (triggered by Reserve button). Modal features: inline `ion-datetime` (24h HK timezone), live opening hours status badge (green/amber/grey), guest stepper (1-10), special requests textarea, confirmation footer button. Opens after login check; shows warning toast if booking outside hours (non-blocking). Uses `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone to reliably extract HK weekday/time from any ISO datetime. Opening hours parsing supports both string (`"11:30-21:30"`) and object (`{open,close}`) formats with dash variants (`-`, `–`, `~`). UX: tap Reserve → login if needed → pick date/time/guests → confirm → toast feedback. Bilingual (EN/TC) throughout.
 - **v1.12.0** (2026-03-04): **Booking system overhaul — payment logic removed, accept/decline workflow added.** Status values changed from `pending/confirmed/cancelled` to `pending/accepted/declined/cancelled/completed`. `paymentStatus`/`paymentIntentId` removed from all booking operations. New `declineMessage` field (set by restaurant owner on decline). Added `GET /restaurant/:restaurantId` endpoint (owner-only, enriches each booking with diner displayName/email/phoneNumber). `PUT /:id` now supports dual-ownership: diners can edit/cancel pending bookings; restaurant owners can accept/decline/complete. `DELETE /:id` enforces 30-day rule. Diner booking page: added edit/delete actions, declined status tab, decline message display. Store page: added status filter tabs (Pending/Accepted/Declined/Cancelled/All), diner info per card, Accept/Decline buttons with optional decline message, chat button.
 - **v1.11.1** (2026-03-04): **Critical auth guard race condition fix.** Fixed spurious redirects to `/login` when refreshing or re-entering protected pages while logged in. **Root cause:** `AuthGuard.canActivate()` used `take(1)` on a BehaviorSubject initialized with `null`, firing before Firebase's `onAuthStateChanged` could restore the persisted session (~300-800ms delay). **Fixes:** (1) Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback. (2) Guard now waits for `authInitialized$` before checking auth state. (3) Guard passes `returnUrl` query param when redirecting, preserving deep links (esp. Stripe's `?payment_success=true&session_id=...`). (4) LoginPage now reads `returnUrl` and navigates there post-auth instead of always `/user`. (5) Added localStorage failsafe in StorePage: saves pending ad sessions to localStorage, allowing users to resume ad creation if modal is accidentally closed after Stripe payment. **Result:** Stripe payment flow now works reliably; all deep links preserved through auth redirects.
 - **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-ad-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
