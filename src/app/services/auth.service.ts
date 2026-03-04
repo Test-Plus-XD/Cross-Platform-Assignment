@@ -51,6 +51,8 @@ export interface User {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$: Observable<User | null> = this.currentUserSubject.asObservable();
+  private authInitializedSubject = new BehaviorSubject<boolean>(false);
+  public authInitialized$: Observable<boolean> = this.authInitializedSubject.asObservable();
   private auth = inject(Auth);
   private router = inject(Router);
   private ngZone = inject(NgZone);
@@ -106,7 +108,10 @@ export class AuthService {
             };
             
             this.currentUserSubject.next(user);
-            
+            if (!this.authInitializedSubject.value) {
+              this.authInitializedSubject.next(true);
+            }
+
             // Ensure user profile exists in Firestore
             // This is done after we have a valid token
             await this.ensureUserProfileExists(user);
@@ -122,6 +127,9 @@ export class AuthService {
         } else {
           console.log('AuthService: User logged out or not authenticated');
           this.currentUserSubject.next(null);
+          if (!this.authInitializedSubject.value) {
+            this.authInitializedSubject.next(true);
+          }
           this.userService.clearAuthToken();
           localStorage.removeItem('firebaseUser');
         }

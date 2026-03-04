@@ -1,5 +1,5 @@
 import { Component, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
@@ -59,16 +59,21 @@ export class LoginPage implements OnDestroy {
     readonly languageService: LanguageService,
     readonly themeService: ThemeService,
     readonly router: Router,
+    readonly activatedRoute: ActivatedRoute,
     readonly toastController: ToastController,
     readonly loadingController: LoadingController
   ) {
     // Subscribe to auth state changes
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
-      // If user is already logged in, redirect to user page
+      // If user is already logged in, redirect to returnUrl or user page
       if (user) {
-        this.router.navigate(['/user']);
+        this.router.navigateByUrl(this.getReturnUrl());
       }
     });
+  }
+
+  private getReturnUrl(): string {
+    return this.activatedRoute.snapshot.queryParams['returnUrl'] || '/user';
   }
 
   ngOnDestroy(): void {
@@ -113,7 +118,7 @@ export class LoginPage implements OnDestroy {
         await this.authService.loginWithEmail(this.email, this.password);
         const currentLang = this.getCurrentLanguage();
         await this.showToast(this.translations.welcomeBack[currentLang], 'success');
-        await this.router.navigate(['/user']);
+        await this.router.navigateByUrl(this.getReturnUrl());
       } else {
         // Perform registration
         await this.authService.registerWithEmail(
@@ -150,7 +155,7 @@ export class LoginPage implements OnDestroy {
       await this.authService.signInWithGoogle();
       const currentLang = this.getCurrentLanguage();
       await this.showToast(this.translations.welcome[currentLang], 'success');
-      await this.router.navigate(['/user']);
+      await this.router.navigateByUrl(this.getReturnUrl());
     } catch (error: any) {
       // Only show error if user didn't cancel
       if (!error.message.includes('cancelled') && !error.message.includes('closed')) {

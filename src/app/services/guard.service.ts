@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { CanActivate, Router, UrlTree } from '@angular/router';
+import { ActivatedRouteSnapshot, CanActivate, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
 import { AuthService } from './auth.service';
 import { Observable } from 'rxjs';
-import { map, take } from 'rxjs/operators';
+import { filter, map, switchMap, take } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -11,19 +11,24 @@ export class AuthGuard implements CanActivate {
   private authService: AuthService = inject(AuthService);
   private router: Router = inject(Router);
 
-  canActivate(): Observable<boolean | UrlTree> {
-    // Check authentication state and redirect to login if not authenticated
-    return this.authService.currentUser$.pipe(
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean | UrlTree> {
+    // Wait for Firebase to finish restoring the persisted auth session before checking state.
+    // Without this, the BehaviorSubject's initial null value causes spurious redirects to /login.
+    return this.authService.authInitialized$.pipe(
+      filter(initialized => initialized),
       take(1),
-      map(user => {
-        if (user) {
-          // User is authenticated, allow access
-          return true;
-        } else {
-          // User is not authenticated, redirect to login
-          return this.router.createUrlTree(['/login']);
-        }
-      })
+      switchMap(() => this.authService.currentUser$.pipe(
+        take(1),
+        map(user => {
+          if (user) {
+            return true;
+          } else {
+            return this.router.createUrlTree(['/login'], {
+              queryParams: { returnUrl: state.url }
+            });
+          }
+        })
+      ))
     );
   }
 }

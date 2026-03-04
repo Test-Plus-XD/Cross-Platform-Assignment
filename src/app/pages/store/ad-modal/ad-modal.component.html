@@ -159,7 +159,7 @@
 
 <ion-footer>
   <ion-toolbar>
-    <ion-button expand="block" fill="outline" (click)="dismiss()" [disabled]="isSubmitting" slot="start" style="margin: 8px 4px 8px 8px;">
+    <ion-button expand="block" fill="outline" color="warning" (click)="dismiss()" [disabled]="isSubmitting" slot="start" style="margin: 8px 4px 8px 8px;">
       {{ (lang$ | async) === 'TC' ? '取消' : 'Cancel' }}
     </ion-button>
     <ion-button expand="block" (click)="submit()" [disabled]="isSubmitting" slot="end" style="margin: 8px 8px 8px 4px;">

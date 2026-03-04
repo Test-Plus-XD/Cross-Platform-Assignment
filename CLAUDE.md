@@ -405,7 +405,7 @@ Authorization: Bearer <firebase-id-token>
 #### Stripe Payment (`/API/Stripe`) - v1.11.0
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| POST | `/create-checkout-session` | ✅ | Create Stripe checkout session for ads (HK$10) |
+| POST | `/create-ad-checkout-session` | ✅ | Create Stripe checkout session for ads (HK$10) |
 
 **Request Body:**
 ```json
@@ -1396,6 +1396,26 @@ on('user-offline', { userId, displayName, lastSeen });
 - UserService: `getUserProfile()`, `getAllUsers()`
 - RestaurantsService: `searchRestaurants()`, `searchRestaurantsWithFilters()`, `getRestaurantById()`, `getMenuItems()`, `getMenuItem()`
 
+### Auth Guard Race Condition (v1.11.1)
+**Issue:** When refreshing or re-entering a protected route while logged in, users were spuriously redirected to `/login`, which then auto-redirected to `/user`. Stripe payment redirects to `/store?payment_success=true&session_id=...` were intercepted, losing the session ID and breaking ad creation.
+
+**Root cause:** `AuthGuard.canActivate()` used `take(1)` on `currentUser$` (a BehaviorSubject initialized with `null`). On page load, Firebase's `onAuthStateChanged` needs ~300–800ms to restore the persisted session. By then, `take(1)` had already fired with `null`, so the guard incorrectly rejected the authenticated user.
+
+**Fixes:**
+1. Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback completes (both authenticated and unauthenticated branches).
+2. Updated `AuthGuard.canActivate()` to wait for `authInitialized$ === true` before checking auth state.
+3. Guard now passes `returnUrl: state.url` when redirecting to `/login`, preserving deep links through auth redirects.
+4. `LoginPage` now reads the `returnUrl` query param and navigates there after successful auth instead of always to `/user`.
+5. `StorePage` persists Stripe `sessionId` to `localStorage['pendingAdSession']` for failsafe recovery if the modal is accidentally closed post-payment.
+
+**Files modified:**
+- `AuthService`: Added `authInitializedSubject` and `authInitialized$` observable
+- `AuthGuard`: Wait for auth init + pass returnUrl
+- `LoginPage`: Use `navigateByUrl(returnUrl)` instead of `navigate(['/user'])`
+- `StorePage`: Save/restore Stripe sessions via localStorage
+
+**Result:** Protected routes no longer spuriously redirect while logged in. Stripe payment flow works reliably. All deep links (including payment redirect URLs) are preserved through auth redirects.
+
 ---
 
 ## AI Assistant Guidelines
@@ -1572,10 +1592,11 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.11.0 | **Maintainer:** AI Assistant
+**Document Version:** 1.11.1 | **Maintainer:** AI Assistant
 
 **Changelog:**
-- **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
+- **v1.11.1** (2026-03-04): **Critical auth guard race condition fix.** Fixed spurious redirects to `/login` when refreshing or re-entering protected pages while logged in. **Root cause:** `AuthGuard.canActivate()` used `take(1)` on a BehaviorSubject initialized with `null`, firing before Firebase's `onAuthStateChanged` could restore the persisted session (~300-800ms delay). **Fixes:** (1) Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback. (2) Guard now waits for `authInitialized$` before checking auth state. (3) Guard passes `returnUrl` query param when redirecting, preserving deep links (esp. Stripe's `?payment_success=true&session_id=...`). (4) LoginPage now reads `returnUrl` and navigates there post-auth instead of always `/user`. (5) Added localStorage failsafe in StorePage: saves pending ad sessions to localStorage, allowing users to resume ad creation if modal is accidentally closed after Stripe payment. **Result:** Stripe payment flow now works reliably; all deep links preserved through auth redirects.
+- **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-ad-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
 - **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.
 - **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters whilst preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
 - **v1.9.1** (2025-12-13): Added ChatVisibilityService, StoreHelpersService documentation. Enhanced UserService section with type/restaurantId fields, updateLoginMetadata, updatePreferences methods. Added dynamic navigation documentation (MenuComponent, TabComponent user-type-specific behavior).

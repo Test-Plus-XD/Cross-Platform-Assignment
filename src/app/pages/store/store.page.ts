@@ -237,6 +237,11 @@ export class StorePage implements OnInit, OnDestroy {
     this.route.queryParams.pipe(take(1)).subscribe(params => {
       if (params['payment_success'] === 'true' && params['session_id']) {
         const sessionId = params['session_id'];
+        // Persist session to localStorage before clearing URL so it survives accidental modal close
+        localStorage.setItem(this.PENDING_AD_SESSION_KEY, JSON.stringify({
+          sessionId,
+          timestamp: Date.now()
+        }));
         // Clean URL params immediately so refreshing doesn't re-open the modal
         this.router.navigate(['/store'], { replaceUrl: true });
         // Wait until restaurant data is available before opening the modal
@@ -248,8 +253,37 @@ export class StorePage implements OnInit, OnDestroy {
         }, 300);
         // Stop polling after 10 seconds as a safety measure
         setTimeout(() => clearInterval(checkReady), 10000);
+      } else {
+        // No Stripe params — check localStorage for a pending session (failsafe)
+        this.checkPendingAdSession();
       }
     });
+  }
+
+  private readonly PENDING_AD_SESSION_KEY = 'pendingAdSession';
+
+  // Reopens the ad modal from a persisted Stripe session (e.g. after accidental modal close).
+  private checkPendingAdSession(): void {
+    const raw = localStorage.getItem(this.PENDING_AD_SESSION_KEY);
+    if (!raw) return;
+    try {
+      const { sessionId, timestamp } = JSON.parse(raw);
+      const TWO_HOURS = 2 * 60 * 60 * 1000;
+      if (!sessionId || Date.now() - timestamp > TWO_HOURS) {
+        localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+        return;
+      }
+      const checkReady = setInterval(() => {
+        if (!this.isRestaurantLoading && this.restaurantId) {
+          clearInterval(checkReady);
+          localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+          this.openAdModal(sessionId);
+        }
+      }, 300);
+      setTimeout(() => clearInterval(checkReady), 10000);
+    } catch {
+      localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+    }
   }
 
   // Load restaurant data linked to current user.
@@ -1606,7 +1640,7 @@ export class StorePage implements OnInit, OnDestroy {
       const cancelUrl = `${window.location.origin}/store`;
       const token = await this.feature.auth.getIdToken();
       const response = await this.dataService.post<{ sessionId: string; url: string }>(
-        '/API/Stripe/create-checkout-session',
+        '/API/Stripe/create-ad-checkout-session',
         { restaurantId: this.restaurantId, successUrl, cancelUrl },
         token
       ).toPromise();
@@ -1630,6 +1664,7 @@ export class StorePage implements OnInit, OnDestroy {
     });
     await modal.present();
     const { data } = await modal.onWillDismiss();
+    localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
     if (data?.created) {
       this.loadAdvertisements();
       const lang = await this.getCurrentLanguage();
