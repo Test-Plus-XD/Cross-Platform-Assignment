@@ -8,7 +8,7 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { MenuItem } from '../../../services/restaurants.service';
 import { StoreFeatureService } from '../../../services/store-feature.service';
 import { MenuItemFieldLabels } from '../../../constants/restaurant-constants';
@@ -120,11 +120,12 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
   async uploadMenuDocument(): Promise<void> {
     if (!this.selectedMenuDocument || !this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
     this.isImportingMenu = true;
 
+    const uploadMsg = lang === 'TC' ? '上傳文件中...' : 'Uploading document...';
     const loading = await this.loadingController.create({
-      message: lang === 'TC' ? '上傳文件中...' : 'Uploading document...',
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${uploadMsg}`,
       spinner: null
     });
     await loading.present();
@@ -273,9 +274,10 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
   async saveExtractedMenuItems(): Promise<void> {
     if (!this.restaurantId || this.extractedMenuItems.length === 0) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
+    const saveMsg = lang === 'TC' ? '儲存菜單項目中...' : 'Saving menu items...';
     const loading = await this.loadingController.create({
-      message: lang === 'TC' ? '儲存菜單項目中...' : 'Saving menu items...',
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${saveMsg}`,
       spinner: null
     });
     await loading.present();
@@ -320,10 +322,6 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Resolve the current language from the stream.
-  private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
-    return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
-  }
 
   // Show a brief bottom toast.
   private async showToast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {

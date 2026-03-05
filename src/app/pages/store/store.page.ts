@@ -444,7 +444,7 @@ export class StorePage implements OnInit, OnDestroy {
   async deleteMenuItem(item: MenuItem): Promise<void> {
     if (!this.restaurantId || !item.id) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header:  this.translations.confirmDelete[lang],
@@ -456,7 +456,7 @@ export class StorePage implements OnInit, OnDestroy {
           role: 'destructive',
           handler: async () => {
             const loading = await this.loadingController.create({
-              message: this.translations.saving[lang],
+              message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${this.translations.saving[lang]}`,
               spinner: null
             });
             await loading.present();
@@ -523,7 +523,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Show a confirmation dialog before marking a pending booking as accepted.
   async confirmBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header:  this.translations.confirmBookingTitle[lang],
@@ -543,7 +543,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Show a decline dialog with an optional reason textarea.
   async rejectBookingAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header: this.translations.rejectBookingTitle[lang],
@@ -569,7 +569,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Show a confirmation dialog before marking an accepted booking as completed.
   async markCompleteAction(booking: Booking): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header:  this.translations.completeBookingTitle[lang],
@@ -595,8 +595,9 @@ export class StorePage implements OnInit, OnDestroy {
     isTC: boolean,
     declineMessage?: string | null
   ): Promise<void> {
+    const savingMsg = isTC ? this.translations.saving.TC : this.translations.saving.EN;
     const loading = await this.loadingController.create({
-      message: isTC ? this.translations.saving.TC : this.translations.saving.EN,
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${savingMsg}`,
       spinner: null
     });
     await loading.present();
@@ -637,7 +638,7 @@ export class StorePage implements OnInit, OnDestroy {
     switch (status) {
       case 'pending':   return 'warning';
       case 'accepted':  return 'success';
-      case 'completed': return 'primary';
+      case 'completed': return 'secondary';
       case 'declined':  return 'danger';
       case 'cancelled': return 'medium';
       default:          return 'medium';
@@ -721,9 +722,10 @@ export class StorePage implements OnInit, OnDestroy {
   async initiateAdPayment(): Promise<void> {
     if (!this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
+    const paymentMsg = lang === 'TC' ? this.translations.processingPayment.TC : this.translations.processingPayment.EN;
     const loading = await this.loadingController.create({
-      message: lang === 'TC' ? this.translations.processingPayment.TC : this.translations.processingPayment.EN,
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${paymentMsg}`,
       spinner: null
     });
     await loading.present();
@@ -770,7 +772,7 @@ export class StorePage implements OnInit, OnDestroy {
 
     if (data?.created) {
       this.loadAdvertisements();
-      const lang = await this.getCurrentLanguage();
+      const lang = this.currentLanguage;
       await this.showToast(
         lang === 'TC' ? '廣告已成功刊登！' : 'Advertisement published successfully!',
         'success'
@@ -780,7 +782,7 @@ export class StorePage implements OnInit, OnDestroy {
 
   // Prompt for confirmation before deleting an advertisement record.
   async deleteAdvertisement(adId: string): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header:  lang === 'TC' ? this.translations.confirmDeleteAd.TC  : this.translations.confirmDeleteAd.EN,
@@ -810,11 +812,6 @@ export class StorePage implements OnInit, OnDestroy {
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────────
-
-  // Resolve the current language from the observable stream (one-shot).
-  private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
-    return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
-  }
 
   // Display a brief toast notification at the bottom of the screen.
   private async showToast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {

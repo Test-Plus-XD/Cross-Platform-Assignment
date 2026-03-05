@@ -138,7 +138,7 @@ export class StoreHelpersService {
    * Checks if a booking is editable (pending or confirmed status)
    */
   isBookingEditable(booking: Booking): boolean {
-    return booking.status === 'pending' || booking.status === 'confirmed';
+    return booking.status === 'pending';
   }
 
   /**
@@ -146,16 +146,12 @@ export class StoreHelpersService {
    */
   getBookingStatusColor(status: string): string {
     switch (status) {
-      case 'confirmed':
-        return 'success';
-      case 'pending':
-        return 'warning';
-      case 'completed':
-        return 'medium';
-      case 'cancelled':
-        return 'danger';
-      default:
-        return 'medium';
+      case 'pending':   return 'warning';
+      case 'accepted':  return 'success';
+      case 'completed': return 'secondary';
+      case 'declined':  return 'danger';
+      case 'cancelled': return 'medium';
+      default:          return 'medium';
     }
   }
 
