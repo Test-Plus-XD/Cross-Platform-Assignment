@@ -1,0 +1,131 @@
+// Hint text shown below the file-select button
+.hint {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  margin: 8px 0 16px;
+  text-align: center;
+}
+
+// Card shown after a file is chosen
+.selected-file-card {
+  ion-card-content {
+    p {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      margin-bottom: 12px;
+
+      ion-icon {
+        font-size: 18px;
+        color: var(--ion-color-primary);
+      }
+    }
+  }
+}
+
+// Processing spinner + text
+.processing-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ion-color-medium);
+  margin-top: 10px;
+}
+
+// Review step header
+.review-header {
+  padding: 0 0 12px;
+
+  ion-card-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 16px;
+  }
+
+  .review-subtitle {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    margin-top: 4px;
+  }
+}
+
+// List of extracted item rows
+.extracted-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Single extracted item row: index + fields + delete
+.extracted-item-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 8px;
+
+  // Circular row-number badge
+  .item-number {
+    min-width: 24px;
+    height: 24px;
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  // Grow to fill remaining width
+  .item-fields {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+// Field group inside a row
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  .field-label-small {
+    font-size: 11px;
+    color: var(--ion-color-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  ion-input,
+  ion-textarea {
+    --padding-start: 6px;
+    font-size: 13px;
+    border: 1px solid var(--ion-color-light-shade);
+    border-radius: 4px;
+  }
+}
+
+.no-items-text {
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: 24px 0;
+  font-size: 14px;
+}
+
+// Footer action buttons
+.footer-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px;
+}
