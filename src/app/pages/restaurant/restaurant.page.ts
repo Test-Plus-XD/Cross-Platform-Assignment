@@ -91,6 +91,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   canEditRestaurant: boolean = false;
   // Check if current user is the owner of this restaurant
   isCurrentUserOwner: boolean = false;
+  // Snapshot of the current language for synchronous access in methods
+  currentLanguage: 'EN' | 'TC' = 'EN';
 
   constructor(
     private readonly feature: RestaurantFeatureService,
@@ -105,6 +107,11 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Keep currentLanguage snapshot in sync for methods that cannot use async pipe
+    this.lang$.pipe(takeUntil(this.destroy$)).subscribe(lang => {
+      this.currentLanguage = lang;
+    });
+
     // Try to get user's location for distance calculation
     this.feature.location.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
 
@@ -345,15 +352,15 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Booking handler invoked by Book button
   async onBook(): Promise<void> {
     try {
+      const lang = this.currentLanguage;
+
       if (!this.bookingDateTime) {
-        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         await this.showToast(lang === 'TC' ? '請選擇預約日期和時間' : 'Please select a booking date and time', 'warning');
         return;
       }
 
       // Check if user is logged in
       if (!this.feature.auth.isLoggedIn) {
-        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         const shouldLogin = await this.showLoginPrompt(lang === 'TC');
         if (shouldLogin) {
           // Navigate to login page with return URL
@@ -365,7 +372,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       }
 
       // Confirm booking details
-      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
       const confirmed = await this.confirmBooking(lang === 'TC');
       if (!confirmed) return;
 
@@ -479,9 +485,10 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Submit new review
   async submitReview(): Promise<void> {
     try {
+      const lang = this.currentLanguage;
+
       // Check if user is logged in
       if (!this.feature.auth.isLoggedIn) {
-        const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
         const shouldLogin = await this.showLoginPrompt(lang === 'TC');
         if (shouldLogin) {
           this.router.navigate(['/login'], {
@@ -490,8 +497,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         }
         return;
       }
-
-      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
 
       // Validate rating
       if (this.newReviewRating < 1 || this.newReviewRating > 5) {
@@ -685,7 +690,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
-      const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
+      const lang = this.currentLanguage;
       const user = await this.feature.auth.currentUser$.pipe(take(1)).toPromise();
 
       if (!user) {
@@ -853,7 +858,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
   /// Open booking modal — checks login first, then presents BookingModalComponent
   async openBookingModal(): Promise<void> {
-    const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
+    const lang = this.currentLanguage;
     const isTC = lang === 'TC';
 
     if (!this.feature.auth.isLoggedIn) {
@@ -979,7 +984,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   async uploadRestaurantImageInline(): Promise<void> {
     if (!this.selectedRestaurantImage || !this.restaurant?.id) return;
 
-    const lang = await this.feature.language.lang$.pipe(take(1)).toPromise();
+    const lang = this.currentLanguage;
     this.isUploadingRestaurantImage = true;
     this.changeDetectionReference.markForCheck();
 
