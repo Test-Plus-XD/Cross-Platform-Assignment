@@ -997,4 +997,8 @@
       </div>
     </div>
   </ng-container>
+
+  <!-- Chat Button (for restaurant owner to chat with customers) -->
+  <app-chat-button #chatButton *ngIf="restaurant" [restaurantId]="restaurant.id"
+    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
 </ion-content>

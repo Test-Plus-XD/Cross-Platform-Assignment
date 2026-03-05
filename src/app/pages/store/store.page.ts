@@ -1,6 +1,6 @@
 // Store management page for Restaurant-type users
 // Provides restaurant info editing, menu management, bookings overview, and advertisement management
-import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
@@ -11,6 +11,7 @@ import { DataService } from '../../services/data.service';
 import { Booking } from '../../services/booking.service';
 import { Restaurant, MenuItem } from '../../services/restaurants.service';
 import { StoreFeatureService } from '../../services/store-feature.service';
+import { ChatButtonComponent } from '../../shared/chat-button/chat-button.component';
 import { District, Districts } from '../../constants/districts.const';
 import { Keyword, Keywords } from '../../constants/keywords.const';
 import { PaymentMethod, PaymentMethods } from '../../constants/payments.const';
@@ -25,6 +26,8 @@ import { MenuItemFieldLabels } from '../../constants/restaurant-constants';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StorePage implements OnInit, OnDestroy {
+  @ViewChild('chatButton') chatButton?: ChatButtonComponent;
+
   // Language and platform streams
   lang$ = this.feature.language.lang$;
   isDark$ = this.feature.theme.isDark$;
@@ -1146,9 +1149,9 @@ export class StorePage implements OnInit, OnDestroy {
     }
   }
 
-  // Navigate to the chat page.
+  // Open the floating chat UI to communicate with customers.
   navigateToChat(): void {
-    this.router.navigate(['/chat']);
+    this.chatButton?.toggleChat();
   }
 
   // Return count of bookings for a given status tab.
