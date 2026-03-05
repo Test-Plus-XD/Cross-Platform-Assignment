@@ -1,0 +1,294 @@
+<!-- Modal for editing all restaurant info fields -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ currentLanguage === 'TC' ? translations.editRestaurant.TC : translations.editRestaurant.EN }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Basic Information -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="document-text-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '基本資料' : 'Basic Information' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+
+      <!-- Name (English) -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="restaurant-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '名稱（英文）' : 'Name (English)' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Name_EN"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
+        </ion-input>
+      </div>
+
+      <!-- Name (Chinese) -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="restaurant-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '名稱（中文）' : 'Name (Chinese)' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Name_TC"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
+        </ion-input>
+      </div>
+
+      <!-- Address (English) -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="map-sharp"></ion-icon>
+          {{ currentLanguage === 'TC' ? '地址（英文）' : 'Address (English)' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Address_EN"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入英文地址' : 'Enter address in English'">
+        </ion-input>
+      </div>
+
+      <!-- Address (Chinese) -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="map-sharp"></ion-icon>
+          {{ currentLanguage === 'TC' ? '地址（中文）' : 'Address (Chinese)' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Address_TC"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入中文地址' : 'Enter address in Chinese'">
+        </ion-input>
+      </div>
+
+      <!-- District -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="location-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '地區' : 'District' }}
+        </ion-label>
+        <ion-button fill="outline" size="small" (click)="showDistrictSelector()">
+          {{ currentLanguage === 'TC' ? (editedInfo.District_TC || translations.selectDistrict.TC) : (editedInfo.District_EN || translations.selectDistrict.EN) }}
+          <ion-icon name="chevron-down-outline" slot="end"></ion-icon>
+        </ion-button>
+      </div>
+
+      <!-- Seats -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="people-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '座位數' : 'Seats' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Seats"
+                   type="number"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入座位數' : 'Enter seat count'">
+        </ion-input>
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Contact Information -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="call-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '聯絡資料' : 'Contact Information' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+
+      <!-- Phone -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="call-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '電話' : 'Phone' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Contacts.Phone"
+                   type="tel"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入電話號碼' : 'Enter phone number'">
+        </ion-input>
+      </div>
+
+      <!-- Email -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="mail-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '電郵' : 'Email' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Contacts.Email"
+                   type="email"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入電郵地址' : 'Enter email address'">
+        </ion-input>
+      </div>
+
+      <!-- Website -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="globe-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '網站' : 'Website' }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Contacts.Website"
+                   type="url"
+                   [placeholder]="currentLanguage === 'TC' ? '輸入網站網址' : 'Enter website URL'">
+        </ion-input>
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Keywords & Payment Methods -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="pricetags-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '分類與付款' : 'Categories & Payments' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+
+      <!-- Keywords selector -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '關鍵字' : 'Keywords' }}
+        </ion-label>
+        <ion-button fill="outline" size="small" (click)="showKeywordsSelector()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          {{ getKeywordDisplay(currentLanguage) }}
+        </ion-button>
+      </div>
+
+      <!-- Payment methods selector -->
+      <div class="field-row">
+        <ion-label class="field-label">
+          <ion-icon name="wallet-outline"></ion-icon>
+          {{ currentLanguage === 'TC' ? '付款方式' : 'Payment Methods' }}
+        </ion-label>
+        <ion-button fill="outline" size="small" (click)="showPaymentMethodsSelector()">
+          <ion-icon name="add-outline" slot="start"></ion-icon>
+          {{ getPaymentDisplay(currentLanguage) }}
+        </ion-button>
+      </div>
+
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Opening Hours — one row per weekday -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="time-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '營業時間' : 'Opening Hours' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div *ngFor="let day of weekdays" class="field-row opening-hours-row">
+        <ion-label class="field-label day-label">
+          {{ currentLanguage === 'TC' ? day.tc : day.en }}
+        </ion-label>
+        <ion-input [(ngModel)]="editedInfo.Opening_Hours[day.en]"
+                   [placeholder]="currentLanguage === 'TC' ? '例如：09:00-22:00 或 休息' : 'e.g. 09:00-22:00 or Closed'">
+        </ion-input>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Location Map -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="map-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? translations.location.TC : translations.location.EN }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p class="map-hint">{{ currentLanguage === 'TC' ? translations.clickMapToSet.TC : translations.clickMapToSet.EN }}</p>
+
+      <!-- Google Maps attaches here -->
+      <div id="info-modal-map" class="map-container"></div>
+
+      <!-- Live coordinate display updated on every pin move -->
+      <div class="coordinates-display" *ngIf="mapMarker">
+        <p>
+          <ion-icon name="map-sharp"></ion-icon>
+          {{ currentLanguage === 'TC' ? '緯度' : 'Latitude' }}: {{ mapMarker.lat.toFixed(6) }}<br>
+          <ion-icon name="map-sharp"></ion-icon>
+          {{ currentLanguage === 'TC' ? '經度' : 'Longitude' }}: {{ mapMarker.lng.toFixed(6) }}
+        </p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Restaurant Hero Image Upload -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="image-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '餐廳圖片' : 'Restaurant Image' }}
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+
+      <!-- Show current image when no new file is selected -->
+      <div class="current-image-preview" *ngIf="restaurant?.ImageUrl && !restaurantImagePreview">
+        <img [src]="restaurant.ImageUrl" alt="Restaurant Image">
+        <p class="image-label">{{ currentLanguage === 'TC' ? '當前圖片' : 'Current Image' }}</p>
+      </div>
+
+      <!-- Preview of the newly selected file -->
+      <div class="image-preview-container" *ngIf="restaurantImagePreview">
+        <img [src]="restaurantImagePreview" alt="Preview">
+        <ion-button fill="clear" size="small" color="danger" (click)="clearRestaurantImageSelection()">
+          <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+
+      <!-- Hidden file input triggered programmatically -->
+      <input type="file"
+             id="modal-restaurant-image-input"
+             accept="image/*"
+             (change)="onRestaurantImageSelected($event)"
+             style="display: none;">
+
+      <ion-button expand="block" fill="outline" (click)="clickRestaurantImageUploadButton()">
+        <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? '選擇圖片' : 'Select Image' }}
+      </ion-button>
+
+      <ion-button expand="block"
+                  [disabled]="!selectedRestaurantImage || isUploadingImage"
+                  (click)="uploadRestaurantImage()">
+        <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? '上傳圖片' : 'Upload Image' }}
+      </ion-button>
+
+      <p class="image-hint">
+        {{ currentLanguage === 'TC' ? '支援 JPEG、PNG、GIF、WebP，最大 10MB' : 'JPEG, PNG, GIF, WebP — max 10MB' }}
+      </p>
+
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
+
+<!-- Fixed footer with save / cancel actions -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button expand="block" color="success" (click)="saveRestaurantInfo()">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
+      </ion-button>
+      <ion-button expand="block" color="warning" fill="outline" (click)="dismiss()">
+        <ion-icon name="close-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

@@ -1,0 +1,181 @@
+<!-- Modal for bulk-importing menu items via DocuPipe document extraction -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      {{ currentLanguage === 'TC' ? translations.title.TC : translations.title.EN }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Step 1: File selection (hidden when review is showing) -->
+  <ng-container *ngIf="!showExtractedItemsReview">
+
+    <!-- Hidden file input triggered by the button below -->
+    <input type="file"
+           id="bulk-import-file-input"
+           accept=".pdf,image/*,.txt,.json"
+           (change)="onDocumentSelected($event)"
+           style="display: none;">
+
+    <!-- Select document button -->
+    <ion-button expand="block" fill="outline" (click)="clickDocumentUploadButton()" [disabled]="isImportingMenu">
+      <ion-icon name="document-outline" slot="start"></ion-icon>
+      {{ currentLanguage === 'TC' ? '選擇文件' : 'Select Document' }}
+    </ion-button>
+
+    <p class="hint">
+      {{ currentLanguage === 'TC'
+          ? '支援 PDF、圖片、TXT 或 JSON 格式，最大 10MB'
+          : 'PDF, image, TXT or JSON — max 10MB' }}
+    </p>
+
+    <!-- Show selected file name and upload trigger once a file is chosen -->
+    <ion-card *ngIf="selectedMenuDocument" class="selected-file-card">
+      <ion-card-content>
+        <p>
+          <ion-icon name="document-attach-outline"></ion-icon>
+          <strong>{{ currentLanguage === 'TC' ? '已選擇' : 'Selected' }}:</strong>
+          {{ selectedMenuDocument.name }}
+        </p>
+
+        <ion-button expand="block" [disabled]="isImportingMenu" (click)="uploadMenuDocument()">
+          <ion-icon name="send-outline" slot="start"></ion-icon>
+          {{ currentLanguage === 'TC' ? '開始提取' : 'Start Extraction' }}
+        </ion-button>
+
+        <!-- Processing indicator (active while server polls DocuPipe) -->
+        <p *ngIf="isPollingDocuPipe" class="processing-text">
+          <ion-spinner name="dots"></ion-spinner>
+          {{ currentLanguage === 'TC' ? '正在提取菜單項目...' : 'Extracting menu items...' }}
+        </p>
+      </ion-card-content>
+    </ion-card>
+
+  </ng-container>
+
+  <!-- Step 2: Review and edit extracted items before saving -->
+  <ng-container *ngIf="showExtractedItemsReview">
+
+    <ion-card-header class="review-header">
+      <ion-card-title>
+        <ion-icon name="document-text-outline"></ion-icon>
+        {{ currentLanguage === 'TC' ? '提取的菜單項目' : 'Extracted Menu Items' }}
+      </ion-card-title>
+      <p class="review-subtitle">
+        {{ currentLanguage === 'TC'
+            ? '請檢查並編輯項目，然後儲存'
+            : 'Review and edit before saving' }}
+      </p>
+    </ion-card-header>
+
+    <!-- Editable item rows -->
+    <div class="extracted-items-list">
+      <div *ngFor="let item of extractedMenuItems; let i = index" class="extracted-item-row">
+
+        <!-- Row number badge -->
+        <div class="item-number">{{ i + 1 }}</div>
+
+        <!-- Editable fields for this item -->
+        <div class="item-fields">
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('Name_EN', currentLanguage) }}</label>
+            <ion-input [(ngModel)]="item.Name_EN"
+                       [placeholder]="getFieldLabel('Name_EN', currentLanguage)">
+            </ion-input>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('Name_TC', currentLanguage) }}</label>
+            <ion-input [(ngModel)]="item.Name_TC"
+                       [placeholder]="getFieldLabel('Name_TC', currentLanguage)">
+            </ion-input>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('Description_EN', currentLanguage) }}</label>
+            <ion-textarea [(ngModel)]="item.Description_EN" rows="2"
+                          [placeholder]="getFieldLabel('Description_EN', currentLanguage)">
+            </ion-textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('Description_TC', currentLanguage) }}</label>
+            <ion-textarea [(ngModel)]="item.Description_TC" rows="2"
+                          [placeholder]="getFieldLabel('Description_TC', currentLanguage)">
+            </ion-textarea>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('price', currentLanguage) }}</label>
+            <ion-input [(ngModel)]="item.price" type="number"
+                       [placeholder]="getFieldLabel('price', currentLanguage)">
+            </ion-input>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label-small">{{ getFieldLabel('imageUrl', currentLanguage) }}</label>
+            <ion-input [(ngModel)]="item.imageUrl" type="url"
+                       [placeholder]="getFieldLabel('imageUrl', currentLanguage)">
+            </ion-input>
+          </div>
+
+        </div>
+
+        <!-- Remove this row -->
+        <ion-button fill="clear" size="small" color="danger" (click)="removeExtractedItem(i)">
+          <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+
+      </div>
+
+      <!-- Empty state when all rows have been removed -->
+      <p *ngIf="extractedMenuItems.length === 0" class="no-items-text">
+        {{ currentLanguage === 'TC' ? '未提取到項目' : 'No items to import' }}
+      </p>
+    </div>
+
+  </ng-container>
+
+</ion-content>
+
+<!-- Footer: different actions for each step -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+
+      <!-- Step 2 actions: save all or cancel -->
+      <ng-container *ngIf="showExtractedItemsReview">
+        <ion-button expand="block" color="success"
+                    [disabled]="extractedMenuItems.length === 0"
+                    (click)="saveExtractedMenuItems()">
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          {{ currentLanguage === 'TC'
+              ? translations.saveAll.TC + ' (' + extractedMenuItems.length + ')'
+              : translations.saveAll.EN + ' (' + extractedMenuItems.length + ')' }}
+        </ion-button>
+
+        <ion-button expand="block" color="warning" fill="outline" (click)="cancelImport()">
+          <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+          {{ currentLanguage === 'TC' ? '返回' : 'Back' }}
+        </ion-button>
+      </ng-container>
+
+      <!-- Step 1 action: close -->
+      <ng-container *ngIf="!showExtractedItemsReview">
+        <ion-button expand="block" fill="outline" (click)="dismiss()">
+          <ion-icon name="close-outline" slot="start"></ion-icon>
+          {{ currentLanguage === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+        </ion-button>
+      </ng-container>
+
+    </div>
+  </ion-toolbar>
+</ion-footer>

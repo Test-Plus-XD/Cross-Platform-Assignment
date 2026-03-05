@@ -1,0 +1,111 @@
+<!-- Modal for adding or editing a single menu item -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      {{ isEditing
+          ? (currentLanguage === 'TC' ? translations.editMenuItem.TC : translations.editMenuItem.EN)
+          : (currentLanguage === 'TC' ? translations.addMenuItem.TC  : translations.addMenuItem.EN) }}
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Name (English) -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('Name_EN', currentLanguage) }}</ion-label>
+    <ion-input [(ngModel)]="editedMenuItem.Name_EN"
+               [placeholder]="currentLanguage === 'TC' ? '輸入英文名稱' : 'Enter name in English'">
+    </ion-input>
+  </div>
+
+  <!-- Name (Chinese) -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('Name_TC', currentLanguage) }}</ion-label>
+    <ion-input [(ngModel)]="editedMenuItem.Name_TC"
+               [placeholder]="currentLanguage === 'TC' ? '輸入中文名稱' : 'Enter name in Chinese'">
+    </ion-input>
+  </div>
+
+  <!-- Description (English) -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('Description_EN', currentLanguage) }}</ion-label>
+    <ion-textarea [(ngModel)]="editedMenuItem.Description_EN"
+                  rows="3"
+                  [placeholder]="currentLanguage === 'TC' ? '輸入英文描述' : 'Enter description in English'">
+    </ion-textarea>
+  </div>
+
+  <!-- Description (Chinese) -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('Description_TC', currentLanguage) }}</ion-label>
+    <ion-textarea [(ngModel)]="editedMenuItem.Description_TC"
+                  rows="3"
+                  [placeholder]="currentLanguage === 'TC' ? '輸入中文描述' : 'Enter description in Chinese'">
+    </ion-textarea>
+  </div>
+
+  <!-- Price -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('price', currentLanguage) }}</ion-label>
+    <ion-input [(ngModel)]="editedMenuItem.price"
+               type="number"
+               [placeholder]="currentLanguage === 'TC' ? '輸入價格' : 'Enter price'">
+    </ion-input>
+  </div>
+
+  <!-- Image upload -->
+  <div class="field-group">
+    <ion-label class="field-label">{{ getFieldLabel('imageUrl', currentLanguage) }}</ion-label>
+
+    <!-- Preview of newly selected file -->
+    <div class="image-preview-container" *ngIf="imagePreview">
+      <img [src]="imagePreview" alt="Preview">
+      <ion-button fill="clear" size="small" color="danger" (click)="clearImageSelection()">
+        <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </div>
+
+    <!-- Show existing image when editing and no new file has been staged -->
+    <div class="image-preview-container" *ngIf="!imagePreview && menuItem?.imageUrl">
+      <img [src]="menuItem!.imageUrl!" alt="Current image">
+      <p class="image-label">{{ currentLanguage === 'TC' ? '當前圖片' : 'Current image' }}</p>
+    </div>
+
+    <!-- Hidden file input triggered programmatically -->
+    <input type="file"
+           id="menu-item-modal-image-input"
+           accept="image/*"
+           (change)="onImageSelected($event)"
+           style="display: none;">
+
+    <ion-button size="small" fill="outline" (click)="clickImageUploadButton()">
+      <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+      {{ currentLanguage === 'TC' ? '選擇圖片' : 'Select Image' }}
+    </ion-button>
+
+    <p class="image-hint">{{ currentLanguage === 'TC' ? '最大 10MB' : 'Max 10MB' }}</p>
+  </div>
+
+</ion-content>
+
+<!-- Sticky footer with save / cancel -->
+<ion-footer>
+  <ion-toolbar>
+    <div class="footer-actions">
+      <ion-button expand="block" color="success" (click)="save()">
+        <ion-icon name="save-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
+      </ion-button>
+      <ion-button expand="block" color="warning" fill="outline" (click)="dismiss()">
+        <ion-icon name="close-outline" slot="start"></ion-icon>
+        {{ currentLanguage === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>
