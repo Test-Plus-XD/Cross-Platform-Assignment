@@ -4,7 +4,7 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { MenuItem } from '../../../services/restaurants.service';
 import { StoreFeatureService } from '../../../services/store-feature.service';
 import { MenuItemFieldLabels } from '../../../constants/restaurant-constants';
@@ -150,7 +150,7 @@ export class MenuItemModalComponent implements OnInit, OnDestroy {
   async save(): Promise<void> {
     if (!this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     // At least one name must be provided
     if (!this.editedMenuItem.Name_EN && !this.editedMenuItem.Name_TC) {
@@ -159,7 +159,7 @@ export class MenuItemModalComponent implements OnInit, OnDestroy {
     }
 
     const loading = await this.loadingController.create({
-      message: this.translations.saving[lang],
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${this.translations.saving[lang]}`,
       spinner: null
     });
     await loading.present();
@@ -215,11 +215,6 @@ export class MenuItemModalComponent implements OnInit, OnDestroy {
     } finally {
       await loading.dismiss();
     }
-  }
-
-  // Resolve the current language value from the stream.
-  private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
-    return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
   }
 
   // Display a brief bottom toast notification.

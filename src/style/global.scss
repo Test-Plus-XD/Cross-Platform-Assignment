@@ -372,20 +372,24 @@ ion-spinner {
   margin: 0 auto;
 }
 
-// Improved badges with green color (30% more green than card background)
+// Base badge shape — applied to all badges regardless of [color] attribute
 ion-badge {
   padding: 6px 12px;
   border-radius: 20px;
   font-weight: 600;
   font-size: 12px;
+}
+
+// Green theme for decorative badges that have no explicit [color] binding
+ion-badge:not([color]) {
   background: rgb(232, 255, 234);
   color: var(--ion-text-color);
 }
 
-// Dark mode badge color
+// Dark mode green for uncoloured badges only
 html.dark,
 .dark {
-  ion-badge {
+  ion-badge:not([color]) {
     background: rgb(36, 66, 41);
     color: var(--ion-text-color);
   }

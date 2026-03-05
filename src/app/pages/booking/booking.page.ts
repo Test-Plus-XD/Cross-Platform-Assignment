@@ -360,7 +360,7 @@ export class BookingPage implements OnInit, OnDestroy {
     switch (status) {
       case 'pending': return 'warning';
       case 'accepted': return 'success';
-      case 'completed': return 'primary';
+      case 'completed': return 'secondary';
       case 'declined': return 'danger';
       case 'cancelled': return 'medium';
       default: return 'medium';

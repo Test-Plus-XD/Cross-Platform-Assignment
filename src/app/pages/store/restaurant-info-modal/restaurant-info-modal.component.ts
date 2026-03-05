@@ -4,7 +4,7 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { Restaurant } from '../../../services/restaurants.service';
 import { StoreFeatureService } from '../../../services/store-feature.service';
 import { Districts } from '../../../constants/districts.const';
@@ -239,7 +239,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   // Open an Ionic alert with radio buttons so the user can pick a district.
   // Selecting a value updates both the EN and TC district fields.
   async showDistrictSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header: this.translations.selectDistrict[lang],
@@ -270,7 +270,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   // Open a checkbox alert for selecting one or more keyword tags.
   // Both EN and TC keyword arrays are updated together.
   async showKeywordsSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header: this.translations.selectKeywords[lang],
@@ -300,7 +300,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
 
   // Open a checkbox alert for selecting accepted payment methods.
   async showPaymentMethodsSelector(): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
 
     const alert = await this.alertController.create({
       header: this.translations.selectPayments[lang],
@@ -326,7 +326,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   // Open a text-input alert for a single weekday opening hours value.
   // The user types e.g. "09:00-22:00" or "Closed"; an empty value clears the entry.
   async updateOpeningHours(day: string): Promise<void> {
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
     // Show the localised day name in the alert header
     const dayLabel = lang === 'TC'
       ? this.weekdays.find(w => w.en === day)?.tc
@@ -418,11 +418,12 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   async uploadRestaurantImage(): Promise<void> {
     if (!this.selectedRestaurantImage || !this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
     this.isUploadingImage = true;
 
+    const uploadMsg = lang === 'TC' ? '上傳圖片中...' : 'Uploading image...';
     const loading = await this.loadingController.create({
-      message: lang === 'TC' ? '上傳圖片中...' : 'Uploading image...',
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${uploadMsg}`,
       spinner: null
     });
     await loading.present();
@@ -464,9 +465,9 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   async saveRestaurantInfo(): Promise<void> {
     if (!this.restaurantId) return;
 
-    const lang = await this.getCurrentLanguage();
+    const lang = this.currentLanguage;
     const loading = await this.loadingController.create({
-      message: this.translations.saving[lang],
+      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${this.translations.saving[lang]}`,
       spinner: null
     });
     await loading.present();
@@ -507,11 +508,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     } finally {
       await loading.dismiss();
     }
-  }
-
-  // Resolve the current language value synchronously from the observable.
-  private async getCurrentLanguage(): Promise<'EN' | 'TC'> {
-    return await this.lang$.pipe(take(1)).toPromise() as 'EN' | 'TC';
   }
 
   // Show a short-lived bottom toast with the given message and colour.
