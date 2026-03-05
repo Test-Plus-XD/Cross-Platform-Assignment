@@ -332,12 +332,10 @@ p {
   line-height: 1.6;
 }
 
-// Smooth transitions for all elements
-* {
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
+// Removed universal * { transition } rule — it caused every light-DOM element
+// to fire transitionend events during Ionic modal animations, flooding zone.js
+// and freezing the entire PWA.  Per-component transitions (ion-card, ion-button,
+// ion-item, .stepper-btn, etc.) already handle hover/interaction effects.
 
 // Modern loading states - Use Eclipse.gif instead of spinners
 .custom-loading {
@@ -345,21 +343,10 @@ p {
   --spinner-color: var(--ion-color-primary);
 }
 
-// Hide all ion-spinner elements and replace with Eclipse.gif
-ion-spinner {
-  display: none !important;
-
-  &::after {
-    content: '';
-    display: block;
-    width: 40px;
-    height: 40px;
-    background-image: url('/assets/icon/Eclipse.gif');
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-  }
-}
+// Removed global ion-spinner { display: none !important } — the ::after
+// pseudo-element never rendered (parent was display:none), making it dead code.
+// Hiding all spinners globally also broke ion-refresher and ion-infinite-scroll.
+// Loading overlays already use spinner:null with Eclipse.gif <img> tags.
 
 // Alternative: Show Eclipse.gif for loading states
 .loading-spinner-replacement {
