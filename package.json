@@ -5,7 +5,7 @@
   "main": "instrument.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "ng test --watch=false --browsers=ChromeHeadlessCI",
     "install:all": "npm --prefix app install && npm --prefix api install",
     "start:api": "node API/API.js",
     "start:app:static": "node -e \"const http = require('http'), fs=require('fs'), p='app/index.html'; http.createServer((r,s)=>{ if(r.url=='/'){ s.writeHead(200,{'Content-Type':'text/html'}); s.end(fs.readFileSync(p)); } else { s.writeHead(404); s.end(); }}).listen(8080); console.log('Static server on http://localhost:8080');\"",
