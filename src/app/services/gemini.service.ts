@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError, from } from 'rxjs';
+import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 
@@ -8,6 +8,20 @@ import { DataService } from './data.service';
 export interface ChatHistoryEntry {
   role: 'user' | 'model';
   parts: string;
+}
+
+// AI-generated advertisement response interface
+export interface AdvertisementGenerationResponse {
+  Title_EN: string;
+  Title_TC: string;
+  Content_EN: string;
+  Content_TC: string;
+  restaurant: {
+    name: string;
+    cuisine: string;
+    district: string;
+    keywords: string[];
+  };
 }
 
 // AI response interface matching actual API response
@@ -195,5 +209,48 @@ export class GeminiService {
       : `What are some popular menu items you would recommend?`;
 
     return this.chat(prompt, true);
+  }
+
+  /**
+   * Generate bilingual advertisement content for a restaurant using AI.
+   * Requires authentication (restaurant owner).
+   * @param name - Restaurant name
+   * @param cuisine - Type of cuisine
+   * @param district - Restaurant district/location
+   * @param keywords - Optional keywords/features
+   */
+  generateAdvertisement(
+    name: string,
+    cuisine: string,
+    district: string,
+    keywords?: string[],
+    message?: string
+  ): Observable<AdvertisementGenerationResponse> {
+    this.isLoading.next(true);
+    console.log('GeminiService: Generating advertisement content');
+
+    const body: any = { name, cuisine, district, keywords: keywords || [] };
+    if (message && message.trim()) {
+      body.message = message.trim();
+    }
+
+    return from(this.authService.getIdToken()).pipe(
+      switchMap(token =>
+        this.dataService.post<AdvertisementGenerationResponse>(
+          '/API/Gemini/restaurant-advertisement',
+          body,
+          token
+        )
+      ),
+      tap(() => {
+        this.isLoading.next(false);
+        console.log('GeminiService: Advertisement content generated');
+      }),
+      catchError(error => {
+        console.error('GeminiService: Error generating advertisement', error);
+        this.isLoading.next(false);
+        return throwError(() => error);
+      })
+    );
   }
 }

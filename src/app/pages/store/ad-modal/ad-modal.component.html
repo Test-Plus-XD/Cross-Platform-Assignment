@@ -22,6 +22,42 @@
 
   <div class="form-container" [class.hidden]="isSubmitting">
 
+    <!-- AI Generation Button -->
+    <div class="ai-generate-section" *ngIf="restaurantName">
+      <ion-item class="ai-message-item" lines="none">
+        <ion-label position="stacked">
+          {{ (lang$ | async) === 'TC' ? 'AI 提示（選填）' : 'AI Prompt (optional)' }}
+        </ion-label>
+        <ion-textarea
+          [(ngModel)]="adMessage"
+          [placeholder]="(lang$ | async) === 'TC'
+            ? '例如：主打週末早午餐優惠、強調環保食材...'
+            : 'e.g. Focus on our weekend brunch special, highlight eco-friendly ingredients...'"
+          [disabled]="isSubmitting || isGenerating"
+          [autoGrow]="true"
+          rows="2"
+          maxlength="500">
+        </ion-textarea>
+      </ion-item>
+      <ion-button
+        expand="block"
+        fill="outline"
+        color="tertiary"
+        (click)="generateWithAI()"
+        [disabled]="isSubmitting || isGenerating">
+        <ion-icon name="sparkles-outline" slot="start"></ion-icon>
+        {{ isGenerating
+          ? ((lang$ | async) === 'TC' ? 'AI 生成中...' : 'Generating...')
+          : ((lang$ | async) === 'TC' ? '用 AI 生成內容' : 'Generate with AI') }}
+      </ion-button>
+      <p class="ai-note">
+        <ion-icon name="information-circle-outline"></ion-icon>
+        {{ (lang$ | async) === 'TC'
+          ? 'AI 將根據你的餐廳資料自動生成雙語廣告文案。'
+          : 'AI will generate bilingual ad content based on your restaurant details.' }}
+      </p>
+    </div>
+
     <!-- English Section -->
     <div class="language-section">
       <div class="language-header">

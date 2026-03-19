@@ -761,7 +761,14 @@ export class StorePage implements OnInit, OnDestroy {
   async openAdModal(sessionId: string): Promise<void> {
     const modal = await this.modalController.create({
       component: AdModalComponent,
-      componentProps: { sessionId, restaurantId: this.restaurantId }
+      componentProps: {
+        sessionId,
+        restaurantId: this.restaurantId,
+        restaurantName: this.restaurant?.Name_EN || this.restaurant?.Name_TC || '',
+        restaurantCuisine: (this.restaurant?.Keyword_EN || []).join(', '),
+        restaurantDistrict: this.restaurant?.District_EN || this.restaurant?.District_TC || '',
+        restaurantKeywords: this.restaurant?.Keyword_EN || []
+      }
     });
     await modal.present();
 

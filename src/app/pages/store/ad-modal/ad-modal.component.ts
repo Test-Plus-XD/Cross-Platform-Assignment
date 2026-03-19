@@ -3,6 +3,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { AdvertisementsService, CreateAdvertisementRequest } from '../../../services/advertisements.service';
+import { GeminiService } from '../../../services/gemini.service';
 import { DataService } from '../../../services/data.service';
 import { LanguageService } from '../../../services/language.service';
 import { Observable } from 'rxjs';
@@ -18,6 +19,11 @@ export class AdModalComponent implements OnInit {
   @Input() sessionId: string = '';
   /** Restaurant ID — pre-filled from the owner's store context */
   @Input() restaurantId: string = '';
+  /** Restaurant details — passed from StorePage for AI content generation */
+  @Input() restaurantName: string = '';
+  @Input() restaurantCuisine: string = '';
+  @Input() restaurantDistrict: string = '';
+  @Input() restaurantKeywords: string[] = [];
 
   // Language stream for bilingual UI
   lang$: Observable<string>;
@@ -38,13 +44,18 @@ export class AdModalComponent implements OnInit {
   imageFileTC: File | null = null;
   imagePreviewTC: string | null = null;
 
+  // AI message input — optional context the owner provides before generating
+  adMessage: string = '';
+
   // UI state
   isSubmitting: boolean = false;
+  isGenerating: boolean = false;
 
   constructor(
     private readonly modalController: ModalController,
     private readonly toastController: ToastController,
     private readonly advertisementsService: AdvertisementsService,
+    private readonly geminiService: GeminiService,
     private readonly dataService: DataService,
     private readonly languageService: LanguageService
   ) {
@@ -94,6 +105,47 @@ export class AdModalComponent implements OnInit {
       console.error('AdModalComponent: Image upload failed', err);
       return null;
     }
+  }
+
+  /** Generate bilingual ad content using Gemini AI and populate form fields */
+  async generateWithAI(): Promise<void> {
+    if (!this.restaurantName) {
+      const toast = await this.toastController.create({
+        message: 'Restaurant details not available for AI generation.',
+        duration: 3000,
+        color: 'warning'
+      });
+      await toast.present();
+      return;
+    }
+
+    this.isGenerating = true;
+
+    this.geminiService.generateAdvertisement(
+      this.restaurantName,
+      this.restaurantCuisine,
+      this.restaurantDistrict,
+      this.restaurantKeywords,
+      this.adMessage
+    ).subscribe({
+      next: (result) => {
+        this.titleEN = result.Title_EN || '';
+        this.titleTC = result.Title_TC || '';
+        this.contentEN = result.Content_EN || '';
+        this.contentTC = result.Content_TC || '';
+        this.isGenerating = false;
+      },
+      error: async (err) => {
+        console.error('AdModalComponent: AI generation failed', err);
+        const toast = await this.toastController.create({
+          message: 'Failed to generate content. Please try again or write manually.',
+          duration: 3000,
+          color: 'danger'
+        });
+        await toast.present();
+        this.isGenerating = false;
+      }
+    });
   }
 
   /**
