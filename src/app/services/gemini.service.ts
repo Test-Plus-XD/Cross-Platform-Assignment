@@ -18,7 +18,6 @@ export interface AdvertisementGenerationResponse {
   Content_TC: string;
   restaurant: {
     name: string;
-    cuisine: string;
     district: string;
     keywords: string[];
   };
@@ -214,14 +213,16 @@ export class GeminiService {
   /**
    * Generate bilingual advertisement content for a restaurant using AI.
    * Requires authentication (restaurant owner).
+   * Menu items are fetched server-side from Firestore and used as the cuisine context.
+   * @param restaurantId - Restaurant document ID (menu is fetched from Firestore)
    * @param name - Restaurant name
-   * @param cuisine - Type of cuisine
    * @param district - Restaurant district/location
    * @param keywords - Optional keywords/features
+   * @param message - Optional additional context for the ad
    */
   generateAdvertisement(
+    restaurantId: string,
     name: string,
-    cuisine: string,
     district: string,
     keywords?: string[],
     message?: string
@@ -229,7 +230,7 @@ export class GeminiService {
     this.isLoading.next(true);
     console.log('GeminiService: Generating advertisement content');
 
-    const body: any = { name, cuisine, district, keywords: keywords || [] };
+    const body: any = { restaurantId, name, district, keywords: keywords || [] };
     if (message && message.trim()) {
       body.message = message.trim();
     }

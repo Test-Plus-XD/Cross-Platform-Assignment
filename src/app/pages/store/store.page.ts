@@ -5,14 +5,13 @@
 //                 bulk-import via BulkMenuImportModalComponent
 //   3. Bookings — view and action pending/accepted/declined/cancelled bookings
 //   4. Ads      — manage Stripe-paid advertisement placements
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, AfterViewInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
+import { AlertController, ToastController, LoadingController, ModalController, ViewWillEnter } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { AdModalComponent } from './ad-modal/ad-modal.component';
-import { RestaurantInfoModalComponent } from './restaurant-info-modal/restaurant-info-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
 import { DataService } from '../../services/data.service';
@@ -35,7 +34,7 @@ import { MenuItemFieldLabels } from '../../constants/restaurant-constants';
   // ChangeDetectorRef.markForCheck() is called manually after async state changes.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StorePage implements OnInit, OnDestroy {
+export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // Reference to the floating ChatButtonComponent used by navigateToChat()
   @ViewChild('chatButton') chatButton?: ChatButtonComponent;
 
@@ -233,6 +232,13 @@ export class StorePage implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // Reload restaurant data when returning from the edit-info sub-page
+  ionViewWillEnter(): void {
+    if (this.restaurantId && !this.isLoading) {
+      this.loadRestaurant();
+    }
+  }
+
   // ── Data loading ──────────────────────────────────────────────────────────────
 
   // Entry point for all data loading.
@@ -378,26 +384,11 @@ export class StorePage implements OnInit, OnDestroy {
 
   // ── Modal openers ─────────────────────────────────────────────────────────────
 
-  // Open the restaurant info editing modal.
-  // When the modal reports { updated: true } on dismiss, the restaurant is reloaded
-  // so the read-only info view reflects the new values immediately.
-  async openRestaurantInfoModal(): Promise<void> {
+  // Navigate to the restaurant info editing sub-page.
+  // Data is reloaded via ionViewWillEnter when returning from the edit page.
+  openRestaurantInfoModal(): void {
     if (!this.restaurant || !this.restaurantId) return;
-
-    const modal = await this.modalController.create({
-      component: RestaurantInfoModalComponent,
-      componentProps: {
-        restaurantId: this.restaurantId,
-        restaurant:   this.restaurant
-      }
-    });
-    await modal.present();
-
-    const { data } = await modal.onWillDismiss();
-    // Reload only if the user actually saved changes (not on cancel/dismiss)
-    if (data?.updated) {
-      this.loadRestaurant();
-    }
+    this.router.navigate(['/store/edit-info']);
   }
 
   // Open the menu item editor in add mode (no item argument) or edit mode.
@@ -765,7 +756,6 @@ export class StorePage implements OnInit, OnDestroy {
         sessionId,
         restaurantId: this.restaurantId,
         restaurantName: this.restaurant?.Name_EN || this.restaurant?.Name_TC || '',
-        restaurantCuisine: (this.restaurant?.Keyword_EN || []).join(', '),
         restaurantDistrict: this.restaurant?.District_EN || this.restaurant?.District_TC || '',
         restaurantKeywords: this.restaurant?.Keyword_EN || []
       }

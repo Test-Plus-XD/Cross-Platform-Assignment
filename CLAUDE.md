@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-03-05 | **Version:** 1.13.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-03-19 | **Version:** 1.14.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -54,6 +54,11 @@ src/app/
 │   ├── user/                  # User profile (auth-protected)
 │   ├── bookings/              # Reservation management
 │   ├── store/                 # Restaurant admin panel
+│   │   ├── store.page.ts/html/scss           # Main store page (Info/Menu/Bookings/Ads tabs)
+│   │   ├── restaurant-info-modal/            # Edit info sub-page (/store/edit-info)
+│   │   ├── ad-modal/                         # Ad creation modal (post-Stripe payment)
+│   │   ├── menu-item-modal/                  # Add/edit menu item modal
+│   │   └── bulk-menu-import-modal/           # DocuPipe bulk import modal
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
 │   └── test/                  # Development/testing
@@ -987,6 +992,7 @@ isRestaurantUser$ = this.userService.currentProfile$.pipe(
 | `/user` | UserPage | ✅ (GuardService) | Account / 帳戶 |
 | `/bookings` | BookingsPage | ✅ | Bookings / 預訂 |
 | `/store` | StorePage | ✅ | Store / 商店 |
+| `/store/edit-info` | RestaurantInfoModalComponent | ✅ | Edit Restaurant Info / 編輯餐廳資料 |
 | `/login` | LoginPage | ❌ | Login / 登入 |
 | `/chat` | ChatPage | ❌ | Chat / 聊天 |
 
@@ -1404,6 +1410,18 @@ on('user-offline', { userId, displayName, lastSeen });
 - UserService: `getUserProfile()`, `getAllUsers()`
 - RestaurantsService: `searchRestaurants()`, `searchRestaurantsWithFilters()`, `getRestaurantById()`, `getMenuItems()`, `getMenuItem()`
 
+### Store Page Modal Freeze (v1.14.0)
+**Issue:** All modals on the store page froze the page on open (page unresponsive).
+
+**Root cause:** `transition: all 0.3s ease` on `ion-card` in `global.scss` applied a CSS transition to every property on every card. When Ionic modal animations changed properties (opacity, transform, etc.), each `ion-card` inside the modal fired multiple `transitionend` events, flooding zone.js and freezing the entire PWA. The RestaurantInfoModal contained 7 `ion-card` elements, making it the worst offender. Three additional `transition: all` rules existed in `store.page.scss`.
+
+**Fix:**
+1. Changed `ion-card { transition: all }` to `transition: transform, box-shadow` in `global.scss` — only the properties used by the hover effect.
+2. Fixed 3 more `transition: all` rules in `store.page.scss` (`.menu-item-card`, `.extracted-item-row`, `.field-group` inputs).
+3. Converted `RestaurantInfoModalComponent` from a modal to a routed sub-page (`/store/edit-info`) — eliminates modal animation entirely for the heaviest component (519 lines TS, 295 lines HTML, 7 cards, Google Maps embed, image upload).
+
+**Files modified:** `src/style/global.scss`, `src/app/pages/store/store.page.scss`, `src/app/pages/store/store-routing.module.ts`, `src/app/pages/store/restaurant-info-modal/restaurant-info-modal.component.ts|html`, `src/app/pages/store/store.page.ts`
+
 ### Auth Guard Race Condition (v1.11.1)
 **Issue:** When refreshing or re-entering a protected route while logged in, users were spuriously redirected to `/login`, which then auto-redirected to `/user`. Stripe payment redirects to `/store?payment_success=true&session_id=...` were intercepted, losing the session ID and breaking ad creation.
 
@@ -1542,6 +1560,7 @@ app.method('/API/Resource', authenticate, async (request, response) => {
 6. Don't create documentation files unless asked
 7. Don't expose sensitive data in logs
 8. Don't skip ownership checks on protected routes
+9. **Never use `transition: all` in CSS** — it causes `transitionend` events to flood zone.js during Ionic modal animations, freezing the entire PWA. Always scope transitions to specific properties (e.g. `transition: transform 0.3s ease, box-shadow 0.3s ease`)
 
 ### When Making Changes
 
@@ -1649,6 +1668,7 @@ API (verify) → Extract UID → Ownership checks
 **Document Version:** 1.13.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.14.0** (2026-03-19): **Store page modal freeze fix + RestaurantInfoModal converted to sub-page.** Root cause: `transition: all 0.3s ease` on `ion-card` in `global.scss` flooded zone.js with `transitionend` events during Ionic modal animations (same class of bug as the `*` selector fix in v1.0). Fixed by scoping transitions to only the properties used in hover effects (`transform`, `box-shadow`). Also fixed 3 additional `transition: all` rules in `store.page.scss`. `RestaurantInfoModalComponent` (519 lines TS, 7 cards, Google Maps, image upload) converted from modal to routed sub-page at `/store/edit-info` — uses `ionViewWillEnter` on StorePage to reload data on return. Remaining store modals (AdModal, MenuItemModal, BulkMenuImportModal) keep modal pattern; CSS fix resolves freeze for them.
 - **v1.13.0** (2026-03-05): **Booking modal with opening hours awareness.** Replaced inline booking form with `BookingModalComponent` modal (triggered by Reserve button). Modal features: inline `ion-datetime` (24h HK timezone), live opening hours status badge (green/amber/grey), guest stepper (1-10), special requests textarea, confirmation footer button. Opens after login check; shows warning toast if booking outside hours (non-blocking). Uses `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone to reliably extract HK weekday/time from any ISO datetime. Opening hours parsing supports both string (`"11:30-21:30"`) and object (`{open,close}`) formats with dash variants (`-`, `–`, `~`). UX: tap Reserve → login if needed → pick date/time/guests → confirm → toast feedback. Bilingual (EN/TC) throughout.
 - **v1.12.0** (2026-03-04): **Booking system overhaul — payment logic removed, accept/decline workflow added.** Status values changed from `pending/confirmed/cancelled` to `pending/accepted/declined/cancelled/completed`. `paymentStatus`/`paymentIntentId` removed from all booking operations. New `declineMessage` field (set by restaurant owner on decline). Added `GET /restaurant/:restaurantId` endpoint (owner-only, enriches each booking with diner displayName/email/phoneNumber). `PUT /:id` now supports dual-ownership: diners can edit/cancel pending bookings; restaurant owners can accept/decline/complete. `DELETE /:id` enforces 30-day rule. Diner booking page: added edit/delete actions, declined status tab, decline message display. Store page: added status filter tabs (Pending/Accepted/Declined/Cancelled/All), diner info per card, Accept/Decline buttons with optional decline message, chat button.
 - **v1.11.1** (2026-03-04): **Critical auth guard race condition fix.** Fixed spurious redirects to `/login` when refreshing or re-entering protected pages while logged in. **Root cause:** `AuthGuard.canActivate()` used `take(1)` on a BehaviorSubject initialized with `null`, firing before Firebase's `onAuthStateChanged` could restore the persisted session (~300-800ms delay). **Fixes:** (1) Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback. (2) Guard now waits for `authInitialized$` before checking auth state. (3) Guard passes `returnUrl` query param when redirecting, preserving deep links (esp. Stripe's `?payment_success=true&session_id=...`). (4) LoginPage now reads `returnUrl` and navigates there post-auth instead of always `/user`. (5) Added localStorage failsafe in StorePage: saves pending ad sessions to localStorage, allowing users to resume ad creation if modal is accidentally closed after Stripe payment. **Result:** Stripe payment flow now works reliably; all deep links preserved through auth redirects.

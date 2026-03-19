@@ -21,7 +21,6 @@ export class AdModalComponent implements OnInit {
   @Input() restaurantId: string = '';
   /** Restaurant details — passed from StorePage for AI content generation */
   @Input() restaurantName: string = '';
-  @Input() restaurantCuisine: string = '';
   @Input() restaurantDistrict: string = '';
   @Input() restaurantKeywords: string[] = [];
 
@@ -122,8 +121,8 @@ export class AdModalComponent implements OnInit {
     this.isGenerating = true;
 
     this.geminiService.generateAdvertisement(
+      this.restaurantId,
       this.restaurantName,
-      this.restaurantCuisine,
       this.restaurantDistrict,
       this.restaurantKeywords,
       this.adMessage

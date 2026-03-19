@@ -1,8 +1,9 @@
-// Modal component for editing all restaurant information fields.
-// Opened by StorePage when the user taps "Edit Info".
-// On save it dismisses with { updated: true } so the parent reloads restaurant data.
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
+// Sub-page for editing all restaurant information fields.
+// Navigated to from StorePage via /store/edit-info route.
+// On save it navigates back to /store so the parent reloads restaurant data.
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
+import { AlertController, ToastController, LoadingController } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Restaurant } from '../../../services/restaurants.service';
@@ -19,9 +20,12 @@ import { Weekdays } from '../../../constants/weekdays.const';
   standalone: false
 })
 export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
-  // Passed in from StorePage via ModalController componentProps
-  @Input() restaurantId!: string;
-  @Input() restaurant!: Restaurant;
+  // Loaded from user profile → restaurant service (no longer @Input)
+  restaurantId: string | null = null;
+  restaurant: Restaurant | null = null;
+
+  // Loading state for initial data fetch
+  isPageLoading = true;
 
   // Static reference data for selector dialogs
   districts = Districts;
@@ -68,7 +72,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   // RxJS teardown subject
   private destroy$ = new Subject<void>();
 
-  // Bilingual UI strings used throughout this modal
+  // Bilingual UI strings used throughout this page
   translations = {
     saveChanges:     { EN: 'Save Changes',             TC: '儲存變更' },
     cancel:          { EN: 'Cancel',                   TC: '取消' },
@@ -85,7 +89,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly feature: StoreFeatureService,
-    private readonly modalController: ModalController,
+    private readonly router: Router,
     private readonly alertController: AlertController,
     private readonly toastController: ToastController,
     private readonly loadingController: LoadingController
@@ -97,11 +101,8 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       this.currentLanguage = lang;
     });
 
-    // Pre-populate the form from the parent-supplied restaurant object
-    this.initializeEditedInfo(this.restaurant);
-
-    // Delay map init so the modal DOM is fully rendered before Google Maps attaches
-    setTimeout(() => this.initializeMap(), 300);
+    // Load restaurant data from user profile
+    this.loadRestaurantData();
   }
 
   ngOnDestroy(): void {
@@ -111,14 +112,60 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // Dismiss the modal without saving any changes
+  // Navigate back to the store page without saving
   dismiss(): void {
     this.destroyMap();
-    this.modalController.dismiss({ updated: false });
+    this.router.navigate(['/store']);
+  }
+
+  // Load the restaurant data by resolving the user's restaurantId
+  private loadRestaurantData(): void {
+    const currentUser = this.feature.auth.currentUser;
+    if (!currentUser?.uid) {
+      this.isPageLoading = false;
+      this.router.navigate(['/store']);
+      return;
+    }
+
+    this.feature.user.getUserProfile(currentUser.uid)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (userProfile) => {
+          if (!userProfile?.restaurantId?.trim()) {
+            this.isPageLoading = false;
+            this.router.navigate(['/store']);
+            return;
+          }
+
+          this.restaurantId = userProfile.restaurantId;
+          this.feature.restaurants.getRestaurantById(this.restaurantId)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (restaurant) => {
+                if (!restaurant) {
+                  this.isPageLoading = false;
+                  this.router.navigate(['/store']);
+                  return;
+                }
+                this.restaurant = restaurant;
+                this.isPageLoading = false;
+                this.initializeEditedInfo(restaurant);
+                setTimeout(() => this.initializeMap(), 100);
+              },
+              error: (err) => {
+                console.error('RestaurantInfoEdit: error loading restaurant:', err);
+                this.isPageLoading = false;
+              }
+            });
+        },
+        error: (err) => {
+          console.error('RestaurantInfoEdit: error loading user profile:', err);
+          this.isPageLoading = false;
+        }
+      });
   }
 
   // Copy restaurant fields into the editable form model.
-  // Called once on init and again on cancel to reset to original values.
   private initializeEditedInfo(restaurant: Restaurant): void {
     this.editedInfo = {
       Name_EN:     restaurant.Name_EN     || '',
@@ -154,10 +201,8 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     const result: { [key: string]: string } = {};
     for (const [key, value] of Object.entries(openingHours)) {
       if (typeof value === 'string') {
-        // Already a string — use as-is
         result[key] = value;
       } else if (value && typeof value === 'object') {
-        // Object format from older API responses: { open: "HH:MM", close: "HH:MM" }
         const oc = value as { open?: string | null; close?: string | null };
         if (oc.open && oc.close) {
           result[key] = `${oc.open}-${oc.close}`;
@@ -167,19 +212,16 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     return result;
   }
 
-  // Initialise the Google Map inside the modal's map container div.
-  // Centres on the existing restaurant location (or Hong Kong default).
+  // Initialise the Google Map inside the page's map container div.
   private initializeMap(): void {
-    // Guard against double-initialisation
     if (this.mapInitialized || this.map) return;
 
     const mapContainer = document.getElementById('info-modal-map');
     if (!mapContainer) {
-      console.warn('RestaurantInfoModal: map container not found');
+      console.warn('RestaurantInfoEdit: map container not found');
       return;
     }
 
-    // Default centre: Hong Kong Island
     const centerLat = this.editedInfo.Latitude  || 22.3193;
     const centerLng = this.editedInfo.Longitude || 114.1694;
 
@@ -192,7 +234,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       streetViewControl: false
     });
 
-    // Drop an existing marker if coordinates are already set
     if (this.mapMarker) {
       this.marker = new google.maps.Marker({
         position: { lat: this.mapMarker.lat, lng: this.mapMarker.lng },
@@ -200,7 +241,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Each click moves the pin and updates the coordinate fields
     this.map.addListener('click', (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
         this.onMapClick(event.latLng.lat(), event.latLng.lng());
@@ -208,16 +248,13 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     });
 
     this.mapInitialized = true;
-    console.log('RestaurantInfoModal: map initialised');
   }
 
-  // Update coordinate fields and reposition the map marker on every click.
   private onMapClick(lat: number, lng: number): void {
     this.editedInfo.Latitude  = lat;
     this.editedInfo.Longitude = lng;
     this.mapMarker = { lat, lng };
 
-    // Remove the previous pin before adding the new one
     if (this.marker) {
       this.marker.setMap(null);
       this.marker = null;
@@ -230,14 +267,11 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Remove and null out all Google Maps objects to free browser memory.
   private destroyMap(): void {
     if (this.marker) { this.marker.setMap(null); this.marker = null; }
     if (this.map)    { this.map = null; this.mapInitialized = false; }
   }
 
-  // Open an Ionic alert with radio buttons so the user can pick a district.
-  // Selecting a value updates both the EN and TC district fields.
   async showDistrictSelector(): Promise<void> {
     const lang = this.currentLanguage;
 
@@ -254,7 +288,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
         {
           text: 'OK',
           handler: (value: string) => {
-            // Find the full district object to get both language values
             const district = this.districts.find(d => d.en === value);
             if (district) {
               this.editedInfo.District_EN = district.en;
@@ -267,8 +300,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Open a checkbox alert for selecting one or more keyword tags.
-  // Both EN and TC keyword arrays are updated together.
   async showKeywordsSelector(): Promise<void> {
     const lang = this.currentLanguage;
 
@@ -285,7 +316,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
         {
           text: 'OK',
           handler: (values: string[]) => {
-            // Store EN values; derive TC equivalents from the constants list
             this.editedInfo.Keyword_EN = values;
             this.editedInfo.Keyword_TC = values.map(v => {
               const kw = this.keywords.find(k => k.en === v);
@@ -298,7 +328,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Open a checkbox alert for selecting accepted payment methods.
   async showPaymentMethodsSelector(): Promise<void> {
     const lang = this.currentLanguage;
 
@@ -323,11 +352,8 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Open a text-input alert for a single weekday opening hours value.
-  // The user types e.g. "09:00-22:00" or "Closed"; an empty value clears the entry.
   async updateOpeningHours(day: string): Promise<void> {
     const lang = this.currentLanguage;
-    // Show the localised day name in the alert header
     const dayLabel = lang === 'TC'
       ? this.weekdays.find(w => w.en === day)?.tc
       : day;
@@ -348,7 +374,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
             if (data.hours?.trim()) {
               this.editedInfo.Opening_Hours[day] = data.hours.trim();
             } else {
-              // Empty input removes the day entry entirely
               delete this.editedInfo.Opening_Hours[day];
             }
           }
@@ -358,7 +383,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     await alert.present();
   }
 
-  // Return a comma-separated keyword display string in the requested language.
   getKeywordDisplay(lang: 'EN' | 'TC'): string {
     if (lang === 'TC' && this.editedInfo.Keyword_TC.length) {
       return this.editedInfo.Keyword_TC.join(', ');
@@ -369,7 +393,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     return lang === 'TC' ? '未選擇' : 'Not selected';
   }
 
-  // Return a comma-separated payment methods display string in the requested language.
   getPaymentDisplay(lang: 'EN' | 'TC'): string {
     if (!this.editedInfo.Payments.length) {
       return lang === 'TC' ? '未選擇' : 'Not selected';
@@ -380,24 +403,20 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     }).join(', ');
   }
 
-  // Trigger the hidden file input element for restaurant image selection.
   clickRestaurantImageUploadButton(): void {
     const input = document.getElementById('modal-restaurant-image-input') as HTMLInputElement;
     input?.click();
   }
 
-  // Validate and create a local preview when a restaurant hero image is chosen.
   onRestaurantImageSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-    // Reject non-image files
     if (!file.type.startsWith('image/')) {
       this.showToast('Please select a valid image file', 'warning');
       return;
     }
-    // Reject files over 10 MB
     if (file.size > 10 * 1024 * 1024) {
       this.showToast('Image size must be less than 10MB', 'warning');
       return;
@@ -405,7 +424,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
 
     this.selectedRestaurantImage = file;
 
-    // Generate a data-URL preview so the user sees the image before uploading
     const reader = new FileReader();
     reader.onload = (e) => {
       this.restaurantImagePreview = e.target?.result as string;
@@ -413,8 +431,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     reader.readAsDataURL(file);
   }
 
-  // Upload the selected restaurant hero image via the REST API.
-  // Updates the local restaurant.ImageUrl on success so the modal shows the new image.
   async uploadRestaurantImage(): Promise<void> {
     if (!this.selectedRestaurantImage || !this.restaurantId) return;
 
@@ -439,13 +455,14 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
         .toPromise();
 
       if (response?.imageUrl) {
-        // Reflect the new URL immediately so the preview updates
-        this.restaurant.ImageUrl = response.imageUrl;
+        if (this.restaurant) {
+          this.restaurant.ImageUrl = response.imageUrl;
+        }
         await this.showToast(lang === 'TC' ? '圖片上傳成功' : 'Image uploaded successfully', 'success');
         this.clearRestaurantImageSelection();
       }
     } catch (error: any) {
-      console.error('RestaurantInfoModal: image upload error:', error);
+      console.error('RestaurantInfoEdit: image upload error:', error);
       await this.showToast(error.message || (lang === 'TC' ? '圖片上傳失敗' : 'Image upload failed'), 'danger');
     } finally {
       this.isUploadingImage = false;
@@ -453,7 +470,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Clear the selected file and preview without uploading.
   clearRestaurantImageSelection(): void {
     this.selectedRestaurantImage = null;
     this.restaurantImagePreview = null;
@@ -461,7 +477,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     if (input) input.value = '';
   }
 
-  // Persist all edited fields to the API and dismiss the modal on success.
+  // Persist all edited fields to the API and navigate back on success.
   async saveRestaurantInfo(): Promise<void> {
     if (!this.restaurantId) return;
 
@@ -473,7 +489,6 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      // Build the API payload — null-out empty strings so the backend stores nulls
       const payload: Partial<Restaurant> = {
         Name_EN:    this.editedInfo.Name_EN.trim()    || null,
         Name_TC:    this.editedInfo.Name_TC.trim()    || null,
@@ -498,19 +513,17 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       await this.feature.restaurants.updateRestaurant(this.restaurantId, payload).toPromise();
       await this.showToast(this.translations.updateSuccess[lang], 'success');
 
-      // Signal to the parent that data has changed so it reloads
       this.destroyMap();
-      this.modalController.dismiss({ updated: true });
+      this.router.navigate(['/store']);
 
     } catch (error: any) {
-      console.error('RestaurantInfoModal: save error:', error);
+      console.error('RestaurantInfoEdit: save error:', error);
       await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
     } finally {
       await loading.dismiss();
     }
   }
 
-  // Show a short-lived bottom toast with the given message and colour.
   private async showToast(message: string, color: 'success' | 'danger' | 'warning'): Promise<void> {
     const toast = await this.toastController.create({ message, duration: 3000, position: 'bottom', color });
     await toast.present();

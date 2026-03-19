@@ -84,6 +84,8 @@
         --padding-top: 12px;
         --padding-bottom: 12px;
         font-size: 14px;
+        --text-transform: none;
+        text-transform: none;
 
         ion-label {
           display: flex;
