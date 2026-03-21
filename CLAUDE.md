@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-03-19 | **Version:** 1.14.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-03-21 | **Version:** 1.15.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -685,6 +685,7 @@ ngOnInit() {
 - `deleteRestaurant(id)` - Delete restaurant
 - `searchRestaurants(query)` - Algolia search
 - `searchRestaurantsWithFilters(query, district, keywords)` - Advanced search
+- `getNearbyRestaurants(lat, lng, radiusMetres)` - Proximity search via backend Haversine (v1.15.0)
 
 **Features:**
 - Image URL sanitization (em dash fix, v1.5.2)
@@ -1490,6 +1491,72 @@ on('user-offline', { userId, displayName, lastSeen });
 
 ---
 
+## Maps & Directions Feature (v1.15.0)
+
+### Search Page — Map View + Near Me
+
+**Toggle:** `ion-segment` in the sticky search header switches between list and map views.
+
+**Map View:**
+- Full Google Map showing markers for all search results
+- Clicking a marker opens an InfoWindow with restaurant name, district, image, distance, and "View Details" link
+- InfoWindow "View Details" navigates to `/restaurant/:id`
+- Map auto-fits bounds to show all markers
+- Default centre: Hong Kong (22.3193, 114.1694) or user location if available
+
+**Near Me Chip:**
+- Green `ion-chip` with locate icon in the filter area
+- Activates GPS via `LocationService.getCurrentLocation()`
+- Calls `RestaurantsService.getNearbyRestaurants()` (5km radius)
+- Results shown with distance badges (metres/km) in both list and map views
+- Map view adds: blue radius circle overlay + blue user location marker
+- Infinite scroll disabled when Near Me is active (finite result set)
+- Deactivating reverts to normal Algolia search
+
+**Files:**
+- `search.page.ts` — `viewMode`, `activateNearMe()`, `deactivateNearMe()`, `initializeSearchMap()`, `updateMapMarkers()`, `cleanupMap()`
+- `search.page.html` — View toggle segment, Near Me chip, map container, distance badges on cards
+- `search.page.scss` — Map container (55vh mobile, 60vh tablet, 65vh desktop), near-me chip active state
+
+### Restaurant Page — Get Directions
+
+**Button:** "Get Directions" / "路線導航" button below the embedded map on the restaurant detail page.
+
+**Behaviour:** Opens the fullscreen `MapModalComponent` with `showDirections: true`. No inline directions rendering — keeps the restaurant page simple.
+
+### Fullscreen Map Modal — Directions
+
+**Component:** `MapModalComponent` (`restaurant/map-modal.component.ts`)
+
+**Props:** `latitude`, `longitude`, `showDirections` (boolean), `restaurantName` (string), `lang` ('EN'|'TC')
+
+**Directions Features:**
+- Travel mode segment: Transit / Walking / Driving / Cycling
+- Default: TRANSIT (Hong Kong has excellent public transport)
+- Route rendered via `google.maps.DirectionsService` + `DirectionsRenderer`
+- Route info bar: duration + distance from the API response
+- Loading state with Eclipse.gif whilst fetching location/directions
+- Error handling: ZERO_RESULTS, permission denied, generic errors — all bilingual
+- "Open in Google Maps" fallback button (opens external Maps with directions URL)
+- Toolbar shows restaurant name; external link button in toolbar
+
+**Bilingual Labels:**
+- Transit / 公共交通, Walking / 步行, Driving / 駕車, Cycling / 騎車
+- Get Directions / 路線導航, Close / 關閉
+- Open in Google Maps / 在 Google Maps 開啟
+- Error messages in both EN and TC
+
+### RestaurantsService — getNearbyRestaurants()
+
+```typescript
+getNearbyRestaurants(lat: number, lng: number, radiusMetres: number = 5000): Observable<(Restaurant & { distance: number })[]>
+```
+- Calls backend `GET /API/Restaurants/nearby?lat=X&lng=Y&radius=Z`
+- Sanitises ImageUrl/Payments (reuses existing helpers)
+- Returns restaurants sorted by distance with `distance` field in metres
+
+---
+
 ## AI Assistant Guidelines
 
 ### Principles
@@ -1665,9 +1732,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.13.0 | **Maintainer:** AI Assistant
+**Document Version:** 1.15.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.15.0** (2026-03-21): **Enhanced Google Maps features — map view on search page, Near Me proximity search, and directions.** Added `getNearbyRestaurants()` to `RestaurantsService` calling backend `GET /API/Restaurants/nearby` (Haversine, 5km default radius). Search page: list/map view toggle via `ion-segment`, map shows markers for all search results with InfoWindow (name, district, image, "View Details" link). "Near Me" chip requests GPS, fetches nearby restaurants, shows distance badges on cards and radius circle on map. Restaurant page: "Get Directions" button opens fullscreen `MapModalComponent` with directions. `MapModalComponent` enhanced: `DirectionsService`/`DirectionsRenderer` integration, travel mode segment (Transit/Walking/Driving/Cycling, default Transit for HK), route info bar (duration + distance), error handling with "Open in Google Maps" fallback. All new UI text bilingual (EN/TC). Fixed 2 `transition: all` rules in `search.page.scss` → scoped to `transform, box-shadow`.
 - **v1.14.0** (2026-03-19): **Store page modal freeze fix + RestaurantInfoModal converted to sub-page.** Root cause: `transition: all 0.3s ease` on `ion-card` in `global.scss` flooded zone.js with `transitionend` events during Ionic modal animations (same class of bug as the `*` selector fix in v1.0). Fixed by scoping transitions to only the properties used in hover effects (`transform`, `box-shadow`). Also fixed 3 additional `transition: all` rules in `store.page.scss`. `RestaurantInfoModalComponent` (519 lines TS, 7 cards, Google Maps, image upload) converted from modal to routed sub-page at `/store/edit-info` — uses `ionViewWillEnter` on StorePage to reload data on return. Remaining store modals (AdModal, MenuItemModal, BulkMenuImportModal) keep modal pattern; CSS fix resolves freeze for them.
 - **v1.13.0** (2026-03-05): **Booking modal with opening hours awareness.** Replaced inline booking form with `BookingModalComponent` modal (triggered by Reserve button). Modal features: inline `ion-datetime` (24h HK timezone), live opening hours status badge (green/amber/grey), guest stepper (1-10), special requests textarea, confirmation footer button. Opens after login check; shows warning toast if booking outside hours (non-blocking). Uses `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone to reliably extract HK weekday/time from any ISO datetime. Opening hours parsing supports both string (`"11:30-21:30"`) and object (`{open,close}`) formats with dash variants (`-`, `–`, `~`). UX: tap Reserve → login if needed → pick date/time/guests → confirm → toast feedback. Bilingual (EN/TC) throughout.
 - **v1.12.0** (2026-03-04): **Booking system overhaul — payment logic removed, accept/decline workflow added.** Status values changed from `pending/confirmed/cancelled` to `pending/accepted/declined/cancelled/completed`. `paymentStatus`/`paymentIntentId` removed from all booking operations. New `declineMessage` field (set by restaurant owner on decline). Added `GET /restaurant/:restaurantId` endpoint (owner-only, enriches each booking with diner displayName/email/phoneNumber). `PUT /:id` now supports dual-ownership: diners can edit/cancel pending bookings; restaurant owners can accept/decline/complete. `DELETE /:id` enforces 30-day rule. Diner booking page: added edit/delete actions, declined status tab, decline message display. Store page: added status filter tabs (Pending/Accepted/Declined/Cancelled/All), diner info per card, Accept/Decline buttons with optional decline message, chat button.

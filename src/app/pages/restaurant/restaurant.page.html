@@ -221,6 +221,13 @@
           <div *ngIf="hasCoordinates()" class="map-container" (dblclick)="openMapModal()" (touchend)="onMapTouchEnd()">
             <div id="restaurant-map" class="leaflet-map"></div>
           </div>
+
+          <!-- Get Directions Button -->
+          <ion-button *ngIf="hasCoordinates()" expand="block" fill="outline"
+                      (click)="openDirectionsModal()" class="directions-button">
+            <ion-icon slot="start" name="navigate-outline"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '路線導航' : 'Get Directions' }}
+          </ion-button>
         </div>
 
         <!-- Menu Section -->

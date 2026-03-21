@@ -532,6 +532,50 @@ export class RestaurantsService {
     );
   }
 
+  /// Fetch nearby restaurants using the backend Haversine endpoint.
+  /// Returns restaurants sorted by distance (nearest first) with a `distance` field in metres.
+  getNearbyRestaurants(
+    lat: number,
+    lng: number,
+    radiusMetres: number = 5000
+  ): Observable<(Restaurant & { distance: number })[]> {
+    const endpoint = `${this.restaurantsEndpoint}/nearby?lat=${lat}&lng=${lng}&radius=${radiusMetres}`;
+    console.log('RestaurantsService: Fetching nearby restaurants:', endpoint);
+
+    return this.dataService.get<{ count: number; data: any[] }>(endpoint).pipe(
+      map(response => {
+        return (response.data || []).map((r: any) => ({
+          id: r.id ?? '',
+          Name_EN: r.Name_EN ?? null,
+          Name_TC: r.Name_TC ?? null,
+          Address_EN: r.Address_EN ?? null,
+          Address_TC: r.Address_TC ?? null,
+          District_EN: r.District_EN ?? null,
+          District_TC: r.District_TC ?? null,
+          Latitude: r.Latitude ?? null,
+          Longitude: r.Longitude ?? null,
+          Keyword_EN: r.Keyword_EN ?? null,
+          Keyword_TC: r.Keyword_TC ?? null,
+          Opening_Hours: r.Opening_Hours ?? null,
+          Seats: r.Seats ?? null,
+          Contacts: r.Contacts ?? null,
+          ImageUrl: this.sanitizeImageUrl(r.ImageUrl),
+          Payments: this.sanitizePayments(r.Payments),
+          ownerId: r.ownerId ?? r.Owner ?? null,
+          reviewsId: r.reviewsId ?? null,
+          distance: r.distance ?? 0
+        }));
+      }),
+      tap(list => {
+        console.log('RestaurantsService: Found', list.length, 'nearby restaurants');
+      }),
+      catchError(err => {
+        console.error('RestaurantsService: getNearbyRestaurants error', err);
+        return of([]);
+      })
+    );
+  }
+
   /// Clear local cache
   clearCache(): void {
     this.restaurantsCache.next(null);

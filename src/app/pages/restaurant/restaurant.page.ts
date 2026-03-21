@@ -570,7 +570,31 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       component: MapModalComponent,
       componentProps: {
         latitude: this.restaurant?.Latitude,
-        longitude: this.restaurant?.Longitude
+        longitude: this.restaurant?.Longitude,
+        restaurantName: this.currentLanguage === 'TC'
+          ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
+          : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || ''),
+        lang: this.currentLanguage
+      },
+      cssClass: 'fullscreen-modal'
+    });
+    await modal.present();
+    await modal.onDidDismiss();
+  }
+
+  /// Open fullscreen map modal with directions enabled
+  async openDirectionsModal(): Promise<void> {
+    if (!this.hasCoordinates()) return;
+    const modal = await this.modalController.create({
+      component: MapModalComponent,
+      componentProps: {
+        latitude: this.restaurant?.Latitude,
+        longitude: this.restaurant?.Longitude,
+        showDirections: true,
+        restaurantName: this.currentLanguage === 'TC'
+          ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
+          : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || ''),
+        lang: this.currentLanguage
       },
       cssClass: 'fullscreen-modal'
     });

@@ -85,7 +85,7 @@
       font-size: 0.875rem;
       font-weight: 500;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s ease;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       cursor: pointer;
 
       &:hover {
@@ -229,7 +229,7 @@
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
 
     &:hover {
@@ -364,6 +364,62 @@
       display: none;
     }
   }
+  // View toggle segment in search header
+  .view-toggle {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.75rem;
+
+    ion-segment {
+      width: auto;
+      min-width: 100px;
+
+      ion-segment-button {
+        --padding-start: 0.5rem;
+        --padding-end: 0.5rem;
+        min-width: 44px;
+        min-height: 36px;
+
+        ion-icon {
+          font-size: 1.25rem;
+        }
+      }
+    }
+  }
+  // Near Me chip active state
+  .near-me-chip {
+    &.near-me-active {
+      --background: rgb(232, 255, 234) !important;
+      --color: rgb(0, 100, 0) !important;
+
+      ion-label {
+        color: rgb(0, 100, 0) !important;
+      }
+
+      ion-icon {
+        color: rgb(0, 100, 0) !important;
+      }
+    }
+  }
+  // Map view container
+  .map-view-container {
+    margin-bottom: 2rem;
+
+    .search-map {
+      width: 100%;
+      height: 55vh;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+  }
+  // Distance badge on restaurant cards
+  .distance-row {
+    .distance-text {
+      font-weight: 600;
+      color: var(--ion-color-primary) !important;
+    }
+  }
   // Bottom spacer for mobile navigation
   .bottom-spacer {
     height: 2rem;
@@ -387,6 +443,10 @@
     .restaurant-card .card-image-container {
       height: 220px;
     }
+
+    .map-view-container .search-map {
+      height: 60vh;
+    }
   }
   // Responsive adjustments for desktop
   @media (min-width: 1024px) {
@@ -396,6 +456,10 @@
 
     .restaurant-card .card-image-container {
       height: 240px;
+    }
+
+    .map-view-container .search-map {
+      height: 65vh;
     }
   }
   // Extra large screens
@@ -455,6 +519,23 @@
     ion-label {
       color: var(--ion-text-color) !important;
     }
+  }
+  // Dark mode near-me active
+  .near-me-chip.near-me-active {
+    --background: rgb(36, 66, 41) !important;
+    --color: rgb(200, 255, 205) !important;
+
+    ion-label {
+      color: rgb(200, 255, 205) !important;
+    }
+
+    ion-icon {
+      color: rgb(200, 255, 205) !important;
+    }
+  }
+
+  .map-view-container .search-map {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
   // Dark mode green badge styling
   .green-badge {

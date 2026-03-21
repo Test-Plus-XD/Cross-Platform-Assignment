@@ -5,7 +5,9 @@
       "Bash(npm start)",
       "Bash(npx ng build)",
       "Bash(npx ng build:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebSearch",
+      "WebFetch(domain:developers.google.com)"
     ]
   }
 }

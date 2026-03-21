@@ -402,6 +402,13 @@
         height: 100%;
       }
     }
+
+    .directions-button {
+      margin-top: 0.75rem;
+      --border-radius: 12px;
+      --border-color: var(--ion-color-primary);
+      font-weight: 600;
+    }
   }
   // === MENU SECTION === //
   .menu-section {

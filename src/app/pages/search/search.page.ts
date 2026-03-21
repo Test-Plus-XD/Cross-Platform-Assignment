@@ -1,10 +1,13 @@
 // Search page component with multi-district and multi-keyword filtering (EN-primary).
+// Supports list/map view toggle and Near Me proximity search.
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { AlertController } from '@ionic/angular';
+import { Router } from '@angular/router';
 import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 'rxjs';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
+import { LocationService, Coordinates } from '../../services/location.service';
 import { Districts } from '../../constants/districts.const';
 import { Keywords } from '../../constants/keywords.const';
 import { environment } from '../../../environments/environment';
@@ -32,6 +35,10 @@ interface Translations {
   noResults: { EN: string; TC: string };
   tryDifferent: { EN: string; TC: string };
   viewDetails: { EN: string; TC: string };
+  nearMe: { EN: string; TC: string };
+  away: { EN: string; TC: string };
+  gettingLocation: { EN: string; TC: string };
+  locationDenied: { EN: string; TC: string };
 }
 
 @Component({
@@ -54,6 +61,18 @@ export class SearchPage implements OnInit, OnDestroy {
   public totalPages: number = 0;
   public readonly resultsPerPage: number = 12;
   public readonly placeholderImage: string = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
+
+  // Map view state
+  public viewMode: 'list' | 'map' = 'list';
+  public isNearMeActive: boolean = false;
+  public isNearMeLoading: boolean = false;
+  public nearbyRestaurants: (Restaurant & { distance: number })[] = [];
+  public userLocation: Coordinates | null = null;
+  private map: google.maps.Map | null = null;
+  private markers: google.maps.Marker[] = [];
+  private infoWindow: google.maps.InfoWindow | null = null;
+  private nearMeCircle: google.maps.Circle | null = null;
+  private userMarker: google.maps.Marker | null = null;
 
   // Available options (store bilingual objects)
   public availableDistricts: DistrictOption[] = [];
@@ -81,14 +100,20 @@ export class SearchPage implements OnInit, OnDestroy {
     loading: { EN: 'Loading...', TC: '正在載入...' },
     noResults: { EN: 'No Restaurants Found', TC: '沒有找到餐廳' },
     tryDifferent: { EN: 'Try adjusting your search or filters', TC: '嘗試調整您的搜尋或篩選條件' },
-    viewDetails: { EN: 'View Details', TC: '查看詳情' }
+    viewDetails: { EN: 'View Details', TC: '查看詳情' },
+    nearMe: { EN: 'Near Me', TC: '附近' },
+    away: { EN: 'away', TC: '距離' },
+    gettingLocation: { EN: 'Getting your location...', TC: '正在取得位置...' },
+    locationDenied: { EN: 'Please enable location access in your browser settings.', TC: '請在瀏覽器設定中啟用位置存取權限。' },
   };
 
   constructor(
     private readonly restaurantsService: RestaurantsService,
     private readonly languageService: LanguageService,
     private readonly alertController: AlertController,
-    private readonly platformService: PlatformService
+    private readonly platformService: PlatformService,
+    private readonly locationService: LocationService,
+    private readonly router: Router
   ) {
     this.isMobile$ = this.platformService.isMobile$;
   }
@@ -117,10 +142,11 @@ export class SearchPage implements OnInit, OnDestroy {
     this.performSearch();
   }
 
-  // Clean up subscriptions
+  // Clean up subscriptions and map resources
   public ngOnDestroy(): void {
     this.subscriptions.forEach(s => s.unsubscribe());
     this.searchSubject.complete();
+    this.cleanupMap();
   }
 
   // Handle search input with debounce
@@ -239,6 +265,11 @@ export class SearchPage implements OnInit, OnDestroy {
       this.totalResults = response.nbHits || 0;
       this.totalPages = response.nbPages || 0;
       this.isLoading = false;
+
+      // Update map markers if in map view
+      if (this.viewMode === 'map' && this.map) {
+        this.updateMapMarkers();
+      }
     } catch (err: any) {
       console.error('SearchPage: performSearch failed', err);
       this.isLoading = false;
@@ -496,5 +527,254 @@ export class SearchPage implements OnInit, OnDestroy {
       event.target.complete();
       event.target.disabled = true;
     }
+  }
+
+  // Get the current display list (nearby results or normal search results)
+  public getDisplayRestaurants(): (Restaurant & { distance?: number })[] {
+    return this.isNearMeActive ? this.nearbyRestaurants : this.restaurants;
+  }
+
+  // Toggle between list and map view
+  public toggleViewMode(): void {
+    if (this.viewMode === 'map') {
+      // Switching to map — initialise after DOM update
+      setTimeout(() => this.initializeSearchMap(), 50);
+    } else {
+      this.cleanupMap();
+    }
+  }
+
+  // Initialise Google Map for search results
+  private initializeSearchMap(): void {
+    const container = document.getElementById('search-map');
+    if (!container || this.map) return;
+
+    const centre = this.userLocation
+      ? { lat: this.userLocation.latitude, lng: this.userLocation.longitude }
+      : { lat: 22.3193, lng: 114.1694 }; // Hong Kong centre
+
+    this.map = new google.maps.Map(container, {
+      center: centre,
+      zoom: 12,
+      mapTypeControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      streetViewControl: false
+    });
+
+    this.infoWindow = new google.maps.InfoWindow();
+    this.updateMapMarkers();
+  }
+
+  // Update markers on the map to reflect current results
+  private updateMapMarkers(): void {
+    if (!this.map) return;
+
+    // Clear existing markers
+    this.markers.forEach(m => m.setMap(null));
+    this.markers = [];
+
+    const displayList = this.getDisplayRestaurants();
+    const bounds = new google.maps.LatLngBounds();
+    let hasValidMarkers = false;
+
+    for (const restaurant of displayList) {
+      if (!restaurant.Latitude || !restaurant.Longitude ||
+          isNaN(restaurant.Latitude) || isNaN(restaurant.Longitude)) {
+        continue;
+      }
+
+      const position = { lat: restaurant.Latitude, lng: restaurant.Longitude };
+      const name = this.currentLang === 'TC'
+        ? (restaurant.Name_TC || restaurant.Name_EN || '—')
+        : (restaurant.Name_EN || restaurant.Name_TC || '—');
+      const district = this.currentLang === 'TC'
+        ? (restaurant.District_TC || restaurant.District_EN || '')
+        : (restaurant.District_EN || restaurant.District_TC || '');
+
+      const marker = new google.maps.Marker({
+        position,
+        map: this.map,
+        title: name
+      });
+
+      // Build InfoWindow content
+      const distanceText = (restaurant as any).distance != null
+        ? `<p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">
+            ${(restaurant as any).distance < 1000
+              ? ((restaurant as any).distance + 'm')
+              : (((restaurant as any).distance / 1000).toFixed(1) + 'km')}
+            ${this.currentLang === 'TC' ? '距離' : 'away'}
+          </p>`
+        : '';
+
+      const imgSrc = restaurant.ImageUrl || this.placeholderImage;
+      const imgHtml = `<img src="${imgSrc}" alt="${name}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">`;
+
+      const content = `
+        <div style="max-width:200px;font-family:system-ui,sans-serif;">
+          ${imgHtml}
+          <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;">${name}</h4>
+          <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
+          ${distanceText}
+          <a href="/restaurant/${restaurant.id}" style="display:inline-block;margin-top:0.25rem;color:#4A46E8;font-size:0.8rem;text-decoration:none;font-weight:500;">
+            ${this.currentLang === 'TC' ? '查看詳情 →' : 'View Details →'}
+          </a>
+        </div>
+      `;
+
+      marker.addListener('click', () => {
+        if (this.infoWindow) {
+          this.infoWindow.setContent(content);
+          this.infoWindow.open(this.map!, marker);
+        }
+      });
+
+      this.markers.push(marker);
+      bounds.extend(position);
+      hasValidMarkers = true;
+    }
+
+    // Add user location to bounds if available
+    if (this.userLocation) {
+      bounds.extend({ lat: this.userLocation.latitude, lng: this.userLocation.longitude });
+    }
+
+    // Fit map to show all markers
+    if (hasValidMarkers) {
+      this.map.fitBounds(bounds);
+      // Don't zoom in too close for a single marker
+      const listener = google.maps.event.addListener(this.map, 'idle', () => {
+        if (this.map && this.map.getZoom()! > 16) {
+          this.map.setZoom(16);
+        }
+        google.maps.event.removeListener(listener);
+      });
+    }
+  }
+
+  // Activate Near Me mode — fetch GPS and nearby restaurants
+  public async activateNearMe(): Promise<void> {
+    this.isNearMeLoading = true;
+
+    try {
+      // Get user location
+      const coords = await firstValueFrom(this.locationService.getCurrentLocation(true));
+      if (!coords) {
+        console.warn('SearchPage: Could not get user location');
+        this.isNearMeLoading = false;
+        return;
+      }
+
+      this.userLocation = coords;
+
+      // Fetch nearby restaurants (5km radius)
+      const nearby = await firstValueFrom(
+        this.restaurantsService.getNearbyRestaurants(coords.latitude, coords.longitude, 5000)
+      );
+
+      this.nearbyRestaurants = nearby;
+      this.isNearMeActive = true;
+      this.totalResults = nearby.length;
+      this.isNearMeLoading = false;
+
+      // Update map if in map view
+      if (this.viewMode === 'map' && this.map) {
+        this.addUserMarker(coords);
+        this.addNearMeCircle(coords, 5000);
+        this.updateMapMarkers();
+      }
+    } catch (err) {
+      console.error('SearchPage: activateNearMe error', err);
+      this.isNearMeLoading = false;
+    }
+  }
+
+  // Deactivate Near Me mode — revert to normal search
+  public deactivateNearMe(): void {
+    this.isNearMeActive = false;
+    this.nearbyRestaurants = [];
+    this.removeNearMeCircle();
+    this.removeUserMarker();
+    this.currentPage = 0;
+    this.performSearch();
+  }
+
+  // Add a blue circle overlay showing the nearby radius
+  private addNearMeCircle(coords: Coordinates, radiusMetres: number): void {
+    this.removeNearMeCircle();
+    if (!this.map) return;
+
+    this.nearMeCircle = new google.maps.Circle({
+      map: this.map,
+      center: { lat: coords.latitude, lng: coords.longitude },
+      radius: radiusMetres,
+      fillColor: '#4A46E8',
+      fillOpacity: 0.08,
+      strokeColor: '#4A46E8',
+      strokeOpacity: 0.3,
+      strokeWeight: 2
+    });
+  }
+
+  // Remove Near Me circle from map
+  private removeNearMeCircle(): void {
+    if (this.nearMeCircle) {
+      this.nearMeCircle.setMap(null);
+      this.nearMeCircle = null;
+    }
+  }
+
+  // Add a marker for the user's location
+  private addUserMarker(coords: Coordinates): void {
+    this.removeUserMarker();
+    if (!this.map) return;
+
+    this.userMarker = new google.maps.Marker({
+      position: { lat: coords.latitude, lng: coords.longitude },
+      map: this.map,
+      title: this.currentLang === 'TC' ? '你的位置' : 'Your location',
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285F4',
+        fillOpacity: 1,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 2
+      }
+    });
+  }
+
+  // Remove user location marker
+  private removeUserMarker(): void {
+    if (this.userMarker) {
+      this.userMarker.setMap(null);
+      this.userMarker = null;
+    }
+  }
+
+  // Clean up all map resources
+  private cleanupMap(): void {
+    this.markers.forEach(m => m.setMap(null));
+    this.markers = [];
+    this.removeNearMeCircle();
+    this.removeUserMarker();
+
+    if (this.infoWindow) {
+      this.infoWindow.close();
+      this.infoWindow = null;
+    }
+
+    if (this.map) {
+      this.map = null;
+    }
+  }
+
+  // Format distance for display (metres to readable string)
+  public formatDistance(distanceMetres: number): string {
+    if (distanceMetres < 1000) {
+      return `${Math.round(distanceMetres)}m`;
+    }
+    return `${(distanceMetres / 1000).toFixed(1)}km`;
   }
 }

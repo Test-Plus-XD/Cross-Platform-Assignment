@@ -71,6 +71,16 @@
             <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
           </ion-chip>
 
+          <!-- Near Me Chip -->
+          <ion-chip [class.near-me-active]="isNearMeActive"
+                    [color]="isNearMeActive ? 'success' : 'medium'"
+                    (click)="isNearMeActive ? deactivateNearMe() : activateNearMe()"
+                    class="filter-chip near-me-chip">
+            <ion-icon [name]="isNearMeActive ? 'locate' : 'locate-outline'"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? translations.nearMe.TC : translations.nearMe.EN }}</ion-label>
+            <ion-icon name="close-circle" *ngIf="isNearMeActive" (click)="deactivateNearMe(); $event.stopPropagation()"></ion-icon>
+          </ion-chip>
+
           <!-- Clear All Filters Button -->
           <ion-chip *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0"
                     color="danger"
@@ -81,35 +91,56 @@
           </ion-chip>
         </div>
       </div>
+
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <ion-segment [(ngModel)]="viewMode" (ionChange)="toggleViewMode()">
+          <ion-segment-button value="list">
+            <ion-icon name="list-outline"></ion-icon>
+          </ion-segment-button>
+          <ion-segment-button value="map">
+            <ion-icon name="map-outline"></ion-icon>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
     </div>
 
     <!-- Results Summary -->
-    <div class="results-summary" *ngIf="!isLoading">
+    <div class="results-summary" *ngIf="!isLoading && !isNearMeLoading">
       <p class="results-count">
-        <span class="count-number">{{ totalResults }}</span>
-        {{ (lang$ | async) === 'TC' ? translations.restaurantsFound.TC : translations.restaurantsFound.EN }}
+        <span class="count-number">{{ isNearMeActive ? nearbyRestaurants.length : totalResults }}</span>
+        {{ isNearMeActive
+           ? ((lang$ | async) === 'TC' ? '間餐廳在附近' : 'restaurants nearby')
+           : ((lang$ | async) === 'TC' ? translations.restaurantsFound.TC : translations.restaurantsFound.EN) }}
       </p>
     </div>
 
     <!-- Loading State -->
-    <div class="loading-container" *ngIf="isLoading">
+    <div class="loading-container" *ngIf="isLoading || isNearMeLoading">
       <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
-      <p>{{ (lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN }}</p>
+      <p>{{ isNearMeLoading
+            ? ((lang$ | async) === 'TC' ? translations.gettingLocation.TC : translations.gettingLocation.EN)
+            : ((lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN) }}</p>
     </div>
 
     <!-- No Results State -->
-    <div class="empty-state" *ngIf="!isLoading && restaurants.length === 0">
+    <div class="empty-state" *ngIf="!isLoading && !isNearMeLoading && getDisplayRestaurants().length === 0">
       <ion-icon name="search-outline" class="empty-icon"></ion-icon>
       <h2>{{ (lang$ | async) === 'TC' ? translations.noResults.TC : translations.noResults.EN }}</h2>
       <p>{{ (lang$ | async) === 'TC' ? translations.tryDifferent.TC : translations.tryDifferent.EN }}</p>
-      <ion-button fill="outline" (click)="clearAllFilters()" *ngIf="selectedDistrict || selectedKeyword || searchQuery">
+      <ion-button fill="outline" (click)="clearAllFilters(); deactivateNearMe()" *ngIf="selectedDistrict || selectedKeyword || searchQuery || isNearMeActive">
         {{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}
       </ion-button>
     </div>
 
+    <!-- Map View -->
+    <div class="map-view-container" *ngIf="viewMode === 'map' && !isLoading && !isNearMeLoading">
+      <div id="search-map" class="search-map"></div>
+    </div>
+
     <!-- Restaurant Results Grid -->
-    <div class="results-grid" *ngIf="!isLoading && restaurants.length > 0">
-      <ion-card *ngFor="let restaurant of restaurants"
+    <div class="results-grid" *ngIf="viewMode === 'list' && !isLoading && !isNearMeLoading && getDisplayRestaurants().length > 0">
+      <ion-card *ngFor="let restaurant of getDisplayRestaurants()"
                 class="restaurant-card"
                 [routerLink]="['/restaurant', restaurant.id]"
                 button>
@@ -157,6 +188,14 @@
                 </ion-chip>
               </div>
             </div>
+
+            <div class="detail-row distance-row" *ngIf="restaurant.distance != null">
+              <ion-icon name="navigate-outline" class="detail-icon"></ion-icon>
+              <span class="detail-text distance-text">
+                {{ formatDistance(restaurant.distance) }}
+                {{ (lang$ | async) === 'TC' ? translations.away.TC : translations.away.EN }}
+              </span>
+            </div>
           </div>
         </ion-card-content>
       </ion-card>
@@ -164,7 +203,7 @@
 
     <!-- Infinite Scroll -->
     <ion-infinite-scroll
-      *ngIf="!isLoading && restaurants.length > 0 && currentPage < totalPages - 1"
+      *ngIf="viewMode === 'list' && !isNearMeActive && !isLoading && restaurants.length > 0 && currentPage < totalPages - 1"
       threshold="15%"
       (ionInfinite)="loadMore($event)">
       <ion-infinite-scroll-content
