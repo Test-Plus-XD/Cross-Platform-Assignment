@@ -161,16 +161,6 @@ import { firstValueFrom } from 'rxjs';
       }
     }
 
-    /* Mobile: 10% margin top and bottom for pop-up map */
-    @media (max-width: 768px) {
-      :host:not(.directions-active) .modal-map-container {
-        height: 80vh;
-        margin: 10vh auto;
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-      }
-    }
   `],
   styleUrls: ['./restaurant.page.scss'],
   standalone: false,

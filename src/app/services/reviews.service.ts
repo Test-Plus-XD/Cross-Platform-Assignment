@@ -150,6 +150,15 @@ export class ReviewsService {
     );
   }
 
+  // Get review statistics for multiple restaurants in a single request
+  getBatchStats(restaurantIds: string[]): Observable<Record<string, { totalReviews: number; averageRating: number }>> {
+    if (restaurantIds.length === 0) return new Observable(sub => { sub.next({}); sub.complete(); });
+    const ids = restaurantIds.join(',');
+    return this.dataService.get<Record<string, { totalReviews: number; averageRating: number }>>(
+      `${this.reviewsEndpoint}/batch-stats?restaurantIds=${encodeURIComponent(ids)}`
+    );
+  }
+
   // Helper method to format rating as stars (for display purposes)
   formatRatingStars(rating: number): string {
     const fullStars = Math.floor(rating);

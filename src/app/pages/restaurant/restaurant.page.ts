@@ -688,12 +688,15 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       // Get user profile to check type and restaurantId
       this.feature.user.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
         next: (profile: UserProfile | null) => {
-          // User can claim if they have type 'Restaurant' (case insensitive) AND
+          // User can claim/edit if they have type 'Restaurant' (case insensitive) AND
           // they haven't claimed a restaurant yet (restaurantId is empty or null)
           const isRestaurantType = profile?.type?.toLowerCase() === 'restaurant';
           const hasNoRestaurant = !profile?.restaurantId || profile.restaurantId.trim() === '';
 
           this.canClaimRestaurant = isRestaurantType && hasNoRestaurant;
+          // canEditRestaurant mirrors canClaimRestaurant — only Restaurant-type users
+          // without a restaurant may upload images to unclaimed restaurants
+          this.canEditRestaurant = isRestaurantType && hasNoRestaurant;
           this.changeDetectionReference.markForCheck();
           console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant,
             'User type:', profile?.type, 'Has restaurantId:', !!profile?.restaurantId);
@@ -701,6 +704,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         error: (error) => {
           console.error('RestaurantPage: Error checking claim eligibility', error);
           this.canClaimRestaurant = false;
+          this.canEditRestaurant = false;
           this.changeDetectionReference.markForCheck();
         }
       });
@@ -953,10 +957,11 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  /// Check if current user can edit this restaurant (no owner)
+  /// Check if current user can edit this restaurant
+  /// Only Restaurant-type users without a claimed restaurant can edit unclaimed restaurants.
+  /// canEditRestaurant is set asynchronously inside checkClaimEligibility.
   checkEditPermission(): void {
-    // Allow editing if restaurant has no owner and user is logged in
-    this.canEditRestaurant = this.feature.auth.isLoggedIn && !this.restaurant?.ownerId;
+    this.canEditRestaurant = false;
     this.changeDetectionReference.markForCheck();
   }
 

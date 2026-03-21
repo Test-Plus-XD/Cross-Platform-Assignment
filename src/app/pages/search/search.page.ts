@@ -8,6 +8,7 @@ import { RestaurantsService, Restaurant } from '../../services/restaurants.servi
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
 import { LocationService, Coordinates } from '../../services/location.service';
+import { ReviewsService } from '../../services/reviews.service';
 import { Districts } from '../../constants/districts.const';
 import { Keywords } from '../../constants/keywords.const';
 import { environment } from '../../../environments/environment';
@@ -74,6 +75,9 @@ export class SearchPage implements OnInit, OnDestroy {
   private nearMeCircle: google.maps.Circle | null = null;
   private userMarker: google.maps.Marker | null = null;
 
+  // Rating stats for displayed restaurants (keyed by restaurant ID)
+  public ratingMap: Record<string, { totalReviews: number; averageRating: number }> = {};
+
   // Available options (store bilingual objects)
   public availableDistricts: DistrictOption[] = [];
   public availableKeywords: KeywordOption[] = [];
@@ -113,6 +117,7 @@ export class SearchPage implements OnInit, OnDestroy {
     private readonly alertController: AlertController,
     private readonly platformService: PlatformService,
     private readonly locationService: LocationService,
+    private readonly reviewsService: ReviewsService,
     private readonly router: Router
   ) {
     this.isMobile$ = this.platformService.isMobile$;
@@ -270,6 +275,9 @@ export class SearchPage implements OnInit, OnDestroy {
       if (this.viewMode === 'map' && this.map) {
         this.updateMapMarkers();
       }
+
+      // Fetch batch review stats for all displayed restaurants
+      this.loadBatchRatings(this.restaurants);
     } catch (err: any) {
       console.error('SearchPage: performSearch failed', err);
       this.isLoading = false;
@@ -599,28 +607,35 @@ export class SearchPage implements OnInit, OnDestroy {
       });
 
       // Build InfoWindow content
-      const distanceText = (restaurant as any).distance != null
-        ? `<p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">
-            ${(restaurant as any).distance < 1000
-              ? ((restaurant as any).distance + 'm')
-              : (((restaurant as any).distance / 1000).toFixed(1) + 'km')}
-            ${this.currentLang === 'TC' ? '距離' : 'away'}
-          </p>`
+      const dist = (restaurant as any).distance;
+      const distanceText = dist != null
+        ? `<span style="color:#666;font-size:0.75rem;">${dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km')} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`
         : '';
 
+      const openStatus = this.getOpeningStatus(restaurant);
+      const openBadge = openStatus === 'open'
+        ? `<span style="background:#4caf50;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
+        : openStatus === 'closed'
+          ? `<span style="background:#e53935;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
+          : '';
+
       const imgSrc = restaurant.ImageUrl || this.placeholderImage;
-      const imgHtml = `<img src="${imgSrc}" alt="${name}" style="width:100%;height:80px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">`;
+
+      const stats = this.ratingMap[restaurant.id];
+      const ratingHtml = stats && stats.totalReviews > 0
+        ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(stats.averageRating)}</span> <span style="color:#888;font-size:0.7rem;">(${stats.totalReviews})</span>`
+        : '';
 
       const content = `
-        <div style="max-width:200px;font-family:system-ui,sans-serif;">
-          ${imgHtml}
-          <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;">${name}</h4>
-          <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
-          ${distanceText}
-          <a href="/restaurant/${restaurant.id}" style="display:inline-block;margin-top:0.25rem;color:#4A46E8;font-size:0.8rem;text-decoration:none;font-weight:500;">
-            ${this.currentLang === 'TC' ? '查看詳情 →' : 'View Details →'}
-          </a>
-        </div>
+        <a href="/restaurant/${restaurant.id}" style="display:block;max-width:200px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;">
+          <img src="${imgSrc}" alt="${name}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">
+          <div style="padding:0 0.25rem 0.25rem;">
+            <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;color:#111;">${name}</h4>
+            <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
+            ${ratingHtml ? `<div style="margin:0.15rem 0;">${ratingHtml}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">${distanceText}${openBadge}</div>
+          </div>
+        </a>
       `;
 
       marker.addListener('click', () => {
@@ -677,6 +692,9 @@ export class SearchPage implements OnInit, OnDestroy {
       this.isNearMeActive = true;
       this.totalResults = nearby.length;
       this.isNearMeLoading = false;
+
+      // Fetch batch review stats for nearby restaurants
+      this.loadBatchRatings(nearby);
 
       // Update map if in map view
       if (this.viewMode === 'map' && this.map) {
@@ -776,5 +794,71 @@ export class SearchPage implements OnInit, OnDestroy {
       return `${Math.round(distanceMetres)}m`;
     }
     return `${(distanceMetres / 1000).toFixed(1)}km`;
+  }
+
+  // Check if a restaurant is currently open based on Opening_Hours and HK time
+  public getOpeningStatus(restaurant: Restaurant): 'open' | 'closed' | 'unknown' {
+    if (!restaurant.Opening_Hours) return 'unknown';
+
+    const now = new Date();
+    const hkDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Hong_Kong', weekday: 'long' }).format(now);
+    const hkTimeParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(now);
+    const hkH = parseInt(hkTimeParts.find(p => p.type === 'hour')?.value || '0', 10);
+    const hkM = parseInt(hkTimeParts.find(p => p.type === 'minute')?.value || '0', 10);
+    const currentMins = hkH * 60 + hkM;
+
+    const hours = restaurant.Opening_Hours;
+    const todayKey = Object.keys(hours).find(k => k.toLowerCase() === hkDay.toLowerCase());
+    if (!todayKey) return 'unknown';
+
+    const entry = hours[todayKey];
+    if (!entry) return 'closed';
+
+    let openStr: string;
+    let closeStr: string;
+
+    if (typeof entry === 'string') {
+      const match = entry.match(/(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/);
+      if (!match) return 'unknown';
+      openStr = match[1];
+      closeStr = match[2];
+    } else if (typeof entry === 'object' && entry !== null && entry.open && entry.close) {
+      openStr = entry.open as string;
+      closeStr = entry.close as string;
+    } else {
+      return 'unknown';
+    }
+
+    const [openH, openM] = openStr.split(':').map(Number);
+    const [closeH, closeM] = closeStr.split(':').map(Number);
+    const openMins = openH * 60 + openM;
+    const closeMins = closeH * 60 + closeM;
+
+    return currentMins >= openMins && currentMins < closeMins ? 'open' : 'closed';
+  }
+
+  // Fetch review stats for a batch of restaurants and populate ratingMap
+  private loadBatchRatings(restaurants: Restaurant[]): void {
+    const ids = restaurants.map(r => r.id).filter(Boolean);
+    if (ids.length === 0) return;
+
+    this.reviewsService.getBatchStats(ids).subscribe({
+      next: (statsMap) => {
+        this.ratingMap = { ...this.ratingMap, ...statsMap };
+      },
+      error: (err) => {
+        console.warn('SearchPage: Failed to load batch ratings', err);
+      }
+    });
+  }
+
+  // Format average rating as star string for display
+  public formatRatingStars(rating: number): string {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
   }
 }

@@ -7,7 +7,8 @@
       "Bash(npx ng build:*)",
       "Bash(echo:*)",
       "WebSearch",
-      "WebFetch(domain:developers.google.com)"
+      "WebFetch(domain:developers.google.com)",
+      "Bash(npx ionic:*)"
     ]
   }
 }
