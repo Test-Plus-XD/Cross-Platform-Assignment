@@ -1,9 +1,11 @@
 // Search page styling with updated green theme and purple-blue gradient accents
 :host {
+
   // Page content background uses light green gradient
   .search-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
+
   // Main container with responsive padding
   .page-container {
     min-height: 100%;
@@ -13,6 +15,7 @@
     max-width: 1400px;
     margin: 0 auto;
   }
+
   // Non-sticky title container
   .search-title-container {
     text-align: center;
@@ -37,6 +40,7 @@
       margin: 0;
     }
   }
+
   // Sticky search & filter section - positioned below header
   .search-header {
     position: sticky;
@@ -48,6 +52,7 @@
     margin: 0 -1rem 2rem -1rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
+
   // Modern search bar styling
   .search-bar-container {
     margin-bottom: 1rem;
@@ -67,6 +72,7 @@
       }
     }
   }
+
   // Filter section styling
   .filter-section {
     margin-bottom: 1.5rem;
@@ -105,6 +111,7 @@
         --background: rgba(var(--ion-color-danger-rgb), 0.1);
       }
     }
+
     // Filter button styling (opens filter dialog)
     .filter-button {
       font-weight: 600;
@@ -113,6 +120,7 @@
         margin-right: 0.25rem;
       }
     }
+
     // Filter tag styling (individual selected filters)
     .filter-tag {
       font-size: 0.8125rem;
@@ -132,6 +140,7 @@
         }
       }
     }
+
     // Green badge styling (30% more green)
     .green-badge {
       --background: rgb(232, 255, 234) !important;
@@ -146,6 +155,7 @@
       }
     }
   }
+
   // Results summary styling
   .results-summary {
     margin-bottom: 1.5rem;
@@ -163,6 +173,7 @@
       }
     }
   }
+
   // Loading state centred on screen
   .loading-container {
     display: flex;
@@ -182,6 +193,7 @@
       font-size: 1rem;
     }
   }
+
   // Empty state styling
   .empty-state {
     display: flex;
@@ -216,6 +228,7 @@
       --border-radius: 12px;
     }
   }
+
   // Restaurant results grid layout
   .results-grid {
     display: grid;
@@ -223,6 +236,7 @@
     gap: 1.5rem;
     margin-bottom: 2rem;
   }
+
   // Individual restaurant card — 50/50 split (image top, info bottom)
   .restaurant-card {
     margin: 0;
@@ -276,7 +290,7 @@
         transition: opacity 0.3s ease;
       }
 
-      // Opening status badge overlaid on thumbnail
+      // Opening status badge: bottom-left
       .opening-badge {
         position: absolute;
         bottom: 0.5rem;
@@ -297,6 +311,54 @@
           background: rgba(229, 57, 53, 0.9);
           color: #fff;
         }
+      }
+
+      // Distance badge: top-right
+      .distance-badge {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        color: #fff;
+        backdrop-filter: blur(4px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+        &.badge-success {
+          background: rgba(16, 185, 129, 0.95); // Green < 500m
+        }
+
+        &.badge-warning {
+          background: rgba(245, 158, 11, 0.95); // Orange 500m–2km
+        }
+
+        &.badge-medium {
+          background: rgba(107, 114, 128, 0.95); // Grey > 2km
+        }
+
+        ion-icon {
+          font-size: 0.75rem;
+        }
+      }
+
+      // Rating badge: bottom-right
+      .rating-badge {
+        position: absolute;
+        bottom: 0.5rem;
+        right: 0.5rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.55);
+        color: #f5c518;
+        backdrop-filter: blur(4px);
+        white-space: nowrap;
       }
     }
 
@@ -338,30 +400,43 @@
             flex-shrink: 0;
           }
 
-          &.distance-row {
-            color: var(--ion-color-success-shade);
+          &.address-row {
+            color: var(--ion-color-medium);
 
-            ion-icon {
-              color: var(--ion-color-success-shade);
+            span {
+              display: -webkit-box;
+              -webkit-line-clamp: 1;
+              -webkit-box-orient: vertical;
+              overflow: hidden;
             }
           }
 
-          &.rating-row {
-            .star-text {
-              color: #f5a623;
-              font-size: 0.85rem;
-              letter-spacing: -0.5px;
-            }
+          &.keywords-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            align-items: center;
 
-            .rating-count {
-              color: var(--ion-color-medium);
-              font-size: 0.75rem;
+            .keyword-tag {
+              font-size: 0.68rem;
+              font-weight: 600;
+              padding: 1px 7px;
+              border-radius: 8px;
+              background: rgba(var(--ion-color-primary-rgb), 0.1);
+              color: var(--ion-color-primary);
+              white-space: nowrap;
+
+              &.more-tag {
+                background: var(--ion-color-primary);
+                color: #fff;
+              }
             }
           }
         }
       }
     }
   }
+
   // Infinite scroll loading indicator
   .infinite-scroll-loading {
     display: flex;
@@ -382,12 +457,14 @@
       font-weight: 500;
     }
   }
+
   // Hide default infinite scroll content
   ion-infinite-scroll-content {
     ::ng-deep .infinite-loading-text {
       display: none;
     }
   }
+
   // View toggle segment in search header
   .view-toggle {
     display: flex;
@@ -410,6 +487,7 @@
       }
     }
   }
+
   // Near Me chip active state
   .near-me-chip {
     &.near-me-active {
@@ -425,6 +503,7 @@
       }
     }
   }
+
   // Map view container
   .map-view-container {
     margin-bottom: 2rem;
@@ -437,6 +516,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
   }
+
   // Distance badge on restaurant cards
   .distance-row {
     .distance-text {
@@ -444,10 +524,12 @@
       color: var(--ion-color-primary) !important;
     }
   }
+
   // Bottom spacer for mobile navigation
   .bottom-spacer {
     height: 2rem;
   }
+
   // Responsive adjustments for tablets and larger screens
   @media (min-width: 768px) {
     .page-container {
@@ -472,6 +554,7 @@
       height: 60vh;
     }
   }
+
   // Responsive adjustments for desktop
   @media (min-width: 1024px) {
     .results-grid {
@@ -486,6 +569,7 @@
       height: 65vh;
     }
   }
+
   // Extra large screens
   @media (min-width: 1400px) {
     .results-grid {
@@ -536,6 +620,7 @@
       }
     }
   }
+
   // Force white text for filter chips in dark mode
   .filter-chip {
     color: var(--ion-text-color) !important;
@@ -544,6 +629,7 @@
       color: var(--ion-text-color) !important;
     }
   }
+
   // Dark mode near-me active
   .near-me-chip.near-me-active {
     --background: rgb(36, 66, 41) !important;
@@ -561,6 +647,7 @@
   .map-view-container .search-map {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   }
+
   // Dark mode green badge styling
   .green-badge {
     --background: rgb(36, 66, 41) !important;

@@ -588,7 +588,7 @@ export class SearchPage implements OnInit, OnDestroy {
 
     for (const restaurant of displayList) {
       if (!restaurant.Latitude || !restaurant.Longitude ||
-          isNaN(restaurant.Latitude) || isNaN(restaurant.Longitude)) {
+        isNaN(restaurant.Latitude) || isNaN(restaurant.Longitude)) {
         continue;
       }
 
@@ -794,6 +794,30 @@ export class SearchPage implements OnInit, OnDestroy {
       return `${Math.round(distanceMetres)}m`;
     }
     return `${(distanceMetres / 1000).toFixed(1)}km`;
+  }
+
+  // Get distance badge with color-coded indicator (< 500m = green, 500m-2km = orange, > 2km = grey)
+  public getDistanceBadge(restaurant: any): { text: string; color: string } | null {
+    // Prefer pre-calculated distance (Near Me mode), otherwise calculate from coordinates
+    if (restaurant.distance != null) {
+      const meters = restaurant.distance;
+      let color = 'medium';
+      if (meters < 500) color = 'success';
+      else if (meters < 2000) color = 'warning';
+      return { text: this.formatDistance(meters), color };
+    }
+
+    if (!restaurant.Latitude || !restaurant.Longitude) return null;
+    const result = this.locationService.calculateDistanceFromCurrentLocation(
+      restaurant.Latitude,
+      restaurant.Longitude
+    );
+    if (!result) return null;
+
+    let color = 'medium';
+    if (result.distanceMeters < 500) color = 'success';
+    else if (result.distanceKm < 2) color = 'warning';
+    return { text: result.displayText, color };
   }
 
   // Check if a restaurant is currently open based on Opening_Hours and HK time

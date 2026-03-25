@@ -2,7 +2,7 @@
 import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { Observable, of, forkJoin } from 'rxjs';
+import { Observable, of, forkJoin, BehaviorSubject } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
@@ -26,7 +26,7 @@ export class HomePage implements OnInit {
   public reviews$: Observable<any[]> = of([]);
   public restaurants$: Observable<any[]> = of([]);
   public ads$: Observable<any[]> = of([]);
-  public nearby$: Observable<any[]> = of([]);
+  public nearby$: BehaviorSubject<any[]> = new BehaviorSubject<any[]>([]);
   // Expose language stream for template
   public lang$ = this.languageService.lang$;
   // Expose platform detection for template
@@ -38,6 +38,8 @@ export class HomePage implements OnInit {
   public locationError: string | null = null;
   // Placeholder image path
   public readonly placeholderImage = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
+  // Rating stats for restaurant cards (keyed by restaurant ID)
+  public ratingMap: Record<string, { totalReviews: number; averageRating: number }> = {};
 
   constructor(
     private readonly mockDataService: MockDataService,
@@ -66,6 +68,17 @@ export class HomePage implements OnInit {
     this.articles$ = this.mockDataService.articles$();
     this.restaurants$ = this.mockDataService.restaurants$();
     this.ads$ = this.mockDataService.ads$();
+
+    // Load batch ratings for trending restaurants
+    this.restaurants$.subscribe(restaurants => {
+      const ids = restaurants.map((r: any) => r.id).filter(Boolean);
+      if (ids.length > 0) {
+        this.reviewsService.getBatchStats(ids).subscribe({
+          next: statsMap => { this.ratingMap = { ...this.ratingMap, ...statsMap }; },
+          error: err => console.warn('HomePage: Failed to load trending ratings', err)
+        });
+      }
+    });
 
     // Load genuine reviews from Firestore, supplemented with mock reviews if needed
     this.reviews$ = this.loadReviews();
@@ -237,13 +250,23 @@ export class HomePage implements OnInit {
       const sorted = this.locationService.sortByDistance(restaurantsWithCoords);
 
       // Step 5: Take first 10 closest restaurants
-      this.nearby$ = of(sorted.slice(0, 10));
+      const nearbySlice = sorted.slice(0, 10);
+      this.nearby$.next(nearbySlice);
       this.isLoadingNearby = false;
+
+      // Load batch ratings for nearby restaurants
+      const nearbyIds = nearbySlice.map((r: any) => r.id).filter(Boolean);
+      if (nearbyIds.length > 0) {
+        this.reviewsService.getBatchStats(nearbyIds).subscribe({
+          next: statsMap => { this.ratingMap = { ...this.ratingMap, ...statsMap }; },
+          error: err => console.warn('HomePage: Failed to load nearby ratings', err)
+        });
+      }
     } catch (error) {
       console.error('Error loading nearby restaurants:', error);
       this.locationError = 'Unable to load nearby restaurants';
       this.isLoadingNearby = false;
-      this.nearby$ = of([]);
+      this.nearby$.next([]);
     }
   }
 
@@ -273,5 +296,26 @@ export class HomePage implements OnInit {
   // Refresh location and reload nearby restaurants
   public async refreshLocation(): Promise<void> {
     await this.loadNearbyRestaurants();
+  }
+
+  // Format average rating as star string for display
+  public formatRatingStars(rating: number): string {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+    return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
+  }
+
+  // Get display keywords for a restaurant (limited to 2)
+  public getDisplayKeywords(restaurant: any, lang: string): string[] {
+    const keywords = lang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+    if (!keywords || keywords.length === 0) return [];
+    return keywords.slice(0, 2);
+  }
+
+  // Get total keyword count for a restaurant
+  public getKeywordCount(restaurant: any, lang: string): number {
+    const keywords = lang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+    return keywords ? keywords.length : 0;
   }
 }

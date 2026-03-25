@@ -1,0 +1,8 @@
+{
+    "/API": {
+        "target": "https://vercel-express-api-alpha.vercel.app",
+        "secure": true,
+        "changeOrigin": true,
+        "logLevel": "debug"
+    }
+}
