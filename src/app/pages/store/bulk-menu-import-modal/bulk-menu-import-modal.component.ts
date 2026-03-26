@@ -125,8 +125,9 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
 
     const uploadMsg = lang === 'TC' ? '上傳文件中...' : 'Uploading document...';
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${uploadMsg}`,
-      spinner: null
+      message: uploadMsg,
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 
@@ -277,8 +278,9 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
     const lang = this.currentLanguage;
     const saveMsg = lang === 'TC' ? '儲存菜單項目中...' : 'Saving menu items...';
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${saveMsg}`,
-      spinner: null
+      message: saveMsg,
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 

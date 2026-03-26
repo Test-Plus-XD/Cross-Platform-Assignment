@@ -232,6 +232,12 @@ export class SearchPage implements OnInit, OnDestroy {
   public async performSearch(append: boolean = false): Promise<void> {
     // Don't set loading if we're appending (for infinite scroll)
     if (!append) {
+      // In map view, the *ngIf removes and recreates the #search-map DOM element while
+      // isLoading is true, which invalidates the current Google Maps instance. Null it
+      // out now so initializeSearchMap() can attach to the new element after loading.
+      if (this.viewMode === 'map') {
+        this.cleanupMap();
+      }
       this.isLoading = true;
     }
 
@@ -271,9 +277,14 @@ export class SearchPage implements OnInit, OnDestroy {
       this.totalPages = response.nbPages || 0;
       this.isLoading = false;
 
-      // Update map markers if in map view
-      if (this.viewMode === 'map' && this.map) {
-        this.updateMapMarkers();
+      // Update map markers if in map view; if map isn't initialised yet (e.g. search
+      // completed while isLoading hid the container), retry initialisation now.
+      if (this.viewMode === 'map') {
+        if (!this.map) {
+          setTimeout(() => this.initializeSearchMap(), 50);
+        } else {
+          this.updateMapMarkers();
+        }
       }
 
       // Fetch batch review stats for all displayed restaurants
@@ -572,6 +583,13 @@ export class SearchPage implements OnInit, OnDestroy {
 
     this.infoWindow = new google.maps.InfoWindow();
     this.updateMapMarkers();
+
+    // If Near Me was active when the map was cleaned up (e.g. search refresh),
+    // restore the user location marker and radius circle.
+    if (this.isNearMeActive && this.userLocation) {
+      this.addUserMarker(this.userLocation);
+      this.addNearMeCircle(this.userLocation, 5000);
+    }
   }
 
   // Update markers on the map to reflect current results

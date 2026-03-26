@@ -35,3 +35,10 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
+
+/* Eclipse.gif loading overlay — used with LoadingController({ cssClass: 'eclipse-loading' }) */
+.eclipse-loading::part(message) {
+  padding-top: 56px;
+  background: url('/assets/icon/Eclipse.gif') center top / 48px 48px no-repeat;
+  text-align: center;
+  min-width: 120px; }

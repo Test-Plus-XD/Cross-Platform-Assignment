@@ -1444,6 +1444,19 @@ on('user-offline', { userId, displayName, lastSeen });
 
 **Result:** Protected routes no longer spuriously redirect while logged in. Stripe payment flow works reliably. All deep links (including payment redirect URLs) are preserved through auth redirects.
 
+### Google Maps Search View — Map Marker Rendering (v1.15.3)
+**Issue:** When searching while in map view (or switching to map view during search), Google Maps markers failed to render until navigating away and back.
+
+**Root cause:** Search triggers loading state via `isLoading = true`, which causes `*ngIf="viewMode === 'map' && !isLoading && !isNearMeLoading"` to remove the `#search-map` DOM container from the DOM tree. The Google Maps instance (`this.map`) remained in memory but now referenced a detached (invisible) element. When loading completed and `isLoading = false`, a new `#search-map` div was inserted, but `this.map` still pointed to the old detached element, so markers appeared on an invisible ghost map.
+
+**Fixes:**
+1. **In `performSearch()` (lines 237-242):** Added `if (this.viewMode === 'map') { this.cleanupMap(); }` before setting `isLoading = true` when in map view. This nulls the ghost map reference before the `*ngIf` removes the DOM container, forcing `initializeSearchMap()` to create a fresh map instance when search completes.
+2. **In `initializeSearchMap()` (lines 587-592):** Added restoration of Near Me overlays after marker placement if `isNearMeActive && userLocation`. This ensures the user location marker and 5km radius circle are redrawn when the map is reinitialized during a search in Near Me mode.
+
+**Architecture:** Google Maps in search page uses shared `this.restaurants` data populated by Algolia search (via `performSearch()`), not a separate direct Algolia query. Both list and map views call `getDisplayRestaurants()`, ensuring they always display the same results. Users can search via the sticky search bar in any view mode; markers update immediately after the fixes.
+
+**Files modified:** `src/app/pages/search/search.page.ts` (performSearch, initializeSearchMap methods)
+
 ---
 
 ## Booking Modal Feature (v1.13.0)

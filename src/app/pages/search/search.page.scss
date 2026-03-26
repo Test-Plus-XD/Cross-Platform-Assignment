@@ -485,6 +485,7 @@
           font-size: 1.25rem;
         }
       }
+
     }
   }
 
@@ -646,6 +647,10 @@
 
   .map-view-container .search-map {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .view-toggle ion-segment ion-segment-button:not(.segment-button-checked) ion-icon {
+    color: #ffffff;
   }
 
   // Dark mode green badge styling

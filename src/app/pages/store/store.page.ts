@@ -447,8 +447,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
           role: 'destructive',
           handler: async () => {
             const loading = await this.loadingController.create({
-              message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${this.translations.saving[lang]}`,
-              spinner: null
+              message: this.translations.saving[lang],
+              spinner: null,
+              cssClass: 'eclipse-loading'
             });
             await loading.present();
 
@@ -588,8 +589,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   ): Promise<void> {
     const savingMsg = isTC ? this.translations.saving.TC : this.translations.saving.EN;
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${savingMsg}`,
-      spinner: null
+      message: savingMsg,
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 
@@ -716,8 +718,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     const lang = this.currentLanguage;
     const paymentMsg = lang === 'TC' ? this.translations.processingPayment.TC : this.translations.processingPayment.EN;
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${paymentMsg}`,
-      spinner: null
+      message: paymentMsg,
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 

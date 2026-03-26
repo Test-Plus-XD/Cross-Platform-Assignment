@@ -343,6 +343,14 @@ p {
   --spinner-color: var(--ion-color-primary);
 }
 
+// Eclipse.gif loading overlay — used with LoadingController({ cssClass: 'eclipse-loading' })
+.eclipse-loading::part(message) {
+  padding-top: 56px;
+  background: url('/assets/icon/Eclipse.gif') center top / 48px 48px no-repeat;
+  text-align: center;
+  min-width: 120px;
+}
+
 // Removed global ion-spinner { display: none !important } — the ::after
 // pseudo-element never rendered (parent was display:none), making it dead code.
 // Hiding all spinners globally also broke ion-refresher and ion-infinite-scroll.

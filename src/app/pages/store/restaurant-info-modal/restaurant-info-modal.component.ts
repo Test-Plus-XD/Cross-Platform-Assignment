@@ -439,8 +439,9 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
 
     const uploadMsg = lang === 'TC' ? '上傳圖片中...' : 'Uploading image...';
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${uploadMsg}`,
-      spinner: null
+      message: uploadMsg,
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 
@@ -483,8 +484,9 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
 
     const lang = this.currentLanguage;
     const loading = await this.loadingController.create({
-      message: `<img src="assets/icon/Eclipse.gif" style="width:48px;height:48px;display:block;margin:0 auto 8px" alt="" />${this.translations.saving[lang]}`,
-      spinner: null
+      message: this.translations.saving[lang],
+      spinner: null,
+      cssClass: 'eclipse-loading'
     });
     await loading.present();
 

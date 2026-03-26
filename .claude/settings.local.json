@@ -8,7 +8,11 @@
       "Bash(echo:*)",
       "WebSearch",
       "WebFetch(domain:developers.google.com)",
-      "Bash(npx ionic:*)"
+      "Bash(npx ionic:*)",
+      "Bash(npm install:*)",
+      "Bash(curl -s -X GET \"https://vercel-express-api-alpha.vercel.app/API/Stripe/config\" -H \"x-api-passcode: PourRice\")",
+      "Bash(curl -s -X GET https://vercel-express-api-alpha.vercel.app/API/Restaurants -H 'x-api-passcode: PourRice')",
+      "Bash(curl -s -X GET \"https://vercel-express-api-alpha.vercel.app/API/Reviews/batch-stats?restaurantIds=test1\" -H \"x-api-passcode: PourRice\")"
     ]
   }
 }
