@@ -1,0 +1,111 @@
+// Add Restaurant Modal styles
+// IMPORTANT: Never use `transition: all` — it floods zone.js with transitionend events
+// during Ionic modal animations and freezes the PWA (v1.14.0 bug).
+// Always scope transitions to specific properties only.
+
+.section-header {
+  padding: 20px 16px 8px;
+
+  h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ion-color-medium);
+    margin: 0 0 2px;
+  }
+
+  .section-hint {
+    font-size: 0.75rem;
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+ion-item {
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+  margin: 0 0 2px;
+}
+
+.field-value {
+  font-size: 0.9rem;
+  color: var(--ion-text-color);
+  margin: 0;
+  white-space: normal;
+  word-break: break-word;
+
+  &.placeholder {
+    color: var(--ion-color-medium);
+    font-style: italic;
+  }
+}
+
+// Map container
+.map-container {
+  margin: 8px 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ion-color-light-shade);
+
+  .map {
+    width: 100%;
+    height: 240px;
+  }
+
+  .map-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+    margin: 0;
+    background: var(--ion-color-light);
+
+    ion-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  .map-coords {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 12px;
+    background: var(--ion-color-light);
+    border-top: 1px solid var(--ion-color-light-shade);
+
+    span {
+      font-size: 0.8rem;
+      color: var(--ion-color-medium);
+      font-family: monospace;
+    }
+  }
+}
+
+// Opening hours list — remove the outer list background card style
+.hours-list {
+  margin: 0;
+  background: transparent;
+}
+
+ion-footer {
+  ion-toolbar {
+    padding: 8px 16px;
+  }
+
+  .submit-btn {
+    --border-radius: 12px;
+    height: 48px;
+  }
+}
+
+.bottom-spacer {
+  height: 16px;
+}

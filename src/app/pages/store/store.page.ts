@@ -12,6 +12,7 @@ import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { AdModalComponent } from './ad-modal/ad-modal.component';
+import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
 import { DataService } from '../../services/data.service';
@@ -157,7 +158,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     confirmDeleteAd:         { EN: 'Delete Advertisement',         TC: '刪除廣告' },
     confirmDeleteAdMessage:  { EN: 'Delete this advertisement?',   TC: '刪除此廣告？' },
     adDeleted:               { EN: 'Advertisement deleted',        TC: '廣告已刪除' },
-    processingPayment:       { EN: 'Processing payment...',        TC: '處理付款中...' }
+    processingPayment:       { EN: 'Processing payment...',        TC: '處理付款中...' },
+    addRestaurant:           { EN: 'Add New Restaurant',           TC: '新增餐廳' },
+    restaurantAdded:         { EN: 'Restaurant added! Loading your dashboard...', TC: '餐廳已新增！正在載入您的主頁...' }
   };
 
   constructor(
@@ -389,6 +392,24 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   openRestaurantInfoModal(): void {
     if (!this.restaurant || !this.restaurantId) return;
     this.router.navigate(['/store/edit-info']);
+  }
+
+  // Open the add-restaurant modal for owners who cannot find their restaurant in search.
+  // On success, reloads restaurant data so the dashboard renders immediately.
+  async openAddRestaurantModal(): Promise<void> {
+    const modal = await this.modalController.create({
+      component: AddRestaurantModalComponent
+    });
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    if (data?.created) {
+      await this.showToast(
+        this.currentLanguage === 'TC' ? this.translations.restaurantAdded.TC : this.translations.restaurantAdded.EN,
+        'success'
+      );
+      this.loadRestaurantData();
+    }
   }
 
   // Open the menu item editor in add mode (no item argument) or edit mode.
