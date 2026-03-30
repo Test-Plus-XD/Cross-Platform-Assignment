@@ -7,6 +7,11 @@ import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
 import { searchClient, SearchClient } from '@algolia/client-search';
 
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
 // Interface for menu items stored in sub-collection
 // Note: Menu items are stored as a sub-collection in Firestore, not as an array field
 export interface MenuItem {
@@ -68,6 +73,12 @@ export class RestaurantsService {
   private readonly algoliaClient: SearchClient;
   // Local cache to reduce network calls
   private readonly restaurantsCache = new BehaviorSubject<Restaurant[] | null>(null);
+  // TTL cache for single restaurant lookups (10 min)
+  private readonly restaurantCache = new Map<string, CacheEntry<Restaurant>>();
+  // TTL cache for menu item lookups keyed by restaurantId (10 min)
+  private readonly menuCache = new Map<string, CacheEntry<MenuItem[]>>();
+  // Timestamp guarding the restaurantsCache BehaviorSubject (0 = never fetched)
+  private restaurantsCacheTimestamp = 0;
   // API URL exposed for direct fetch calls (e.g. DocuPipe)
   public readonly apiUrl = environment.apiUrl;
 
@@ -94,6 +105,11 @@ export class RestaurantsService {
     if (!payments || payments === '—' || payments === '' || payments === 'null' || payments === 'undefined') return null;
     if (Array.isArray(payments)) return payments.length > 0 ? payments : null;
     return null;
+  }
+
+  /// Returns true when the cached value identified by `timestamp` is still within `ttlMs`.
+  private isCacheValid(timestamp: number, ttlMs: number): boolean {
+    return Date.now() - timestamp < ttlMs;
   }
 
   /// Search restaurants using Algolia with pagination and filters.
@@ -273,7 +289,7 @@ export class RestaurantsService {
   /// Get all restaurants from API (fallback for non-search scenarios)
   getRestaurants(): Observable<Restaurant[]> {
     const cached = this.restaurantsCache.getValue();
-    if (cached && cached.length > 0) {
+    if (cached && cached.length > 0 && this.isCacheValid(this.restaurantsCacheTimestamp, 600_000)) {
       return of(cached);
     }
 
@@ -282,6 +298,7 @@ export class RestaurantsService {
       tap(list => {
         console.log('RestaurantsService: Fetched', list.length, 'restaurants');
         this.restaurantsCache.next(list);
+        this.restaurantsCacheTimestamp = Date.now();
       }),
       catchError(err => {
         console.error('RestaurantsService: getRestaurants error', err);
@@ -294,6 +311,12 @@ export class RestaurantsService {
   /// Get a single restaurant by ID from server API
   getRestaurantById(id: string): Observable<Restaurant | null> {
     if (!id) return of(null);
+
+    // Return cached entry if still within TTL
+    if (this.restaurantCache.has(id) && this.isCacheValid(this.restaurantCache.get(id)!.timestamp, 600_000)) {
+      console.log('RestaurantsService: Cache hit for restaurant:', id);
+      return of(this.restaurantCache.get(id)!.data);
+    }
 
     console.log('RestaurantsService: Fetching restaurant:', id);
     return this.dataService.get<Restaurant>(`${this.restaurantsEndpoint}/${encodeURIComponent(id)}`).pipe(
@@ -324,6 +347,11 @@ export class RestaurantsService {
         console.log('RestaurantsService: Restaurant fetched successfully');
         return restaurant;
       }),
+      tap(restaurant => {
+        if (restaurant) {
+          this.restaurantCache.set(id, { data: restaurant, timestamp: Date.now() });
+        }
+      }),
       catchError(err => {
         console.error('RestaurantsService: getRestaurantById error', err);
         return of(null);
@@ -335,6 +363,12 @@ export class RestaurantsService {
   /// Note: Menu items are stored as a sub-collection, not an array field.
   getMenuItems(restaurantId: string): Observable<MenuItem[]> {
     if (!restaurantId) return of([]);
+
+    // Return cached entry if still within TTL
+    if (this.menuCache.has(restaurantId) && this.isCacheValid(this.menuCache.get(restaurantId)!.timestamp, 600_000)) {
+      console.log('RestaurantsService: Cache hit for menu items:', restaurantId);
+      return of(this.menuCache.get(restaurantId)!.data);
+    }
 
     console.log('RestaurantsService: Fetching menu for restaurant:', restaurantId);
     const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu`;
@@ -349,6 +383,7 @@ export class RestaurantsService {
       }),
       tap(items => {
         console.log('RestaurantsService: Fetched', items.length, 'menu items');
+        this.menuCache.set(restaurantId, { data: items, timestamp: Date.now() });
       }),
       catchError(err => {
         console.error('RestaurantsService: getMenuItems error', err);
@@ -386,6 +421,7 @@ export class RestaurantsService {
     return this.dataService.post<{ id: string }>(this.restaurantsEndpoint, payload).pipe(
       tap(response => {
         console.log('RestaurantsService: Restaurant created:', response.id);
+        this.restaurantsCacheTimestamp = 0;
         this.restaurantsCache.next(null); // Invalidate cache
       }),
       catchError((err: any) => {
@@ -401,6 +437,9 @@ export class RestaurantsService {
     return this.dataService.put<void>(`${this.restaurantsEndpoint}/${encodeURIComponent(id)}`, payload).pipe(
       tap(() => {
         console.log('RestaurantsService: Restaurant updated successfully');
+        this.restaurantCache.delete(id);
+        this.menuCache.delete(id);
+        this.restaurantsCacheTimestamp = 0;
         this.restaurantsCache.next(null); // Invalidate cache
       }),
       catchError((err: any) => {
@@ -416,6 +455,9 @@ export class RestaurantsService {
     return this.dataService.delete<void>(`${this.restaurantsEndpoint}/${encodeURIComponent(id)}`).pipe(
       tap(() => {
         console.log('RestaurantsService: Restaurant deleted successfully');
+        this.restaurantCache.delete(id);
+        this.menuCache.delete(id);
+        this.restaurantsCacheTimestamp = 0;
         this.restaurantsCache.next(null); // Invalidate cache
       }),
       catchError((err: any) => {
@@ -482,6 +524,9 @@ export class RestaurantsService {
     return this.dataService.uploadFile<{ imageUrl: string }>(endpoint, file, 'image', authToken).pipe(
       tap(response => {
         console.log('RestaurantsService: Restaurant image uploaded successfully:', response.imageUrl);
+        this.restaurantCache.delete(restaurantId);
+        this.menuCache.delete(restaurantId);
+        this.restaurantsCacheTimestamp = 0;
         this.restaurantsCache.next(null); // Invalidate cache
       }),
       catchError((err: any) => {
@@ -523,6 +568,7 @@ export class RestaurantsService {
     return this.dataService.post<{ message: string; restaurantId: string; userId: string }>(endpoint, {}, authToken).pipe(
       tap(response => {
         console.log('RestaurantsService: Restaurant claimed successfully:', response);
+        this.restaurantsCacheTimestamp = 0;
         this.restaurantsCache.next(null); // Invalidate cache
       }),
       catchError((err: any) => {

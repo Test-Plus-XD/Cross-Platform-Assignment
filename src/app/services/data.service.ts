@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, shareReplay, finalize } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
   private readonly apiUrl = environment.apiUrl;
   private readonly apiPasscode = 'PourRice';
+  private inFlightRequests = new Map<string, Observable<any>>();
 
   constructor(
     private readonly http: HttpClient
@@ -38,12 +39,22 @@ export class DataService {
    */
   get<T>(endpoint: string, authToken?: string | null): Observable<T> {
     const url = `${this.apiUrl}${endpoint}`;
+
+    if (this.inFlightRequests.has(url)) {
+      return this.inFlightRequests.get(url) as Observable<T>;
+    }
+
     const headers = this.getHeaders(authToken);
     console.log('DataService: GET', url);
 
-    return this.http.get<T>(url, { headers }).pipe(
-      catchError(this.handleError)
+    const request$ = this.http.get<T>(url, { headers }).pipe(
+      catchError(this.handleError),
+      shareReplay(1),
+      finalize(() => this.inFlightRequests.delete(url))
     );
+
+    this.inFlightRequests.set(url, request$);
+    return request$;
   }
 
   /**

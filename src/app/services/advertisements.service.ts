@@ -1,7 +1,7 @@
 // Advertisements service handles all advertisement-related operations through the API
 import { Injectable } from '@angular/core';
-import { Observable, from, of } from 'rxjs';
-import { map, catchError, switchMap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, from, of } from 'rxjs';
+import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { DataService } from './data.service';
 
@@ -49,6 +49,13 @@ export interface CreateAdvertisementRequest {
 export class AdvertisementsService {
   private readonly adsEndpoint = '/API/Advertisements';
 
+  private adsCache = new BehaviorSubject<Advertisement[] | null>(null);
+  private adsCacheTimestamp = 0;
+
+  private isCacheValid(timestamp: number, ttlMs: number): boolean {
+    return Date.now() - timestamp < ttlMs;
+  }
+
   constructor(
     private readonly dataService: DataService,
     private readonly authService: AuthService
@@ -68,8 +75,21 @@ export class AdvertisementsService {
       ? `${this.adsEndpoint}?restaurantId=${restaurantId}`
       : this.adsEndpoint;
 
+    if (!restaurantId) {
+      const cached = this.adsCache.getValue();
+      if (cached !== null && this.isCacheValid(this.adsCacheTimestamp, 300_000)) {
+        return of(cached);
+      }
+    }
+
     return this.dataService.get<{ count: number; data: Advertisement[] }>(endpoint).pipe(
       map(response => response.data || []),
+      tap(ads => {
+        if (!restaurantId) {
+          this.adsCache.next(ads);
+          this.adsCacheTimestamp = Date.now();
+        }
+      }),
       catchError(err => {
         console.error('AdvertisementsService: Failed to fetch advertisements', err);
         return of([]);
@@ -103,7 +123,11 @@ export class AdvertisementsService {
           data,
           token
         )
-      )
+      ),
+      tap(() => {
+        this.adsCache.next(null);
+        this.adsCacheTimestamp = 0;
+      })
     );
   }
 
@@ -120,7 +144,11 @@ export class AdvertisementsService {
           data,
           token
         )
-      )
+      ),
+      tap(() => {
+        this.adsCache.next(null);
+        this.adsCacheTimestamp = 0;
+      })
     );
   }
 
@@ -135,7 +163,11 @@ export class AdvertisementsService {
           `${this.adsEndpoint}/${id}`,
           token
         )
-      )
+      ),
+      tap(() => {
+        this.adsCache.next(null);
+        this.adsCacheTimestamp = 0;
+      })
     );
   }
 }

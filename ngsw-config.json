@@ -26,5 +26,43 @@
         ]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-restaurants",
+      "urls": [
+        "/API/Restaurants/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 50,
+        "maxAge": "10m",
+        "timeout": "10s"
+      }
+    },
+    {
+      "name": "api-advertisements",
+      "urls": [
+        "/API/Advertisements/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 50,
+        "maxAge": "10m",
+        "timeout": "10s"
+      }
+    },
+    {
+      "name": "api-reviews",
+      "urls": [
+        "/API/Reviews/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 50,
+        "maxAge": "5m",
+        "timeout": "10s"
+      }
+    }
   ]
 }

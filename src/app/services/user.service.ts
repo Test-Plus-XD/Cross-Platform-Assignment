@@ -7,6 +7,14 @@ import { environment } from '../../environments/environment';
 // Timestamp type: Can be ISO 8601 string (from API), Firestore Timestamp object (with toDate() method), or Date
 export type Timestamp = string | Date | { toDate: () => Date } | null | undefined;
 
+// Shape of the localStorage profile cache
+export interface UserProfileCache {
+  type: string | null;
+  restaurantId: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
 // User profile interface matching Firestore schema
 export interface UserProfile {
   uid: string;
@@ -46,6 +54,29 @@ export class UserService {
 
   constructor(private readonly httpClient: HttpClient) {
     console.log('UserService: Initialised with API URL:', this.apiUrl);
+    // Hydrate currentProfileSubject from localStorage on construction (Requirement 10.1)
+    try {
+      const raw = localStorage.getItem('userProfileCache');
+      if (raw) {
+        const parsed: UserProfileCache = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const existing = this.currentProfileSubject.value;
+          this.currentProfileSubject.next({
+            ...existing,
+            uid: existing?.uid ?? '',
+            email: existing?.email ?? null,
+            emailVerified: existing?.emailVerified ?? false,
+            type: parsed.type,
+            restaurantId: parsed.restaurantId,
+            displayName: parsed.displayName,
+            photoURL: parsed.photoURL
+          });
+          console.log('UserService: Hydrated profile from localStorage cache');
+        }
+      }
+    } catch (e) {
+      console.warn('UserService: Could not read localStorage profile cache', e);
+    }
   }
 
   // Store authentication token for API calls
@@ -58,6 +89,11 @@ export class UserService {
   clearAuthToken(): void {
     this.authToken = null;
     this.currentProfileSubject.next(null);
+    try {
+      localStorage.removeItem('userProfileCache');
+    } catch (e) {
+      console.warn('UserService: Could not remove localStorage profile cache', e);
+    }
     console.log('UserService: Auth token cleared');
   }
 
@@ -93,7 +129,7 @@ export class UserService {
 
   // Get HTTP headers with authentication
   private getHeaders(): HttpHeaders {
-    const headers: { [key: string]: string} = {
+    const headers: { [key: string]: string } = {
       'Content-Type': 'application/json',
       'x-api-passcode': 'PourRice'
     };
@@ -194,6 +230,18 @@ export class UserService {
         };
         console.log('UserService: Profile mapped with restaurantId:', profile.restaurantId);
         this.currentProfileSubject.next(profile);
+        // Persist profile fields to localStorage (Requirement 10.2)
+        try {
+          const cacheEntry: UserProfileCache = {
+            type: profile.type ?? null,
+            restaurantId: profile.restaurantId ?? null,
+            displayName: profile.displayName ?? null,
+            photoURL: profile.photoURL ?? null
+          };
+          localStorage.setItem('userProfileCache', JSON.stringify(cacheEntry));
+        } catch (e) {
+          console.warn('UserService: Could not write localStorage profile cache', e);
+        }
         return profile;
       }),
       catchError((error: HttpErrorResponse) => {
@@ -265,6 +313,12 @@ export class UserService {
       tap(() => {
         console.log('UserService: Profile deleted successfully for uid:', uid);
         this.currentProfileSubject.next(null);
+        // Remove localStorage cache on profile deletion (Requirement 10.3)
+        try {
+          localStorage.removeItem('userProfileCache');
+        } catch (e) {
+          console.warn('UserService: Could not remove localStorage profile cache', e);
+        }
       }),
       catchError((error: HttpErrorResponse) => {
         console.error('UserService: Error deleting profile:', error);
@@ -302,7 +356,7 @@ export class UserService {
    */
   updateLoginMetadata(uid: string): Observable<void> {
     console.log('UserService: Updating login metadata for uid:', uid);
-    
+
     const currentProfile = this.currentProfileSubject.value;
     const loginCount = (currentProfile?.loginCount || 0) + 1;
 
@@ -315,7 +369,7 @@ export class UserService {
   // Update user preferences
   updatePreferences(uid: string, preferences: Partial<UserProfile['preferences']>): Observable<void> {
     console.log('UserService: Updating preferences for uid:', uid);
-    
+
     const currentProfile = this.currentProfileSubject.value;
     const updatedPreferences = {
       ...currentProfile?.preferences,
@@ -331,7 +385,7 @@ export class UserService {
    */
   profileExists(uid: string): Observable<boolean> {
     console.log('UserService: Checking if profile exists for uid:', uid);
-    
+
     return this.getUserProfile(uid).pipe(
       map(profile => {
         const exists = profile !== null;

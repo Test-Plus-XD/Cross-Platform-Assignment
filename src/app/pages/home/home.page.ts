@@ -2,7 +2,7 @@
 import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { Observable, of, forkJoin, BehaviorSubject } from 'rxjs';
+import { Observable, of, forkJoin, BehaviorSubject, combineLatest } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
@@ -40,6 +40,9 @@ export class HomePage implements OnInit {
   public readonly placeholderImage = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
   // Rating stats for restaurant cards (keyed by restaurant ID)
   public ratingMap: Record<string, { totalReviews: number; averageRating: number }> = {};
+  // Internal ID lists used to merge into a single getBatchStats call
+  private trendingIds$ = new BehaviorSubject<string[]>([]);
+  private nearbyIds$ = new BehaviorSubject<string[]>([]);
 
   constructor(
     private readonly mockDataService: MockDataService,
@@ -69,13 +72,19 @@ export class HomePage implements OnInit {
     this.restaurants$ = this.mockDataService.restaurants$();
     this.ads$ = this.mockDataService.ads$();
 
-    // Load batch ratings for trending restaurants
+    // Collect trending restaurant IDs for the merged getBatchStats call
     this.restaurants$.subscribe(restaurants => {
       const ids = restaurants.map((r: any) => r.id).filter(Boolean);
-      if (ids.length > 0) {
-        this.reviewsService.getBatchStats(ids).subscribe({
-          next: statsMap => { this.ratingMap = { ...this.ratingMap, ...statsMap }; },
-          error: err => console.warn('HomePage: Failed to load trending ratings', err)
+      this.trendingIds$.next(ids);
+    });
+
+    // Wire up a single getBatchStats call once both ID lists are available
+    combineLatest([this.trendingIds$, this.nearbyIds$]).subscribe(([trendingIds, nearbyIds]) => {
+      const allIds = [...new Set([...trendingIds, ...nearbyIds])];
+      if (allIds.length > 0) {
+        this.reviewsService.getBatchStats(allIds).subscribe({
+          next: statsMap => { this.ratingMap = statsMap; },
+          error: err => console.warn('HomePage: Failed to load ratings', err)
         });
       }
     });
@@ -254,14 +263,10 @@ export class HomePage implements OnInit {
       this.nearby$.next(nearbySlice);
       this.isLoadingNearby = false;
 
-      // Load batch ratings for nearby restaurants
+      // Push nearby IDs into the shared stream — the combineLatest in loadData
+      // will fire getBatchStats exactly once with the merged deduplicated ID set
       const nearbyIds = nearbySlice.map((r: any) => r.id).filter(Boolean);
-      if (nearbyIds.length > 0) {
-        this.reviewsService.getBatchStats(nearbyIds).subscribe({
-          next: statsMap => { this.ratingMap = { ...this.ratingMap, ...statsMap }; },
-          error: err => console.warn('HomePage: Failed to load nearby ratings', err)
-        });
-      }
+      this.nearbyIds$.next(nearbyIds);
     } catch (error) {
       console.error('Error loading nearby restaurants:', error);
       this.locationError = 'Unable to load nearby restaurants';

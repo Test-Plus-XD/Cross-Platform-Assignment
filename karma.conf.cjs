@@ -32,6 +32,9 @@ module.exports = function (config) {
         { type: 'text-summary' }
       ]
     },
+    files: [
+      { pattern: 'ngsw-config.json', watched: false, included: false, served: true }
+    ],
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
