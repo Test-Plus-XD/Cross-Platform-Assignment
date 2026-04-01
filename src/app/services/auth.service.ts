@@ -6,6 +6,7 @@ import {
   Auth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithCredential,
   signOut,
   sendPasswordResetEmail,
   updateProfile,
@@ -344,6 +345,31 @@ export class AuthService {
       };
     } catch (error: any) {
       console.error('AuthService: Error during Google sign-in:', error);
+      throw this.handleAuthError(error);
+    }
+  }
+
+  /**
+   * Sign in using a Google ID token obtained from the One Tap prompt.
+   * Used when the user completes the GSI One Tap credential flow.
+   */
+  public async signInWithGoogleCredential(idToken: string): Promise<User> {
+    try {
+      const credential = GoogleAuthProvider.credential(idToken);
+      const userCredential = await signInWithCredential(this.auth, credential);
+      if (!userCredential?.user) {
+        throw new Error('Google sign-in failed: no user returned');
+      }
+      console.log('AuthService: Google credential sign-in successful, uid:', userCredential.user.uid);
+      return {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName,
+        photoURL: userCredential.user.photoURL,
+        emailVerified: userCredential.user.emailVerified
+      };
+    } catch (error: any) {
+      console.error('AuthService: Error during Google credential sign-in:', error);
       throw this.handleAuthError(error);
     }
   }

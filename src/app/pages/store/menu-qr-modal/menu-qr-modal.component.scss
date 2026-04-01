@@ -1,0 +1,146 @@
+.description-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+
+  .header-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .description-text {
+    .description-main {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+    .description-sub {
+      margin: 0;
+      font-size: 12px;
+      opacity: 0.6;
+      code {
+        font-family: monospace;
+        font-size: 11px;
+      }
+    }
+  }
+}
+
+.qr-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 20px 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  margin-bottom: 20px;
+
+  .qr-wrapper {
+    canvas {
+      display: block;
+      border-radius: 8px;
+    }
+  }
+
+  .restaurant-label {
+    margin: 10px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  .btn-spinner {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.tip-card {
+  margin: 0;
+  // Scope transition to avoid zone.js flooding (see Known Issues in CLAUDE.md)
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  ion-card-content {
+    .tip-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      ion-icon {
+        font-size: 18px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.5;
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+// Full-screen expand overlay
+.expanded-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+
+  .expanded-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 28px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    max-width: 380px;
+    width: 100%;
+
+    h2 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+      text-align: center;
+    }
+
+    .expanded-restaurant-name {
+      margin: 0 0 12px;
+      font-size: 14px;
+      color: #444;
+      text-align: center;
+    }
+
+    .expanded-canvas {
+      display: block;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    ion-button {
+      width: 100%;
+    }
+  }
+}

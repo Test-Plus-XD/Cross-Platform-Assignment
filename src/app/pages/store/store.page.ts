@@ -15,6 +15,7 @@ import { AdModalComponent } from './ad-modal/ad-modal.component';
 import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
+import { MenuQrModalComponent } from './menu-qr-modal/menu-qr-modal.component';
 import { DataService } from '../../services/data.service';
 import { Booking } from '../../services/booking.service';
 import { Restaurant, MenuItem } from '../../services/restaurants.service';
@@ -160,7 +161,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     adDeleted:               { EN: 'Advertisement deleted',        TC: '廣告已刪除' },
     processingPayment:       { EN: 'Processing payment...',        TC: '處理付款中...' },
     addRestaurant:           { EN: 'Add New Restaurant',           TC: '新增餐廳' },
-    restaurantAdded:         { EN: 'Restaurant added! Loading your dashboard...', TC: '餐廳已新增！正在載入您的主頁...' }
+    restaurantAdded:         { EN: 'Restaurant added! Loading your dashboard...', TC: '餐廳已新增！正在載入您的主頁...' },
+    menuQrCode:              { EN: 'Menu QR Code',                               TC: '菜單二維碼' },
+    menuQrCodeHint:          { EN: 'Let customers scan to view your menu',        TC: '讓顧客掃描瀏覽您的菜單' }
   };
 
   constructor(
@@ -410,6 +413,23 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
       );
       this.loadRestaurantData();
     }
+  }
+
+  // Open the QR code generator modal for the current restaurant's menu deep link.
+  async openMenuQrModal(): Promise<void> {
+    if (!this.restaurantId || !this.restaurant) return;
+    const lang = this.currentLanguage;
+    const modal = await this.modalController.create({
+      component: MenuQrModalComponent,
+      componentProps: {
+        restaurantId: this.restaurantId,
+        restaurantName: lang === 'TC'
+          ? (this.restaurant.Name_TC || this.restaurant.Name_EN || '')
+          : (this.restaurant.Name_EN || this.restaurant.Name_TC || ''),
+        lang,
+      },
+    });
+    await modal.present();
   }
 
   // Open the menu item editor in add mode (no item argument) or edit mode.

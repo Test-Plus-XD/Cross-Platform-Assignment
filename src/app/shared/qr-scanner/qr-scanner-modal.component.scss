@@ -1,0 +1,164 @@
+// Scanner modal fills the full screen
+ion-content.scanner-content {
+  --background: #000;
+  --color: #fff;
+
+  // Native mode: transparent so the Capacitor camera renders underneath
+  &.native-mode {
+    --background: transparent;
+  }
+}
+
+.scanner-header {
+  ion-toolbar.scanner-toolbar {
+    --background: rgba(0, 0, 0, 0.85);
+    --color: #fff;
+    --border-color: transparent;
+  }
+}
+
+// ── Viewfinder ──────────────────────────────────────────────────────────────
+
+.viewfinder-wrapper {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 80px); // leave room for hint bar
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.camera-feed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+// ── Scan overlay ─────────────────────────────────────────────────────────────
+
+.scan-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // Dark vignette around the scan frame
+  background: radial-gradient(
+    ellipse 260px 260px at center,
+    transparent 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+}
+
+.scan-frame {
+  position: relative;
+  width: 240px;
+  height: 240px;
+
+  .corner {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    border-color: var(--ion-color-primary, #3880ff);
+    border-style: solid;
+    border-width: 0;
+
+    &.tl { top: 0;    left: 0;  border-top-width: 4px; border-left-width: 4px;  border-top-left-radius: 4px; }
+    &.tr { top: 0;    right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 4px; }
+    &.bl { bottom: 0; left: 0;  border-bottom-width: 4px; border-left-width: 4px;  border-bottom-left-radius: 4px; }
+    &.br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 4px; }
+  }
+}
+
+// ── Hint bar ─────────────────────────────────────────────────────────────────
+
+.hint-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 24px 32px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+
+  ion-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    color: var(--ion-color-primary, #3880ff);
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+}
+
+// ── Unsupported fallback (web / no BarcodeDetector) ──────────────────────────
+
+.unsupported-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 32px 24px;
+  text-align: center;
+  color: #fff;
+
+  .unsupported-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  p {
+    font-size: 14px;
+    opacity: 0.8;
+    line-height: 1.6;
+    margin: 0 0 24px;
+  }
+
+  ion-button {
+    --color: #fff;
+    --border-color: rgba(255,255,255,0.5);
+  }
+}
+
+// ── Processing overlay ────────────────────────────────────────────────────────
+
+.processing-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 10;
+  color: #fff;
+
+  .loading-spinner {
+    width: 56px;
+    height: 56px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+  }
+}

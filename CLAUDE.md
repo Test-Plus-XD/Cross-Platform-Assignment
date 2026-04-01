@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-03-25 | **Version:** 1.15.3 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-02 | **Version:** 1.17.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -59,7 +59,8 @@ src/app/
 │   │   ├── ad-modal/                         # Ad creation modal (post-Stripe payment)
 │   │   ├── add-restaurant-modal/             # Create new restaurant modal (v1.16.0)
 │   │   ├── menu-item-modal/                  # Add/edit menu item modal
-│   │   └── bulk-menu-import-modal/           # DocuPipe bulk import modal
+│   │   ├── bulk-menu-import-modal/           # DocuPipe bulk import modal
+│   │   └── menu-qr-modal/                    # QR code generator modal (v1.17.0)
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
 │   └── test/                  # Development/testing
@@ -101,7 +102,8 @@ src/app/
 │   ├── menu/                  # Side navigation menu
 │   ├── tab/                   # Bottom tab bar
 │   ├── chat-button/           # Restaurant chat (login required)
-│   └── gemini-button/         # AI assistant (global, no login)
+│   ├── gemini-button/         # AI assistant (global, no login)
+│   └── qr-scanner/            # QR scanner modal (global, no login) (v1.17.0)
 └── environments/              # Environment configs
     ├── environment.ts         # Development
     └── environment.prod.ts    # Production
@@ -897,6 +899,8 @@ export interface CreateAdvertisementRequest {
 `fcmVapidKey` must be configured in both `environment.ts` and `environment.prod.ts`. Obtain VAPID key from Firebase Console > Project Settings > Cloud Messaging > Web Push certificates.
 
 ### 13. Other Services
+- **QrScannerModalComponent** (`shared/qr-scanner/`): Decodes `pourrice://menu/{restaurantId}` QR codes. Native: `@capacitor-mlkit/barcode-scanning` startScan() with transparent WebView. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+). Accessible from nav drawer — no login required. CSS class `.barcode-scanner-active` on `<html>` makes WebView transparent during native scanning (defined in `global.scss`).
+- **MenuQrModalComponent** (`store/menu-qr-modal/`): Generates the `pourrice://menu/{restaurantId}` QR code using the `qrcode` npm package on a `<canvas>`. Features: display, full-screen expand, download as PNG. Store page menu section — restaurant owners only.
 - **GuardService:** Route protection (CanActivate)
 - **ThemeService:** Dark/light mode (localStorage)
 - **LanguageService:** EN/TC switching (localStorage)
@@ -978,6 +982,25 @@ isRestaurantUser$ = this.userService.currentProfile$.pipe(
 - Modern gradient UI (purple-blue theme)
 - Bilingual support (EN/TC)
 - Auto-dimming after 3 seconds
+
+### QR Code Features (v1.17.0)
+
+**Deep-link format:** `pourrice://menu/{restaurantId}` — identical across iOS, Android, and PWA.
+
+**QR Generator (restaurant owners — Store page → Menu tab):**
+- `MenuQrModalComponent` renders QR on a `<canvas>` via `qrcode` npm package
+- Error correction level H (30% redundancy — matches Android implementation)
+- Expand button shows 300 px fullscreen overlay for easy counter scanning
+- Download button exports a 600 px PNG via `<a download>` anchor
+- Opened via "Menu QR Code" button in the Menu section action bar
+
+**QR Scanner (all users — nav drawer):**
+- `QrScannerModalComponent` opened from "Scan QR Code" item in `MenuComponent`
+- **Native (iOS/Android):** `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` on `<html>` making the WebView transparent; native camera renders beneath. Torch toggle available.
+- **Web (Chrome/Edge 83+):** `getUserMedia({ facingMode: 'environment' })` → `<video>` element + `BarcodeDetector` API polling every 400 ms.
+- **Web fallback:** If `BarcodeDetector` is unavailable, shows an informational message prompting the user to use Chrome/Edge or the native app.
+- On a valid scan: validates URL scheme (`pourrice:` + hostname `menu`), fetches restaurant via `RestaurantsService.getRestaurantById()`, then navigates to `/restaurant/:id`.
+- CSS modal class `.qr-scanner-modal` (full-screen, no border-radius) defined in `global.scss`.
 
 ### Button Mutual Exclusivity (v1.8.0)
 **ChatVisibilityService** ensures only one chat interface (Chat or Gemini) is visible at a time. Opening one automatically closes the other to prevent user confusion from overlapping chat boxes.
@@ -1750,6 +1773,7 @@ API (verify) → Extract UID → Ownership checks
 **Document Version:** 1.16.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.0** (2026-04-02): **QR code feature — generator + scanner.** Deep-link format `pourrice://menu/{restaurantId}` (identical to iOS/Android). **Generator**: `MenuQrModalComponent` (`store/menu-qr-modal/`) uses `qrcode` npm package (canvas, error correction H, 200 px display / 600 px download PNG). Opened via "Menu QR Code" button in Store → Menu tab action bar. Features: display, full-screen expand, download PNG. **Scanner**: `QrScannerModalComponent` (`shared/qr-scanner/`) accessible from nav drawer (all users, no login). Native: `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` transparent-WebView pattern + torch toggle. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+) polling every 400 ms; falls back to informational message if API unavailable. Validates URL scheme, fetches restaurant via `RestaurantsService`, navigates to `/restaurant/:id`. Global CSS (`.barcode-scanner-active`, `.qr-scanner-modal`) added to `src/global.scss`. `QrScannerModalComponent` declared in `SharedModule`; `MenuQrModalComponent` declared in `StorePageModule`.
 - **v1.16.0** (2026-03-30): **Add New Restaurant modal.** `AddRestaurantModalComponent` (`store/add-restaurant-modal/`) lets Restaurant-type users who can't find their restaurant in the claim search create a new listing. **API flow** (no `/claim` call): `POST /API/Restaurants` with `ownerId: uid` in body (no auth, uses existing `RestaurantsService.createRestaurant()`) → `PUT /API/Users/:uid { restaurantId }` (auth auto-attached by UserService). **Form**: bilingual names (EN/TC, at least one required), address (EN/TC), district (radio AlertDialog), seats, contacts (phone/email/website), Google Maps location pin (tap to place, same `initializeMap()`/`onMapClick()` pattern as `restaurant-info-modal`), opening hours (text-input AlertDialog per weekday, `"HH:MM-HH:MM"` format), keywords (checkbox AlertDialog, shown in active language), payments (checkbox AlertDialog, shown in active language, stores EN strings). **Trigger**: "Add New Restaurant" `ion-button` in the empty-state block of `store.page.html`. `StorePage.openAddRestaurantModal()` re-calls `loadRestaurantData()` on `{ created: true }`. `StorePageModule` declares the new component. CSS: all transitions scoped to `transform, box-shadow` — no `transition: all`.
 - **v1.15.3** (2026-03-25): **API batch-stats fix + unified restaurant card redesign.** (1) Fixed critical `GET /API/Reviews/batch-stats` returning `{"error":"Review not found"}` — root cause: route was defined after `/:id`, so Express matched `batch-stats` as an ID. Fixed by moving the `/batch-stats` route before `/:id` in `Reviews.ts`. (2) Search page list card redesign: **distance badge** (blue pill, top-right of thumbnail, Near Me only), **rating badge** (gold text on dark pill, bottom-right of thumbnail), **opening status badge** (bottom-left, unchanged). Info section now shows: name → keywords row (2 tags + overflow count, above district) → district → address (replacing the old distance row). (3) Home page restaurant cards (Nearby + Trending) updated to match: rating badge on thumbnail bottom-right, keywords row in card-content, `&::part(native) { padding: 0; }` for edge-to-edge thumbnails. `HomePage` gains `ratingMap`, `formatRatingStars()`, `getDisplayKeywords()`, `getKeywordCount()`, and batch stats loading for both nearby and trending restaurants. (4) Fixed `transition: all` → `transition: transform, box-shadow` on home page cards and review card.
 - **v1.15.2** (2026-03-21): **Search card star ratings, thumbnail fix, Near Me icon fix.** (1) Near Me chip icon now uses explicit `*ngIf` switch between `locate` (filled, when active/loading) and `locate-outline` (default), fixing Ionicons dynamic `[name]` binding issue. (2) Restaurant card thumbnails now fill edge-to-edge: added `&::part(native) { padding: 0; }` to remove Ionic `ion-card` default inner padding. (3) Added star ratings to search result cards and map InfoWindows. New backend endpoint `GET /API/Reviews/batch-stats?restaurantIds=id1,id2,...` (max 50 IDs) returns `{ [restaurantId]: { totalReviews, averageRating } }` using Firestore `in` queries (chunked at 30). Frontend: `ReviewsService.getBatchStats()` method, `SearchPage.ratingMap` populated after each search/nearby call, rating row shows `★★★★☆ (12)` with gold star colour. (4) Updated `ReviewsService` exports with `getBatchStats()` method.

@@ -10,6 +10,7 @@ import { MenuComponent } from './menu/menu.component';
 import { TabComponent } from './tab/tab.component';
 import { ChatButtonComponent } from './chat-button/chat-button.component';
 import { GeminiButtonComponent } from './gemini-button/gemini-button.component';
+import { QrScannerModalComponent } from './qr-scanner/qr-scanner-modal.component';
 
 @NgModule({
   // Declare the header and footer components in this module
@@ -19,7 +20,8 @@ import { GeminiButtonComponent } from './gemini-button/gemini-button.component';
     MenuComponent,
     TabComponent,
     ChatButtonComponent,
-    GeminiButtonComponent
+    GeminiButtonComponent,
+    QrScannerModalComponent,
   ],
   // Import common building blocks and Ionic/Router for routerLink support
   imports: [CommonModule, FormsModule, IonicModule, RouterModule],
@@ -30,7 +32,8 @@ import { GeminiButtonComponent } from './gemini-button/gemini-button.component';
     MenuComponent,
     TabComponent,
     ChatButtonComponent,
-    GeminiButtonComponent
+    GeminiButtonComponent,
+    QrScannerModalComponent,
   ]
 })
 export class SharedModule { }

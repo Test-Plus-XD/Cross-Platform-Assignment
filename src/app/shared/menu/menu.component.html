@@ -23,6 +23,12 @@
       <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
     </ion-item>
 
+    <!-- QR Scanner — available to all users, no login required -->
+    <ion-item button (click)="openQrScanner()" lines="none" detail="false">
+      <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+      <ion-label>{{ (lang$ | async) === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</ion-label>
+    </ion-item>
+
     <!-- Conditional menu items based on login state and user type -->
     <ng-container *ngIf="appState$ | async as appState">
       <ng-container *ngIf="appState.isLoggedIn">

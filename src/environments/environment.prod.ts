@@ -15,5 +15,6 @@ export const environment = {
   placeholderImageUrl: 'https://placehold.co/600x400?text=No+Image',
   socketUrl: 'https://railway-socket-production.up.railway.app/',
   fcmVapidKey: 'BEDBZEh6wzrgo0uI6SMui03I6IBJaurA-aFst3dLWC2hxuGhKjjWAXI9BlrQrbxNUgubkkxgOFJVacbpogSa7uc',
-  googleMapsApiKey: 'AIzaSyAun6GtoyZqdkzO55Cbc5DHIO-xL2oYlRI'
+  googleMapsApiKey: 'AIzaSyAun6GtoyZqdkzO55Cbc5DHIO-xL2oYlRI',
+  googleClientId: '937491674619-r1e5di42mi8tdgkqfhe2fubdms7jks9f.apps.googleusercontent.com'
 };

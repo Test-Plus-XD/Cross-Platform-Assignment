@@ -1,0 +1,86 @@
+<!-- QR Scanner Modal
+     Native: transparent ion-content — camera shows through; overlay rendered on top.
+     Web:    <video> element with live camera feed + BarcodeDetector polling. -->
+<ion-header class="scanner-header">
+  <ion-toolbar class="scanner-toolbar">
+    <ion-title>{{ lang === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</ion-title>
+    <ion-buttons slot="end">
+      <!-- Torch toggle (native only) -->
+      <ion-button *ngIf="isNative" (click)="toggleTorch()" [title]="lang === 'TC' ? '閃光燈' : 'Torch'">
+        <ion-icon *ngIf="torchEnabled" name="flash" slot="icon-only"></ion-icon>
+        <ion-icon *ngIf="!torchEnabled" name="flash-off-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+      <ion-button (click)="dismissModal()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="scanner-content" [class.native-mode]="isNative">
+
+  <!-- ── Web mode: camera feed via getUserMedia ──────────────────────────── -->
+  <ng-container *ngIf="!isNative">
+
+    <!-- BarcodeDetector available: show live viewfinder -->
+    <ng-container *ngIf="hasBarcodeDetector">
+      <div class="viewfinder-wrapper">
+        <video #videoEl autoplay playsinline muted class="camera-feed"></video>
+        <div class="scan-overlay">
+          <div class="scan-frame">
+            <span class="corner tl"></span>
+            <span class="corner tr"></span>
+            <span class="corner bl"></span>
+            <span class="corner br"></span>
+          </div>
+        </div>
+      </div>
+      <div class="hint-bar">
+        <ion-icon name="qr-code-outline"></ion-icon>
+        <p>{{ lang === 'TC' ? '將鏡頭對準二維碼，自動掃描' : 'Point camera at QR code — scans automatically' }}</p>
+      </div>
+    </ng-container>
+
+    <!-- BarcodeDetector unavailable: informational fallback -->
+    <ng-container *ngIf="!hasBarcodeDetector">
+      <div class="unsupported-state">
+        <ion-icon name="warning-outline" color="warning" class="unsupported-icon"></ion-icon>
+        <h3>{{ lang === 'TC' ? '不支援即時掃描' : 'Live scanning not supported' }}</h3>
+        <p>
+          {{ lang === 'TC'
+            ? '請使用 Chrome 或 Edge 瀏覽器，或下載 PourRice 手機應用程式以使用 QR 掃描功能。'
+            : 'Please use Chrome or Edge, or download the PourRice mobile app to use QR scanning.' }}
+        </p>
+        <ion-button fill="outline" (click)="dismissModal()">
+          {{ lang === 'TC' ? '關閉' : 'Close' }}
+        </ion-button>
+      </div>
+    </ng-container>
+
+  </ng-container>
+
+  <!-- ── Native mode: transparent content; camera renders beneath ─────── -->
+  <ng-container *ngIf="isNative">
+    <div class="viewfinder-wrapper">
+      <div class="scan-overlay">
+        <div class="scan-frame">
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+        </div>
+      </div>
+    </div>
+    <div class="hint-bar">
+      <ion-icon name="qr-code-outline"></ion-icon>
+      <p>{{ lang === 'TC' ? '將鏡頭對準餐廳的二維碼，自動掃描' : 'Point camera at the restaurant\'s QR code — scans automatically' }}</p>
+    </div>
+  </ng-container>
+
+  <!-- ── Processing overlay (both modes) ──────────────────────────────── -->
+  <div class="processing-overlay" *ngIf="isProcessing">
+    <img src="assets/icon/Eclipse.gif" alt="" class="loading-spinner">
+    <p>{{ lang === 'TC' ? '處理中...' : 'Processing...' }}</p>
+  </div>
+
+</ion-content>

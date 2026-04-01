@@ -304,6 +304,12 @@
               <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
               {{ (lang$ | async) === 'TC' ? '批量匯入菜單' : 'Bulk Import Menu' }}
             </ion-button>
+
+            <!-- Opens MenuQrModalComponent — generates pourrice://menu/{id} QR code -->
+            <ion-button expand="block" fill="outline" (click)="openMenuQrModal()">
+              <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.menuQrCode.TC : translations.menuQrCode.EN }}
+            </ion-button>
           </div>
 
           <!-- Eclipse loading indicator while menu items are fetching -->

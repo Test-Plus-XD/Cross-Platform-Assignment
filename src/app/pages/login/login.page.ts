@@ -1,10 +1,37 @@
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, AfterViewInit, NgZone } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
-import { ToastController, LoadingController } from '@ionic/angular';
-import { Subscription } from 'rxjs';
+import { ToastController, LoadingController, Platform } from '@ionic/angular';
+import { Subscription, filter, take } from 'rxjs';
+import { environment } from '../../../environments/environment';
+
+interface GsiCredentialResponse {
+  credential: string;
+  select_by: string;
+}
+
+declare const google: {
+  accounts: {
+    id: {
+      initialize(config: {
+        client_id: string;
+        callback: (response: GsiCredentialResponse) => void;
+        auto_select?: boolean;
+        cancel_on_tap_outside?: boolean;
+        context?: string;
+      }): void;
+      prompt(momentListener?: (notification: {
+        isNotDisplayed(): boolean;
+        isSkippedMoment(): boolean;
+        isDismissedMoment(): boolean;
+        getDismissedReason(): string;
+      }) => void): void;
+      cancel(): void;
+    };
+  };
+};
 
 @Component({
   selector: 'app-login',
@@ -12,7 +39,7 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage implements OnDestroy {
+export class LoginPage implements OnDestroy, AfterViewInit {
   // Form fields bound to template
   public email: string = '';
   public password: string = '';
@@ -53,6 +80,8 @@ export class LoginPage implements OnDestroy {
   };
 
   private authSubscription: Subscription | null = null;
+  private authInitSub: Subscription | null = null;
+  private oneTapRetries = 0;
 
   constructor(
     readonly authService: AuthService,
@@ -61,7 +90,9 @@ export class LoginPage implements OnDestroy {
     readonly router: Router,
     readonly activatedRoute: ActivatedRoute,
     readonly toastController: ToastController,
-    readonly loadingController: LoadingController
+    readonly loadingController: LoadingController,
+    readonly platform: Platform,
+    readonly ngZone: NgZone
   ) {
     // Subscribe to auth state changes
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
@@ -76,10 +107,79 @@ export class LoginPage implements OnDestroy {
     return this.activatedRoute.snapshot.queryParams['returnUrl'] || '/user';
   }
 
+  ngAfterViewInit(): void {
+    // One Tap is web-only — skip on Capacitor/Cordova native builds
+    if (this.platform.is('capacitor') || this.platform.is('cordova')) return;
+
+    // Wait for Firebase auth to finish initialising before deciding whether to show One Tap
+    this.authInitSub = this.authService.authInitialized$.pipe(
+      filter(initialized => initialized),
+      take(1)
+    ).subscribe(() => {
+      if (!this.authService.isLoggedIn) {
+        this.initOneTap();
+      }
+    });
+  }
+
   ngOnDestroy(): void {
-    // Clean up subscription
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
+    }
+    if (this.authInitSub) {
+      this.authInitSub.unsubscribe();
+    }
+    try {
+      if (typeof google !== 'undefined' && google?.accounts?.id) {
+        google.accounts.id.cancel();
+      }
+    } catch { /* GSI not loaded */ }
+  }
+
+  private initOneTap(): void {
+    if (typeof google !== 'undefined' && google?.accounts?.id) {
+      this.setupOneTap();
+    } else if (this.oneTapRetries < 10) {
+      this.oneTapRetries++;
+      setTimeout(() => this.initOneTap(), 500);
+    }
+  }
+
+  private setupOneTap(): void {
+    try {
+      google.accounts.id.initialize({
+        client_id: environment.googleClientId,
+        callback: (response: GsiCredentialResponse) => {
+          this.ngZone.run(() => this.handleOneTapCredential(response));
+        },
+        auto_select: false,
+        cancel_on_tap_outside: true,
+        context: 'signin'
+      });
+      google.accounts.id.prompt();
+    } catch (error) {
+      console.error('LoginPage: One Tap initialization failed', error);
+    }
+  }
+
+  private async handleOneTapCredential(response: GsiCredentialResponse): Promise<void> {
+    const lang = this.getCurrentLanguage();
+    const loading = await this.loadingController.create({
+      message: this.translations.connectingGoogle[lang],
+      spinner: null
+    });
+    await loading.present();
+
+    try {
+      await this.authService.signInWithGoogleCredential(response.credential);
+      const currentLang = this.getCurrentLanguage();
+      await this.showToast(this.translations.welcome[currentLang], 'success');
+      await this.router.navigateByUrl(this.getReturnUrl());
+    } catch (error: any) {
+      const currentLang = this.getCurrentLanguage();
+      await this.showToast(error.message || this.translations.googleSignInFailed[currentLang], 'danger');
+    } finally {
+      await loading.dismiss();
     }
   }
 

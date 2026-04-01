@@ -1,0 +1,83 @@
+<!-- Menu QR Code Modal — generates a scannable deep link for the restaurant menu -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ lang === 'TC' ? '菜單二維碼' : 'Menu QR Code' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- Description -->
+  <div class="description-row">
+    <ion-icon name="qr-code-outline" class="header-icon" color="primary"></ion-icon>
+    <div class="description-text">
+      <p class="description-main">
+        {{ lang === 'TC' ? '顧客可以掃描此二維碼瀏覽您的菜單' : 'Customers can scan this QR code to browse your menu' }}
+      </p>
+      <p class="description-sub">
+        {{ lang === 'TC' ? '格式：' : 'Format: ' }}<code>pourrice://menu/{{ restaurantId }}</code>
+      </p>
+    </div>
+  </div>
+
+  <!-- QR Code canvas -->
+  <div class="qr-card">
+    <div class="qr-wrapper">
+      <canvas #qrCanvas></canvas>
+    </div>
+    <p class="restaurant-label">{{ restaurantName }}</p>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="action-buttons">
+    <!-- Expand: shows a larger QR in an overlay for easier scanning -->
+    <ion-button expand="block" fill="outline" (click)="expandQr()">
+      <ion-icon name="expand-outline" slot="start"></ion-icon>
+      {{ lang === 'TC' ? '放大' : 'Expand' }}
+    </ion-button>
+
+    <!-- Download: saves a high-res PNG to the device -->
+    <ion-button expand="block" [disabled]="isExporting" (click)="downloadQr()">
+      <ng-container *ngIf="!isExporting">
+        <ion-icon name="download-outline" slot="start"></ion-icon>
+        {{ lang === 'TC' ? '下載 PNG' : 'Download PNG' }}
+      </ng-container>
+      <ng-container *ngIf="isExporting">
+        <img src="assets/icon/Eclipse.gif" class="btn-spinner" slot="start" alt="">
+        {{ lang === 'TC' ? '處理中...' : 'Exporting...' }}
+      </ng-container>
+    </ion-button>
+  </div>
+
+  <!-- Tip card -->
+  <ion-card class="tip-card">
+    <ion-card-content>
+      <div class="tip-row">
+        <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+        <p>
+          {{ lang === 'TC'
+            ? '提示：將此二維碼列印並放在桌面，或分享至社交媒體，讓顧客輕鬆瀏覽菜單。'
+            : 'Tip: Print this QR code and place it on tables, or share it on social media so customers can easily browse your menu.' }}
+        </p>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>
+
+<!-- Full-screen expand overlay -->
+<div class="expanded-overlay" *ngIf="isExpanded" (click)="closeExpanded()">
+  <div class="expanded-card" (click)="$event.stopPropagation()">
+    <h2>{{ lang === 'TC' ? '掃描查看菜單' : 'Scan to View Menu' }}</h2>
+    <p class="expanded-restaurant-name">{{ restaurantName }}</p>
+    <canvas #qrCanvasExpanded class="expanded-canvas"></canvas>
+    <ion-button expand="block" (click)="closeExpanded()">
+      {{ lang === 'TC' ? '關閉' : 'Close' }}
+    </ion-button>
+  </div>
+</div>

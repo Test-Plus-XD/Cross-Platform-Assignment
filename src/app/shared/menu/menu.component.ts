@@ -1,13 +1,14 @@
 // Component that renders the ion-menu contents and controls navigation
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { MenuController } from '@ionic/angular';
+import { MenuController, ModalController } from '@ionic/angular';
 import { map } from 'rxjs/operators';
 import { UIService } from '../../services/UI.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { UserService } from '../../services/user.service';
 import { AppStateService } from '../../services/app-state.service';
+import { QrScannerModalComponent } from '../qr-scanner/qr-scanner-modal.component';
 
 @Component({
   selector: 'app-shared-menu',
@@ -35,7 +36,8 @@ export class MenuComponent {
     readonly menu: MenuController,
     readonly language: LanguageService,
     readonly theme: ThemeService,
-    readonly userService: UserService
+    readonly userService: UserService,
+    private readonly modalController: ModalController,
   ) { }
 
   // Called by template when user clicks an item
@@ -67,5 +69,17 @@ export class MenuComponent {
   // Set language via LanguageService
   toggleLanguage() {
     this.language.toggleLanguage();// Update language globally
+  }
+
+  // Open the QR scanner modal (accessible to all users — no login required)
+  async openQrScanner(): Promise<void> {
+    await this.menu.close();
+    const lang = this.language.getCurrentLanguage();
+    const modal = await this.modalController.create({
+      component: QrScannerModalComponent,
+      componentProps: { lang },
+      cssClass: 'qr-scanner-modal',
+    });
+    await modal.present();
   }
 }
