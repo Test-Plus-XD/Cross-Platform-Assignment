@@ -1,5 +1,5 @@
 // Booking page for customers to view and manage their reservations
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { Subject } from 'rxjs';
@@ -19,6 +19,16 @@ type BookingFilter = 'upcoming' | 'past' | 'declined' | 'cancelled' | 'all';
   standalone: false,
 })
 export class BookingPage implements OnInit, OnDestroy {
+  private readonly bookingService = inject(BookingService);
+  private readonly authService = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
+  private readonly themeService = inject(ThemeService);
+  private readonly platformService = inject(PlatformService);
+  private readonly router = inject(Router);
+  private readonly alertController = inject(AlertController);
+  private readonly loadingController = inject(LoadingController);
+  private readonly toastController = inject(ToastController);
+
   lang$ = this.languageService.lang$;
   isDark$ = this.themeService.isDark$;
   isMobile$ = this.platformService.isMobile$;
@@ -70,17 +80,10 @@ export class BookingPage implements OnInit, OnDestroy {
     numberOfGuests: { EN: 'Number of Guests', TC: '人數' },
   };
 
-  constructor(
-    private readonly bookingService: BookingService,
-    private readonly authService: AuthService,
-    private readonly languageService: LanguageService,
-    private readonly themeService: ThemeService,
-    private readonly platformService: PlatformService,
-    private readonly router: Router,
-    private readonly alertController: AlertController,
-    private readonly loadingController: LoadingController,
-    private readonly toastController: ToastController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     const event = new CustomEvent('page-title', {

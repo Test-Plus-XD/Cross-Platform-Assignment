@@ -5,7 +5,7 @@
 //   3. Extracted items are shown in an editable review table
 //   4. User can remove rows or edit fields, then saves all items to the DB
 // Dismisses with { imported: true } when items are saved.
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
 import { ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,6 +21,11 @@ import { environment } from '../../../../environments/environment';
   standalone: false
 })
 export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
+  private readonly feature = inject(StoreFeatureService);
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly loadingController = inject(LoadingController);
+
   // The restaurant that extracted items will be saved to
   @Input() restaurantId!: string;
 
@@ -54,12 +59,10 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
     saveAll:      { EN: 'Save All',         TC: '儲存全部' },
   };
 
-  constructor(
-    private readonly feature: StoreFeatureService,
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     // Keep language snapshot current for template bindings

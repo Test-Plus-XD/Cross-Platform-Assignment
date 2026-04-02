@@ -14,6 +14,10 @@ import { AppStateService } from '../../services/app-state.service';
   standalone: false
 })
 export class TabComponent {
+  readonly UI = inject(UIService);
+  readonly language = inject(LanguageService);
+  readonly userService = inject(UserService);
+
   // Observable controlling whether tab bar displays
   showTabs$: Observable<boolean>;
   // Language stream for labels
@@ -27,11 +31,10 @@ export class TabComponent {
     map(profile => profile?.type?.toLowerCase() === 'restaurant')
   );
 
-  constructor(
-    readonly UI: UIService,
-    readonly language: LanguageService,
-    readonly userService: UserService
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.showTabs$ = this.UI.showTabs$;
     this.showTabs$.subscribe(v => console.debug('TabComponent showTabs =>', v));
   }

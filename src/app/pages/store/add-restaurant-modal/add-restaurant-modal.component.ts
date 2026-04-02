@@ -2,7 +2,7 @@
 // Creates the restaurant via POST /API/Restaurants (ownerId in body, no auth required),
 // then links it to the user profile via PUT /API/Users/:uid (auth required).
 // Dismisses with { created: true } after a successful save.
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, inject } from '@angular/core';
 import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -19,6 +19,12 @@ import { Weekdays } from '../../../constants/weekdays.const';
   standalone: false
 })
 export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly feature = inject(StoreFeatureService);
+  private readonly modalController = inject(ModalController);
+  private readonly alertController = inject(AlertController);
+  private readonly toastController = inject(ToastController);
+  private readonly loadingController = inject(LoadingController);
+
 
   // ── Language ──────────────────────────────────────────────────────────────────
   lang$ = this.feature.language.lang$;
@@ -93,13 +99,10 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     hoursPlaceholder:  { EN: 'e.g. 09:00-22:00 or Closed', TC: '例如：09:00-22:00 或 休息' },
   };
 
-  constructor(
-    private readonly feature: StoreFeatureService,
-    private readonly modalController: ModalController,
-    private readonly alertController: AlertController,
-    private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────────
 

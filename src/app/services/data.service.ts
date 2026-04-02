@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, shareReplay, finalize } from 'rxjs/operators';
@@ -6,13 +6,16 @@ import { environment } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DataService {
+  private readonly http = inject(HttpClient);
+
   private readonly apiUrl = environment.apiUrl;
   private readonly apiPasscode = 'PourRice';
   private inFlightRequests = new Map<string, Observable<any>>();
 
-  constructor(
-    private readonly http: HttpClient
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('DataService: Initialised with API URL:', this.apiUrl);
   }
 

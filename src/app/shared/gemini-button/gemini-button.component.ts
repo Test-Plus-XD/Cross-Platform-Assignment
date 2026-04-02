@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, Input } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Input, inject } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject, Observable } from 'rxjs';
@@ -22,6 +22,15 @@ interface Message {
   standalone: false
 })
 export class GeminiButtonComponent implements OnInit, OnDestroy {
+  private readonly geminiService = inject(GeminiService);
+  private readonly authService = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
+  private readonly chatVisibilityService = inject(ChatVisibilityService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly restaurantsService = inject(RestaurantsService);
+  private readonly sanitizer = inject(DomSanitizer);
+
   // Chat state
   isOpen = false;
   messages: Message[] = [];
@@ -84,16 +93,10 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     }
   };
 
-  constructor(
-    private readonly geminiService: GeminiService,
-    private readonly authService: AuthService,
-    private readonly languageService: LanguageService,
-    private readonly chatVisibilityService: ChatVisibilityService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
-    private readonly restaurantsService: RestaurantsService,
-    private readonly sanitizer: DomSanitizer
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.chatButtonOpen$ = this.chatVisibilityService.chatButtonOpen$;
   }
 

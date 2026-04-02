@@ -1,6 +1,6 @@
 // Restaurant detail page component with modern responsive design
 // Displays comprehensive restaurant information including menu, reviews, and booking functionality
-import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
@@ -24,6 +24,14 @@ import { environment } from '../../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
+  private readonly feature = inject(RestaurantFeatureService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly alertController = inject(AlertController);
+  private readonly changeDetectionReference = inject(ChangeDetectorRef);
+
   // Bilingual language stream
   lang$ = this.feature.language.lang$;
   // Observable boolean that indicates whether dark theme is active
@@ -94,15 +102,10 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   // Snapshot of the current language for synchronous access in methods
   currentLanguage: 'EN' | 'TC' = 'EN';
 
-  constructor(
-    private readonly feature: RestaurantFeatureService,
-    private readonly route: ActivatedRoute,
-    private readonly router: Router,
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly alertController: AlertController,
-    private readonly changeDetectionReference: ChangeDetectorRef
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.isDark$ = this.feature.theme.isDark$;
   }
 

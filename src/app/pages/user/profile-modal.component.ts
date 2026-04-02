@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, Input, inject } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserService, UserProfile } from '../../services/user.service';
@@ -12,6 +12,12 @@ import { firstValueFrom } from 'rxjs';
   standalone: false
 })
 export class ProfileModalComponent implements OnInit {
+  private readonly modalController = inject(ModalController);
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly userService = inject(UserService);
+  private readonly languageService = inject(LanguageService);
+  private readonly toastController = inject(ToastController);
+
   // Input property to receive existing profile data
   @Input() profile: UserProfile | null = null;
   // Input property to determine if this is first-time setup
@@ -65,13 +71,10 @@ export class ProfileModalComponent implements OnInit {
     errorMessage: { EN: 'Failed to update profile', TC: '更新個人資料失敗' }
   };
 
-  constructor(
-    private readonly modalController: ModalController,
-    private readonly formBuilder: FormBuilder,
-    private readonly userService: UserService,
-    private readonly languageService: LanguageService,
-    private readonly toastController: ToastController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     // Initialise the form with existing profile data or defaults

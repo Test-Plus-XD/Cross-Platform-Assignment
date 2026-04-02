@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, NgZone, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, NgZone, ChangeDetectorRef, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -17,6 +17,15 @@ import PhotoSwipeLightbox from 'photoswipe/lightbox';
   standalone: false
 })
 export class ChatButtonComponent implements OnInit, OnDestroy {
+  private readonly chatService = inject(ChatService);
+  private readonly authService = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
+  private readonly chatVisibilityService = inject(ChatVisibilityService);
+  private readonly router = inject(Router);
+  private readonly httpClient = inject(HttpClient);
+  private readonly ngZone = inject(NgZone);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
+
   @Input() restaurantId!: string;
   @Input() restaurantName!: string;
   @Input() restaurantOwnerId?: string;
@@ -47,16 +56,10 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   // Flag to track whether message history has been loaded at least once
   private HasReceivedHistory = false;
 
-  constructor(
-    private readonly chatService: ChatService,
-    private readonly authService: AuthService,
-    private readonly languageService: LanguageService,
-    private readonly chatVisibilityService: ChatVisibilityService,
-    private readonly router: Router,
-    private readonly httpClient: HttpClient,
-    private readonly ngZone: NgZone,
-    private readonly changeDetectorRef: ChangeDetectorRef
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.geminiButtonOpen$ = this.chatVisibilityService.geminiButtonOpen$;
   }
 

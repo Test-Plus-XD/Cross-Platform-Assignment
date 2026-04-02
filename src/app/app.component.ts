@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -19,22 +19,25 @@ import { MessagingService } from './services/messaging.service';
   standalone: false,
 })
 export class AppComponent implements OnInit, OnDestroy {
+    readonly theme = inject(ThemeService);
+    readonly layout = inject(LayoutService);
+    readonly language = inject(LanguageService);
+    readonly platform = inject(PlatformService);
+    readonly UI = inject(UIService);
+    readonly appState = inject(AppStateService);
+    readonly router = inject(Router);
+    readonly messagingService = inject(MessagingService);
+    private alertController = inject(AlertController);
+
     @ViewChild(HeaderComponent) header!: HeaderComponent;
 
     // Cleanup subject
     private destroy$ = new Subject<void>();
 
-    constructor(
-        readonly theme: ThemeService,
-        readonly layout: LayoutService,
-        readonly language: LanguageService,
-        readonly platform: PlatformService,
-        readonly UI: UIService,
-        readonly appState: AppStateService,
-        readonly router: Router,
-        readonly messagingService: MessagingService,
-        private alertController: AlertController
-    ) {
+    /** Inserted by Angular inject() migration for backwards compatibility */
+    constructor(...args: unknown[]);
+
+    constructor() {
         // Ensure the initial theme is applied right away.
         // This re-applies whatever ThemeService computed in getInitialTheme().
         // (ThemeService's setTheme will also write to localStorage.)

@@ -22,6 +22,12 @@ interface PageTitle {
   standalone: false,
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  readonly lang = inject(LanguageService);
+  readonly theme = inject(ThemeService);
+  readonly platform = inject(PlatformService);
+  readonly UI = inject(UIService);
+  private location = inject(Location);
+
   // Observable boolean that is true when running on mobile
   isMobile$: Observable<boolean>;
   // Observable boolean for whether to show menu
@@ -46,13 +52,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private eventHandler = (ev: Event) => this.onPageTitleEvent(ev as CustomEvent);
   private subscriptions: Subscription[] = [];
 
-  constructor(
-    readonly lang: LanguageService,
-    readonly theme: ThemeService,
-    readonly platform: PlatformService,
-    readonly UI: UIService,
-    private location: Location
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     window.addEventListener('page-title', this.eventHandler as EventListener);
     // Use service observable directly for template consumption
     this.isMobile$ = this.platform.isMobile$;

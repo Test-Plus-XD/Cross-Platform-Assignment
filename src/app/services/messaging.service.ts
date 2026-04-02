@@ -1,4 +1,4 @@
-import { Injectable, Optional } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Messaging, getToken, onMessage, deleteToken, MessagePayload } from '@angular/fire/messaging';
 import { environment } from '../../environments/environment';
@@ -156,7 +156,12 @@ export class MessagingService {
   public message$ = this.messageSubject.asObservable();
   public permission$ = this.permissionSubject.asObservable();
 
-  constructor(@Optional() messaging: Messaging) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
+    const messaging = inject(Messaging, { optional: true });
+
     this.initialiseMessaging(messaging);
   }
 

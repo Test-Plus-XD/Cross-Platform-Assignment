@@ -1,16 +1,21 @@
 // LayoutService centralises simple header/footer spacing and footer visibility
-import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
+import { Injectable, Renderer2, RendererFactory2, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
+  private rendererFactory = inject(RendererFactory2);
+
   // BehaviourSubject that emits whether footer should be visible
   private showFooterSubject = new BehaviorSubject<boolean>(false);
   // Public observable for footer components to subscribe to
   showFooter$ = this.showFooterSubject.asObservable();
   // Renderer used to update styles on the router outlet
   private renderer: Renderer2;
-  constructor(private rendererFactory: RendererFactory2) {
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+  constructor() {
     this.renderer = this.rendererFactory.createRenderer(null, null);
   }
   // Set the --header-spacing CSS variable on ion-router-outlet

@@ -17,6 +17,14 @@ import { QrScannerModalComponent } from '../qr-scanner/qr-scanner-modal.componen
   standalone: false
 })
 export class MenuComponent {
+  readonly router = inject(Router);
+  readonly UI = inject(UIService);
+  readonly menu = inject(MenuController);
+  readonly language = inject(LanguageService);
+  readonly theme = inject(ThemeService);
+  readonly userService = inject(UserService);
+  private readonly modalController = inject(ModalController);
+
   // Expose language observable for bilingual labels (shorthand assignment)
   lang$ = this.language.lang$;
   // Expose dark-mode observable for template use
@@ -30,15 +38,10 @@ export class MenuComponent {
     map(profile => profile?.type?.toLowerCase() === 'restaurant')
   );
 
-  constructor(
-    readonly router: Router,
-    readonly UI: UIService,
-    readonly menu: MenuController,
-    readonly language: LanguageService,
-    readonly theme: ThemeService,
-    readonly userService: UserService,
-    private readonly modalController: ModalController,
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   // Called by template when user clicks an item
   async onMenuItemSelected(route: string): Promise<void> {

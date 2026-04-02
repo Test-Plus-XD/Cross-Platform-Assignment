@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, ChangeDetectorRef, inject } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { Restaurant, OpeningHours } from '../../services/restaurants.service';
 
@@ -14,6 +14,10 @@ interface ParsedHours {
   standalone: false
 })
 export class BookingModalComponent {
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   @Input() restaurant!: Restaurant;
   @Input() lang: string = 'EN';
 
@@ -35,11 +39,10 @@ export class BookingModalComponent {
   hoursInfo: ParsedHours | null = null;
   hoursMessage: string = '';
 
-  constructor(
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly cdr: ChangeDetectorRef
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   /// Called by ion-datetime on every value change
   onDateTimeChange(event: CustomEvent): void {

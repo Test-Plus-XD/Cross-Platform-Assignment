@@ -1,5 +1,5 @@
 // UIService controls menu and platform-only tab visibility; route logic belongs in components
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { MenuController } from '@ionic/angular';
 import { BehaviorSubject, Observable, Subscription } from 'rxjs';
 import { startWith } from 'rxjs/operators';
@@ -7,6 +7,9 @@ import { PlatformService } from '../services/platform.service';
 
 @Injectable({ providedIn: 'root' })
 export class UIService implements OnDestroy {
+  private platform = inject(PlatformService);
+  private menu = inject(MenuController);
+
   // BehaviourSubject whether bottom tabs should be shown because device is mobile
   private showTabsSubject = new BehaviorSubject<boolean>(false);
   showTabs$: Observable<boolean> = this.showTabsSubject.asObservable();
@@ -19,10 +22,10 @@ export class UIService implements OnDestroy {
   // Subscription for platform listener created in init()
   private subscription: Subscription | null = null;
 
-  constructor(
-    private platform: PlatformService,
-    private menu: MenuController
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     // Constructor intentionally lightweight; call init() from AppComponent.ngOnInit()
   }
 

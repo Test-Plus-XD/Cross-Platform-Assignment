@@ -1,5 +1,5 @@
 // Import Observable utilities, Angular and Ionic lifecycle APIs and Rx utilities
-import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy, inject } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Observable, of, forkJoin, BehaviorSubject, combineLatest } from 'rxjs';
@@ -20,6 +20,15 @@ import { environment } from '../../../environments/environment';
   standalone: false,
 })
 export class HomePage implements OnInit {
+  private readonly mockDataService = inject(MockDataService);
+  private readonly languageService = inject(LanguageService);
+  private readonly platformService = inject(PlatformService);
+  private readonly reviewsService = inject(ReviewsService);
+  private readonly router = inject(Router);
+  private readonly locationService = inject(LocationService);
+  private readonly restaurantsService = inject(RestaurantsService);
+  private readonly advertisementsService = inject(AdvertisementsService);
+
   // Observables for async data from services
   public offers$: Observable<any[]> = of([]);
   public articles$: Observable<any[]> = of([]);
@@ -44,16 +53,10 @@ export class HomePage implements OnInit {
   private trendingIds$ = new BehaviorSubject<string[]>([]);
   private nearbyIds$ = new BehaviorSubject<string[]>([]);
 
-  constructor(
-    private readonly mockDataService: MockDataService,
-    private readonly languageService: LanguageService,
-    private readonly platformService: PlatformService,
-    private readonly reviewsService: ReviewsService,
-    private readonly router: Router,
-    private readonly locationService: LocationService,
-    private readonly restaurantsService: RestaurantsService,
-    private readonly advertisementsService: AdvertisementsService
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   ngOnInit(): void {
     // Load all data from mock service

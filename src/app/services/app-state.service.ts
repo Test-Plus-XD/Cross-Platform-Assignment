@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -16,6 +16,8 @@ export interface AppState {
   providedIn: 'root'
 })
 export class AppStateService implements OnDestroy {
+  private auth = inject(AuthService);
+
   // Centralized app state - accessible by all components
   private appStateSubject = new BehaviorSubject<AppState>(this.loadStateFromStorage());
   public appState$: Observable<AppState> = this.appStateSubject.asObservable();
@@ -23,7 +25,10 @@ export class AppStateService implements OnDestroy {
   // Cleanup subject
   private destroy$ = new Subject<void>();
 
-  constructor(private auth: AuthService) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     // Subscribe to auth state changes and update centralized state
     this.auth.currentUser$
       .pipe(takeUntil(this.destroy$))

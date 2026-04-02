@@ -1,7 +1,7 @@
 // Modal for adding a new menu item or editing an existing one.
 // Pass menuItem via componentProps to enter edit mode; omit it for add mode.
 // Dismisses with { saved: true } after a successful create or update.
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject } from '@angular/core';
 import { ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -16,6 +16,11 @@ import { MenuItemFieldLabels } from '../../../constants/restaurant-constants';
   standalone: false
 })
 export class MenuItemModalComponent implements OnInit, OnDestroy {
+  private readonly feature = inject(StoreFeatureService);
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly loadingController = inject(LoadingController);
+
   // Required: the restaurant whose menu this item belongs to
   @Input() restaurantId!: string;
   // Optional: when provided the modal operates in edit mode instead of add mode
@@ -58,12 +63,10 @@ export class MenuItemModalComponent implements OnInit, OnDestroy {
     updateFailed: { EN: 'Update failed',  TC: '更新失敗' },
   };
 
-  constructor(
-    private readonly feature: StoreFeatureService,
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     // Keep snapshot in sync for template expressions that cannot use async pipe

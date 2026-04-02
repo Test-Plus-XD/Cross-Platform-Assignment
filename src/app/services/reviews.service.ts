@@ -1,5 +1,5 @@
 // Reviews service handles all review-related operations through the API
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -57,6 +57,9 @@ interface CacheEntry<T> {
   providedIn: 'root'
 })
 export class ReviewsService {
+  private readonly dataService = inject(DataService);
+  private readonly authService = inject(AuthService);
+
   // Base endpoint for review operations
   private readonly reviewsEndpoint = '/API/Reviews';
 
@@ -68,10 +71,10 @@ export class ReviewsService {
   private statsCache = new Map<string, CacheEntry<ReviewStats>>();
   private batchStatsCache = new Map<string, CacheEntry<BatchStats>>();
 
-  constructor(
-    private readonly dataService: DataService,
-    private readonly authService: AuthService
-  ) { console.log('ReviewsService: Initialised'); }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { console.log('ReviewsService: Initialised'); }
 
   /**
    * Returns true if the cached entry is still within the TTL window.

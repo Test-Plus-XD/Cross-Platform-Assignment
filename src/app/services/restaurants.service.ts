@@ -1,6 +1,6 @@
 // Service to fetch restaurants from backend API and perform Algolia searches
 // This service handles CRUD operations and integrates with the Vercel API
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -65,6 +65,8 @@ export interface Restaurant {
 
 @Injectable({ providedIn: 'root' })
 export class RestaurantsService {
+  private readonly dataService = inject(DataService);
+
   // Base endpoint for restaurant operations
   private readonly restaurantsEndpoint = '/API/Restaurants';
   // Algolia index name for restaurant searches
@@ -82,7 +84,10 @@ export class RestaurantsService {
   // API URL exposed for direct fetch calls (e.g. DocuPipe)
   public readonly apiUrl = environment.apiUrl;
 
-  constructor(private readonly dataService: DataService) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('RestaurantsService: Initialised');
     // Initialise Algolia client with credentials from environment
     this.algoliaClient = searchClient(environment.algoliaAppId, environment.algoliaSearchKey);

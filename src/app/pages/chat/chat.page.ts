@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -17,6 +17,13 @@ import { environment } from '../../../environments/environment';
   standalone: false,
 })
 export class ChatPage implements OnInit, OnDestroy {
+  private readonly authService = inject(AuthService);
+  private readonly userService = inject(UserService);
+  private readonly languageService = inject(LanguageService);
+  private readonly chatService = inject(ChatService);
+  private readonly httpClient = inject(HttpClient);
+  private readonly router = inject(Router);
+
   // ViewChild reference to ChatButton component
   @ViewChild(ChatButtonComponent) chatButton?: ChatButtonComponent;
 
@@ -40,14 +47,10 @@ export class ChatPage implements OnInit, OnDestroy {
   // Cleanup
   private destroy$ = new Subject<void>();
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-    private readonly languageService: LanguageService,
-    private readonly chatService: ChatService,
-    private readonly httpClient: HttpClient,
-    private readonly router: Router
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   ngOnInit() {
     this.loadUserProfile();

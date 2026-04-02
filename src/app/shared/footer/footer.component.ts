@@ -1,5 +1,5 @@
 // FooterComponent slides up when LayoutService signals showFooter = true
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { LayoutService } from '../../services/layout.service';
 import { LanguageService } from '../../services/language.service';
 
@@ -10,6 +10,9 @@ import { LanguageService } from '../../services/language.service';
   standalone: false,
 })
 export class FooterComponent implements OnInit, OnDestroy {
+  readonly layout = inject(LayoutService);
+  readonly lang = inject(LanguageService);
+
   // Bind language stream for bilingual links
   lang$ = this.lang.lang$;
   // Local flag used to drive animation class
@@ -22,7 +25,10 @@ export class FooterComponent implements OnInit, OnDestroy {
   private lastEmitTime = 0;
   private readonly debounceMs = 80;
 
-  constructor(readonly layout: LayoutService, readonly lang: LanguageService) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     // Subscribe to layout visibility so component toggles class when service emits
     this.layout.showFooter$.subscribe(visible => this.isVisible = visible);
   }

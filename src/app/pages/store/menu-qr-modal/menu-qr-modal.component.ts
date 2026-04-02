@@ -2,7 +2,7 @@
 // Uses the 'qrcode' npm package (already in package.json) to draw onto a <canvas>.
 // Deep-link format: pourrice://menu/{restaurantId}
 // Features: display QR, expand full-screen view, download as PNG.
-import { Component, Input, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, Input, AfterViewInit, ViewChild, ElementRef, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import * as QRCode from 'qrcode';
 
@@ -12,7 +12,7 @@ import * as QRCode from 'qrcode';
   styleUrls: ['./menu-qr-modal.component.scss'],
   standalone: false,
 })
-export class MenuQrModalComponent implements AfterViewInit {
+class MenuQrModalComponent implements AfterViewInit {
   @Input() restaurantId!: string;
   @Input() restaurantName!: string;
   @Input() lang: 'EN' | 'TC' = 'EN';
@@ -20,14 +20,14 @@ export class MenuQrModalComponent implements AfterViewInit {
   @ViewChild('qrCanvas') qrCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('qrCanvasExpanded') qrCanvasExpanded!: ElementRef<HTMLCanvasElement>;
 
+  private readonly modalController = inject(ModalController);
+
   isExpanded = false;
   isExporting = false;
 
   get deepLinkUrl(): string {
     return `pourrice://menu/${this.restaurantId}`;
   }
-
-  constructor(private readonly modalController: ModalController) {}
 
   ngAfterViewInit(): void {
     this.renderQr(this.qrCanvas, 200);
@@ -79,3 +79,5 @@ export class MenuQrModalComponent implements AfterViewInit {
     });
   }
 }
+
+export default MenuQrModalComponent;

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService, User } from '../../services/auth.service';
 import { UserService, UserProfile } from '../../services/user.service';
@@ -15,6 +15,16 @@ import { ProfileModalComponent } from './profile-modal.component';
   standalone: false,
 })
 export class UserPage implements OnInit, OnDestroy {
+  private readonly authService = inject(AuthService);
+  private readonly userService = inject(UserService);
+  private readonly languageService = inject(LanguageService);
+  private readonly platformService = inject(PlatformService);
+  private readonly router = inject(Router);
+  private readonly alertController = inject(AlertController);
+  private readonly loadingController = inject(LoadingController);
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+
   // Current user authentication data is stored
   public user: User | null = null;
   // Current user profile data from Firestore is stored
@@ -98,17 +108,10 @@ export class UserPage implements OnInit, OnDestroy {
   // Flag to ensure modal is only shown once per page entry is maintained
   private hasShownProfilePrompt = false;
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly userService: UserService,
-    private readonly languageService: LanguageService,
-    private readonly platformService: PlatformService,
-    private readonly router: Router,
-    private readonly alertController: AlertController,
-    private readonly loadingController: LoadingController,
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.isMobile$ = this.platformService.isMobile$;
   }
 

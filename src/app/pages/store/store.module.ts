@@ -12,7 +12,7 @@ import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaura
 import { RestaurantInfoModalComponent } from './restaurant-info-modal/restaurant-info-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
-import { MenuQrModalComponent } from './menu-qr-modal/menu-qr-modal.component';
+import MenuQrModalComponent from './menu-qr-modal/menu-qr-modal.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({

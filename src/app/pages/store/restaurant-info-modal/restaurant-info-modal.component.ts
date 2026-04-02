@@ -1,7 +1,7 @@
 // Sub-page for editing all restaurant information fields.
 // Navigated to from StorePage via /store/edit-info route.
 // On save it navigates back to /store so the parent reloads restaurant data.
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, ToastController, LoadingController } from '@ionic/angular';
 import { Subject } from 'rxjs';
@@ -20,6 +20,12 @@ import { Weekdays } from '../../../constants/weekdays.const';
   standalone: false
 })
 export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
+  private readonly feature = inject(StoreFeatureService);
+  private readonly router = inject(Router);
+  private readonly alertController = inject(AlertController);
+  private readonly toastController = inject(ToastController);
+  private readonly loadingController = inject(LoadingController);
+
   // Loaded from user profile → restaurant service (no longer @Input)
   restaurantId: string | null = null;
   restaurant: Restaurant | null = null;
@@ -87,13 +93,10 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     editRestaurant:  { EN: 'Edit Restaurant Info',     TC: '編輯餐廳資料' },
   };
 
-  constructor(
-    private readonly feature: StoreFeatureService,
-    private readonly router: Router,
-    private readonly alertController: AlertController,
-    private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   ngOnInit(): void {
     // Keep currentLanguage snapshot in sync for methods that cannot use async pipe

@@ -1,6 +1,6 @@
 // Service to manage restaurant bookings via REST API
 // Provides CRUD operations for user bookings with authentication
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { catchError, map, tap, retry } from 'rxjs/operators';
@@ -46,6 +46,9 @@ export interface UpdateBookingRequest {
   providedIn: 'root'
 })
 export class BookingService {
+  private readonly httpClient = inject(HttpClient);
+  private readonly authService = inject(AuthService);
+
   private readonly apiUrl = `${environment.apiUrl}/API/Bookings`;
   private authToken: string | null = null;
   private bookingsCache = new BehaviorSubject<Booking[] | null>(null);
@@ -53,10 +56,10 @@ export class BookingService {
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
   public isLoading$: Observable<boolean> = this.isLoadingSubject.asObservable();
 
-  constructor(
-    private readonly httpClient: HttpClient,
-    private readonly authService: AuthService
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('BookingService: Initialised with API URL:', this.apiUrl);
     this.authService.currentUser$.subscribe(user => {
       if (user) {

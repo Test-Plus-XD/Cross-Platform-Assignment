@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { RestaurantsService } from './restaurants.service';
 import { ReviewsService } from './reviews.service';
 import { LocationService } from './location.service';
@@ -17,15 +17,18 @@ import { PlatformService } from './platform.service';
   providedIn: 'root'
 })
 export class RestaurantFeatureService {
-  constructor(
-    public restaurants: RestaurantsService,
-    public reviews: ReviewsService,
-    public location: LocationService,
-    public bookings: BookingService,
-    public auth: AuthService,
-    public user: UserService,
-    public language: LanguageService,
-    public theme: ThemeService,
-    public platform: PlatformService
-  ) {}
+  restaurants = inject(RestaurantsService);
+  reviews = inject(ReviewsService);
+  location = inject(LocationService);
+  bookings = inject(BookingService);
+  auth = inject(AuthService);
+  user = inject(UserService);
+  language = inject(LanguageService);
+  theme = inject(ThemeService);
+  platform = inject(PlatformService);
+
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 }

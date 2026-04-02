@@ -1,6 +1,6 @@
 // Fullscreen modal that shows a Google Map for given coordinates
 // with optional directions/routing support and travel mode selection
-import { Component, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { LocationService } from '../../services/location.service';
 import { firstValueFrom } from 'rxjs';
@@ -166,6 +166,9 @@ import { firstValueFrom } from 'rxjs';
   standalone: false,
 })
 export class MapModalComponent implements AfterViewInit, OnDestroy {
+  private readonly modalController = inject(ModalController);
+  private readonly locationService = inject(LocationService);
+
   // Props passed via componentProps
   latitude!: number;
   longitude!: number;
@@ -187,10 +190,10 @@ export class MapModalComponent implements AfterViewInit, OnDestroy {
   private directionsService: google.maps.DirectionsService | null = null;
   private directionsRenderer: google.maps.DirectionsRenderer | null = null;
 
-  constructor(
-    private readonly modalController: ModalController,
-    private readonly locationService: LocationService
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   async ngAfterViewInit(): Promise<void> {
     // Wait for DOM to stabilise

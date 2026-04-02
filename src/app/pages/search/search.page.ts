@@ -1,6 +1,6 @@
 // Search page component with multi-district and multi-keyword filtering (EN-primary).
 // Supports list/map view toggle and Near Me proximity search.
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { AlertController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 'rxjs';
@@ -49,6 +49,14 @@ interface Translations {
   standalone: false,
 })
 export class SearchPage implements OnInit, OnDestroy {
+  private readonly restaurantsService = inject(RestaurantsService);
+  private readonly languageService = inject(LanguageService);
+  private readonly alertController = inject(AlertController);
+  private readonly platformService = inject(PlatformService);
+  private readonly locationService = inject(LocationService);
+  private readonly reviewsService = inject(ReviewsService);
+  private readonly router = inject(Router);
+
   // Search and filter state
   public searchQuery: string = ''; // Free-text query (user input)
   public selectedDistrictTokens: string[] = []; // EN tokens for districts (canonical)
@@ -111,15 +119,10 @@ export class SearchPage implements OnInit, OnDestroy {
     locationDenied: { EN: 'Please enable location access in your browser settings.', TC: '請在瀏覽器設定中啟用位置存取權限。' },
   };
 
-  constructor(
-    private readonly restaurantsService: RestaurantsService,
-    private readonly languageService: LanguageService,
-    private readonly alertController: AlertController,
-    private readonly platformService: PlatformService,
-    private readonly locationService: LocationService,
-    private readonly reviewsService: ReviewsService,
-    private readonly router: Router
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.isMobile$ = this.platformService.isMobile$;
   }
 

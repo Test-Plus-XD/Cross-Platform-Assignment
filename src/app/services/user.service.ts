@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, BehaviorSubject, from, throwError, of } from 'rxjs';
 import { catchError, map, tap, switchMap, retry } from 'rxjs/operators';
@@ -46,13 +46,18 @@ export interface UserProfile {
   providedIn: 'root'
 })
 export class UserService {
+  private readonly httpClient = inject(HttpClient);
+
   private readonly apiUrl = `${environment.apiUrl}/API/Users`;
   private authToken: string | null = null;
   // Cache current user profile
   private currentProfileSubject = new BehaviorSubject<UserProfile | null>(null);
   public currentProfile$: Observable<UserProfile | null> = this.currentProfileSubject.asObservable();
 
-  constructor(private readonly httpClient: HttpClient) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('UserService: Initialised with API URL:', this.apiUrl);
     // Hydrate currentProfileSubject from localStorage on construction (Requirement 10.1)
     try {

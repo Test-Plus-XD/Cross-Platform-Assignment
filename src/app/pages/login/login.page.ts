@@ -1,4 +1,4 @@
-import { Component, OnDestroy, AfterViewInit, NgZone } from '@angular/core';
+import { Component, OnDestroy, AfterViewInit, NgZone, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
@@ -40,6 +40,16 @@ declare const google: {
   standalone: false,
 })
 export class LoginPage implements OnDestroy, AfterViewInit {
+  readonly authService = inject(AuthService);
+  readonly languageService = inject(LanguageService);
+  readonly themeService = inject(ThemeService);
+  readonly router = inject(Router);
+  readonly activatedRoute = inject(ActivatedRoute);
+  readonly toastController = inject(ToastController);
+  readonly loadingController = inject(LoadingController);
+  readonly platform = inject(Platform);
+  readonly ngZone = inject(NgZone);
+
   // Form fields bound to template
   public email: string = '';
   public password: string = '';
@@ -83,17 +93,10 @@ export class LoginPage implements OnDestroy, AfterViewInit {
   private authInitSub: Subscription | null = null;
   private oneTapRetries = 0;
 
-  constructor(
-    readonly authService: AuthService,
-    readonly languageService: LanguageService,
-    readonly themeService: ThemeService,
-    readonly router: Router,
-    readonly activatedRoute: ActivatedRoute,
-    readonly toastController: ToastController,
-    readonly loadingController: LoadingController,
-    readonly platform: Platform,
-    readonly ngZone: NgZone
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     // Subscribe to auth state changes
     this.authSubscription = this.authService.currentUser$.subscribe(user => {
       // If user is already logged in, redirect to returnUrl or user page

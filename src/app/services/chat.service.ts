@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
@@ -44,6 +44,8 @@ export interface TypingIndicator {
 })
 
 export class ChatService {
+  private readonly AuthService = inject(AuthService);
+
   private Socket: Socket | null = null;
   private readonly SocketUrl = environment.socketUrl;
 
@@ -75,7 +77,10 @@ export class ChatService {
   private IsRegistered = new BehaviorSubject<boolean>(false);
   public IsRegistered$ = this.IsRegistered.asObservable();
 
-  constructor(private readonly AuthService: AuthService) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('ChatService: Initialised (manual connect mode)');
     // DO NOT auto-connect - connection is triggered manually when chat is opened
   }

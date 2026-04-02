@@ -1,5 +1,5 @@
 // Fullscreen modal that lists the Menu items
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { Observable } from 'rxjs';
 
@@ -28,10 +28,15 @@ import { Observable } from 'rxjs';
   standalone: false,
 })
 export class MenuModalComponent {
+  private modalController = inject(ModalController);
+
   menu: any[] = [];
   langStream: Observable<string> | undefined;
 
-  constructor(private modalController: ModalController) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   async close(): Promise<void> {
     await this.modalController.dismiss();

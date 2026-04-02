@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, BehaviorSubject, throwError, from } from 'rxjs';
 import { map, tap, catchError, switchMap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -40,6 +40,9 @@ export interface GeminiResponse {
   providedIn: 'root'
 })
 export class GeminiService {
+  private readonly dataService = inject(DataService);
+  private readonly authService = inject(AuthService);
+
   // Chat history for maintaining conversation context
   private readonly chatHistory = new BehaviorSubject<ChatHistoryEntry[]>([]);
   public chatHistory$ = this.chatHistory.asObservable();
@@ -48,10 +51,10 @@ export class GeminiService {
   private readonly isLoading = new BehaviorSubject<boolean>(false);
   public isLoading$ = this.isLoading.asObservable();
 
-  constructor(
-    private readonly dataService: DataService,
-    private readonly authService: AuthService // Inject authentication service
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     console.log('GeminiService: Initialised');
   }
 

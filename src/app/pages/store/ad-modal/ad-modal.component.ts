@@ -1,6 +1,6 @@
 // Ad creation modal for restaurant owners to compose and submit an advertisement
 // Presented by StorePage after a successful Stripe checkout payment
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, inject } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { AdvertisementsService, CreateAdvertisementRequest } from '../../../services/advertisements.service';
 import { GeminiService } from '../../../services/gemini.service';
@@ -15,6 +15,13 @@ import { Observable } from 'rxjs';
   standalone: false
 })
 export class AdModalComponent implements OnInit {
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly advertisementsService = inject(AdvertisementsService);
+  private readonly geminiService = inject(GeminiService);
+  private readonly dataService = inject(DataService);
+  private readonly languageService = inject(LanguageService);
+
   /** Stripe Checkout Session ID — passed from StorePage after redirect */
   @Input() sessionId: string = '';
   /** Restaurant ID — pre-filled from the owner's store context */
@@ -50,14 +57,10 @@ export class AdModalComponent implements OnInit {
   isSubmitting: boolean = false;
   isGenerating: boolean = false;
 
-  constructor(
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly advertisementsService: AdvertisementsService,
-    private readonly geminiService: GeminiService,
-    private readonly dataService: DataService,
-    private readonly languageService: LanguageService
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.lang$ = this.languageService.lang$;
   }
 

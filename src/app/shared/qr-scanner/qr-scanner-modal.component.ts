@@ -8,10 +8,7 @@
 //                             Falls back to an error message if BarcodeDetector is absent.
 //
 // On a successful scan the modal dismisses itself and navigates to /restaurant/:id.
-import {
-  Component, OnInit, OnDestroy, Input,
-  ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, Input, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ModalController, ToastController } from '@ionic/angular';
 import { Capacitor } from '@capacitor/core';
@@ -38,6 +35,12 @@ declare const BarcodeDetector: {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QrScannerModalComponent implements OnInit, OnDestroy {
+  private readonly modalController = inject(ModalController);
+  private readonly toastController = inject(ToastController);
+  private readonly router = inject(Router);
+  private readonly restaurantsService = inject(RestaurantsService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   @Input() lang: 'EN' | 'TC' = 'EN';
 
   @ViewChild('videoEl') videoEl?: ElementRef<HTMLVideoElement>;
@@ -56,13 +59,10 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   torchEnabled = false;
   private nativeListener: { remove: () => Promise<void> } | null = null;
 
-  constructor(
-    private readonly modalController: ModalController,
-    private readonly toastController: ToastController,
-    private readonly router: Router,
-    private readonly restaurantsService: RestaurantsService,
-    private readonly cdr: ChangeDetectorRef,
-  ) {}
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {}
 
   async ngOnInit(): Promise<void> {
     if (this.isNative) {

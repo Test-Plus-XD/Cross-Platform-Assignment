@@ -1,5 +1,5 @@
 // Advertisements service handles all advertisement-related operations through the API
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, from, of } from 'rxjs';
 import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -47,6 +47,9 @@ export interface CreateAdvertisementRequest {
   providedIn: 'root'
 })
 export class AdvertisementsService {
+  private readonly dataService = inject(DataService);
+  private readonly authService = inject(AuthService);
+
   private readonly adsEndpoint = '/API/Advertisements';
 
   private adsCache = new BehaviorSubject<Advertisement[] | null>(null);
@@ -56,10 +59,10 @@ export class AdvertisementsService {
     return Date.now() - timestamp < ttlMs;
   }
 
-  constructor(
-    private readonly dataService: DataService,
-    private readonly authService: AuthService
-  ) { }
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() { }
 
   /** Helper to retrieve the current user's Firebase ID token. Returns null if unauthenticated. */
   private async getAuthToken(): Promise<string | null> {

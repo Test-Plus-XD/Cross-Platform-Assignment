@@ -5,7 +5,7 @@
 //                 bulk-import via BulkMenuImportModalComponent
 //   3. Bookings — view and action pending/accepted/declined/cancelled bookings
 //   4. Ads      — manage Stripe-paid advertisement placements
-import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController, ViewWillEnter } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
@@ -15,7 +15,7 @@ import { AdModalComponent } from './ad-modal/ad-modal.component';
 import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
-import { MenuQrModalComponent } from './menu-qr-modal/menu-qr-modal.component';
+import MenuQrModalComponent from './menu-qr-modal/menu-qr-modal.component';
 import { DataService } from '../../services/data.service';
 import { Booking } from '../../services/booking.service';
 import { Restaurant, MenuItem } from '../../services/restaurants.service';
@@ -37,6 +37,17 @@ import { MenuItemFieldLabels } from '../../constants/restaurant-constants';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
+  private readonly feature = inject(StoreFeatureService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private readonly alertController = inject(AlertController);
+  private readonly toastController = inject(ToastController);
+  private readonly loadingController = inject(LoadingController);
+  private readonly modalController = inject(ModalController);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly advertisementsService = inject(AdvertisementsService);
+  private readonly dataService = inject(DataService);
+
   // Reference to the floating ChatButtonComponent used by navigateToChat()
   @ViewChild('chatButton') chatButton?: ChatButtonComponent;
 
@@ -166,18 +177,10 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     menuQrCodeHint:          { EN: 'Let customers scan to view your menu',        TC: '讓顧客掃描瀏覽您的菜單' }
   };
 
-  constructor(
-    private readonly feature: StoreFeatureService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
-    private readonly alertController: AlertController,
-    private readonly toastController: ToastController,
-    private readonly loadingController: LoadingController,
-    private readonly modalController: ModalController,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly advertisementsService: AdvertisementsService,
-    private readonly dataService: DataService
-  ) {
+  /** Inserted by Angular inject() migration for backwards compatibility */
+  constructor(...args: unknown[]);
+
+  constructor() {
     this.isMobile$ = this.feature.platform.isMobile$;
   }
 
