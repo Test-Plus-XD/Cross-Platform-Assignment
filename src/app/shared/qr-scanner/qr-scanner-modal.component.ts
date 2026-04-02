@@ -18,7 +18,7 @@ import { Capacitor } from '@capacitor/core';
 import {
   BarcodeScanner,
   BarcodeFormat,
-  BarcodeScannedEvent,
+  BarcodesScannedEvent,
 } from '@capacitor-mlkit/barcode-scanning';
 import { RestaurantsService } from '../../services/restaurants.service';
 
@@ -99,8 +99,13 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       document.documentElement.classList.add('barcode-scanner-active');
 
       this.nativeListener = await BarcodeScanner.addListener(
-        'barcodeScanned',
-        (event: BarcodeScannedEvent) => this.handleScannedValue(event.barcode.rawValue),
+        'barcodesScanned',
+        (event: BarcodesScannedEvent) => {
+          const scannedValue = event.barcodes[0]?.rawValue;
+          if (scannedValue) {
+            this.handleScannedValue(scannedValue);
+          }
+        },
       );
 
       await BarcodeScanner.startScan({ formats: [BarcodeFormat.QrCode] });

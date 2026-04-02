@@ -4,7 +4,7 @@
 // Features: display QR, expand full-screen view, download as PNG.
 import { Component, Input, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { ModalController } from '@ionic/angular';
-import QRCode from 'qrcode';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-menu-qr-modal',
