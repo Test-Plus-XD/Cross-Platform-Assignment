@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, HostListener, Input, inject } from '@angular/core';
-import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subject, Observable } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -7,7 +7,6 @@ import { GeminiService } from '../../services/gemini.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ChatVisibilityService } from '../../services/chat-visibility.service';
-import { RestaurantsService, Restaurant, MenuItem } from '../../services/restaurants.service';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -27,8 +26,6 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   private readonly languageService = inject(LanguageService);
   private readonly chatVisibilityService = inject(ChatVisibilityService);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
-  private readonly restaurantsService = inject(RestaurantsService);
   private readonly sanitizer = inject(DomSanitizer);
 
   // Chat state
@@ -59,8 +56,6 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   // Current route tracking
   private currentRoute = '';
   private currentRestaurantId: string | null = null;
-  private currentRestaurant: Restaurant | null = null;
-  private currentMenu: MenuItem[] = [];
 
   // Quick suggestions - base suggestions that always appear
   private baseSuggestions = [
@@ -177,51 +172,13 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     }
   }
 
-  /// Load restaurant context when on restaurant page
+  /// Track restaurant ID from the current route
   private loadRestaurantContext(): void {
-    // Check if we are on a restaurant detail page
     const restaurantMatch = this.currentRoute.match(/\/restaurant\/([^/?]+)/);
-
     if (restaurantMatch && restaurantMatch[1]) {
-      const restaurantId = restaurantMatch[1];
-
-      // Only load if this is a different restaurant
-      if (this.currentRestaurantId !== restaurantId) {
-        this.currentRestaurantId = restaurantId;
-
-        // Load restaurant details
-        this.restaurantsService.getRestaurantById(restaurantId)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (restaurant) => {
-              this.currentRestaurant = restaurant;
-              console.log('GeminiButton: Loaded restaurant context:', restaurant?.Name_EN);
-            },
-            error: (err) => {
-              console.error('GeminiButton: Error loading restaurant:', err);
-              this.currentRestaurant = null;
-            }
-          });
-
-        // Load menu items
-        this.restaurantsService.getMenuItems(restaurantId)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: (menu) => {
-              this.currentMenu = menu;
-              console.log('GeminiButton: Loaded menu context:', menu.length, 'items');
-            },
-            error: (err) => {
-              console.error('GeminiButton: Error loading menu:', err);
-              this.currentMenu = [];
-            }
-          });
-      }
+      this.currentRestaurantId = restaurantMatch[1];
     } else {
-      // Clear context when not on restaurant page
       this.currentRestaurantId = null;
-      this.currentRestaurant = null;
-      this.currentMenu = [];
     }
   }
 
@@ -278,47 +235,12 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     this.newMessage = '';
     setTimeout(() => this.scrollToBottom(), 100);
 
-    // Build context string if on restaurant page
-    let contextMessage = messageToSend;
+    // Route to restaurant-specific or general chat
+    const chat$ = this.currentRestaurantId
+      ? this.geminiService.chatAboutRestaurant(this.currentRestaurantId, messageToSend, true)
+      : this.geminiService.chat(messageToSend, true);
 
-    if (this.currentRestaurant && this.currentMenu.length > 0) {
-      // Build restaurant context
-      const restaurantName = this.currentLang === 'TC'
-        ? (this.currentRestaurant.Name_TC || this.currentRestaurant.Name_EN || 'Unknown')
-        : (this.currentRestaurant.Name_EN || this.currentRestaurant.Name_TC || 'Unknown');
-
-      const restaurantDistrict = this.currentLang === 'TC'
-        ? (this.currentRestaurant.District_TC || this.currentRestaurant.District_EN || '')
-        : (this.currentRestaurant.District_EN || this.currentRestaurant.District_TC || '');
-
-      // Build menu context with items
-      const menuItems = this.currentMenu.map(item => {
-        const itemName = this.currentLang === 'TC'
-          ? (item.Name_TC || item.Name_EN || 'Unknown')
-          : (item.Name_EN || item.Name_TC || 'Unknown');
-
-        const itemDescription = this.currentLang === 'TC'
-          ? (item.Description_TC || item.Description_EN || '')
-          : (item.Description_EN || item.Description_TC || '');
-
-        const priceText = item.price ? `$${item.price}` : '';
-
-        return `- ${itemName}${priceText ? ' (' + priceText + ')' : ''}${itemDescription ? ': ' + itemDescription : ''}`;
-      }).join('\n');
-
-      // Add context to the message
-      contextMessage = `[CONTEXT: User is currently viewing ${restaurantName}${restaurantDistrict ? ' in ' + restaurantDistrict : ''}. 
-
-Menu items available:
-${menuItems}
-
-END OF CONTEXT]
-
-User question: ${messageToSend}`;
-    }
-
-    // Get AI response
-    this.geminiService.chat(contextMessage, true).pipe(takeUntil(this.destroy$)).subscribe({
+    chat$.pipe(takeUntil(this.destroy$)).subscribe({
       next: (response) => {
         this.messages.push({
           role: 'assistant',

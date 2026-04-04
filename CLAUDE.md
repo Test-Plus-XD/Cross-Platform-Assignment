@@ -443,7 +443,8 @@ Authorization: Bearer <firebase-id-token>
 |--------|----------|------|-------------|
 | POST | `/generate` | ❌ | Generate text content (`prompt`) |
 | POST | `/chat` | ❌ | Chat with AI (`message`, `history[]`) |
-| POST | `/restaurant-description` | ❌ | Generate restaurant description |
+| POST | `/restaurant-description` | ❌ | Generate restaurant description or chat about a restaurant (`restaurantId`, `message`, `history[]` — server fetches restaurant info + menu from Firestore) |
+| POST | `/restaurant-advertisement` | ✅ | Generate bilingual ad content (`restaurantId`, `name`, `district`, `keywords[]`, `message?` — server fetches menu from Firestore; returns `AdvertisementGenerationResponse`) |
 
 #### Chat (`/API/Chat`)
 | Method | Endpoint | Auth | Description |
@@ -771,13 +772,22 @@ ngOnInit() {
 **Purpose:** Google Gemini AI assistant integration
 
 **Key Methods:**
-- `chat(message, history?)` - Conversational AI with chat history
+- `chat(message, includeHistory?)` - Conversational AI with chat history
 - `generate(prompt)` - Text generation
-- `askAboutRestaurant(question, restaurantName)` - Restaurant-specific queries
+- `chatAboutRestaurant(restaurantId, message, includeHistory?)` - Restaurant-context chat; server fetches restaurant info + menu from Firestore automatically (preferred on restaurant detail pages)
+- `generateAdvertisement(restaurantId, name, district, keywords?, message?)` - Generate bilingual ad content (auth required; returns `AdvertisementGenerationResponse`)
+- `askAboutRestaurant(question, restaurantName?)` - Quick helper wrapping `chat()`
 - `getDiningRecommendation(preferences)` - Personalized recommendations
 
+**Exported Interfaces:**
+- `ChatHistoryEntry` — `{ role: 'user' | 'model', parts: string }`
+- `AdvertisementGenerationResponse` — `{ Title_EN, Title_TC, Content_EN, Content_TC, restaurant: { name, district, keywords[] } }`
+- `GeminiResponse` — raw API response shape
+
 **Features:**
-- Chat history management
+- Chat history management (`chatHistory$` BehaviorSubject)
+- `isLoading$` observable for UI loading states
+- Restaurant-context routing in `GeminiButtonComponent`: on `/restaurant/:id` pages, `sendMessage()` automatically calls `chatAboutRestaurant()` instead of `chat()`; context-specific "What is on the menu?" suggestion chip added
 - Error handling and retry logic
 - Bilingual support (EN/TC)
 

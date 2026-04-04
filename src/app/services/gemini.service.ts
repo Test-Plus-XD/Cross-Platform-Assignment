@@ -121,6 +121,39 @@ export class GeminiService {
   }
 
   /**
+   * Chat about a specific restaurant using server-side context (preferred for restaurant detail pages)
+   * Posts to /restaurant-description (chat mode). The server fetches restaurant info and menu
+   * from Firestore automatically — no client-side context building needed.
+   * @param restaurantId - Firestore restaurant document ID
+   * @param message - User's chat message
+   * @param includeHistory - Whether to include conversation history (default true)
+   */
+  chatAboutRestaurant(restaurantId: string, message: string, includeHistory: boolean = true): Observable<string> {
+    this.isLoading.next(true);
+    const body: any = { restaurantId, message };
+
+    if (includeHistory) {
+      body.history = this.chatHistory.value;
+    }
+
+    return this.dataService.post<GeminiResponse>('/API/Gemini/restaurant-description', body, null).pipe(
+      map(response => response.result || ''),
+      tap(result => {
+        const history = this.chatHistory.value;
+        history.push({ role: 'user', parts: message });
+        history.push({ role: 'model', parts: result });
+        this.chatHistory.next(history);
+        this.isLoading.next(false);
+      }),
+      catchError(error => {
+        console.error('GeminiService: Error in chatAboutRestaurant', error);
+        this.isLoading.next(false);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
    * Generate restaurant description
    * @param restaurantName - Name of the restaurant
    * @param cuisine - Type of cuisine
