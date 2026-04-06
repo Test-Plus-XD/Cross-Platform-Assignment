@@ -678,6 +678,28 @@
         margin-bottom: 1rem;
       }
 
+      // Preview of the selected review image with remove button
+      .review-image-preview {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+
+        .review-img-preview {
+          width: 80px;
+          height: 80px;
+          object-fit: cover;
+          border-radius: 8px;
+          border: 1px solid var(--ion-color-light-shade);
+        }
+      }
+
+      // "Add Photo" button — subtle, sits between comment and action buttons
+      .add-photo-btn {
+        margin-bottom: 0.75rem;
+        --border-radius: 8px;
+      }
+
       .form-actions {
         display: flex;
         gap: 1rem;

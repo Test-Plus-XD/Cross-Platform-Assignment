@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-02 | **Version:** 1.17.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-06 | **Version:** 1.17.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -553,9 +553,14 @@ curl -X POST https://vercel-express-api-alpha.vercel.app/API/Bookings \
   Contacts: {Phone, Email, Website};
   ImageUrl: string;
   ownerId: string;               // User UID
+  rating: number;                // Auto-maintained average (0 if no reviews, 1 dp). Updated by API on review create/update/delete.
   createdAt, modifiedAt: Timestamp;
 }
 ```
+
+**Star display:** `formatRatingStars(rating)` rounds to nearest 0.5 via `Math.round(rating * 2) / 2`.
+Defined in `reviews.service.ts` (authoritative), `home.page.ts`, and `search.page.ts` (local copies).
+Cards show `★★★½☆ 3.7`; detail page hero shows `stars + number` from `restaurant.rating` directly.
 
 ### User
 ```typescript
@@ -1783,6 +1788,7 @@ API (verify) → Extract UID → Ownership checks
 **Document Version:** 1.16.0 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.1** (2026-04-06): **Cross-platform feature parity.** (1) **Account type selector**: `UserTypeSelectionComponent` shown as a non-dismissable bottom sheet to new users (post-registration). Calls `PUT /API/Users/:uid { type }` on selection; `UserService` exposes `needsAccountTypeSelection$` observable; sheet auto-dismisses on success. (2) **Opening status badges on Home page cards**: Nearby and Trending restaurant cards now show green `Open` / red `Closed` pill overlaid on the card thumbnail. Badge computed from `Restaurant.Opening_Hours` using `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone — same `getOpeningStatus()` helper as search cards. (3) **Review image upload**: `ReviewsService` gains `uploadReviewImage(file: File, token: string): Observable<string>` calling `POST /API/Images/upload?folder=Reviews` (multipart). `RestaurantPage` review submission form includes file input with preview; selected image is uploaded before `createReview()` is called; `imageUrl` included in the review payload.
 - **v1.17.0** (2026-04-02): **QR code feature — generator + scanner.** Deep-link format `pourrice://menu/{restaurantId}` (identical to iOS/Android). **Generator**: `MenuQrModalComponent` (`store/menu-qr-modal/`) uses `qrcode` npm package (canvas, error correction H, 200 px display / 600 px download PNG). Opened via "Menu QR Code" button in Store → Menu tab action bar. Features: display, full-screen expand, download PNG. **Scanner**: `QrScannerModalComponent` (`shared/qr-scanner/`) accessible from nav drawer (all users, no login). Native: `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` transparent-WebView pattern + torch toggle. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+) polling every 400 ms; falls back to informational message if API unavailable. Validates URL scheme, fetches restaurant via `RestaurantsService`, navigates to `/restaurant/:id`. Global CSS (`.barcode-scanner-active`, `.qr-scanner-modal`) added to `src/global.scss`. `QrScannerModalComponent` declared in `SharedModule`; `MenuQrModalComponent` declared in `StorePageModule`.
 - **v1.16.0** (2026-03-30): **Add New Restaurant modal.** `AddRestaurantModalComponent` (`store/add-restaurant-modal/`) lets Restaurant-type users who can't find their restaurant in the claim search create a new listing. **API flow** (no `/claim` call): `POST /API/Restaurants` with `ownerId: uid` in body (no auth, uses existing `RestaurantsService.createRestaurant()`) → `PUT /API/Users/:uid { restaurantId }` (auth auto-attached by UserService). **Form**: bilingual names (EN/TC, at least one required), address (EN/TC), district (radio AlertDialog), seats, contacts (phone/email/website), Google Maps location pin (tap to place, same `initializeMap()`/`onMapClick()` pattern as `restaurant-info-modal`), opening hours (text-input AlertDialog per weekday, `"HH:MM-HH:MM"` format), keywords (checkbox AlertDialog, shown in active language), payments (checkbox AlertDialog, shown in active language, stores EN strings). **Trigger**: "Add New Restaurant" `ion-button` in the empty-state block of `store.page.html`. `StorePage.openAddRestaurantModal()` re-calls `loadRestaurantData()` on `{ created: true }`. `StorePageModule` declares the new component. CSS: all transitions scoped to `transform, box-shadow` — no `transition: all`.
 - **v1.15.3** (2026-03-25): **API batch-stats fix + unified restaurant card redesign.** (1) Fixed critical `GET /API/Reviews/batch-stats` returning `{"error":"Review not found"}` — root cause: route was defined after `/:id`, so Express matched `batch-stats` as an ID. Fixed by moving the `/batch-stats` route before `/:id` in `Reviews.ts`. (2) Search page list card redesign: **distance badge** (blue pill, top-right of thumbnail, Near Me only), **rating badge** (gold text on dark pill, bottom-right of thumbnail), **opening status badge** (bottom-left, unchanged). Info section now shows: name → keywords row (2 tags + overflow count, above district) → district → address (replacing the old distance row). (3) Home page restaurant cards (Nearby + Trending) updated to match: rating badge on thumbnail bottom-right, keywords row in card-content, `&::part(native) { padding: 0; }` for edge-to-edge thumbnails. `HomePage` gains `ratingMap`, `formatRatingStars()`, `getDisplayKeywords()`, `getKeywordCount()`, and batch stats loading for both nearby and trending restaurants. (4) Fixed `transition: all` → `transition: transform, box-shadow` on home page cards and review card.

@@ -1,6 +1,6 @@
 import { Component, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, ModalController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { HeaderComponent } from './shared/header/header.component';
@@ -11,6 +11,8 @@ import { PlatformService } from './services/platform.service';
 import { UIService } from './services/UI.service';
 import { AppStateService } from './services/app-state.service';
 import { MessagingService } from './services/messaging.service';
+import { UserService } from './services/user.service';
+import { AccountTypeSelectorComponent } from './shared/account-type-selector/account-type-selector.component';
 
 @Component({
   selector: 'app-root',
@@ -27,12 +29,17 @@ export class AppComponent implements OnInit, OnDestroy {
     readonly appState = inject(AppStateService);
     readonly router = inject(Router);
     readonly messagingService = inject(MessagingService);
+    private readonly userService = inject(UserService);
+    private readonly modalController = inject(ModalController);
     private alertController = inject(AlertController);
 
     @ViewChild(HeaderComponent) header!: HeaderComponent;
 
     // Cleanup subject
     private destroy$ = new Subject<void>();
+
+    // Guard: prevent presenting the account-type modal more than once per session
+    private hasShownTypeSelector = false;
 
     /** Inserted by Angular inject() migration for backwards compatibility */
     constructor(...args: unknown[]);
@@ -72,6 +79,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
       // Show notification permission prompt if not yet granted
       this.promptNotificationPermission();
+
+      // Watch for logged-in users whose profile has no type set.
+      // When detected, present the account-type selector modal once per session.
+      this.watchForMissingUserType();
     }
 
     private async promptNotificationPermission(): Promise<void> {
@@ -157,6 +168,61 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } catch (err) {
         console.error('[AppComponent] Notification prompt error:', err);
+      }
+    }
+
+    // Watch auth state + user profile; present the account-type modal when a
+    // logged-in user has no type field.  The guard flag prevents re-presentation
+    // on each navigation (appState$ emits on every route change).
+    private watchForMissingUserType(): void {
+      this.appState.appState$.pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(state => {
+        if (!state.isLoggedIn || !state.uid) return;
+
+        // Read the cached profile synchronously; if type is already set, skip
+        const profile = this.userService.currentProfile;
+        if (profile?.type) return;
+
+        // Subscribe to the profile observable for one emission to check type
+        this.userService.currentProfile$.pipe(
+          takeUntil(this.destroy$)
+        ).subscribe(async userProfile => {
+          // Only act if logged in and profile has no type
+          if (!userProfile || userProfile.type) return;
+          if (this.hasShownTypeSelector) return;
+
+          this.hasShownTypeSelector = true;
+          await this.presentAccountTypeModal();
+        });
+      });
+    }
+
+    // Present the AccountTypeSelectorComponent as a non-dismissable bottom sheet
+    private async presentAccountTypeModal(): Promise<void> {
+      try {
+        const modal = await this.modalController.create({
+          component: AccountTypeSelectorComponent,
+          // Prevent swipe-to-dismiss — user must complete the selection
+          canDismiss: false,
+          breakpoints: [0, 0.6, 1],
+          initialBreakpoint: 0.6,
+          cssClass: 'account-type-modal',
+        });
+        await modal.present();
+
+        // After the user confirms, reload their profile so tabs update
+        const { data } = await modal.onWillDismiss();
+        if (data?.type) {
+          console.log('[AppComponent] Account type selected:', data.type);
+          // Re-fetch profile so navigation guards and tabs reflect the new type
+          const uid = this.appState.appState.uid;
+          if (uid) {
+            this.userService.getUserProfile(uid).pipe(takeUntil(this.destroy$)).subscribe();
+          }
+        }
+      } catch (err) {
+        console.error('[AppComponent] Error presenting account type modal:', err);
       }
     }
 

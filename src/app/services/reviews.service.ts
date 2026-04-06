@@ -242,9 +242,11 @@ export class ReviewsService {
   }
 
   // Helper method to format rating as stars (for display purposes)
+  // Rounds to nearest 0.5: e.g. 3.7 → ★★★½☆, 3.3 → ★★★½☆, 4.2 → ★★★★☆
   formatRatingStars(rating: number): string {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const rounded = Math.round(rating * 2) / 2;
+    const fullStars = Math.floor(rounded);
+    const hasHalfStar = rounded - fullStars > 0;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
     let stars = '★'.repeat(fullStars);

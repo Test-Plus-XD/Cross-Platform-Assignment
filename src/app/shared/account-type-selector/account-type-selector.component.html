@@ -1,0 +1,78 @@
+<!-- Account-type selection bottom sheet.
+     canDismiss=false on the host ion-modal means only our confirm() method
+     can close it, ensuring users always complete this step. -->
+<ion-header>
+  <ion-toolbar>
+    <ion-title>
+      {{ isTC ? '選擇帳戶類型' : 'Choose Account Type' }}
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="selector-container">
+
+    <!-- Subtitle -->
+    <p class="selector-subtitle">
+      {{ isTC
+        ? '請選擇最能描述您的帳戶類型。'
+        : 'Please choose the account type that best describes you.' }}
+    </p>
+
+    <!-- Type cards row -->
+    <div class="type-cards">
+
+      <!-- Diner card -->
+      <div class="type-card"
+           [class.selected]="selectedType === 'Diner'"
+           (click)="selectType('Diner')"
+           role="button"
+           [attr.aria-pressed]="selectedType === 'Diner'">
+        <ion-icon name="restaurant-outline" class="type-icon"></ion-icon>
+        <h2 class="type-title">{{ isTC ? '食客' : 'Diner' }}</h2>
+        <p class="type-description">
+          {{ isTC
+            ? '瀏覽及預訂餐廳、撰寫評論'
+            : 'Browse & book restaurants, write reviews' }}
+        </p>
+        <!-- Selection checkmark -->
+        <ion-icon name="checkmark-circle"
+                  class="checkmark"
+                  *ngIf="selectedType === 'Diner'">
+        </ion-icon>
+      </div>
+
+      <!-- Restaurant Owner card -->
+      <div class="type-card"
+           [class.selected]="selectedType === 'Restaurant'"
+           (click)="selectType('Restaurant')"
+           role="button"
+           [attr.aria-pressed]="selectedType === 'Restaurant'">
+        <ion-icon name="storefront-outline" class="type-icon"></ion-icon>
+        <h2 class="type-title">{{ isTC ? '餐廳老闆' : 'Restaurant Owner' }}</h2>
+        <p class="type-description">
+          {{ isTC
+            ? '管理您的餐廳、菜單及預訂'
+            : 'Manage your restaurant, menu & bookings' }}
+        </p>
+        <!-- Selection checkmark -->
+        <ion-icon name="checkmark-circle"
+                  class="checkmark"
+                  *ngIf="selectedType === 'Restaurant'">
+        </ion-icon>
+      </div>
+
+    </div><!-- /.type-cards -->
+
+    <!-- Confirm button — disabled until a type is chosen -->
+    <ion-button
+      expand="block"
+      class="confirm-btn"
+      [disabled]="!selectedType || isSaving"
+      (click)="confirm()">
+      <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
+      {{ isTC ? '確認' : 'Confirm' }}
+    </ion-button>
+
+  </div><!-- /.selector-container -->
+</ion-content>

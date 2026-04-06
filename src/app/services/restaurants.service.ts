@@ -59,6 +59,7 @@ export interface Restaurant {
   Payments?: string[] | null;
   ownerId?: string | null;
   reviewsId?: string[] | null;
+  rating?: number | null;
   createdAt?: any;
   modifiedAt?: any;
 }

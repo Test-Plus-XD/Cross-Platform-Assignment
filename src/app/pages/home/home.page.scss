@@ -210,6 +210,29 @@
         white-space: nowrap;
         z-index: 10;
       }
+
+      // Open/Closed badge: bottom-left of thumbnail (matches search page v1.15.1 pattern)
+      .opening-badge {
+        position: absolute;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 8px;
+        white-space: nowrap;
+        z-index: 10;
+
+        &.open {
+          background: rgba(76, 175, 80, 0.85);
+          color: #fff;
+        }
+
+        &.closed {
+          background: rgba(229, 57, 53, 0.85);
+          color: #fff;
+        }
+      }
     }
 
     .card-content {

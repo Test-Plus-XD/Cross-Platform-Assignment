@@ -307,9 +307,11 @@ export class HomePage implements OnInit {
   }
 
   // Format average rating as star string for display
+  // Rounds to nearest 0.5: e.g. 3.7 → ★★★½☆, 3.3 → ★★★½☆, 4.2 → ★★★★☆
   public formatRatingStars(rating: number): string {
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+    const rounded = Math.round(rating * 2) / 2;
+    const fullStars = Math.floor(rounded);
+    const hasHalfStar = rounded - fullStars > 0;
     const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
     return '★'.repeat(fullStars) + (hasHalfStar ? '½' : '') + '☆'.repeat(emptyStars);
   }
@@ -325,5 +327,54 @@ export class HomePage implements OnInit {
   public getKeywordCount(restaurant: any, lang: string): number {
     const keywords = lang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
     return keywords ? keywords.length : 0;
+  }
+
+  // Check if a restaurant is currently open based on Opening_Hours and HK time.
+  // Mirrors the identical method in search.page.ts — kept as a local copy to
+  // avoid circular service dependencies.
+  public getOpeningStatus(restaurant: any): 'open' | 'closed' | 'unknown' {
+    if (!restaurant?.Opening_Hours) return 'unknown';
+
+    const now = new Date();
+    // Extract HK weekday and time parts using Intl (avoids manual UTC offset maths)
+    const hkDay = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Hong_Kong', weekday: 'long'
+    }).format(now);
+    const hkTimeParts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Hong_Kong', hour: '2-digit', minute: '2-digit', hour12: false
+    }).formatToParts(now);
+    const hkH = parseInt(hkTimeParts.find(p => p.type === 'hour')?.value || '0', 10);
+    const hkM = parseInt(hkTimeParts.find(p => p.type === 'minute')?.value || '0', 10);
+    const currentMins = hkH * 60 + hkM;
+
+    const hours = restaurant.Opening_Hours;
+    const todayKey = Object.keys(hours).find(k => k.toLowerCase() === hkDay.toLowerCase());
+    if (!todayKey) return 'unknown';
+
+    const entry = hours[todayKey];
+    if (!entry) return 'closed';
+
+    let openStr: string;
+    let closeStr: string;
+
+    if (typeof entry === 'string') {
+      // Supports "HH:MM-HH:MM", "HH:MM–HH:MM", "HH:MM~HH:MM"
+      const match = entry.match(/(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/);
+      if (!match) return 'unknown';
+      openStr = match[1];
+      closeStr = match[2];
+    } else if (typeof entry === 'object' && entry !== null && entry.open && entry.close) {
+      openStr = entry.open as string;
+      closeStr = entry.close as string;
+    } else {
+      return 'unknown';
+    }
+
+    const [openH, openM] = openStr.split(':').map(Number);
+    const [closeH, closeM] = closeStr.split(':').map(Number);
+    const openMins = openH * 60 + openM;
+    const closeMins = closeH * 60 + closeM;
+
+    return currentMins >= openMins && currentMins < closeMins ? 'open' : 'closed';
   }
 }

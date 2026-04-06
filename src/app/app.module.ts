@@ -9,6 +9,7 @@ import { provideAuth, getAuth } from '@angular/fire/auth';
 import { provideMessaging, getMessaging } from '@angular/fire/messaging';
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
+import { AccountTypeSelectorComponent } from './shared/account-type-selector/account-type-selector.component';
 import { SharedModule } from './shared/shared.module';
 import { environment } from '../environments/environment';
 import { register } from 'swiper/element/bundle';
@@ -16,7 +17,7 @@ import { register } from 'swiper/element/bundle';
 register();
 
 @NgModule({
-  declarations: [AppComponent],
+  declarations: [AppComponent, AccountTypeSelectorComponent],
   imports: [
     BrowserModule,
     IonicModule.forRoot(),

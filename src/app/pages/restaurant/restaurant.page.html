@@ -41,6 +41,11 @@
             {{ (lang$ | async) === 'TC' ? (restaurant.District_TC || restaurant.District_EN || '') :
             (restaurant.District_EN || restaurant.District_TC || '') }}
           </p>
+          <!-- Rating (from restaurant record) -->
+          <div class="hero-rating" *ngIf="(restaurant.rating ?? 0) > 0">
+            <span class="stars">{{ formatRatingStars(restaurant.rating!) }}</span>
+            <span class="rating-number">{{ restaurant.rating!.toFixed(1) }}</span>
+          </div>
           <!-- Claim Restaurant Button -->
           <ion-button *ngIf="canClaimRestaurant && !restaurant.ownerId" class="claim-restaurant-button"
             [disabled]="isClaimingRestaurant" (click)="claimRestaurant()">
@@ -271,8 +276,8 @@
         <div class="review-stats" *ngIf="reviewStats && reviewStats.totalReviews > 0">
           <div class="stats-summary">
             <div class="average-rating">
-              <h2>{{ reviewStats.averageRating.toFixed(1) }}</h2>
               <div class="stars">{{ formatRatingStars(reviewStats.averageRating) }}</div>
+              <h2>{{ reviewStats.averageRating.toFixed(1) }}</h2>
               <p>{{ reviewStats.totalReviews }} {{ (lang$ | async) === 'TC' ? '則評論' : 'reviews' }}</p>
             </div>
           </div>
@@ -334,12 +339,34 @@
             </ion-textarea>
           </ion-item>
 
+          <!-- Image Picker — hidden file input triggered by the button below -->
+          <input type="file" accept="image/*" #reviewImageInput
+                 style="display:none"
+                 (change)="onReviewImageSelected($event)">
+
+          <!-- Image preview (shown once a file is chosen) -->
+          <div class="review-image-preview" *ngIf="newReviewImagePreviewUrl">
+            <img [src]="newReviewImagePreviewUrl" alt="Preview" class="review-img-preview">
+            <ion-button fill="clear" size="small" color="danger" (click)="clearReviewImage()">
+              <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+            </ion-button>
+          </div>
+
+          <!-- Add photo button (shown when no image chosen yet) -->
+          <ion-button fill="outline" size="small" class="add-photo-btn"
+                      *ngIf="!newReviewImagePreviewUrl"
+                      (click)="reviewImageInput.click()">
+            <ion-icon name="image-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '新增相片' : 'Add Photo' }}
+          </ion-button>
+
           <!-- Action Buttons -->
           <div class="form-actions">
             <ion-button fill="outline" (click)="toggleReviewForm()">
               {{ (lang$ | async) === 'TC' ? '取消' : 'Cancel' }}
             </ion-button>
-            <ion-button (click)="submitReview()">
+            <ion-button (click)="submitReview()" [disabled]="isUploadingReviewImage">
+              <ion-spinner *ngIf="isUploadingReviewImage" name="crescent" slot="start"></ion-spinner>
               {{ (lang$ | async) === 'TC' ? '提交' : 'Submit' }}
             </ion-button>
           </div>

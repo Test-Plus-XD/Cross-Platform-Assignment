@@ -11,6 +11,7 @@ import { UserProfile } from '../../services/user.service';
 import { CreateBookingRequest } from '../../services/booking.service';
 import { DistanceResult } from '../../services/location.service';
 import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
+import { DataService } from '../../services/data.service';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
 import { BookingModalComponent } from './booking-modal.component';
@@ -25,6 +26,7 @@ import { environment } from '../../../environments/environment';
 })
 export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   private readonly feature = inject(RestaurantFeatureService);
+  private readonly dataService = inject(DataService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly modalController = inject(ModalController);
@@ -79,6 +81,10 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   newReviewRating: number = 5;
   newReviewComment: string = '';
   isWritingReview: boolean = false;
+  // Review image upload state
+  newReviewImageFile: File | null = null;
+  newReviewImagePreviewUrl: string | null = null;
+  isUploadingReviewImage: boolean = false;
   // Restaurant claim state
   canClaimRestaurant: boolean = false;
   isClaimingRestaurant: boolean = false;
@@ -507,10 +513,43 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
+      // If the user attached an image, upload it first and capture the URL
+      let uploadedImageUrl: string | undefined;
+      if (this.newReviewImageFile) {
+        try {
+          this.isUploadingReviewImage = true;
+          this.changeDetectionReference.markForCheck();
+
+          const token = await this.feature.auth.getIdToken();
+          const uploadResponse = await this.dataService
+            .uploadFile<{ imageUrl: string }>(
+              '/API/Images/upload?folder=Reviews',
+              this.newReviewImageFile,
+              'image',
+              token
+            )
+            .toPromise();
+
+          uploadedImageUrl = uploadResponse?.imageUrl;
+          this.isUploadingReviewImage = false;
+          this.changeDetectionReference.markForCheck();
+        } catch (uploadError: any) {
+          this.isUploadingReviewImage = false;
+          this.changeDetectionReference.markForCheck();
+          console.error('Review image upload failed:', uploadError);
+          await this.showToast(
+            lang === 'TC' ? '圖片上傳失敗，請重試' : 'Image upload failed, please try again',
+            'danger'
+          );
+          return;
+        }
+      }
+
       const reviewRequest: CreateReviewRequest = {
         restaurantId: this.restaurant?.id || '',
         rating: this.newReviewRating,
-        comment: this.newReviewComment || undefined
+        comment: this.newReviewComment || undefined,
+        imageUrl: uploadedImageUrl
       };
 
       // Call reviews service
@@ -522,9 +561,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
           const successMessage = lang === 'TC' ? '已成功提交評論！' : 'Review submitted successfully!';
           await this.showToast(successMessage, 'success');
 
-          // Reset form
+          // Reset form including any selected image
           this.newReviewRating = 5;
           this.newReviewComment = '';
+          this.newReviewImageFile = null;
+          if (this.newReviewImagePreviewUrl) {
+            URL.revokeObjectURL(this.newReviewImagePreviewUrl);
+            this.newReviewImagePreviewUrl = null;
+          }
           this.isWritingReview = false;
           this.changeDetectionReference.markForCheck();
 
@@ -548,10 +592,38 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   toggleReviewForm(): void {
     this.isWritingReview = !this.isWritingReview;
     if (!this.isWritingReview) {
-      // Reset form when closing
+      // Reset form when closing — including any selected image
       this.newReviewRating = 5;
       this.newReviewComment = '';
+      this.newReviewImageFile = null;
+      this.newReviewImagePreviewUrl = null;
     }
+    this.changeDetectionReference.markForCheck();
+  }
+
+  /// Called when the hidden file input emits a change event.
+  /// Stores the chosen file and generates a local preview URL.
+  onReviewImageSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+
+    // Revoke any previously created object URL to avoid memory leaks
+    if (this.newReviewImagePreviewUrl) {
+      URL.revokeObjectURL(this.newReviewImagePreviewUrl);
+    }
+
+    this.newReviewImageFile = file;
+    this.newReviewImagePreviewUrl = file ? URL.createObjectURL(file) : null;
+    this.changeDetectionReference.markForCheck();
+  }
+
+  /// Remove the currently selected review image
+  clearReviewImage(): void {
+    if (this.newReviewImagePreviewUrl) {
+      URL.revokeObjectURL(this.newReviewImagePreviewUrl);
+    }
+    this.newReviewImageFile = null;
+    this.newReviewImagePreviewUrl = null;
     this.changeDetectionReference.markForCheck();
   }
 

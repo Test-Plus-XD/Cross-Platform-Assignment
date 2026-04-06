@@ -72,9 +72,18 @@
                     <span>{{ badge.text }}</span>
                   </div>
                   <!-- Rating badge: bottom-right -->
-                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0">
-                    {{ formatRatingStars(ratingMap[restaurant.id]!.averageRating) }}
-                    ({{ ratingMap[restaurant.id]!.totalReviews }})
+                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
+                    {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+                    ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
+                  </span>
+                  <!-- Open/Closed badge: bottom-left -->
+                  <span class="opening-badge open"
+                        *ngIf="getOpeningStatus(restaurant) === 'open'">
+                    {{ curLang === 'TC' ? '營業中' : 'Open' }}
+                  </span>
+                  <span class="opening-badge closed"
+                        *ngIf="getOpeningStatus(restaurant) === 'closed'">
+                    {{ curLang === 'TC' ? '已關閉' : 'Closed' }}
                   </span>
                 </div>
                 <ion-card-content class="card-content">
@@ -224,9 +233,18 @@
                     [alt]="curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="card-image">
                   <div class="card-overlay"></div>
                   <!-- Rating badge: bottom-right -->
-                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0">
-                    {{ formatRatingStars(ratingMap[restaurant.id]!.averageRating) }}
-                    ({{ ratingMap[restaurant.id]!.totalReviews }})
+                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
+                    {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+                    ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
+                  </span>
+                  <!-- Open/Closed badge: bottom-left -->
+                  <span class="opening-badge open"
+                        *ngIf="getOpeningStatus(restaurant) === 'open'">
+                    {{ curLang === 'TC' ? '營業中' : 'Open' }}
+                  </span>
+                  <span class="opening-badge closed"
+                        *ngIf="getOpeningStatus(restaurant) === 'closed'">
+                    {{ curLang === 'TC' ? '已關閉' : 'Closed' }}
                   </span>
                 </div>
                 <ion-card-content class="card-content">

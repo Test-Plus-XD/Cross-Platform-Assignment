@@ -1,0 +1,88 @@
+// Account Type Selector bottom-sheet styles
+// No `transition: all` — scoped to specific properties only (CLAUDE.md rule)
+
+.selector-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0.5rem 0 1.5rem;
+}
+
+.selector-subtitle {
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+// Side-by-side cards on wider screens, stacked on narrow
+.type-cards {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+
+  @media (max-width: 400px) {
+    flex-direction: column;
+  }
+}
+
+.type-card {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border-radius: 16px;
+  border: 2px solid var(--ion-color-light-shade);
+  background: var(--ion-color-light);
+  cursor: pointer;
+  // Scope transition to only the properties used for the selection effect
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+
+  // Highlighted state when selected
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: var(--ion-color-primary-tint);
+  }
+
+  .type-icon {
+    font-size: 2.5rem;
+    color: var(--ion-color-primary);
+  }
+
+  .type-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ion-color-dark);
+  }
+
+  .type-description {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  // Checkmark badge — top-right corner of selected card
+  .checkmark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 1.25rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+// Confirm button at bottom of sheet
+.confirm-btn {
+  margin-top: 0.5rem;
+  --border-radius: 12px;
+}

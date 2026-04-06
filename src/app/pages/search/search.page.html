@@ -168,9 +168,9 @@
               <span>{{ badge.text }}</span>
             </div>
             <!-- Rating badge: bottom-right -->
-            <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0">
-              {{ formatRatingStars(ratingMap[restaurant.id]!.averageRating) }}
-              ({{ ratingMap[restaurant.id]!.totalReviews }})
+            <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
+              {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+              ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
             </span>
           </div>
 
