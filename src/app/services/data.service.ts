@@ -108,6 +108,23 @@ export class DataService {
   }
 
   /**
+   * DELETE request with a request body.
+   * Use this when the endpoint requires a body (e.g., removing a specific token).
+   * @param endpoint - API endpoint path
+   * @param body - Request body
+   * @param authToken - Optional authentication token to include in headers
+   */
+  deleteWithBody<T>(endpoint: string, body: any, authToken?: string | null): Observable<T> {
+    const url = `${this.apiUrl}${endpoint}`;
+    const headers = this.getHeaders(authToken);
+    console.log('DataService: DELETE (with body)', url);
+
+    return this.http.delete<T>(url, { headers, body }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
    * Upload file with multipart/form-data
    * @param endpoint - API endpoint path
    * @param file - File to upload

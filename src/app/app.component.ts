@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
+import { Auth, getIdToken } from '@angular/fire/auth';
 import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
 import { LayoutService } from './services/layout.service';
@@ -30,6 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
     readonly router = inject(Router);
     readonly messagingService = inject(MessagingService);
     private readonly userService = inject(UserService);
+    private readonly auth = inject(Auth);
     private readonly modalController = inject(ModalController);
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
@@ -127,8 +129,17 @@ export class AppComponent implements OnInit, OnDestroy {
         const permission = Notification.permission;
 
         if (permission === 'granted') {
-          // Already granted — silently obtain token
-          this.messagingService.requestPermission().catch(err => {
+          // Already granted — silently obtain token and register with backend
+          this.messagingService.requestPermission().then(async token => {
+            if (token && this.auth.currentUser) {
+              try {
+                const idToken = await getIdToken(this.auth.currentUser);
+                await this.messagingService.registerTokenWithBackend(token, idToken);
+              } catch (err) {
+                console.error('[AppComponent] Failed to register FCM token with backend:', err);
+              }
+            }
+          }).catch(err => {
             console.error('[AppComponent] FCM token error (auto):', err);
           });
           return;
@@ -166,10 +177,18 @@ export class AppComponent implements OnInit, OnDestroy {
                   Notification.requestPermission().then(permission => {
                     console.log('[AppComponent] Browser permission result:', permission);
                     if (permission === 'granted') {
-                      // Permission granted — now obtain FCM token via service
-                      this.messagingService.requestPermission().then(token => {
+                      // Permission granted — obtain FCM token and register with backend
+                      this.messagingService.requestPermission().then(async token => {
                         if (token) {
                           console.log('[AppComponent] FCM token obtained.');
+                          if (this.auth.currentUser) {
+                            try {
+                              const idToken = await getIdToken(this.auth.currentUser);
+                              await this.messagingService.registerTokenWithBackend(token, idToken);
+                            } catch (err) {
+                              console.error('[AppComponent] Failed to register FCM token with backend:', err);
+                            }
+                          }
                         } else {
                           console.warn('[AppComponent] Permission granted but no FCM token returned.');
                         }

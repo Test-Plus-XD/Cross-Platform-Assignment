@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { Messaging, getToken, onMessage, deleteToken, MessagePayload } from '@angular/fire/messaging';
 import { environment } from '../../environments/environment';
+import { DataService } from './data.service';
 
 // Firebase Cloud Messaging Models
 
@@ -151,6 +152,7 @@ export class MessagingService {
   private tokenSubject = new BehaviorSubject<string | null>(null);
   private messageSubject = new BehaviorSubject<NotificationPayload | null>(null);
   private permissionSubject = new BehaviorSubject<NotificationPermission>('default');
+  private readonly dataService = inject(DataService);
 
   public token$ = this.tokenSubject.asObservable();
   public message$ = this.messageSubject.asObservable();
@@ -280,24 +282,66 @@ export class MessagingService {
   }
 
   /**
-   * Delete current FCM token and remove from storage
+   * Delete current FCM token and remove from storage.
+   * If an authToken is provided, the token is also removed from the backend.
+   * @param authToken - Optional Firebase ID token to authenticate the backend removal
    * @returns Promise resolving to true if successful
    */
-  async deleteCurrentToken(): Promise<boolean> {
+  async deleteCurrentToken(authToken?: string): Promise<boolean> {
     try {
       if (!this.messaging) {
         console.error('MessagingService Messaging not initialised');
         return false;
       }
 
+      const currentToken = this.getCurrentToken();
       await deleteToken(this.messaging);
       this.tokenSubject.next(null);
       localStorage.removeItem('fcmToken');
+
+      if (currentToken && authToken) {
+        await this.removeTokenFromBackend(currentToken, authToken);
+      }
+
       console.log('MessagingService Token deleted successfully');
       return true;
     } catch (error) {
       console.error('MessagingService Error deleting token:', error);
       return false;
+    }
+  }
+
+  /**
+   * Register an FCM token with the backend so the server can send push notifications.
+   * Should be called after the user grants notification permission.
+   * @param fcmToken - The FCM device token to register
+   * @param authToken - Firebase ID token for authentication
+   */
+  async registerTokenWithBackend(fcmToken: string, authToken: string): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.dataService.post<void>('/API/Messaging/register-token', { token: fcmToken }, authToken)
+      );
+      console.log('MessagingService Token registered with backend');
+    } catch (error) {
+      console.error('MessagingService Failed to register token with backend:', error);
+    }
+  }
+
+  /**
+   * Remove an FCM token from the backend.
+   * Should be called when the user revokes notification permission or logs out.
+   * @param fcmToken - The FCM device token to remove
+   * @param authToken - Firebase ID token for authentication
+   */
+  async removeTokenFromBackend(fcmToken: string, authToken: string): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.dataService.deleteWithBody<void>('/API/Messaging/register-token', { token: fcmToken }, authToken)
+      );
+      console.log('MessagingService Token removed from backend');
+    } catch (error) {
+      console.error('MessagingService Failed to remove token from backend:', error);
     }
   }
 
@@ -375,17 +419,19 @@ export class MessagingService {
   }
 
   /**
-   * Subscribe to a topic (requires backend implementation)
-   * Topics allow sending notifications to groups of users
-   * @param token FCM token
-   * @param topic Topic name
+   * Subscribe an FCM token to a topic via the backend.
+   * Topics allow sending notifications to groups of users.
+   * @param token - FCM device token
+   * @param topic - Topic name
+   * @param authToken - Firebase ID token for authentication
    * @returns Promise resolving to true if successful
    */
-  async subscribeToTopic(token: string, topic: string): Promise<boolean> {
+  async subscribeToTopic(token: string, topic: string, authToken: string): Promise<boolean> {
     try {
-      // This requires a backend endpoint to call Firebase Admin SDK
-      // POST /API/FCM/subscribe { token, topic }
-      console.log(`MessagingService Subscribe to topic: ${topic} (requires backend implementation)`);
+      await firstValueFrom(
+        this.dataService.post<void>('/API/Messaging/subscribe', { token, topic }, authToken)
+      );
+      console.log(`MessagingService Subscribed to topic: ${topic}`);
       return true;
     } catch (error) {
       console.error('MessagingService Error subscribing to topic:', error);
@@ -394,16 +440,18 @@ export class MessagingService {
   }
 
   /**
-   * Unsubscribe from a topic (requires backend implementation)
-   * @param token FCM token
-   * @param topic Topic name
+   * Unsubscribe an FCM token from a topic via the backend.
+   * @param token - FCM device token
+   * @param topic - Topic name
+   * @param authToken - Firebase ID token for authentication
    * @returns Promise resolving to true if successful
    */
-  async unsubscribeFromTopic(token: string, topic: string): Promise<boolean> {
+  async unsubscribeFromTopic(token: string, topic: string, authToken: string): Promise<boolean> {
     try {
-      // This requires a backend endpoint to call Firebase Admin SDK
-      // POST /API/FCM/unsubscribe { token, topic }
-      console.log(`MessagingService Unsubscribe from topic: ${topic} (requires backend implementation)`);
+      await firstValueFrom(
+        this.dataService.post<void>('/API/Messaging/unsubscribe', { token, topic }, authToken)
+      );
+      console.log(`MessagingService Unsubscribed from topic: ${topic}`);
       return true;
     } catch (error) {
       console.error('MessagingService Error unsubscribing from topic:', error);

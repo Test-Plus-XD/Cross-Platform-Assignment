@@ -871,17 +871,19 @@ export interface CreateAdvertisementRequest {
 - `getBookingStatusColor(status)` - Get badge color for status
 - `isValidCoordinates(lat, lng)` - Validate coordinates
 
-### 12. MessagingService (`messaging.service.ts`) - v1.10.0
-**Purpose:** Firebase Cloud Messaging integration for push notifications
+### 12. MessagingService (`messaging.service.ts`) - v1.13.0
+**Purpose:** Firebase Cloud Messaging integration for push notifications, including server-side token registration so the API can deliver notifications directly to devices.
 
 **Key Methods:**
-- `requestPermission()` - Request notification permission and obtain FCM token
+- `requestPermission()` - Request notification permission, obtain FCM token, and store in localStorage
 - `getCurrentToken()` - Retrieve current FCM token (from memory or localStorage)
 - `getCurrentPermission()` - Get current notification permission status
-- `deleteCurrentToken()` - Delete current FCM token and remove from storage
+- `deleteCurrentToken(authToken?)` - Delete FCM token from Firebase SDK and localStorage; if `authToken` is provided, also removes the token from the backend via `DELETE /API/Messaging/register-token`
 - `refreshToken()` - Refresh FCM token (delete and request new one)
-- `subscribeToTopic(token, topic)` - Subscribe to notification topic (requires backend)
-- `unsubscribeFromTopic(token, topic)` - Unsubscribe from topic (requires backend)
+- `registerTokenWithBackend(fcmToken, authToken)` - POST to `POST /API/Messaging/register-token`; stores token in `Users/{uid}.fcmTokens` via `arrayUnion` so the server can send push notifications to this device
+- `removeTokenFromBackend(fcmToken, authToken)` - DELETE to `/API/Messaging/register-token`; removes token from `Users/{uid}.fcmTokens`
+- `subscribeToTopic(token, topic, authToken)` - POST to `/API/Messaging/subscribe` (previously a no-op stub)
+- `unsubscribeFromTopic(token, topic, authToken)` - POST to `/API/Messaging/unsubscribe` (previously a no-op stub)
 - `generateNotification(type, params)` - Generate notification from template
 
 **State:**
@@ -889,16 +891,23 @@ export interface CreateAdvertisementRequest {
 - `message$: Observable<NotificationPayload | null>` - Incoming messages
 - `permission$: Observable<NotificationPermission>` - Permission status changes
 
+**Token registration flow:**
+`app.component.ts` calls `registerTokenWithBackend()` immediately after the user grants permission (both the auto-grant path and the "Allow" button path). It obtains a fresh Firebase ID token via `getIdToken(auth.currentUser)` from `@angular/fire/auth` before calling the API. This ensures the server always has an up-to-date token for the current user.
+
+**Notification deeplinks (set in FCM `data.url` by the server):**
+- `pourrice://bookings` — booking status notifications; client opens the Bookings or Store Bookings Management page
+- `pourrice://chat/{roomId}` — new chat message notifications; client opens that chat room
+
 **Features:**
 - Foreground and background message handling
 - Browser notification display with click actions
-- Token persistence in localStorage
+- Token persistence in localStorage and Firestore (`Users/{uid}.fcmTokens`)
 - Notification templates for common use cases
 - Observable patterns for reactive updates
 
 **Exported Models:**
 - `NotificationPayload` - Notification structure
-- `NotificationData` - Notification metadata
+- `NotificationData` - Notification metadata (includes `url`, `roomId`, `bookingId`, `type`)
 - `NotificationType` - Notification type enumeration
 - `FcmTokenInfo` - Token information
 - `SendNotificationRequest` - Backend request structure
@@ -1800,6 +1809,7 @@ API (verify) → Extract UID → Ownership checks
 - **v1.12.0** (2026-03-04): **Booking system overhaul — payment logic removed, accept/decline workflow added.** Status values changed from `pending/confirmed/cancelled` to `pending/accepted/declined/cancelled/completed`. `paymentStatus`/`paymentIntentId` removed from all booking operations. New `declineMessage` field (set by restaurant owner on decline). Added `GET /restaurant/:restaurantId` endpoint (owner-only, enriches each booking with diner displayName/email/phoneNumber). `PUT /:id` now supports dual-ownership: diners can edit/cancel pending bookings; restaurant owners can accept/decline/complete. `DELETE /:id` enforces 30-day rule. Diner booking page: added edit/delete actions, declined status tab, decline message display. Store page: added status filter tabs (Pending/Accepted/Declined/Cancelled/All), diner info per card, Accept/Decline buttons with optional decline message, chat button.
 - **v1.11.1** (2026-03-04): **Critical auth guard race condition fix.** Fixed spurious redirects to `/login` when refreshing or re-entering protected pages while logged in. **Root cause:** `AuthGuard.canActivate()` used `take(1)` on a BehaviorSubject initialized with `null`, firing before Firebase's `onAuthStateChanged` could restore the persisted session (~300-800ms delay). **Fixes:** (1) Added `authInitialized$` observable to `AuthService` that emits `true` only after the first `onAuthStateChanged` callback. (2) Guard now waits for `authInitialized$` before checking auth state. (3) Guard passes `returnUrl` query param when redirecting, preserving deep links (esp. Stripe's `?payment_success=true&session_id=...`). (4) LoginPage now reads `returnUrl` and navigates there post-auth instead of always `/user`. (5) Added localStorage failsafe in StorePage: saves pending ad sessions to localStorage, allowing users to resume ad creation if modal is accidentally closed after Stripe payment. **Result:** Stripe payment flow now works reliably; all deep links preserved through auth redirects.
 - **v1.11.0** (2026-03-04): Advertisement placement system with Stripe payment integration. Added `advertisements.service.ts` for Firestore CRUD. Implemented `AdModalComponent` for bilingual ad creation (EN/TC) with image uploads. Added `/API/Advertisements` CRUD endpoints and `POST /API/Stripe/create-ad-checkout-session` for HK$10 payments. Updated StorePage with ad management UI and payment flow. Overhauled HomePage to fetch and display real Firestore ads alongside mock offers with bilingual support. Introduced language fallback pattern for bilingual fields. Updated from 23 to 24 core services.
+- **v1.13.0** (2026-04-09): **FCM backend token registration.** `MessagingService` now registers device tokens with the API (`POST /API/Messaging/register-token`) after permission is granted, and removes them on `deleteCurrentToken()`. `subscribeToTopic()` and `unsubscribeFromTopic()` are fully implemented (previously no-op stubs) — signatures updated to accept `authToken` as a third parameter. `app.component.ts` calls `registerTokenWithBackend()` in both the auto-grant and "Allow" button paths, obtaining a fresh ID token via `getIdToken()` from `@angular/fire/auth`. `DataService.deleteWithBody()` added for DELETE requests with a body. `fcmTokens?: string[]` added to `UserProfile` interface in `user.service.ts`. Notification deeplinks: `pourrice://bookings` (booking status) and `pourrice://chat/{roomId}` (chat message) are sent by the server in FCM `data.url`.
 - **v1.10.0** (2025-01-29): Added Firebase Cloud Messaging (FCM) support via MessagingService. Push notifications for bookings, reviews, and chat messages. Service exports all models directly (NotificationPayload, NotificationData, NotificationType, etc.). Requires VAPID key configuration in environment files. Background notifications handled by `firebase-messaging-sw.js` service worker. Updated from 22 to 23 core services.
 - **v1.9.2** (2025-01-15): **Condensed documentation from 128k to 50k characters whilst preserving all features.** Added critical API documentation references: Backend repositories located in sibling directories (`..\Vercel-Express-API`, `..\Railway-Socket`). **IMPORTANT:** AI agents must read `..\Vercel-Express-API\API.md` before using/modifying endpoints. Updated AI Assistant Guidelines with API consultation requirements. Enhanced "Add API Endpoint" section with mandatory API.md review steps.
 - **v1.9.1** (2025-12-13): Added ChatVisibilityService, StoreHelpersService documentation. Enhanced UserService section with type/restaurantId fields, updateLoginMetadata, updatePreferences methods. Added dynamic navigation documentation (MenuComponent, TabComponent user-type-specific behavior).

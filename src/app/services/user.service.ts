@@ -40,6 +40,7 @@ export interface UserProfile {
   modifiedAt?: Timestamp;
   lastLoginAt?: Timestamp;
   loginCount?: number;
+  fcmTokens?: string[];
 }
 
 @Injectable({

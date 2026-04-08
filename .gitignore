@@ -76,3 +76,6 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+#Graphify Cache
+src/graphify-out/cache/
