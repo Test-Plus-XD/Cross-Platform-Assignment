@@ -52,6 +52,12 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
   },
+  {
+    path: 'chat/:id',
+    data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
+  },
 ];
 
 @NgModule({

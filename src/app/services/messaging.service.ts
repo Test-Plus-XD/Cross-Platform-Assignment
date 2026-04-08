@@ -116,7 +116,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     bodyTemplate: (params) => params.messagePreview,
     dataTemplate: (params) => ({
       type: 'chat_message',
-      url: '/chat',
+      url: `/chat/${params.roomId}`,
       roomId: params.roomId
     })
   },
