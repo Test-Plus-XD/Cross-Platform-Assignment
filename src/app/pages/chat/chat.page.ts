@@ -44,6 +44,7 @@ export class ChatPage implements OnInit, OnDestroy {
   selectedRestaurantName: string | null = null;
   selectedRestaurantOwnerId: string | null = null;
   private pendingRouteRoomId: string | null = null;
+  private hasStartedProfileLoad = false;
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -54,8 +55,19 @@ export class ChatPage implements OnInit, OnDestroy {
   constructor() { }
 
   ngOnInit() {
-    this.pendingRouteRoomId = this.route.snapshot.paramMap.get('id');
-    this.loadUserProfile();
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((paramMap) => {
+      this.pendingRouteRoomId = paramMap.get('id');
+
+      if (!this.hasStartedProfileLoad) {
+        this.hasStartedProfileLoad = true;
+        this.loadUserProfile();
+        return;
+      }
+
+      if (this.chatRooms.length > 0) {
+        this.tryOpenRoomFromRoute();
+      }
+    });
   }
 
   ngOnDestroy(): void {
