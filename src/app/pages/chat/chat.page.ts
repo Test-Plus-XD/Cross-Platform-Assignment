@@ -244,14 +244,18 @@ export class ChatPage implements OnInit, OnDestroy {
     const targetRoom = this.chatRooms.find(room => room.roomId === this.pendingRouteRoomId);
     if (!targetRoom) {
       console.warn('ChatPage: Route room not found in user room list:', this.pendingRouteRoomId);
-      this.pendingRouteRoomId = null;
       return;
     }
 
-    this.openChatRoom(targetRoom).catch((error) => {
-      console.error('ChatPage: Failed to auto-open room from route', error);
-    });
-    this.pendingRouteRoomId = null;
+    this.openChatRoom(targetRoom)
+      .then(() => {
+        this.pendingRouteRoomId = null;
+      })
+      .catch((error) => {
+        console.error('ChatPage: Failed to auto-open room from route', error);
+        // Clear pending room when opening fails definitively.
+        this.pendingRouteRoomId = null;
+      });
   }
 
   /// Gets the other participant in a direct chat (excluding current user)
