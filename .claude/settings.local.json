@@ -13,7 +13,14 @@
       "Bash(curl -s -X GET \"https://vercel-express-api-alpha.vercel.app/API/Stripe/config\" -H \"x-api-passcode: PourRice\")",
       "Bash(curl -s -X GET https://vercel-express-api-alpha.vercel.app/API/Restaurants -H 'x-api-passcode: PourRice')",
       "Bash(curl -s -X GET \"https://vercel-express-api-alpha.vercel.app/API/Reviews/batch-stats?restaurantIds=test1\" -H \"x-api-passcode: PourRice\")",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(gh repo:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(graphify install:*)",
+      "Bash(python -c ':*)",
+      "Bash(ls .graphify_*.json .graphify_*.txt)",
+      "Bash(python -c \"import json; d=json.loads\\(open\\('.graphify_semantic_new.json'\\).read\\(\\)\\); print\\(f'nodes: {len\\(d.get\\(\\\\\"nodes\\\\\",[]\\)\\)}, edges: {len\\(d.get\\(\\\\\"edges\\\\\",[]\\)\\)}, hyperedges: {len\\(d.get\\(\\\\\"hyperedges\\\\\",[]\\)\\), }'\\)\")"
     ]
   }
 }
