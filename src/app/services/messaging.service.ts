@@ -73,7 +73,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Your reservation at ${params.restaurantName} is confirmed for ${params.dateTime}`,
     dataTemplate: (params) => ({
       type: 'booking_confirmed',
-      url: '/bookings',
+      url: '/booking',
       bookingId: params.bookingId
     })
   },
@@ -84,7 +84,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Your reservation at ${params.restaurantName} has been cancelled`,
     dataTemplate: (params) => ({
       type: 'booking_cancelled',
-      url: '/bookings',
+      url: '/booking',
       bookingId: params.bookingId
     })
   },
@@ -95,7 +95,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Reminder: Your reservation at ${params.restaurantName} is in ${params.timeUntil}`,
     dataTemplate: (params) => ({
       type: 'booking_reminder',
-      url: '/bookings',
+      url: '/booking',
       bookingId: params.bookingId
     })
   },
@@ -116,7 +116,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     bodyTemplate: (params) => params.messagePreview,
     dataTemplate: (params) => ({
       type: 'chat_message',
-      url: '/chat',
+      url: `/chat/${params.roomId}`,
       roomId: params.roomId
     })
   },

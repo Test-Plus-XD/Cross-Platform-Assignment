@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { MessagingService } from './messaging.service';
+import { MessagingService, NOTIFICATION_TEMPLATES } from './messaging.service';
 
 describe('MessagingService', () => {
   let service: MessagingService;
@@ -64,5 +64,32 @@ describe('MessagingService', () => {
     expect(notification.title).toBe('Booking Confirmed');
     expect(notification.body).toContain('Test Restaurant');
     expect(notification.data?.bookingId).toBe('test123');
+  });
+
+  it('should generate booking notification URLs that match existing routes', () => {
+    const bookingTypes = ['booking_confirmed', 'booking_cancelled', 'booking_reminder'] as const;
+
+    bookingTypes.forEach((type) => {
+      const notification = service.generateNotification(type, {
+        restaurantName: 'Test Restaurant',
+        dateTime: '2025-12-25',
+        timeUntil: '2 hours',
+        bookingId: 'booking123'
+      });
+
+      expect(notification.data?.url).toBe('/booking');
+    });
+  });
+
+  it('should generate non-booking template URLs that match existing route shapes', () => {
+    const params = { restaurantId: 'restaurant123', roomId: 'room123' };
+
+    const reviewUrl = NOTIFICATION_TEMPLATES.new_review.dataTemplate?.(params)?.url;
+    const chatUrl = NOTIFICATION_TEMPLATES.chat_message.dataTemplate?.(params)?.url;
+    const storeUrl = NOTIFICATION_TEMPLATES.restaurant_claimed.dataTemplate?.(params)?.url;
+
+    expect(reviewUrl).toBe('/restaurant/restaurant123');
+    expect(chatUrl).toBe('/chat/room123');
+    expect(storeUrl).toBe('/store');
   });
 });
