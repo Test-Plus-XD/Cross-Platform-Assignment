@@ -89,7 +89,7 @@ describe('MessagingService', () => {
     const storeUrl = NOTIFICATION_TEMPLATES.restaurant_claimed.dataTemplate?.(params)?.url;
 
     expect(reviewUrl).toBe('/restaurant/restaurant123');
-    expect(chatUrl).toBe('/chat/room123');
+    expect(chatUrl).toBe('/chat');
     expect(storeUrl).toBe('/store');
   });
 });
