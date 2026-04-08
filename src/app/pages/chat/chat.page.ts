@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
@@ -22,7 +22,7 @@ export class ChatPage implements OnInit, OnDestroy {
   private readonly languageService = inject(LanguageService);
   private readonly chatService = inject(ChatService);
   private readonly httpClient = inject(HttpClient);
-  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   // ViewChild reference to ChatButton component
   @ViewChild(ChatButtonComponent) chatButton?: ChatButtonComponent;
@@ -43,6 +43,8 @@ export class ChatPage implements OnInit, OnDestroy {
   selectedRestaurantId: string | null = null;
   selectedRestaurantName: string | null = null;
   selectedRestaurantOwnerId: string | null = null;
+  private pendingRouteRoomId: string | null = null;
+  private hasStartedProfileLoad = false;
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -53,7 +55,19 @@ export class ChatPage implements OnInit, OnDestroy {
   constructor() { }
 
   ngOnInit() {
-    this.loadUserProfile();
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((paramMap) => {
+      this.pendingRouteRoomId = paramMap.get('id');
+
+      if (!this.hasStartedProfileLoad) {
+        this.hasStartedProfileLoad = true;
+        this.loadUserProfile();
+        return;
+      }
+
+      if (this.chatRooms.length > 0) {
+        this.tryOpenRoomFromRoute();
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -148,6 +162,7 @@ export class ChatPage implements OnInit, OnDestroy {
 
       // Chat rooms array is updated with the fetched data
       this.chatRooms = Response.rooms || [];
+      this.tryOpenRoomFromRoute();
 
       console.log('ChatPage: Successfully loaded', this.chatRooms.length, 'chat rooms');
 
@@ -221,6 +236,26 @@ export class ChatPage implements OnInit, OnDestroy {
       // Other room types could be handled here in future
       console.log('ChatPage: Room type not yet supported');
     }
+  }
+
+  private tryOpenRoomFromRoute(): void {
+    if (!this.pendingRouteRoomId) return;
+
+    const targetRoom = this.chatRooms.find(room => room.roomId === this.pendingRouteRoomId);
+    if (!targetRoom) {
+      console.warn('ChatPage: Route room not found in user room list:', this.pendingRouteRoomId);
+      return;
+    }
+
+    this.openChatRoom(targetRoom)
+      .then(() => {
+        this.pendingRouteRoomId = null;
+      })
+      .catch((error) => {
+        console.error('ChatPage: Failed to auto-open room from route', error);
+        // Clear pending room when opening fails definitively.
+        this.pendingRouteRoomId = null;
+      });
   }
 
   /// Gets the other participant in a direct chat (excluding current user)

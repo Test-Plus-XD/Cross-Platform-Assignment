@@ -47,6 +47,12 @@ const routes: Routes = [
     loadChildren: () => import('./pages/store/store.module').then(m => m.StorePageModule)
   },
   {
+    path: 'chat',
+    data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./pages/chat/chat.module').then( m => m.ChatPageModule)
+  },
+  {
     path: 'chat/:id',
     data: { title: { Header_EN: 'Chat', Header_TC: '聊天' } },
     canActivate: [AuthGuard],

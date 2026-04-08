@@ -1,6 +1,6 @@
 import { Component, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { AlertController, ModalController } from '@ionic/angular';
+import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { HeaderComponent } from './shared/header/header.component';
@@ -10,7 +10,7 @@ import { LanguageService } from './services/language.service';
 import { PlatformService } from './services/platform.service';
 import { UIService } from './services/UI.service';
 import { AppStateService } from './services/app-state.service';
-import { MessagingService } from './services/messaging.service';
+import { MessagingService, NotificationPayload } from './services/messaging.service';
 import { UserService } from './services/user.service';
 import { AccountTypeSelectorComponent } from './shared/account-type-selector/account-type-selector.component';
 
@@ -31,6 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
     readonly messagingService = inject(MessagingService);
     private readonly userService = inject(UserService);
     private readonly modalController = inject(ModalController);
+    private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
 
     @ViewChild(HeaderComponent) header!: HeaderComponent;
@@ -79,10 +80,44 @@ export class AppComponent implements OnInit, OnDestroy {
 
       // Show notification permission prompt if not yet granted
       this.promptNotificationPermission();
+      this.subscribeToInAppMessages();
 
       // Watch for logged-in users whose profile has no type set.
       // When detected, present the account-type selector modal once per session.
       this.watchForMissingUserType();
+    }
+
+    private subscribeToInAppMessages(): void {
+      this.messagingService.getMessages$().pipe(
+        filter((payload): payload is NotificationPayload => payload !== null),
+        takeUntil(this.destroy$)
+      ).subscribe(payload => {
+        this.presentInAppMessage(payload).catch((error) => {
+          console.error('[AppComponent] Failed to show in-app notification toast:', error);
+        });
+      });
+    }
+
+    private async presentInAppMessage(payload: NotificationPayload): Promise<void> {
+      const buttonText = this.language.getCurrentLanguage() === 'TC' ? '查看' : 'View';
+      const buttons = payload.data?.url
+        ? [{ text: buttonText, role: 'open' }]
+        : [];
+
+      const toast = await this.toastController.create({
+        header: payload.title,
+        message: payload.body,
+        duration: 5000,
+        position: 'top',
+        buttons
+      });
+
+      await toast.present();
+      const result = await toast.onDidDismiss();
+
+      if (result.role === 'open' && payload.data?.url) {
+        await this.router.navigateByUrl(payload.data.url);
+      }
     }
 
     private async promptNotificationPermission(): Promise<void> {
