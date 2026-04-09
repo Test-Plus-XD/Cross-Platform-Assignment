@@ -5,88 +5,90 @@
   </ion-toolbar>
 </ion-header>
 
-<div class="shared-menu">
-  <!-- Main Navigation -->
-  <ion-list class="px-2">
-    <ion-item button routerLink="/home" (click)="closeMenu()" lines="none" detail="false">
-      <ion-icon name="home-outline" slot="start"></ion-icon>
-      <ion-label>{{ (lang$ | async) === 'TC' ? '主頁' : 'Home' }}</ion-label>
-    </ion-item>
-
-    <ion-item button routerLink="/search" (click)="closeMenu()" lines="none" detail="false">
-      <ion-icon name="search-outline" slot="start"></ion-icon>
-      <ion-label>{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</ion-label>
-    </ion-item>
-
-    <ion-item button routerLink="/user" (click)="closeMenu()" lines="none" detail="false">
-      <ion-icon name="person-outline" slot="start"></ion-icon>
-      <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
-    </ion-item>
-
-    <!-- QR Scanner — available to all users, no login required -->
-    <ion-item button (click)="openQrScanner()" lines="none" detail="false">
-      <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-      <ion-label>{{ (lang$ | async) === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</ion-label>
-    </ion-item>
-
-    <!-- Conditional menu items based on login state and user type -->
-    <ng-container *ngIf="appState$ | async as appState">
-      <ng-container *ngIf="appState.isLoggedIn">
-        <ion-item button routerLink="/chat/main" (click)="closeMenu()" lines="none" detail="false">
-          <ion-icon name="chatbubbles-outline" slot="start"></ion-icon>
-          <ion-label>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</ion-label>
-        </ion-item>
-
-        <!-- Bookings item - for Diner users -->
-        <ion-item button routerLink="/booking" (click)="closeMenu()" lines="none" detail="false" *ngIf="!(isRestaurantUser$ | async)">
-          <ion-icon name="calendar-outline" slot="start"></ion-icon>
-          <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
-        </ion-item>
-
-        <!-- Store item - for Restaurant users -->
-        <ion-item button routerLink="/store" (click)="closeMenu()" lines="none" detail="false" *ngIf="isRestaurantUser$ | async">
-          <ion-icon name="storefront-outline" slot="start"></ion-icon>
-          <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
-        </ion-item>
-      </ng-container>
-    </ng-container>
-  </ion-list>
-  <br><br><br><br><br><br><br><br><br><br>
-  <!-- Settings Section -->
-  <div class="settings-section mt-4">
-    <ion-list-header class="px-4">
-      <ion-label>{{ (lang$ | async) === 'TC' ? '設定' : 'Settings' }}</ion-label>
-    </ion-list-header>
-
+<ion-content>
+  <div class="shared-menu">
+    <!-- Main Navigation -->
     <ion-list class="px-2">
-      <!-- Language Toggle -->
-      <ion-item lines="none" detail="false" class="settings-item">
-        <ion-icon name="language-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? 'Language' : '語言' }}</ion-label>
-        <button (click)="toggleLanguage()" class="modern-toggle" aria-label="Toggle language">
-          <ng-container *ngIf="(lang$ | async) === 'EN'; else HK">🇬🇧 EN</ng-container>
-          <ng-template #HK>🇭🇰 中文</ng-template>
-        </button>
+      <ion-item button routerLink="/home" (click)="closeMenu()" lines="none" detail="false">
+        <ion-icon name="home-outline" slot="start"></ion-icon>
+        <ion-label>{{ (lang$ | async) === 'TC' ? '主頁' : 'Home' }}</ion-label>
       </ion-item>
 
-      <!-- Theme Toggle -->
-      <ion-item lines="none" detail="false" class="settings-item">
-        <ion-icon name="contrast-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '顏色模式' : 'Colour Mode' }}</ion-label>
-        <button (click)="toggleTheme()" class="modern-toggle" aria-label="Toggle theme">
-          <ng-container *ngIf="isDark$ | async; else sun">
-            <ion-icon name="moon-outline"></ion-icon>
-          </ng-container>
-          <ng-template #sun>
-            <ion-icon name="sunny-outline"></ion-icon>
-          </ng-template>
-        </button>
+      <ion-item button routerLink="/search" (click)="closeMenu()" lines="none" detail="false">
+        <ion-icon name="search-outline" slot="start"></ion-icon>
+        <ion-label>{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</ion-label>
       </ion-item>
 
-      <ion-item button (click)="onMenuItemSelected('/settings')" lines="none" detail="false" class="settings-item">
-        <ion-icon name="settings-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '更多設定' : 'More Settings' }}</ion-label>
+      <ion-item button routerLink="/user" (click)="closeMenu()" lines="none" detail="false">
+        <ion-icon name="person-outline" slot="start"></ion-icon>
+        <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
       </ion-item>
+
+      <!-- QR Scanner — available to all users, no login required -->
+      <ion-item button (click)="openQrScanner()" lines="none" detail="false">
+        <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+        <ion-label>{{ (lang$ | async) === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</ion-label>
+      </ion-item>
+
+      <!-- Conditional menu items based on login state and user type -->
+      <ng-container *ngIf="appState$ | async as appState">
+        <ng-container *ngIf="appState.isLoggedIn">
+          <ion-item button routerLink="/chat/main" (click)="closeMenu()" lines="none" detail="false">
+            <ion-icon name="chatbubbles-outline" slot="start"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</ion-label>
+          </ion-item>
+
+          <!-- Bookings item - for Diner users -->
+          <ion-item button routerLink="/booking" (click)="closeMenu()" lines="none" detail="false" *ngIf="!(isRestaurantUser$ | async)">
+            <ion-icon name="calendar-outline" slot="start"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
+          </ion-item>
+
+          <!-- Store item - for Restaurant users -->
+          <ion-item button routerLink="/store" (click)="closeMenu()" lines="none" detail="false" *ngIf="isRestaurantUser$ | async">
+            <ion-icon name="storefront-outline" slot="start"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
+          </ion-item>
+        </ng-container>
+      </ng-container>
     </ion-list>
+
+    <!-- Settings Section -->
+    <div class="settings-section mt-4">
+      <ion-list-header class="px-4">
+        <ion-label>{{ (lang$ | async) === 'TC' ? '設定' : 'Settings' }}</ion-label>
+      </ion-list-header>
+
+      <ion-list class="px-2">
+        <!-- Language Toggle -->
+        <ion-item lines="none" detail="false" class="settings-item">
+          <ion-icon name="language-outline" slot="start"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? 'Language' : '語言' }}</ion-label>
+          <button (click)="toggleLanguage()" class="modern-toggle" aria-label="Toggle language">
+            <ng-container *ngIf="(lang$ | async) === 'EN'; else HK">🇬🇧 EN</ng-container>
+            <ng-template #HK>🇭🇰 中文</ng-template>
+          </button>
+        </ion-item>
+
+        <!-- Theme Toggle -->
+        <ion-item lines="none" detail="false" class="settings-item">
+          <ion-icon name="contrast-outline" slot="start"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? '顏色模式' : 'Colour Mode' }}</ion-label>
+          <button (click)="toggleTheme()" class="modern-toggle" aria-label="Toggle theme">
+            <ng-container *ngIf="isDark$ | async; else sun">
+              <ion-icon name="moon-outline"></ion-icon>
+            </ng-container>
+            <ng-template #sun>
+              <ion-icon name="sunny-outline"></ion-icon>
+            </ng-template>
+          </button>
+        </ion-item>
+
+        <ion-item button (click)="onMenuItemSelected('/settings')" lines="none" detail="false" class="settings-item">
+          <ion-icon name="settings-outline" slot="start"></ion-icon>
+          <ion-label>{{ (lang$ | async) === 'TC' ? '更多設定' : 'More Settings' }}</ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
   </div>
-</div>
+</ion-content>

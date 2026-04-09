@@ -1,17 +1,17 @@
 .shared-menu {
   --ion-item-background: transparent;
   --ion-toolbar-background: var(--ion-color-primary);
-  padding-left: 1vw;
+  padding: 0.75rem 0 1rem;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
   color: var(--ion-text-color);
   background: transparent;
 }
 
 .settings-section {
   margin-top: auto; /* push settings to bottom */
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   border-top: 1px solid var(--ion-color-light-shade);
   background: transparent;
 }
