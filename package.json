@@ -48,7 +48,7 @@
     "@angular/service-worker": "^20.3.3",
     "@augmentcode/auggie": "^0.5.7",
     "@capacitor-mlkit/barcode-scanning": "^8.0.1",
-    "@capacitor/android": "^7.4.3",
+    "@capacitor/android": "^7.6.1",
     "@capacitor/ios": "^7.4.3",
     "@ionic/angular": "^8.7.9",
     "@ionic/angular-server": "^8.7.5",
