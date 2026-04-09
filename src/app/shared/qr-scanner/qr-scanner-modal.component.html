@@ -81,7 +81,7 @@
     </div>
   </ng-container>
 
-  <div class="image-upload-fallback" *ngIf="isUnsupportedWebMode">
+  <div class="image-upload-fallback" *ngIf="isNativeCameraFallback">
     <label class="upload-qr-button">
       <input type="file" accept="image/*" (change)="onImageSelected($event)" />
       {{ lang === 'TC' ? '上傳圖片並掃描二維碼' : 'Upload image to scan QR' }}

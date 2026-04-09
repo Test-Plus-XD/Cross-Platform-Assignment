@@ -51,6 +51,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   // True when running in a Capacitor native shell (iOS / Android)
   readonly isNative = Capacitor.isNativePlatform();
   isUnsupportedWebMode = false;
+  isNativeCameraFallback = false;
 
   // Web scanner state
   hasBarcodeDetector = false;
@@ -64,6 +65,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   // Shared state
   isProcessing = false;
   torchEnabled = false;
+  private isDismissed = false;
+  private isDestroyed = false;
   private nativeListener: { remove: () => Promise<void> } | null = null;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
@@ -80,6 +83,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
     this.cleanup();
   }
 
@@ -87,9 +91,10 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   private async startNativeScanner(): Promise<void> {
     try {
+      this.isNativeCameraFallback = false;
       const { supported } = await BarcodeScanner.isSupported();
       if (!supported) {
-        this.isUnsupportedWebMode = true;
+        this.isNativeCameraFallback = true;
         this.cdr.markForCheck();
         await this.showToast(
           this.lang === 'TC'
@@ -122,7 +127,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       await BarcodeScanner.startScan({ formats: [BarcodeFormat.QrCode] });
     } catch (err) {
       console.error('[QrScanner] native start error', err);
-      this.isUnsupportedWebMode = true;
+      this.cleanup();
+      this.isNativeCameraFallback = true;
       this.cdr.markForCheck();
       await this.showToast(
         this.lang === 'TC' ? '無法啟動相機' : 'Failed to start camera',
@@ -232,8 +238,16 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       }
       this.isDecodingImage = false;
       this.cdr.markForCheck();
+
+      if (this.isDismissed || this.isDestroyed) {
+        return;
+      }
+
       await this.handleScannedValue(raw);
     } catch (err: unknown) {
+      if (this.isDismissed || this.isDestroyed) {
+        return;
+      }
       const msg = err instanceof Error ? err.message : String(err);
       await this.showToast(msg, 'danger');
     } finally {
@@ -302,7 +316,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   private async handleScannedValue(raw: string): Promise<void> {
-    if (this.isProcessing || !raw) return;
+    if (this.isProcessing || !raw || this.isDismissed || this.isDestroyed) return;
     this.isProcessing = true;
     this.cdr.markForCheck();
 
@@ -338,9 +352,11 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       this.cleanup();
 
       // Dismiss modal then navigate so the route change happens outside the modal
+      this.isDismissed = true;
       await this.modalController.dismiss({ restaurantId });
       await this.router.navigate(['/restaurant', restaurantId]);
     } catch (err: unknown) {
+      if (this.isDismissed || this.isDestroyed) return;
       const msg = err instanceof Error ? err.message : String(err);
       await this.showToast(msg, 'danger');
       this.isProcessing = false;
@@ -372,6 +388,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   dismissModal(): void {
+    this.isDismissed = true;
     this.cleanup();
     this.modalController.dismiss();
   }
