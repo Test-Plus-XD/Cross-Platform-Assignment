@@ -48,12 +48,12 @@
         <h3>{{ lang === 'TC' ? '不支援即時掃描' : 'Live scanning not supported' }}</h3>
         <p>
           {{ lang === 'TC'
-            ? '請使用 Chrome 或 Edge 瀏覽器，或下載 PourRice 手機應用程式以使用 QR 掃描功能。'
-            : 'Please use Chrome or Edge, or download the PourRice mobile app to use QR scanning.' }}
+            ? '此裝置或瀏覽器不支援即時掃描。你可以立即上傳含有 QR Code 的圖片進行掃描。'
+            : 'Live scanning is unavailable on this device or browser. You can upload an image containing a QR code to scan now.' }}
         </p>
         <label class="upload-qr-button">
           <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-          {{ lang === 'TC' ? '從圖片掃描二維碼' : 'Scan QR from image' }}
+          {{ lang === 'TC' ? '上傳圖片並掃描二維碼' : 'Upload image to scan QR' }}
         </label>
         <ion-button fill="outline" (click)="dismissModal()">
           {{ lang === 'TC' ? '關閉' : 'Close' }}
@@ -81,10 +81,10 @@
     </div>
   </ng-container>
 
-  <div class="image-upload-fallback" *ngIf="!isUnsupportedWebMode">
+  <div class="image-upload-fallback" *ngIf="isUnsupportedWebMode">
     <label class="upload-qr-button">
       <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-      {{ lang === 'TC' ? '相機不可用？從圖片掃描二維碼' : 'No camera? Scan QR from image' }}
+      {{ lang === 'TC' ? '上傳圖片並掃描二維碼' : 'Upload image to scan QR' }}
     </label>
   </div>
 

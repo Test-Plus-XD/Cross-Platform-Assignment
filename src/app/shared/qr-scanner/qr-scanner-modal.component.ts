@@ -50,9 +50,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   // True when running in a Capacitor native shell (iOS / Android)
   readonly isNative = Capacitor.isNativePlatform();
-  get isUnsupportedWebMode(): boolean {
-    return !this.isNative && !this.hasBarcodeDetector;
-  }
+  isUnsupportedWebMode = false;
 
   // Web scanner state
   hasBarcodeDetector = false;
@@ -91,13 +89,14 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
     try {
       const { supported } = await BarcodeScanner.isSupported();
       if (!supported) {
+        this.isUnsupportedWebMode = true;
+        this.cdr.markForCheck();
         await this.showToast(
           this.lang === 'TC'
             ? '此裝置不支援 QR 掃描'
             : 'QR scanning is not supported on this device',
           'warning',
         );
-        this.dismissModal();
         return;
       }
 
@@ -123,11 +122,12 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       await BarcodeScanner.startScan({ formats: [BarcodeFormat.QrCode] });
     } catch (err) {
       console.error('[QrScanner] native start error', err);
+      this.isUnsupportedWebMode = true;
+      this.cdr.markForCheck();
       await this.showToast(
         this.lang === 'TC' ? '無法啟動相機' : 'Failed to start camera',
         'danger',
       );
-      this.dismissModal();
     }
   }
 
@@ -147,6 +147,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
     // Check BarcodeDetector availability (Chrome / Edge 83+)
     if (typeof BarcodeDetector === 'undefined') {
       this.hasBarcodeDetector = false;
+      this.isUnsupportedWebMode = true;
       this.cdr.markForCheck();
       return;
     }
@@ -155,10 +156,12 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       const formats = await BarcodeDetector.getSupportedFormats();
       if (!formats.includes('qr_code')) {
         this.hasBarcodeDetector = false;
+        this.isUnsupportedWebMode = true;
         this.cdr.markForCheck();
         return;
       }
       this.hasBarcodeDetector = true;
+      this.isUnsupportedWebMode = false;
       this.cdr.markForCheck();
 
       this.webDetector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -180,6 +183,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('[QrScanner] web start error', err);
       this.hasBarcodeDetector = false;
+      this.isUnsupportedWebMode = true;
       this.cdr.markForCheck();
     }
   }
@@ -210,7 +214,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   async onImageSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement | null;
     const file = input?.files?.[0];
-    if (!file || this.isImageScanInProgress) return;
+    if (!file || this.isImageScanInProgress || this.isProcessing) return;
 
     this.isImageScanInProgress = true;
     this.isLiveScanPaused = true;
@@ -226,6 +230,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
             : 'No readable QR code found in the image',
         );
       }
+      this.isDecodingImage = false;
+      this.cdr.markForCheck();
       await this.handleScannedValue(raw);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
