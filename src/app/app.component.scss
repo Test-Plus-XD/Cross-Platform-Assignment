@@ -1,0 +1,30 @@
+:host {
+  --app-header-height: calc(64px + env(safe-area-inset-top, 0px));
+}
+
+ion-app,
+.app-shell {
+  width: 100%;
+  height: 100%;
+}
+
+.app-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+app-shared-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+ion-router-outlet {
+  position: absolute;
+  top: var(--app-header-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
