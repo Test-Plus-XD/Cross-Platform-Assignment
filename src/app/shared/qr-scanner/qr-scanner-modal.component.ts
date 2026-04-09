@@ -18,6 +18,7 @@ import {
   BarcodesScannedEvent,
 } from '@capacitor-mlkit/barcode-scanning';
 import { RestaurantsService } from '../../services/restaurants.service';
+import jsQR from 'jsqr';
 
 // BarcodeDetector is a browser API not yet in the TS lib — declare it locally
 declare const BarcodeDetector: {
@@ -35,6 +36,8 @@ declare const BarcodeDetector: {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QrScannerModalComponent implements OnInit, OnDestroy {
+  private static readonly MAX_IMAGE_DECODE_DIMENSION = 1600;
+
   private readonly modalController = inject(ModalController);
   private readonly toastController = inject(ToastController);
   private readonly router = inject(Router);
@@ -47,9 +50,14 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   // True when running in a Capacitor native shell (iOS / Android)
   readonly isNative = Capacitor.isNativePlatform();
+  isUnsupportedWebMode = false;
+  isNativeCameraFallback = false;
 
   // Web scanner state
   hasBarcodeDetector = false;
+  isDecodingImage = false;
+  private isImageScanInProgress = false;
+  private isLiveScanPaused = false;
   private webStream: MediaStream | null = null;
   private webDetector: InstanceType<typeof BarcodeDetector> | null = null;
   private scanInterval: ReturnType<typeof setInterval> | null = null;
@@ -57,6 +65,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   // Shared state
   isProcessing = false;
   torchEnabled = false;
+  private isDismissed = false;
+  private isDestroyed = false;
   private nativeListener: { remove: () => Promise<void> } | null = null;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
@@ -73,6 +83,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
     this.cleanup();
   }
 
@@ -80,15 +91,17 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   private async startNativeScanner(): Promise<void> {
     try {
+      this.isNativeCameraFallback = false;
       const { supported } = await BarcodeScanner.isSupported();
       if (!supported) {
+        this.isNativeCameraFallback = true;
+        this.cdr.markForCheck();
         await this.showToast(
           this.lang === 'TC'
             ? '此裝置不支援 QR 掃描'
             : 'QR scanning is not supported on this device',
           'warning',
         );
-        this.dismissModal();
         return;
       }
 
@@ -101,6 +114,9 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       this.nativeListener = await BarcodeScanner.addListener(
         'barcodesScanned',
         (event: BarcodesScannedEvent) => {
+          if (this.isImageScanInProgress || this.isLiveScanPaused) {
+            return;
+          }
           const scannedValue = event.barcodes[0]?.rawValue;
           if (scannedValue) {
             this.handleScannedValue(scannedValue);
@@ -111,11 +127,13 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       await BarcodeScanner.startScan({ formats: [BarcodeFormat.QrCode] });
     } catch (err) {
       console.error('[QrScanner] native start error', err);
+      this.cleanup();
+      this.isNativeCameraFallback = true;
+      this.cdr.markForCheck();
       await this.showToast(
         this.lang === 'TC' ? '無法啟動相機' : 'Failed to start camera',
         'danger',
       );
-      this.dismissModal();
     }
   }
 
@@ -135,6 +153,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
     // Check BarcodeDetector availability (Chrome / Edge 83+)
     if (typeof BarcodeDetector === 'undefined') {
       this.hasBarcodeDetector = false;
+      this.isUnsupportedWebMode = true;
       this.cdr.markForCheck();
       return;
     }
@@ -143,10 +162,12 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       const formats = await BarcodeDetector.getSupportedFormats();
       if (!formats.includes('qr_code')) {
         this.hasBarcodeDetector = false;
+        this.isUnsupportedWebMode = true;
         this.cdr.markForCheck();
         return;
       }
       this.hasBarcodeDetector = true;
+      this.isUnsupportedWebMode = false;
       this.cdr.markForCheck();
 
       this.webDetector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -168,12 +189,19 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('[QrScanner] web start error', err);
       this.hasBarcodeDetector = false;
+      this.isUnsupportedWebMode = true;
       this.cdr.markForCheck();
     }
   }
 
   private async detectFromVideo(): Promise<void> {
-    if (!this.webDetector || !this.videoEl?.nativeElement || this.isProcessing) return;
+    if (
+      !this.webDetector ||
+      !this.videoEl?.nativeElement ||
+      this.isProcessing ||
+      this.isImageScanInProgress ||
+      this.isLiveScanPaused
+    ) return;
     const video = this.videoEl.nativeElement;
     if (video.readyState < video.HAVE_ENOUGH_DATA) return;
 
@@ -189,8 +217,106 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   // ── Shared scan handler ───────────────────────────────────────────────────
 
+  async onImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file || this.isImageScanInProgress || this.isProcessing) return;
+
+    this.isImageScanInProgress = true;
+    this.isLiveScanPaused = true;
+    this.isDecodingImage = true;
+    this.cdr.markForCheck();
+
+    try {
+      const raw = await this.decodeQrFromImage(file);
+      if (!raw) {
+        throw new Error(
+          this.lang === 'TC'
+            ? '圖片中找不到可讀取的二維碼'
+            : 'No readable QR code found in the image',
+        );
+      }
+      this.isDecodingImage = false;
+      this.cdr.markForCheck();
+
+      if (this.isDismissed || this.isDestroyed) {
+        return;
+      }
+
+      await this.handleScannedValue(raw);
+    } catch (err: unknown) {
+      if (this.isDismissed || this.isDestroyed) {
+        return;
+      }
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.showToast(msg, 'danger');
+    } finally {
+      this.isImageScanInProgress = false;
+      this.isLiveScanPaused = false;
+      this.isDecodingImage = false;
+      if (input) {
+        input.value = '';
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  private decodeQrFromImage(file: File): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+
+      image.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          const maxDimension = QrScannerModalComponent.MAX_IMAGE_DECODE_DIMENSION;
+          const scale = Math.min(
+            1,
+            maxDimension / Math.max(image.naturalWidth, image.naturalHeight),
+          );
+          const scaledWidth = Math.max(1, Math.floor(image.naturalWidth * scale));
+          const scaledHeight = Math.max(1, Math.floor(image.naturalHeight * scale));
+
+          canvas.width = scaledWidth;
+          canvas.height = scaledHeight;
+          const context = canvas.getContext('2d');
+          if (!context) {
+            reject(
+              new Error(
+                this.lang === 'TC' ? '無法讀取圖片內容' : 'Failed to read image',
+              ),
+            );
+            return;
+          }
+
+          context.drawImage(image, 0, 0, scaledWidth, scaledHeight);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const qrResult = jsQR(imageData.data, imageData.width, imageData.height);
+          resolve(qrResult?.data ?? null);
+        } catch (err) {
+          reject(err);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(
+          new Error(
+            this.lang === 'TC'
+              ? '無法載入圖片，請重試'
+              : 'Unable to load image, please try again',
+          ),
+        );
+      };
+
+      image.src = url;
+    });
+  }
+
   private async handleScannedValue(raw: string): Promise<void> {
-    if (this.isProcessing || !raw) return;
+    if (this.isProcessing || !raw || this.isDismissed || this.isDestroyed) return;
     this.isProcessing = true;
     this.cdr.markForCheck();
 
@@ -226,9 +352,11 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       this.cleanup();
 
       // Dismiss modal then navigate so the route change happens outside the modal
+      this.isDismissed = true;
       await this.modalController.dismiss({ restaurantId });
       await this.router.navigate(['/restaurant', restaurantId]);
     } catch (err: unknown) {
+      if (this.isDismissed || this.isDestroyed) return;
       const msg = err instanceof Error ? err.message : String(err);
       await this.showToast(msg, 'danger');
       this.isProcessing = false;
@@ -260,6 +388,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   dismissModal(): void {
+    this.isDismissed = true;
     this.cleanup();
     this.modalController.dismiss();
   }
