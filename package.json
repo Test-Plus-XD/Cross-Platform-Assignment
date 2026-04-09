@@ -61,6 +61,7 @@
     "firebase-admin": "^13.5.0",
     "instantsearch.js": "^4.80.0",
     "ionicons": "^8.0.13",
+    "jsqr": "^1.4.0",
     "latest-version": "^9.0.0",
     "npm-check-updates": "^19.0.0",
     "photoswipe": "^5.4.4",

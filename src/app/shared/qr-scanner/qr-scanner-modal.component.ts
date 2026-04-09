@@ -18,6 +18,7 @@ import {
   BarcodesScannedEvent,
 } from '@capacitor-mlkit/barcode-scanning';
 import { RestaurantsService } from '../../services/restaurants.service';
+import jsQR from 'jsqr';
 
 // BarcodeDetector is a browser API not yet in the TS lib — declare it locally
 declare const BarcodeDetector: {
@@ -50,6 +51,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   // Web scanner state
   hasBarcodeDetector = false;
+  isDecodingImage = false;
   private webStream: MediaStream | null = null;
   private webDetector: InstanceType<typeof BarcodeDetector> | null = null;
   private scanInterval: ReturnType<typeof setInterval> | null = null;
@@ -188,6 +190,82 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   // ── Shared scan handler ───────────────────────────────────────────────────
+
+  async onImageSelected(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+
+    this.isDecodingImage = true;
+    this.cdr.markForCheck();
+
+    try {
+      const raw = await this.decodeQrFromImage(file);
+      if (!raw) {
+        throw new Error(
+          this.lang === 'TC'
+            ? '圖片中找不到可讀取的二維碼'
+            : 'No readable QR code found in the image',
+        );
+      }
+      await this.handleScannedValue(raw);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.showToast(msg, 'danger');
+    } finally {
+      this.isDecodingImage = false;
+      if (input) {
+        input.value = '';
+      }
+      this.cdr.markForCheck();
+    }
+  }
+
+  private decodeQrFromImage(file: File): Promise<string | null> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      const url = URL.createObjectURL(file);
+
+      image.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth;
+          canvas.height = image.naturalHeight;
+          const context = canvas.getContext('2d');
+          if (!context) {
+            reject(
+              new Error(
+                this.lang === 'TC' ? '無法讀取圖片內容' : 'Failed to read image',
+              ),
+            );
+            return;
+          }
+
+          context.drawImage(image, 0, 0);
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const qrResult = jsQR(imageData.data, imageData.width, imageData.height);
+          resolve(qrResult?.data ?? null);
+        } catch (err) {
+          reject(err);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(
+          new Error(
+            this.lang === 'TC'
+              ? '無法載入圖片，請重試'
+              : 'Unable to load image, please try again',
+          ),
+        );
+      };
+
+      image.src = url;
+    });
+  }
 
   private async handleScannedValue(raw: string): Promise<void> {
     if (this.isProcessing || !raw) return;

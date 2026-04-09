@@ -51,6 +51,10 @@
             ? '請使用 Chrome 或 Edge 瀏覽器，或下載 PourRice 手機應用程式以使用 QR 掃描功能。'
             : 'Please use Chrome or Edge, or download the PourRice mobile app to use QR scanning.' }}
         </p>
+        <label class="upload-qr-button">
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+          {{ lang === 'TC' ? '從圖片掃描二維碼' : 'Scan QR from image' }}
+        </label>
         <ion-button fill="outline" (click)="dismissModal()">
           {{ lang === 'TC' ? '關閉' : 'Close' }}
         </ion-button>
@@ -77,10 +81,23 @@
     </div>
   </ng-container>
 
+  <div class="image-upload-fallback">
+    <label class="upload-qr-button">
+      <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+      {{ lang === 'TC' ? '相機不可用？從圖片掃描二維碼' : 'No camera? Scan QR from image' }}
+    </label>
+  </div>
+
   <!-- ── Processing overlay (both modes) ──────────────────────────────── -->
-  <div class="processing-overlay" *ngIf="isProcessing">
+  <div class="processing-overlay" *ngIf="isProcessing || isDecodingImage">
     <img src="assets/icon/Eclipse.gif" alt="" class="loading-spinner">
-    <p>{{ lang === 'TC' ? '處理中...' : 'Processing...' }}</p>
+    <p>
+      {{
+        isDecodingImage
+          ? (lang === 'TC' ? '正在分析圖片...' : 'Reading QR from image...')
+          : (lang === 'TC' ? '處理中...' : 'Processing...')
+      }}
+    </p>
   </div>
 
 </ion-content>
