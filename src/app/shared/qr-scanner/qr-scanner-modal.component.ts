@@ -36,6 +36,8 @@ declare const BarcodeDetector: {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QrScannerModalComponent implements OnInit, OnDestroy {
+  private static readonly MAX_IMAGE_DECODE_DIMENSION = 1600;
+
   private readonly modalController = inject(ModalController);
   private readonly toastController = inject(ToastController);
   private readonly router = inject(Router);
@@ -48,10 +50,15 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
   // True when running in a Capacitor native shell (iOS / Android)
   readonly isNative = Capacitor.isNativePlatform();
+  get isUnsupportedWebMode(): boolean {
+    return !this.isNative && !this.hasBarcodeDetector;
+  }
 
   // Web scanner state
   hasBarcodeDetector = false;
   isDecodingImage = false;
+  private isImageScanInProgress = false;
+  private isLiveScanPaused = false;
   private webStream: MediaStream | null = null;
   private webDetector: InstanceType<typeof BarcodeDetector> | null = null;
   private scanInterval: ReturnType<typeof setInterval> | null = null;
@@ -103,6 +110,9 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       this.nativeListener = await BarcodeScanner.addListener(
         'barcodesScanned',
         (event: BarcodesScannedEvent) => {
+          if (this.isImageScanInProgress || this.isLiveScanPaused) {
+            return;
+          }
           const scannedValue = event.barcodes[0]?.rawValue;
           if (scannedValue) {
             this.handleScannedValue(scannedValue);
@@ -175,7 +185,13 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   }
 
   private async detectFromVideo(): Promise<void> {
-    if (!this.webDetector || !this.videoEl?.nativeElement || this.isProcessing) return;
+    if (
+      !this.webDetector ||
+      !this.videoEl?.nativeElement ||
+      this.isProcessing ||
+      this.isImageScanInProgress ||
+      this.isLiveScanPaused
+    ) return;
     const video = this.videoEl.nativeElement;
     if (video.readyState < video.HAVE_ENOUGH_DATA) return;
 
@@ -194,8 +210,10 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   async onImageSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement | null;
     const file = input?.files?.[0];
-    if (!file) return;
+    if (!file || this.isImageScanInProgress) return;
 
+    this.isImageScanInProgress = true;
+    this.isLiveScanPaused = true;
     this.isDecodingImage = true;
     this.cdr.markForCheck();
 
@@ -213,6 +231,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       const msg = err instanceof Error ? err.message : String(err);
       await this.showToast(msg, 'danger');
     } finally {
+      this.isImageScanInProgress = false;
+      this.isLiveScanPaused = false;
       this.isDecodingImage = false;
       if (input) {
         input.value = '';
@@ -229,8 +249,16 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       image.onload = () => {
         try {
           const canvas = document.createElement('canvas');
-          canvas.width = image.naturalWidth;
-          canvas.height = image.naturalHeight;
+          const maxDimension = QrScannerModalComponent.MAX_IMAGE_DECODE_DIMENSION;
+          const scale = Math.min(
+            1,
+            maxDimension / Math.max(image.naturalWidth, image.naturalHeight),
+          );
+          const scaledWidth = Math.max(1, Math.floor(image.naturalWidth * scale));
+          const scaledHeight = Math.max(1, Math.floor(image.naturalHeight * scale));
+
+          canvas.width = scaledWidth;
+          canvas.height = scaledHeight;
           const context = canvas.getContext('2d');
           if (!context) {
             reject(
@@ -241,7 +269,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
             return;
           }
 
-          context.drawImage(image, 0, 0);
+          context.drawImage(image, 0, 0, scaledWidth, scaledHeight);
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
           const qrResult = jsQR(imageData.data, imageData.width, imageData.height);
           resolve(qrResult?.data ?? null);

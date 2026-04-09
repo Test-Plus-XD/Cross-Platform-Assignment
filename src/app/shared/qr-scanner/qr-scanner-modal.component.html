@@ -42,7 +42,7 @@
     </ng-container>
 
     <!-- BarcodeDetector unavailable: informational fallback -->
-    <ng-container *ngIf="!hasBarcodeDetector">
+    <ng-container *ngIf="isUnsupportedWebMode">
       <div class="unsupported-state">
         <ion-icon name="warning-outline" color="warning" class="unsupported-icon"></ion-icon>
         <h3>{{ lang === 'TC' ? '不支援即時掃描' : 'Live scanning not supported' }}</h3>
@@ -81,7 +81,7 @@
     </div>
   </ng-container>
 
-  <div class="image-upload-fallback">
+  <div class="image-upload-fallback" *ngIf="!isUnsupportedWebMode">
     <label class="upload-qr-button">
       <input type="file" accept="image/*" (change)="onImageSelected($event)" />
       {{ lang === 'TC' ? '相機不可用？從圖片掃描二維碼' : 'No camera? Scan QR from image' }}
