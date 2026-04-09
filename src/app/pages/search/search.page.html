@@ -167,10 +167,13 @@
               <ion-icon name="location"></ion-icon>
               <span>{{ badge.text }}</span>
             </div>
-            <!-- Rating badge: bottom-right -->
-            <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
-              {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
-              ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
+            <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
+            <span class="rating-badge">
+              <ng-container *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0; else newBadge">
+                {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+                <ng-container *ngIf="ratingMap[restaurant.id]?.totalReviews">({{ ratingMap[restaurant.id]!.totalReviews }})</ng-container>
+              </ng-container>
+              <ng-template #newBadge>{{ (lang$ | async) === 'TC' ? '全新' : 'New' }}</ng-template>
             </span>
           </div>
 

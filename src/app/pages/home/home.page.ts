@@ -72,7 +72,15 @@ export class HomePage implements OnInit {
     // when the DOM is ready, so we don't need manual initialisation logic
     this.offers$ = this.loadOffers();
     this.articles$ = this.mockDataService.articles$();
-    this.restaurants$ = this.mockDataService.restaurants$();
+    // Load real restaurants from API, sorted by rating descending, for the Trending section.
+    // This ensures Opening_Hours and rating are available for badges.
+    this.restaurants$ = this.restaurantsService.getRestaurants().pipe(
+      map(restaurants => [...restaurants].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0)).slice(0, 10)),
+      catchError(err => {
+        console.error('HomePage: Failed to load trending restaurants', err);
+        return of([]);
+      })
+    );
     this.ads$ = this.mockDataService.ads$();
 
     // Collect trending restaurant IDs for the merged getBatchStats call
@@ -332,11 +340,13 @@ export class HomePage implements OnInit {
   // Check if a restaurant is currently open based on Opening_Hours and HK time.
   // Mirrors the identical method in search.page.ts — kept as a local copy to
   // avoid circular service dependencies.
+  // Returns 'unknown' only when no Opening_Hours data exists at all.
+  // Missing day → 'closed'. Supports multi-period hours ("11:30-15:00, 17:30-21:30").
   public getOpeningStatus(restaurant: any): 'open' | 'closed' | 'unknown' {
-    if (!restaurant?.Opening_Hours) return 'unknown';
+    const hours = restaurant?.Opening_Hours;
+    if (!hours || Object.keys(hours).length === 0) return 'unknown';
 
     const now = new Date();
-    // Extract HK weekday and time parts using Intl (avoids manual UTC offset maths)
     const hkDay = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Hong_Kong', weekday: 'long'
     }).format(now);
@@ -347,34 +357,28 @@ export class HomePage implements OnInit {
     const hkM = parseInt(hkTimeParts.find(p => p.type === 'minute')?.value || '0', 10);
     const currentMins = hkH * 60 + hkM;
 
-    const hours = restaurant.Opening_Hours;
     const todayKey = Object.keys(hours).find(k => k.toLowerCase() === hkDay.toLowerCase());
-    if (!todayKey) return 'unknown';
+    if (!todayKey) return 'closed'; // Day not listed → closed today
 
     const entry = hours[todayKey];
     if (!entry) return 'closed';
 
-    let openStr: string;
-    let closeStr: string;
-
     if (typeof entry === 'string') {
-      // Supports "HH:MM-HH:MM", "HH:MM–HH:MM", "HH:MM~HH:MM"
-      const match = entry.match(/(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/);
-      if (!match) return 'unknown';
-      openStr = match[1];
-      closeStr = match[2];
+      // Match all time ranges — supports multi-period e.g. "11:30-15:00, 17:30-21:30"
+      const regex = /(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/g;
+      let match;
+      while ((match = regex.exec(entry)) !== null) {
+        const [oH, oM] = match[1].split(':').map(Number);
+        const [cH, cM] = match[2].split(':').map(Number);
+        if (currentMins >= oH * 60 + oM && currentMins < cH * 60 + cM) return 'open';
+      }
+      return 'closed';
     } else if (typeof entry === 'object' && entry !== null && entry.open && entry.close) {
-      openStr = entry.open as string;
-      closeStr = entry.close as string;
-    } else {
-      return 'unknown';
+      const [openH, openM] = (entry.open as string).split(':').map(Number);
+      const [closeH, closeM] = (entry.close as string).split(':').map(Number);
+      return currentMins >= openH * 60 + openM && currentMins < closeH * 60 + closeM ? 'open' : 'closed';
     }
 
-    const [openH, openM] = openStr.split(':').map(Number);
-    const [closeH, closeM] = closeStr.split(':').map(Number);
-    const openMins = openH * 60 + openM;
-    const closeMins = closeH * 60 + closeM;
-
-    return currentMins >= openMins && currentMins < closeMins ? 'open' : 'closed';
+    return 'closed';
   }
 }

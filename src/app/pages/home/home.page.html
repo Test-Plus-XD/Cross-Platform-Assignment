@@ -71,10 +71,13 @@
                     <ion-icon name="location"></ion-icon>
                     <span>{{ badge.text }}</span>
                   </div>
-                  <!-- Rating badge: bottom-right -->
-                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
-                    {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
-                    ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
+                  <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
+                  <span class="rating-badge">
+                    <ng-container *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0; else newBadgeTpl">
+                      {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+                      <ng-container *ngIf="ratingMap[restaurant.id]?.totalReviews">({{ ratingMap[restaurant.id]!.totalReviews }})</ng-container>
+                    </ng-container>
+                    <ng-template #newBadgeTpl>{{ curLang === 'TC' ? '全新' : 'New' }}</ng-template>
                   </span>
                   <!-- Open/Closed badge: bottom-left -->
                   <span class="opening-badge open"
@@ -232,10 +235,13 @@
                   <img [src]="restaurant.image || restaurant.ImageUrl || placeholderImage"
                     [alt]="curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="card-image">
                   <div class="card-overlay"></div>
-                  <!-- Rating badge: bottom-right -->
-                  <span class="rating-badge" *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0">
-                    {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
-                    ({{ ratingMap[restaurant.id]?.totalReviews ?? '' }})
+                  <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
+                  <span class="rating-badge">
+                    <ng-container *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0; else newBadgeTpl">
+                      {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+                      <ng-container *ngIf="ratingMap[restaurant.id]?.totalReviews">({{ ratingMap[restaurant.id]!.totalReviews }})</ng-container>
+                    </ng-container>
+                    <ng-template #newBadgeTpl>{{ curLang === 'TC' ? '全新' : 'New' }}</ng-template>
                   </span>
                   <!-- Open/Closed badge: bottom-left -->
                   <span class="opening-badge open"

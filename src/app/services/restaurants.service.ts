@@ -190,7 +190,8 @@ export class RestaurantsService {
             ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
             Payments: this.sanitizePayments(h.Payments),
             ownerId: h.Owner ?? h.ownerId ?? null,
-            reviewsId: h.reviewsId ?? null
+            reviewsId: h.reviewsId ?? null,
+            rating: h.rating ?? null
           }));
 
           observer.next({
@@ -275,7 +276,8 @@ export class RestaurantsService {
           ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
           Payments: this.sanitizePayments(h.Payments),
           ownerId: h.ownerId ?? h.Owner ?? null,
-          reviewsId: h.reviewsId ?? null
+          reviewsId: h.reviewsId ?? null,
+          rating: h.rating ?? null
         }));
 
         return {

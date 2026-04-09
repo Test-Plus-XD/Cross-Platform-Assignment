@@ -627,40 +627,52 @@ export class SearchPage implements OnInit, OnDestroy {
         title: name
       });
 
-      // Build InfoWindow content
-      const dist = (restaurant as any).distance;
-      const distanceText = dist != null
-        ? `<span style="color:#666;font-size:0.75rem;">${dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km')} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`
-        : '';
-
-      const openStatus = this.getOpeningStatus(restaurant);
-      const openBadge = openStatus === 'open'
-        ? `<span style="background:#4caf50;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
-        : openStatus === 'closed'
-          ? `<span style="background:#e53935;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
-          : '';
-
+      // Pre-compute static parts (image doesn't change after marker creation)
       const imgSrc = restaurant.ImageUrl || this.placeholderImage;
+      // Distance: use pre-calculated value (Near Me) or fall back to live calculation
+      const dist = (restaurant as any).distance;
+      let distanceText = '';
+      if (dist != null) {
+        distanceText = `<span style="color:#666;font-size:0.75rem;">${dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km')} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`;
+      } else {
+        const badge = this.getDistanceBadge(restaurant);
+        if (badge) {
+          distanceText = `<span style="color:#666;font-size:0.75rem;">${badge.text} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`;
+        }
+      }
 
-      const stats = this.ratingMap[restaurant.id];
-      const ratingHtml = stats && stats.totalReviews > 0
-        ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(stats.averageRating)}</span> <span style="color:#888;font-size:0.7rem;">(${stats.totalReviews})</span>`
-        : '';
-
-      const content = `
-        <a href="/restaurant/${restaurant.id}" style="display:block;max-width:200px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;">
-          <img src="${imgSrc}" alt="${name}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">
-          <div style="padding:0 0.25rem 0.25rem;">
-            <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;color:#111;">${name}</h4>
-            <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
-            ${ratingHtml ? `<div style="margin:0.15rem 0;">${ratingHtml}</div>` : ''}
-            <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">${distanceText}${openBadge}</div>
-          </div>
-        </a>
-      `;
-
+      // Build InfoWindow content at click time so ratingMap and openStatus reflect current state.
+      // ratingMap is populated asynchronously after loadBatchRatings returns; restaurant.rating
+      // is used as an immediate fallback so the rating badge always shows if data is available.
       marker.addListener('click', () => {
         if (this.infoWindow) {
+          const openStatus = this.getOpeningStatus(restaurant);
+          const openBadge = openStatus === 'open'
+            ? `<span style="background:#4caf50;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
+            : openStatus === 'closed'
+              ? `<span style="background:#e53935;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
+              : '';
+
+          const stats = this.ratingMap[restaurant.id];
+          const avgRating = stats?.averageRating ?? restaurant.rating ?? 0;
+          const ratingHtml = stats && stats.totalReviews > 0
+            ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(stats.averageRating)}</span> <span style="color:#888;font-size:0.7rem;">(${stats.totalReviews})</span>`
+            : avgRating > 0
+              ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(avgRating)}</span>`
+              : `<span style="color:#888;font-size:0.7rem;">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
+
+          const content = `
+            <a href="/restaurant/${restaurant.id}" style="display:block;max-width:200px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;">
+              <img src="${imgSrc}" alt="${name}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">
+              <div style="padding:0 0.25rem 0.25rem;">
+                <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;color:#111;">${name}</h4>
+                <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
+                <div style="margin:0.15rem 0;">${ratingHtml}</div>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">${distanceText}${openBadge}</div>
+              </div>
+            </a>
+          `;
+
           this.infoWindow.setContent(content);
           this.infoWindow.open(this.map!, marker);
         }
@@ -841,9 +853,12 @@ export class SearchPage implements OnInit, OnDestroy {
     return { text: result.displayText, color };
   }
 
-  // Check if a restaurant is currently open based on Opening_Hours and HK time
+  // Check if a restaurant is currently open based on Opening_Hours and HK time.
+  // Returns 'unknown' only when no Opening_Hours data exists at all.
+  // Missing day → 'closed'. Supports multi-period hours ("11:30-15:00, 17:30-21:30").
   public getOpeningStatus(restaurant: Restaurant): 'open' | 'closed' | 'unknown' {
-    if (!restaurant.Opening_Hours) return 'unknown';
+    const hours = restaurant.Opening_Hours;
+    if (!hours || Object.keys(hours).length === 0) return 'unknown';
 
     const now = new Date();
     const hkDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Hong_Kong', weekday: 'long' }).format(now);
@@ -854,34 +869,29 @@ export class SearchPage implements OnInit, OnDestroy {
     const hkM = parseInt(hkTimeParts.find(p => p.type === 'minute')?.value || '0', 10);
     const currentMins = hkH * 60 + hkM;
 
-    const hours = restaurant.Opening_Hours;
     const todayKey = Object.keys(hours).find(k => k.toLowerCase() === hkDay.toLowerCase());
-    if (!todayKey) return 'unknown';
+    if (!todayKey) return 'closed'; // Day not listed → closed today
 
     const entry = hours[todayKey];
     if (!entry) return 'closed';
 
-    let openStr: string;
-    let closeStr: string;
-
     if (typeof entry === 'string') {
-      const match = entry.match(/(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/);
-      if (!match) return 'unknown';
-      openStr = match[1];
-      closeStr = match[2];
+      // Match all time ranges — supports multi-period e.g. "11:30-15:00, 17:30-21:30"
+      const regex = /(\d{1,2}:\d{2})\s*[-–~]\s*(\d{1,2}:\d{2})/g;
+      let match;
+      while ((match = regex.exec(entry)) !== null) {
+        const [oH, oM] = match[1].split(':').map(Number);
+        const [cH, cM] = match[2].split(':').map(Number);
+        if (currentMins >= oH * 60 + oM && currentMins < cH * 60 + cM) return 'open';
+      }
+      return 'closed';
     } else if (typeof entry === 'object' && entry !== null && entry.open && entry.close) {
-      openStr = entry.open as string;
-      closeStr = entry.close as string;
-    } else {
-      return 'unknown';
+      const [openH, openM] = (entry.open as string).split(':').map(Number);
+      const [closeH, closeM] = (entry.close as string).split(':').map(Number);
+      return currentMins >= openH * 60 + openM && currentMins < closeH * 60 + closeM ? 'open' : 'closed';
     }
 
-    const [openH, openM] = openStr.split(':').map(Number);
-    const [closeH, closeM] = closeStr.split(':').map(Number);
-    const openMins = openH * 60 + openM;
-    const closeMins = closeH * 60 + closeM;
-
-    return currentMins >= openMins && currentMins < closeMins ? 'open' : 'closed';
+    return 'closed';
   }
 
   // Fetch review stats for a batch of restaurants and populate ratingMap

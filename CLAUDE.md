@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-06 | **Version:** 1.17.0 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-09 | **Version:** 1.17.3 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1758,6 +1758,15 @@ app.method('/API/Resource', authenticate, async (request, response) => {
 
 ## Quick Reference
 
+### Codebase Knowledge Graph (graphify-out/)
+A pre-generated knowledge graph of the `src/` directory lives at `graphify-out/` (generated 2026-04-08, 951 nodes, 1347 edges, 78 communities). Use it for deep codebase exploration:
+- `graphify-out/graph.html` — interactive visual graph (open in browser)
+- `graphify-out/graph.json` — machine-readable node/edge data
+- `graphify-out/GRAPH_REPORT.md` — god nodes, surprising connections, community summary
+- `graphify-out/obsidian/` — Obsidian-compatible markdown vault
+
+**When to use:** Before large refactors, when tracing unfamiliar cross-component dependencies, or when you need to understand which services are most central. The graph is a snapshot — verify with live code before acting on it.
+
 ### Key Files
 - **`..\Vercel-Express-API\API.md`** - **API documentation (READ FIRST for endpoint info)**
 - `..\Vercel-Express-API\API.js` - Backend API implementation
@@ -1794,9 +1803,11 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.16.0 | **Maintainer:** AI Assistant
+**Document Version:** 1.17.3 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.3** (2026-04-09): **Open/closed badge logic fix + "New" rating badge + map InfoWindow distance fallback.** (1) **`getOpeningStatus` rewritten** in both `home.page.ts` and `search.page.ts`: missing weekday in `Opening_Hours` now returns `'closed'` (not `'unknown'`); multi-period hours (`"11:30-15:00, 17:30-21:30"`) now correctly check all periods via global regex; empty `Opening_Hours` map stays `'unknown'`; default fallback changed from `'unknown'` to `'closed'`. Root cause confirmed via cURL: the test restaurant only defines Mon/Sat/Sun — Wednesday correctly now shows Closed. (2) **"New" rating badge**: when a restaurant has no reviews and no `rating` field, the badge now shows `New` / `全新` instead of being hidden — applied to search list cards, home page Nearby and Trending cards, and the map InfoWindow. (3) **Map InfoWindow distance fallback**: `distanceText` now calls `getDistanceBadge()` when `restaurant.distance` is null (non-Near-Me mode), enabling distance display for regular search results if the user has granted location permission.
+- **v1.17.2** (2026-04-09): **Opening/rating badge fixes + trending restaurants from real API.** (1) **Home page Trending section now loads real restaurants from API** sorted by `rating` descending (replaces static mock data); this gives cards access to `Opening_Hours` and `rating` so all badges render correctly. (2) **`rating` field added to Algolia hit mappings** in both `searchRestaurants()` and `searchRestaurantsWithFilters()` in `restaurants.service.ts` — search results now carry `restaurant.rating` directly. (3) **Search page map InfoWindow content built at click time** (moved from marker-creation time) so `ratingMap` is always fresh; `restaurant.rating` used as immediate fallback when `ratingMap` hasn't loaded yet. (4) **Rating badge review count** now uses `*ngIf` guard so `()` is never shown without a count — fixed in `home.page.html` (both Nearby and Trending cards) and `search.page.html`.
 - **v1.17.1** (2026-04-06): **Cross-platform feature parity.** (1) **Account type selector**: `UserTypeSelectionComponent` shown as a non-dismissable bottom sheet to new users (post-registration). Calls `PUT /API/Users/:uid { type }` on selection; `UserService` exposes `needsAccountTypeSelection$` observable; sheet auto-dismisses on success. (2) **Opening status badges on Home page cards**: Nearby and Trending restaurant cards now show green `Open` / red `Closed` pill overlaid on the card thumbnail. Badge computed from `Restaurant.Opening_Hours` using `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone — same `getOpeningStatus()` helper as search cards. (3) **Review image upload**: `ReviewsService` gains `uploadReviewImage(file: File, token: string): Observable<string>` calling `POST /API/Images/upload?folder=Reviews` (multipart). `RestaurantPage` review submission form includes file input with preview; selected image is uploaded before `createReview()` is called; `imageUrl` included in the review payload.
 - **v1.17.0** (2026-04-02): **QR code feature — generator + scanner.** Deep-link format `pourrice://menu/{restaurantId}` (identical to iOS/Android). **Generator**: `MenuQrModalComponent` (`store/menu-qr-modal/`) uses `qrcode` npm package (canvas, error correction H, 200 px display / 600 px download PNG). Opened via "Menu QR Code" button in Store → Menu tab action bar. Features: display, full-screen expand, download PNG. **Scanner**: `QrScannerModalComponent` (`shared/qr-scanner/`) accessible from nav drawer (all users, no login). Native: `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` transparent-WebView pattern + torch toggle. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+) polling every 400 ms; falls back to informational message if API unavailable. Validates URL scheme, fetches restaurant via `RestaurantsService`, navigates to `/restaurant/:id`. Global CSS (`.barcode-scanner-active`, `.qr-scanner-modal`) added to `src/global.scss`. `QrScannerModalComponent` declared in `SharedModule`; `MenuQrModalComponent` declared in `StorePageModule`.
 - **v1.16.0** (2026-03-30): **Add New Restaurant modal.** `AddRestaurantModalComponent` (`store/add-restaurant-modal/`) lets Restaurant-type users who can't find their restaurant in the claim search create a new listing. **API flow** (no `/claim` call): `POST /API/Restaurants` with `ownerId: uid` in body (no auth, uses existing `RestaurantsService.createRestaurant()`) → `PUT /API/Users/:uid { restaurantId }` (auth auto-attached by UserService). **Form**: bilingual names (EN/TC, at least one required), address (EN/TC), district (radio AlertDialog), seats, contacts (phone/email/website), Google Maps location pin (tap to place, same `initializeMap()`/`onMapClick()` pattern as `restaurant-info-modal`), opening hours (text-input AlertDialog per weekday, `"HH:MM-HH:MM"` format), keywords (checkbox AlertDialog, shown in active language), payments (checkbox AlertDialog, shown in active language, stores EN strings). **Trigger**: "Add New Restaurant" `ion-button` in the empty-state block of `store.page.html`. `StorePage.openAddRestaurantModal()` re-calls `loadRestaurantData()` on `{ created: true }`. `StorePageModule` declares the new component. CSS: all transitions scoped to `transform, box-shadow` — no `transition: all`.
