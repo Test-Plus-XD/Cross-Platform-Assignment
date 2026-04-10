@@ -8,7 +8,15 @@ ion-app,
   height: 100%;
 }
 
+ion-menu {
+  z-index: 1500;
+}
+ion-menu::part(container) {
+  z-index: 2500;
+}
+
 .app-shell {
+  z-index: 1;
   position: relative;
   overflow: hidden;
 }
@@ -27,4 +35,11 @@ ion-router-outlet {
   left: 0;
   right: 0;
   bottom: 0;
+}
+
+ion-menu.show-menu + .app-shell app-shared-header,
+ion-menu.show-menu + .app-shell app-shared-tab,
+ion-menu.show-menu + .app-shell app-shared-footer,
+ion-menu.show-menu + .app-shell app-gemini-button {
+  pointer-events: none;
 }
