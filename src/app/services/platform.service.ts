@@ -18,8 +18,23 @@ export interface PlatformServiceConfig {
 
 @Injectable({ providedIn: 'root' })
 export class PlatformService implements OnDestroy {
-  // BehaviorSubject to hold current platform state
-  private platformSubject = new BehaviorSubject<PlatformType>('web');
+  // BehaviorSubject to hold current platform state — seed with early mobile check
+  // so pages render with mobile layout before init() completes
+  private platformSubject = new BehaviorSubject<PlatformType>(
+    PlatformService.earlyMobileCheck() ? 'mobile' : 'web'
+  );
+
+  // Synchronous best-effort mobile detection used ONLY for the BehaviorSubject seed.
+  // Runs before Angular DI is fully wired, so it must be static and side-effect-free.
+  private static earlyMobileCheck(): boolean {
+    try {
+      // Capacitor native bridge (available synchronously if the app is packaged)
+      if (typeof Capacitor !== 'undefined' && Capacitor?.isNativePlatform?.()) return true;
+      // User-agent fallback
+      if (/android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent)) return true;
+    } catch { /* swallow — we are inside a class field initialiser */ }
+    return false;
+  }
 
   // Observable that emits platform changes, distinctUntilChanged prevents repeated emissions
   platform$: Observable<PlatformType> = this.platformSubject.asObservable().pipe(distinctUntilChanged());

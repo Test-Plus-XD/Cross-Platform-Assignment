@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-09 | **Version:** 1.17.3 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-11 | **Version:** 1.17.4 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -138,7 +138,7 @@ If you need to add/modify endpoints or API functionality, update both:
 **Search:** Algolia 5.42.0
 **Maps:** Google Maps JavaScript API v3
 **Carousels:** Swiper 12.0.2
-**Native Bridge:** Capacitor 7.4.3
+**Native Bridge:** Capacitor 8.3.0
 **Auth:** Firebase Auth 12.5.0
 **Database:** Firestore 12.5.0
 **Real-time:** Socket.IO Client 4.8.1
@@ -1492,6 +1492,25 @@ on('user-offline', { userId, displayName, lastSeen });
 
 **Result:** Protected routes no longer spuriously redirect while logged in. Stripe payment flow works reliably. All deep links (including payment redirect URLs) are preserved through auth redirects.
 
+### Android Blank Pages + Menu Overlap + OAuth Redirect (v1.17.4)
+**Issue:** First physical Android device test (Samsung S24U, Android 16) revealed: (1) all pages except Login/Chat showed blank content, (2) side menu items overlapped with the header, (3) Google Sign-in opened system browser and couldn't return to the app.
+
+**Root causes:**
+1. **Blank pages:** `*ngIf="isMobile$ | async as isMobile"` wrapping all page content. When `isMobile$` emitted `false`, `*ngIf` evaluated it as falsy and removed the entire DOM subtree. The `as isMobile` syntax assigns the emitted boolean value, not just its presence.
+2. **Menu overlap:** PR #51 replaced `<ion-content>` with `<div class="app-shell">` using `overflow: hidden`, `position: absolute` on router-outlet, and `position: fixed` + high z-index on header — broke Ionic's layout system on Android WebView.
+3. **OAuth redirect:** `signInWithPopup()` opens system browser on Android (not in-app), with no way to return to the Capacitor app.
+4. **Capacitor v7/v8 mismatch:** `@capacitor/core` v8 with `@capacitor/android` v7 caused potential bridge failures.
+
+**Fixes:**
+1. Replaced `*ngIf` with always-truthy object wrapper: `*ngIf="{ mobile: (isMobile$ | async) ?? true } as platform"` — object `{}` is always truthy, `?? true` provides mobile-first default.
+2. Reverted to `<div class="ion-page">` wrapper, `type="overlay"` menu, removed all z-index/position hacks.
+3. Added `signInWithRedirect()` on native platforms, deep link intent filter in AndroidManifest, `androidScheme: 'https'` in Capacitor config, deep link listener in `app.component.ts`.
+4. Aligned `@capacitor/android` and `@capacitor/ios` to v8.3.0.
+
+**Key learning:** The `*ngIf="observable$ | async as value"` pattern is dangerous for layout wrappers — `false` removes the DOM. Use the object wrapper pattern instead. Login/Chat pages worked because they didn't use this pattern.
+
+**Files modified:** 6 page templates, `app.component.html/scss/ts`, `auth.service.ts`, `platform.service.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `gradle-wrapper.properties`, `package.json`.
+
 ### Google Maps Search View — Map Marker Rendering (v1.15.3)
 **Issue:** When searching while in map view (or switching to map view during search), Google Maps markers failed to render until navigating away and back.
 
@@ -1803,9 +1822,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.17.3 | **Maintainer:** AI Assistant
+**Document Version:** 1.17.4 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.4** (2026-04-11): **Android rendering, menu overlap, and OAuth redirect fixes.** First physical Android device test (Samsung S24U, Android 16) revealed three critical issues. **(1) Blank pages fix:** 6 page templates (`home`, `search`, `restaurant`, `store`, `booking`, `user`) wrapped all content in `*ngIf="isMobile$ | async as isMobile"` — when observable emitted `false`, Angular removed the entire DOM. Fixed by replacing with always-truthy object wrapper: `*ngIf="{ mobile: (isMobile$ | async) ?? true } as platform"` and updating all `isMobile` refs to `platform.mobile`. Login/Chat pages were unaffected (never used this pattern). **(2) App shell layout fix:** Reverted `<div class="app-shell">` (from PR #51) back to `<div class="ion-page">` — the custom shell with `overflow: hidden`, `position: absolute` on router-outlet, and `position: fixed` on header broke Ionic's layout on Android WebView. Changed menu `type="push"` to `type="overlay"`. Removed all z-index hacks (1500/2500/1000) from `app.component.scss`. **(3) Google Sign-in fix:** `signInWithPopup()` opens system browser on Android, which can't redirect back. `auth.service.ts` now uses `signInWithRedirect()` on native platforms (detected via `Capacitor.isNativePlatform()`), popup on web. Added deep link intent filter for `com.example.app` scheme in `AndroidManifest.xml`. `capacitor.config.ts` configured with `androidScheme: 'https'` and `allowNavigation` for OAuth domains. `app.component.ts` gains `setupDeepLinkListener()` using `@capacitor/app` `appUrlOpen` event for deep link routing (`pourrice://` and OAuth callbacks). **(4) Capacitor v8 alignment:** `@capacitor/android` and `@capacitor/ios` upgraded from v7 to `^8.3.0` to match `@capacitor/core` 8.3.0. Added `@capacitor/browser` v8. **(5) PlatformService hardened:** `BehaviorSubject` now seeds with `earlyMobileCheck()` (Capacitor native bridge + UA string) before `init()` is called, ensuring mobile-first rendering. **(6) Gradle updated** from 8.11.1 to 8.13.2 for JDK 21 compatibility. **Files modified:** `home.page.html`, `search.page.html`, `restaurant.page.html`, `store.page.html`, `booking.page.html`, `user.page.html`, `app.component.html`, `app.component.scss`, `app.component.ts`, `auth.service.ts`, `platform.service.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `gradle-wrapper.properties`, `package.json`.
 - **v1.17.3** (2026-04-09): **Open/closed badge logic fix + "New" rating badge + map InfoWindow distance fallback.** (1) **`getOpeningStatus` rewritten** in both `home.page.ts` and `search.page.ts`: missing weekday in `Opening_Hours` now returns `'closed'` (not `'unknown'`); multi-period hours (`"11:30-15:00, 17:30-21:30"`) now correctly check all periods via global regex; empty `Opening_Hours` map stays `'unknown'`; default fallback changed from `'unknown'` to `'closed'`. Root cause confirmed via cURL: the test restaurant only defines Mon/Sat/Sun — Wednesday correctly now shows Closed. (2) **"New" rating badge**: when a restaurant has no reviews and no `rating` field, the badge now shows `New` / `全新` instead of being hidden — applied to search list cards, home page Nearby and Trending cards, and the map InfoWindow. (3) **Map InfoWindow distance fallback**: `distanceText` now calls `getDistanceBadge()` when `restaurant.distance` is null (non-Near-Me mode), enabling distance display for regular search results if the user has granted location permission.
 - **v1.17.2** (2026-04-09): **Opening/rating badge fixes + trending restaurants from real API.** (1) **Home page Trending section now loads real restaurants from API** sorted by `rating` descending (replaces static mock data); this gives cards access to `Opening_Hours` and `rating` so all badges render correctly. (2) **`rating` field added to Algolia hit mappings** in both `searchRestaurants()` and `searchRestaurantsWithFilters()` in `restaurants.service.ts` — search results now carry `restaurant.rating` directly. (3) **Search page map InfoWindow content built at click time** (moved from marker-creation time) so `ratingMap` is always fresh; `restaurant.rating` used as immediate fallback when `ratingMap` hasn't loaded yet. (4) **Rating badge review count** now uses `*ngIf` guard so `()` is never shown without a count — fixed in `home.page.html` (both Nearby and Trending cards) and `search.page.html`.
 - **v1.17.1** (2026-04-06): **Cross-platform feature parity.** (1) **Account type selector**: `UserTypeSelectionComponent` shown as a non-dismissable bottom sheet to new users (post-registration). Calls `PUT /API/Users/:uid { type }` on selection; `UserService` exposes `needsAccountTypeSelection$` observable; sheet auto-dismisses on success. (2) **Opening status badges on Home page cards**: Nearby and Trending restaurant cards now show green `Open` / red `Closed` pill overlaid on the card thumbnail. Badge computed from `Restaurant.Opening_Hours` using `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone — same `getOpeningStatus()` helper as search cards. (3) **Review image upload**: `ReviewsService` gains `uploadReviewImage(file: File, token: string): Observable<string>` calling `POST /API/Images/upload?folder=Reviews` (multipart). `RestaurantPage` review submission form includes file input with preview; selected image is uploaded before `createReview()` is called; `imageUrl` included in the review payload.

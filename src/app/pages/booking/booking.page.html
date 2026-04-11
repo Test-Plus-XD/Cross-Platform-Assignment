@@ -1,7 +1,7 @@
 <ion-content class="booking-page-content">
 <br><br>
-  <ng-container *ngIf="isMobile$ | async as isMobile">
-    <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
+  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? true } as platform">
+    <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
 
       <!-- Pull to Refresh -->
       <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">

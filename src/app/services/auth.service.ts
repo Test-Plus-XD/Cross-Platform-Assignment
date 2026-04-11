@@ -19,6 +19,7 @@ import {
   User as FirebaseUser
 } from '@angular/fire/auth';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
+import { Capacitor } from '@capacitor/core';
 import { UserService, UserProfile } from './user.service';
 
 export interface User {
@@ -314,28 +315,32 @@ export class AuthService {
 
   /**
    * Sign in with Google OAuth provider.
-   * Uses popup flow for all platforms. 
-   * Note: In production, you may want to use redirect flow for mobile:
-   *   if (this.isMobile) {
-   *     await signInWithRedirect(this.auth, provider);
-   *     return { uid: 'pending', email: null, displayName: null, photoURL: null, emailVerified: false };
-   *   }
+   * On native (Capacitor) platforms, uses redirect flow so the OAuth page
+   * opens inside the app's WebView / Chrome Custom Tab and can return to the app.
+   * On web, uses popup flow for a smoother UX.
    */
   public async signInWithGoogle(): Promise<User> {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      
-      // Use popup flow for all platforms (web and mobile)
-      // This is simpler for development and avoids full app reloads
-      console.log('AuthService: Using popup flow for Google sign-in');
+
+      // Native: use redirect flow — opens a browser tab in-app and returns via deep link
+      if (this.isNativePlatform()) {
+        console.log('AuthService: Using redirect flow for Google sign-in (native)');
+        await signInWithRedirect(this.auth, provider);
+        // The page will reload; getRedirectResult() in AppComponent handles the result
+        return { uid: 'pending-redirect', email: null, displayName: null, photoURL: null, emailVerified: false };
+      }
+
+      // Web: use popup flow
+      console.log('AuthService: Using popup flow for Google sign-in (web)');
       const userCredential = await signInWithPopup(this.auth, provider);
       if (!userCredential?.user) {
         throw new Error('Google sign-in failed: no user returned');
       }
-      
+
       console.log('AuthService: Google sign-in successful, uid:', userCredential.user.uid);
-      
+
       return {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
@@ -346,6 +351,15 @@ export class AuthService {
     } catch (error: any) {
       console.error('AuthService: Error during Google sign-in:', error);
       throw this.handleAuthError(error);
+    }
+  }
+
+  /** Check if running inside a Capacitor native shell */
+  private isNativePlatform(): boolean {
+    try {
+      return Capacitor?.isNativePlatform?.() === true;
+    } catch {
+      return false;
     }
   }
 

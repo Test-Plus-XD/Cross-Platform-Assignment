@@ -1,9 +1,11 @@
-import { Component, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { Auth, getIdToken } from '@angular/fire/auth';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
 import { LayoutService } from './services/layout.service';
@@ -35,6 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
     private readonly modalController = inject(ModalController);
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
+    private ngZone = inject(NgZone);
 
     @ViewChild(HeaderComponent) header!: HeaderComponent;
 
@@ -80,6 +83,9 @@ export class AppComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
       // AppStateService now handles state management automatically
 
+      // Set up deep link listener for native platforms (OAuth redirects, QR codes, etc.)
+      this.setupDeepLinkListener();
+
       // Show notification permission prompt if not yet granted
       this.promptNotificationPermission();
       this.subscribeToInAppMessages();
@@ -87,6 +93,39 @@ export class AppComponent implements OnInit, OnDestroy {
       // Watch for logged-in users whose profile has no type set.
       // When detected, present the account-type selector modal once per session.
       this.watchForMissingUserType();
+    }
+
+    private setupDeepLinkListener(): void {
+      if (!Capacitor.isNativePlatform()) return;
+
+      CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
+        this.ngZone.run(() => {
+          const url = event.url;
+          console.log('[AppComponent] Deep link received:', url);
+
+          try {
+            // Handle pourrice:// deep links (QR codes, notification taps)
+            if (url.startsWith('pourrice://')) {
+              const parsed = new URL(url);
+              const path = parsed.hostname + parsed.pathname;
+              if (path) {
+                this.router.navigateByUrl('/' + path);
+              }
+              return;
+            }
+
+            // Handle com.example.app:// scheme (OAuth redirect callback)
+            // Firebase Auth processes the redirect internally via getRedirectResult()
+            // in AuthService — no manual navigation needed here.
+            if (url.startsWith('com.example.app://')) {
+              console.log('[AppComponent] OAuth redirect callback received');
+              return;
+            }
+          } catch (err) {
+            console.error('[AppComponent] Error processing deep link:', err);
+          }
+        });
+      });
     }
 
     private subscribeToInAppMessages(): void {
