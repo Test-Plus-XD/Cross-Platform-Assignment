@@ -101,7 +101,7 @@ export class AppComponent implements OnInit, OnDestroy {
       CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
         this.ngZone.run(() => {
           const url = event.url;
-          console.log('[AppComponent] Deep link received:', url);
+          console.log('[AppComponent] Deep link received');
 
           try {
             // Handle pourrice:// deep links (QR codes, notification taps)

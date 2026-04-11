@@ -7,11 +7,10 @@ const config: CapacitorConfig = {
   server: {
     // Use https scheme so Firebase Auth redirect flow works inside the WebView
     androidScheme: 'https',
-    // Allow navigation to OAuth and Firebase domains for in-app browser tabs
+    // Allow navigation to the specific hosts required for Google OAuth + Firebase Auth
     allowNavigation: [
       'accounts.google.com',
-      '*.firebaseapp.com',
-      '*.googleapis.com'
+      'cross-platform-assignmen-b97cc.firebaseapp.com'
     ]
   }
 };

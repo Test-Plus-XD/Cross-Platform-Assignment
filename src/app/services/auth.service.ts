@@ -319,17 +319,18 @@ export class AuthService {
    * opens inside the app's WebView / Chrome Custom Tab and can return to the app.
    * On web, uses popup flow for a smoother UX.
    */
-  public async signInWithGoogle(): Promise<User> {
+  public async signInWithGoogle(): Promise<User | null> {
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // Native: use redirect flow — opens a browser tab in-app and returns via deep link
+      // Native: use redirect flow — browser navigates away; getRedirectResult() / onAuthStateChanged
+      // in AppComponent will deliver the real user after the redirect completes.
       if (this.isNativePlatform()) {
         console.log('AuthService: Using redirect flow for Google sign-in (native)');
         await signInWithRedirect(this.auth, provider);
-        // The page will reload; getRedirectResult() in AppComponent handles the result
-        return { uid: 'pending-redirect', email: null, displayName: null, photoURL: null, emailVerified: false };
+        // Unreachable — signInWithRedirect navigates the page away
+        return null;
       }
 
       // Web: use popup flow

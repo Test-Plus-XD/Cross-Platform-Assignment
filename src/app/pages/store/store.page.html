@@ -1,7 +1,7 @@
 <!-- Store management page: Info | Menu | Bookings | Ads sections -->
 <br><br>
 <ion-content fullscreen>
-  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? true } as platform">
+  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
     <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
 
       <!-- Pull-to-refresh reloads restaurant, menu, and bookings -->

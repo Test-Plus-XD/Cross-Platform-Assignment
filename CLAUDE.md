@@ -1493,6 +1493,7 @@ on('user-offline', { userId, displayName, lastSeen });
 **Result:** Protected routes no longer spuriously redirect while logged in. Stripe payment flow works reliably. All deep links (including payment redirect URLs) are preserved through auth redirects.
 
 ### Android Blank Pages + Menu Overlap + OAuth Redirect (v1.17.4)
+
 **Issue:** First physical Android device test (Samsung S24U, Android 16) revealed: (1) all pages except Login/Chat showed blank content, (2) side menu items overlapped with the header, (3) Google Sign-in opened system browser and couldn't return to the app.
 
 **Root causes:**

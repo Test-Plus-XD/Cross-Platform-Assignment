@@ -1,5 +1,5 @@
 <ion-content class="user-page-content">
-  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? true } as platform">
+  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
     <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
 
       <!-- Loading State -->
