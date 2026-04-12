@@ -1,7 +1,7 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
 <ion-content class="search-page-content">
-  <ng-container *ngIf="isMobile$ | async as isMobile">
-    <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
+  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
+    <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
 
       <!-- Page Title (Non-sticky) -->
       <div class="search-title-container">

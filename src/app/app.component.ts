@@ -1,9 +1,11 @@
-import { Component, ViewChild, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { Auth, getIdToken } from '@angular/fire/auth';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
+import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
 import { LayoutService } from './services/layout.service';
@@ -35,11 +37,15 @@ export class AppComponent implements OnInit, OnDestroy {
     private readonly modalController = inject(ModalController);
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
+    private ngZone = inject(NgZone);
 
     @ViewChild(HeaderComponent) header!: HeaderComponent;
 
     // Cleanup subject
     private destroy$ = new Subject<void>();
+
+    // Deep link listener handle for cleanup
+    private appUrlOpenListener?: PluginListenerHandle;
 
     // Guard: prevent presenting the account-type modal more than once per session
     private hasShownTypeSelector = false;
@@ -80,6 +86,9 @@ export class AppComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
       // AppStateService now handles state management automatically
 
+      // Set up deep link listener for native platforms (OAuth redirects, QR codes, etc.)
+      void this.setupDeepLinkListener();
+
       // Show notification permission prompt if not yet granted
       this.promptNotificationPermission();
       this.subscribeToInAppMessages();
@@ -87,6 +96,69 @@ export class AppComponent implements OnInit, OnDestroy {
       // Watch for logged-in users whose profile has no type set.
       // When detected, present the account-type selector modal once per session.
       this.watchForMissingUserType();
+    }
+
+    private async setupDeepLinkListener(): Promise<void> {
+      if (!Capacitor.isNativePlatform()) return;
+
+      // Handle cold-start deep links (app was killed, opened via deep link)
+      const launch = await CapacitorApp.getLaunchUrl();
+      if (launch?.url) {
+        this.handleIncomingUrl(launch.url);
+      }
+
+      // Handle live deep links (app is already running)
+      this.appUrlOpenListener = await CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
+        this.handleIncomingUrl(event.url);
+      });
+    }
+
+    private handleIncomingUrl(url: string): void {
+      this.ngZone.run(() => {
+        console.log('[AppComponent] Deep link received');
+
+        try {
+          // Handle pourrice:// deep links (QR codes, notification taps)
+          if (url.startsWith('pourrice://')) {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            const slug = parsed.pathname.replace(/^\/+/, '');
+
+            // pourrice://menu/{restaurantId} → /restaurant/{restaurantId}
+            if (host === 'menu' && slug) {
+              this.router.navigateByUrl(`/restaurant/${slug}`);
+              return;
+            }
+
+            // pourrice://bookings → /booking
+            if (host === 'bookings') {
+              this.router.navigateByUrl('/booking');
+              return;
+            }
+
+            // pourrice://chat/{roomId} → /chat/{roomId}
+            if (host === 'chat') {
+              this.router.navigateByUrl(`/chat${slug ? '/' + slug : ''}`);
+              return;
+            }
+
+            // Unsupported deep-link type
+            void this.presentDeepLinkError();
+            return;
+          }
+
+          // Handle com.example.app:// scheme (OAuth redirect callback)
+          // Firebase Auth processes the redirect internally via getRedirectResult()
+          // in AuthService — no manual navigation needed here.
+          if (url.startsWith('com.example.app://')) {
+            console.log('[AppComponent] OAuth redirect callback received');
+            return;
+          }
+        } catch (err) {
+          console.error('[AppComponent] Error processing deep link:', err);
+          void this.presentDeepLinkError();
+        }
+      });
     }
 
     private subscribeToInAppMessages(): void {
@@ -280,7 +352,18 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
 
+    private async presentDeepLinkError(): Promise<void> {
+      const isTc = this.language.getCurrentLanguage() === 'TC';
+      const toast = await this.toastController.create({
+        message: isTc ? '連結無效或已過期。' : 'This link is invalid or expired.',
+        duration: 2500,
+        position: 'top',
+      });
+      await toast.present();
+    }
+
     ngOnDestroy(): void {
+      void this.appUrlOpenListener?.remove();
       this.destroy$.next();
       this.destroy$.complete();
     }

@@ -2,12 +2,12 @@
 <ion-content>
   <!-- Expose language and platform for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
-    <ng-container *ngIf="isMobile$ | async as isMobile">
+    <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
       <!-- Main container with platform-aware class -->
-      <div class="page-container" [class.mobile-layout]="isMobile" [class.web-layout]="!isMobile">
+      <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
         <!-- Hero Banner with Auto-rotating Ads -->
         <div class="hero-section">
-          <swiper-container #heroSwiper class="hero-swiper" loop="true" [autoplay-delay]="isMobile ? 5000 : 7000"
+          <swiper-container #heroSwiper class="hero-swiper" loop="true" [attr.autoplay-delay]="platform.mobile ? 5000 : 7000"
             autoplay-disable-on-interaction="false" speed="800" effect="fade">
             <swiper-slide *ngFor="let advertisement of (ads$ | async) || []">
               <div class="hero-slide">
@@ -55,8 +55,8 @@
 
           <!-- Nearby Restaurants List -->
           <swiper-container *ngIf="!isLoadingNearby && !locationError && (nearby$ | async)?.length"
-            [class]="isMobile ? 'nearby-swiper mobile-peek' : 'nearby-swiper'"
-            [attr.slides-per-view]="isMobile ? '1.15' : '1.3'" space-between="16" centered-slides="true" loop="true"
+            [class]="platform.mobile ? 'nearby-swiper mobile-peek' : 'nearby-swiper'"
+            [attr.slides-per-view]="platform.mobile ? '1.08' : '1.3'" space-between="12" centered-slides="true" loop="true"
             autoplay-delay="7000" autoplay-disable-on-interaction="false" speed="600"
             breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
             <swiper-slide *ngFor="let restaurant of (nearby$ | async) || []">
@@ -114,8 +114,8 @@
             </ion-button>
           </div>
 
-          <swiper-container #offersSwiper [class]="isMobile ? 'offers-swiper mobile-peek' : 'offers-swiper'"
-            [attr.slides-per-view]="isMobile ? '1.15' : '1.3'" space-between="16" centered-slides="true" loop="true"
+          <swiper-container #offersSwiper [class]="platform.mobile ? 'offers-swiper mobile-peek' : 'offers-swiper'"
+            [attr.slides-per-view]="platform.mobile ? '1.08' : '1.3'" space-between="12" centered-slides="true" loop="true"
             autoplay-delay="4000" autoplay-disable-on-interaction="false" speed="600"
             breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
             <swiper-slide *ngFor="let offer of (offers$ | async) || []">
@@ -151,8 +151,8 @@
             </ion-button>
           </div>
 
-          <swiper-container #articlesSwiper [class]="isMobile ? 'articles-swiper mobile-peek' : 'articles-swiper'"
-            [attr.slides-per-view]="isMobile ? '1.15' : '1.3'" space-between="16" centered-slides="true" loop="true"
+          <swiper-container #articlesSwiper [class]="platform.mobile ? 'articles-swiper mobile-peek' : 'articles-swiper'"
+            [attr.slides-per-view]="platform.mobile ? '1.08' : '1.3'" space-between="12" centered-slides="true" loop="true"
             autoplay-delay="5000" autoplay-disable-on-interaction="false" speed="600"
             breakpoints='{"768": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
             <swiper-slide *ngFor="let article of (articles$ | async) || []">
@@ -225,8 +225,8 @@
           </div>
 
           <swiper-container #restaurantsSwiper
-            [class]="isMobile ? 'restaurants-swiper mobile-peek' : 'restaurants-swiper'"
-            [attr.slides-per-view]="isMobile ? '1.15' : '1.3'" space-between="16" centered-slides="true" loop="true"
+            [class]="platform.mobile ? 'restaurants-swiper mobile-peek' : 'restaurants-swiper'"
+            [attr.slides-per-view]="platform.mobile ? '1.08' : '1.3'" space-between="12" centered-slides="true" loop="true"
             autoplay-delay="7000" autoplay-disable-on-interaction="false" speed="600"
             breakpoints='{"640": {"slidesPerView": 2}, "1024": {"slidesPerView": 3}}'>
             <swiper-slide *ngFor="let restaurant of (restaurants$ | async) || []">
