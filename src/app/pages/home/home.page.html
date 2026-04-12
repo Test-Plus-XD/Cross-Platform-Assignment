@@ -7,7 +7,7 @@
       <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
         <!-- Hero Banner with Auto-rotating Ads -->
         <div class="hero-section">
-          <swiper-container #heroSwiper class="hero-swiper" loop="true" [autoplay-delay]="platform.mobile ? 5000 : 7000"
+          <swiper-container #heroSwiper class="hero-swiper" loop="true" [attr.autoplay-delay]="platform.mobile ? 5000 : 7000"
             autoplay-disable-on-interaction="false" speed="800" effect="fade">
             <swiper-slide *ngFor="let advertisement of (ads$ | async) || []">
               <div class="hero-slide">

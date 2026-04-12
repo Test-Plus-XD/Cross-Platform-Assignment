@@ -107,10 +107,29 @@ export class AppComponent implements OnInit, OnDestroy {
             // Handle pourrice:// deep links (QR codes, notification taps)
             if (url.startsWith('pourrice://')) {
               const parsed = new URL(url);
-              const path = parsed.hostname + parsed.pathname;
-              if (path) {
-                this.router.navigateByUrl('/' + path);
+              const host = parsed.hostname.toLowerCase();
+              const slug = parsed.pathname.replace(/^\/+/, '');
+
+              // pourrice://menu/{restaurantId} → /restaurant/{restaurantId}
+              if (host === 'menu' && slug) {
+                this.router.navigateByUrl(`/restaurant/${slug}`);
+                return;
               }
+
+              // pourrice://bookings → /bookings
+              if (host === 'bookings') {
+                this.router.navigateByUrl('/bookings');
+                return;
+              }
+
+              // pourrice://chat/{roomId} → /chat/{roomId}
+              if (host === 'chat') {
+                this.router.navigateByUrl(`/chat${slug ? '/' + slug : ''}`);
+                return;
+              }
+
+              // Fallback for other recognised links
+              this.router.navigateByUrl(`/${host}${parsed.pathname}`);
               return;
             }
 
