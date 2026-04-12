@@ -14,10 +14,9 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
   User as FirebaseUser
 } from '@angular/fire/auth';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
 import { UserService, UserProfile } from './user.service';
@@ -75,7 +74,6 @@ export class AuthService {
     console.log('AuthService: Initialised, isMobile:', this.isMobile);
     
     this.initialiseAuth();
-    this.handleRedirectResult();
   }
 
   /**
@@ -137,31 +135,6 @@ export class AuthService {
         }
       });
     });
-  }
-
-  /**
-   * Handle redirect result for mobile OAuth.
-   * This processes the result when the user returns to the app after OAuth redirect.
-   * Note: On mobile platforms with full app reload, the redirect result may have already been
-   * processed by the onAuthStateChanged listener before this method runs, so getRedirectResult()
-   * might return null. This is expected and not an error - the auth state listener will handle it.
-   */
-  private async handleRedirectResult(): Promise<void> {
-    try {
-      console.log('AuthService: Checking for redirect result');
-      const result = await getRedirectResult(this.auth);
-      if (result?.user) {
-        console.log('AuthService: Redirect result received for user:', result.user.uid);
-        // Auth state change handler will process the rest
-      } else {
-        // On mobile with full app reload, the auth state listener usually processes the redirect
-        // before getRedirectResult() is called, so null is expected and not an error
-        console.log('AuthService: No redirect result (auth state listener may have processed it)');
-      }
-    } catch (error: any) {
-      console.error('AuthService: Error handling redirect result:', error);
-      // Don't throw - user might not have come from a redirect
-    }
   }
 
   /**
@@ -315,33 +288,33 @@ export class AuthService {
 
   /**
    * Sign in with Google OAuth provider.
-   * On native (Capacitor) platforms, uses redirect flow so the OAuth page
-   * opens inside the app's WebView / Chrome Custom Tab and can return to the app.
-   * On web, uses popup flow for a smoother UX.
+   * On native (Capacitor) platforms, uses the native Google Sign-In SDK via
+   * @capgo/capacitor-social-login — shows the system account picker sheet,
+   * no browser involved, so Google's disallowed_useragent block is avoided.
+   * On web, uses Firebase popup flow.
    */
   public async signInWithGoogle(): Promise<User | null> {
     try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-
-      // Native: use redirect flow — browser navigates away; getRedirectResult() / onAuthStateChanged
-      // in AppComponent will deliver the real user after the redirect completes.
       if (this.isNativePlatform()) {
-        console.log('AuthService: Using redirect flow for Google sign-in (native)');
-        await signInWithRedirect(this.auth, provider);
-        // Unreachable — signInWithRedirect navigates the page away
-        return null;
+        console.log('AuthService: Using native Google Sign-In (SocialLogin)');
+        const result = await SocialLogin.login({ provider: 'google', options: {} });
+        const idToken = (result.result as { idToken?: string })?.idToken;
+        if (!idToken) {
+          throw new Error('Google sign-in failed: no ID token returned');
+        }
+        console.log('AuthService: Native Google Sign-In succeeded, exchanging for Firebase credential');
+        return await this.signInWithGoogleCredential(idToken);
       }
 
-      // Web: use popup flow
+      // Web: use Firebase popup flow
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
       console.log('AuthService: Using popup flow for Google sign-in (web)');
       const userCredential = await signInWithPopup(this.auth, provider);
       if (!userCredential?.user) {
         throw new Error('Google sign-in failed: no user returned');
       }
-
       console.log('AuthService: Google sign-in successful, uid:', userCredential.user.uid);
-
       return {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
@@ -501,6 +474,9 @@ export class AuthService {
         break;
       case 'auth/redirect-operation-pending':
         message = 'Another sign-in operation is pending';
+        break;
+      case 'ERR_CANCELED':
+        message = 'Sign-in cancelled';
         break;
       default:
         message = error.message || message;

@@ -23,7 +23,9 @@
       "Bash(python -c \"import json; d=json.loads\\(open\\('.graphify_semantic_new.json'\\).read\\(\\)\\); print\\(f'nodes: {len\\(d.get\\(\\\\\"nodes\\\\\",[]\\)\\)}, edges: {len\\(d.get\\(\\\\\"edges\\\\\",[]\\)\\)}, hyperedges: {len\\(d.get\\(\\\\\"hyperedges\\\\\",[]\\)\\), }'\\)\")",
       "Bash(curl -s -H \"x-api-passcode: PourRice\" \"https://vercel-express-api-alpha.vercel.app/API/Restaurants/n3WrpkeCvU6CElyoKKp2\")",
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d, indent=2, ensure_ascii=False\\)\\)\")",
-      "Bash(curl -s -H \"x-api-passcode: PourRice\" \"https://vercel-express-api-alpha.vercel.app/API/Algolia/Restaurants?query=TEST+RESTAURANT&hitsPerPage=1\")"
+      "Bash(curl -s -H \"x-api-passcode: PourRice\" \"https://vercel-express-api-alpha.vercel.app/API/Algolia/Restaurants?query=TEST+RESTAURANT&hitsPerPage=1\")",
+      "mcp__Windows-MCP__Scrape",
+      "mcp__Windows-MCP__FileSystem"
     ]
   }
 }

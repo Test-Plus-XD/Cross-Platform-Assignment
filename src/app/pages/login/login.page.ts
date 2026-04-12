@@ -21,12 +21,16 @@ declare const google: {
         auto_select?: boolean;
         cancel_on_tap_outside?: boolean;
         context?: string;
+        use_fedcm_for_prompt?: boolean;
+        itp_support?: boolean;
       }): void;
       prompt(momentListener?: (notification: {
         isNotDisplayed(): boolean;
         isSkippedMoment(): boolean;
         isDismissedMoment(): boolean;
         getDismissedReason(): string;
+        getNotDisplayedReason(): string;
+        getMomentType(): string;
       }) => void): void;
       cancel(): void;
     };
@@ -157,9 +161,22 @@ export class LoginPage implements OnDestroy, AfterViewInit {
         },
         auto_select: false,
         cancel_on_tap_outside: true,
-        context: 'signin'
+        context: 'signin',
+        // FedCM avoids the old iframe-based flow that triggers origin_mismatch
+        // errors when the page origin is not yet registered in Google Cloud Console.
+        // Falls back to legacy One Tap on browsers that don't support FedCM yet.
+        use_fedcm_for_prompt: true,
+        itp_support: true,
       });
-      google.accounts.id.prompt();
+      google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+          // One Tap suppressed (origin not registered, browser policy, etc.)
+          // Silent — the user can still sign in via the "Continue with Google" button.
+          console.log('LoginPage: One Tap not displayed:', notification.getNotDisplayedReason());
+        } else if (notification.isSkippedMoment()) {
+          console.log('LoginPage: One Tap skipped:', notification.getDismissedReason());
+        }
+      });
     } catch (error) {
       console.error('LoginPage: One Tap initialization failed', error);
     }

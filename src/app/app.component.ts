@@ -6,6 +6,8 @@ import { Subject } from 'rxjs';
 import { Auth, getIdToken } from '@angular/fire/auth';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
+import { SocialLogin } from '@capgo/capacitor-social-login';
+import { environment } from '../environments/environment';
 import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
 import { LayoutService } from './services/layout.service';
@@ -86,7 +88,14 @@ export class AppComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
       // AppStateService now handles state management automatically
 
-      // Set up deep link listener for native platforms (OAuth redirects, QR codes, etc.)
+      // Initialise native Google Sign-In on Capacitor platforms
+      if (Capacitor.isNativePlatform()) {
+        SocialLogin.initialize({
+          google: { webClientId: environment.googleClientId }
+        }).catch(err => console.error('[AppComponent] SocialLogin init error:', err));
+      }
+
+      // Set up deep link listener for native platforms (QR codes, notification taps, etc.)
       void this.setupDeepLinkListener();
 
       // Show notification permission prompt if not yet granted
@@ -147,13 +156,6 @@ export class AppComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Handle com.example.app:// scheme (OAuth redirect callback)
-          // Firebase Auth processes the redirect internally via getRedirectResult()
-          // in AuthService — no manual navigation needed here.
-          if (url.startsWith('com.example.app://')) {
-            console.log('[AppComponent] OAuth redirect callback received');
-            return;
-          }
         } catch (err) {
           console.error('[AppComponent] Error processing deep link:', err);
           void this.presentDeepLinkError();
