@@ -14,11 +14,7 @@
         <ion-icon name="storefront-outline" class="empty-icon"></ion-icon>
         <h2>{{ (lang$ | async) === 'TC' ? translations.noRestaurant.TC : translations.noRestaurant.EN }}</h2>
         <p>{{ (lang$ | async) === 'TC' ? translations.contactSupport.TC : translations.contactSupport.EN }}</p>
-        <ion-button
-          fill="outline"
-          (click)="openAddRestaurantModal()"
-          class="add-restaurant-btn"
-        >
+        <ion-button fill="outline" (click)="openAddRestaurantModal()" class="add-restaurant-btn">
           <ion-icon name="add-circle-outline" slot="start"></ion-icon>
           {{ (lang$ | async) === 'TC' ? translations.addRestaurant.TC : translations.addRestaurant.EN }}
         </ion-button>
@@ -32,10 +28,12 @@
           <ion-card-content>
             <div class="header-content">
               <div class="restaurant-name-section">
-                <h2>{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN) : (restaurant?.Name_EN || restaurant?.Name_TC) }}</h2>
+                <h2>{{ (lang$ | async) === 'TC' ? (restaurant?.Name_TC || restaurant?.Name_EN) : (restaurant?.Name_EN ||
+                  restaurant?.Name_TC) }}</h2>
                 <p class="district">
                   <ion-icon name="location-outline"></ion-icon>
-                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN) : (restaurant?.District_EN || restaurant?.District_TC) }}
+                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN) :
+                  (restaurant?.District_EN || restaurant?.District_TC) }}
                 </p>
               </div>
               <!-- Opens the public restaurant detail page -->
@@ -55,7 +53,8 @@
             <ion-card-content>
               <ion-icon name="today-outline" color="primary"></ion-icon>
               <div class="stat-value">{{ getTodayBookingsCount() }}</div>
-              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.todayBookings.TC : translations.todayBookings.EN }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.todayBookings.TC :
+                translations.todayBookings.EN }}</div>
             </ion-card-content>
           </ion-card>
 
@@ -64,7 +63,8 @@
             <ion-card-content>
               <ion-icon name="hourglass-outline" color="warning"></ion-icon>
               <div class="stat-value">{{ getPendingBookingsCount() }}</div>
-              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.pendingBookings.TC : translations.pendingBookings.EN }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.pendingBookings.TC :
+                translations.pendingBookings.EN }}</div>
             </ion-card-content>
           </ion-card>
 
@@ -73,14 +73,16 @@
             <ion-card-content>
               <ion-icon name="calendar-outline" color="success"></ion-icon>
               <div class="stat-value">{{ bookings.length }}</div>
-              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.totalBookings.TC : translations.totalBookings.EN }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.totalBookings.TC :
+                translations.totalBookings.EN }}</div>
             </ion-card-content>
           </ion-card>
 
         </div>
 
         <!-- Section tab bar — switches currentSection -->
-        <ion-segment [value]="currentSection" (ionChange)="switchSection($any($event).detail.value)" class="section-tabs">
+        <ion-segment [value]="currentSection" (ionChange)="switchSection($any($event).detail.value)"
+          class="section-tabs">
           <ion-segment-button value="info">
             <ion-label>
               <ion-icon name="information-circle-outline"></ion-icon>
@@ -160,7 +162,8 @@
                 <div class="info-label"><ion-icon name="location-outline"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</div>
                 <div class="info-value">
-                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN || '—') : (restaurant?.District_EN || restaurant?.District_TC || '—') }}
+                  {{ (lang$ | async) === 'TC' ? (restaurant?.District_TC || restaurant?.District_EN || '—') :
+                  (restaurant?.District_EN || restaurant?.District_TC || '—') }}
                 </div>
               </div>
 
@@ -218,7 +221,7 @@
                   {{ (lang$ | async) === 'TC' ? '關鍵字' : 'Keywords' }}</div>
                 <div class="info-value keywords-display">
                   <span *ngFor="let kw of (lang$ | async) === 'TC' ? restaurant?.Keyword_TC : restaurant?.Keyword_EN"
-                        class="keyword-chip">{{ kw }}</span>
+                    class="keyword-chip">{{ kw }}</span>
                   <span *ngIf="!(restaurant?.Keyword_EN?.length)">—</span>
                 </div>
               </div>
@@ -406,6 +409,7 @@
 
               <ion-segment-button value="pending">
                 <ion-label>
+                  <ion-icon name="time-outline"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.pending.TC : translations.pending.EN }}
                   <!-- Badge only shown when there are bookings in this tab -->
                   <ion-badge color="warning" *ngIf="getBookingTabCount('pending') > 0">
@@ -416,6 +420,7 @@
 
               <ion-segment-button value="accepted">
                 <ion-label>
+                  <ion-icon name="checkmark-outline"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.accepted.TC : translations.accepted.EN }}
                   <ion-badge color="success" *ngIf="getBookingTabCount('accepted') > 0">
                     {{ getBookingTabCount('accepted') }}
@@ -425,6 +430,7 @@
 
               <ion-segment-button value="declined">
                 <ion-label>
+                  <ion-icon name="ban-outline"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}
                   <ion-badge color="danger" *ngIf="getBookingTabCount('declined') > 0">
                     {{ getBookingTabCount('declined') }}
@@ -434,12 +440,16 @@
 
               <ion-segment-button value="cancelled">
                 <ion-label>
+                  <ion-icon name="close-outline"></ion-icon>
                   {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
                 </ion-label>
               </ion-segment-button>
 
               <ion-segment-button value="all">
-                <ion-label>{{ (lang$ | async) === 'TC' ? '全部' : 'All' }} ({{ bookings.length }})</ion-label>
+                <ion-label>
+                  <ion-icon name="layers-outline"></ion-icon>
+                  {{ (lang$ | async) === 'TC' ? '全部' : 'All' }} ({{ bookings.length }})
+                </ion-label>
               </ion-segment-button>
 
             </ion-segment>
@@ -453,10 +463,14 @@
             <!-- Empty state: bookings exist but none match the active filter -->
             <div class="empty-state" *ngIf="bookings.length > 0 && filteredBookings.length === 0">
               <ion-icon name="calendar-clear-outline"></ion-icon>
-              <p *ngIf="bookingStatusFilter === 'pending'">{{ (lang$ | async) === 'TC' ? translations.noBookingsPending.TC : translations.noBookingsPending.EN }}</p>
-              <p *ngIf="bookingStatusFilter === 'accepted'">{{ (lang$ | async) === 'TC' ? translations.noBookingsAccepted.TC : translations.noBookingsAccepted.EN }}</p>
-              <p *ngIf="bookingStatusFilter === 'declined'">{{ (lang$ | async) === 'TC' ? translations.noBookingsDeclined.TC : translations.noBookingsDeclined.EN }}</p>
-              <p *ngIf="bookingStatusFilter === 'cancelled'">{{ (lang$ | async) === 'TC' ? translations.noBookingsCancelled.TC : translations.noBookingsCancelled.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'pending'">{{ (lang$ | async) === 'TC' ?
+                translations.noBookingsPending.TC : translations.noBookingsPending.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'accepted'">{{ (lang$ | async) === 'TC' ?
+                translations.noBookingsAccepted.TC : translations.noBookingsAccepted.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'declined'">{{ (lang$ | async) === 'TC' ?
+                translations.noBookingsDeclined.TC : translations.noBookingsDeclined.EN }}</p>
+              <p *ngIf="bookingStatusFilter === 'cancelled'">{{ (lang$ | async) === 'TC' ?
+                translations.noBookingsCancelled.TC : translations.noBookingsCancelled.EN }}</p>
             </div>
 
             <!-- Booking cards -->
@@ -468,7 +482,8 @@
                   <div class="booking-header">
                     <div class="booking-date">{{ booking.dateTime | date: 'dd MMM yyyy, HH:mm' }}</div>
                     <ion-badge [color]="getBookingStatusColor(booking.status)">
-                      {{ (lang$ | async) === 'TC' ? translations[booking.status]?.TC : translations[booking.status]?.EN }}
+                      {{ (lang$ | async) === 'TC' ? translations[booking.status]?.TC : translations[booking.status]?.EN
+                      }}
                     </ion-badge>
                   </div>
 
@@ -477,8 +492,8 @@
                     <ion-icon name="people-outline"></ion-icon>
                     {{ booking.numberOfGuests }}
                     {{ booking.numberOfGuests === 1
-                        ? ((lang$ | async) === 'TC' ? '位' : 'guest')
-                        : ((lang$ | async) === 'TC' ? '位' : 'guests') }}
+                    ? ((lang$ | async) === 'TC' ? '位' : 'guest')
+                    : ((lang$ | async) === 'TC' ? '位' : 'guests') }}
                   </p>
 
                   <!-- Special requests (only shown when present) -->
@@ -489,7 +504,7 @@
 
                   <!-- Diner contact info (enriched by the /restaurant/:id endpoint) -->
                   <div class="diner-info"
-                       *ngIf="booking.diner && (booking.diner.displayName || booking.diner.email || booking.diner.phoneNumber)">
+                    *ngIf="booking.diner && (booking.diner.displayName || booking.diner.email || booking.diner.phoneNumber)">
                     <p class="diner-label">
                       <ion-icon name="person-outline"></ion-icon>
                       {{ (lang$ | async) === 'TC' ? translations.dinerInfo.TC : translations.dinerInfo.EN }}
@@ -504,8 +519,7 @@
                   </div>
 
                   <!-- Decline reason (only shown on declined bookings) -->
-                  <div class="decline-reason"
-                       *ngIf="booking.status === 'declined' && booking.declineMessage">
+                  <div class="decline-reason" *ngIf="booking.status === 'declined' && booking.declineMessage">
                     <p class="diner-label" style="color: var(--ion-color-danger)">
                       <ion-icon name="information-circle-outline"></ion-icon>
                       {{ (lang$ | async) === 'TC' ? translations.declineReason.TC : translations.declineReason.EN }}
@@ -530,7 +544,7 @@
 
                     <!-- Accepted bookings: Mark complete -->
                     <ion-button *ngIf="booking.status === 'accepted'" size="small" color="primary"
-                                (click)="markCompleteAction(booking)">
+                      (click)="markCompleteAction(booking)">
                       <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
                       {{ (lang$ | async) === 'TC' ? translations.markComplete.TC : translations.markComplete.EN }}
                     </ion-button>
@@ -562,7 +576,8 @@
           <!-- CTA card: cost label + pay button -->
           <ion-card class="ad-cta-card">
             <ion-card-content>
-              <p class="ad-cost-label">{{ (lang$ | async) === 'TC' ? translations.adCost.TC : translations.adCost.EN }}</p>
+              <p class="ad-cost-label">{{ (lang$ | async) === 'TC' ? translations.adCost.TC : translations.adCost.EN }}
+              </p>
               <ion-button expand="block" (click)="initiateAdPayment()">
                 <ion-icon name="megaphone-outline" slot="start"></ion-icon>
                 {{ (lang$ | async) === 'TC' ? translations.placeAd.TC : translations.placeAd.EN }}
@@ -580,7 +595,8 @@
           <div class="empty-state" *ngIf="!isAdsLoading && advertisements.length === 0">
             <ion-icon name="megaphone-outline" class="empty-icon"></ion-icon>
             <p>{{ (lang$ | async) === 'TC' ? translations.noAds.TC : translations.noAds.EN }}</p>
-            <p class="empty-hint">{{ (lang$ | async) === 'TC' ? translations.noAdsHint.TC : translations.noAdsHint.EN }}</p>
+            <p class="empty-hint">{{ (lang$ | async) === 'TC' ? translations.noAdsHint.TC : translations.noAdsHint.EN }}
+            </p>
           </div>
 
           <!-- Ad cards — bilingual title / content with language fallback -->
@@ -589,8 +605,8 @@
 
               <!-- Bilingual ad image with TC → EN fallback -->
               <img *ngIf="(lang$ | async) === 'TC' ? (ad.Image_TC || ad.Image_EN) : (ad.Image_EN || ad.Image_TC)"
-                   [src]="(lang$ | async) === 'TC' ? (ad.Image_TC || ad.Image_EN) : (ad.Image_EN || ad.Image_TC)"
-                   class="ad-image" alt="Advertisement image">
+                [src]="(lang$ | async) === 'TC' ? (ad.Image_TC || ad.Image_EN) : (ad.Image_EN || ad.Image_TC)"
+                class="ad-image" alt="Advertisement image">
 
               <ion-card-content>
                 <div class="ad-header">
@@ -601,14 +617,14 @@
                   <!-- Active / Inactive status badge -->
                   <ion-badge [color]="ad.status === 'active' ? 'success' : 'medium'">
                     {{ (lang$ | async) === 'TC'
-                        ? (ad.status === 'active' ? translations.adActive.TC : translations.adInactive.TC)
-                        : (ad.status === 'active' ? translations.adActive.EN : translations.adInactive.EN) }}
+                    ? (ad.status === 'active' ? translations.adActive.TC : translations.adInactive.TC)
+                    : (ad.status === 'active' ? translations.adActive.EN : translations.adInactive.EN) }}
                   </ion-badge>
                 </div>
 
                 <!-- Bilingual ad body content -->
                 <p class="ad-content"
-                   *ngIf="(lang$ | async) === 'TC' ? (ad.Content_TC || ad.Content_EN) : (ad.Content_EN || ad.Content_TC)">
+                  *ngIf="(lang$ | async) === 'TC' ? (ad.Content_TC || ad.Content_EN) : (ad.Content_EN || ad.Content_TC)">
                   {{ (lang$ | async) === 'TC' ? (ad.Content_TC || ad.Content_EN) : (ad.Content_EN || ad.Content_TC) }}
                 </p>
 

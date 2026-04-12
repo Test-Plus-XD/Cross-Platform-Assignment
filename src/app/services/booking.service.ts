@@ -2,8 +2,8 @@
 // Provides CRUD operations for user bookings with authentication
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
-import { catchError, map, tap, retry } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError, of, from } from 'rxjs';
+import { catchError, map, tap, retry, switchMap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
@@ -50,7 +50,6 @@ export class BookingService {
   private readonly authService = inject(AuthService);
 
   private readonly apiUrl = `${environment.apiUrl}/API/Bookings`;
-  private authToken: string | null = null;
   private bookingsCache = new BehaviorSubject<Booking[] | null>(null);
   public bookings$: Observable<Booking[] | null> = this.bookingsCache.asObservable();
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
@@ -61,49 +60,18 @@ export class BookingService {
 
   constructor() {
     console.log('BookingService: Initialised with API URL:', this.apiUrl);
-    this.authService.currentUser$.subscribe(user => {
-      if (user) {
-        this.refreshToken();
-      } else {
-        this.clearAuthToken();
-      }
-    });
   }
 
-  private async refreshToken(): Promise<void> {
-    try {
-      const token = await this.authService.getIdToken();
-      if (token) {
-        this.authToken = token;
-        console.log('BookingService: Token refreshed');
-      }
-    } catch (error) {
-      console.error('BookingService: Failed to refresh token', error);
-    }
-  }
-
-  setAuthToken(token: string): void {
-    this.authToken = token;
-    console.log('BookingService: Auth token set');
-  }
-
-  clearAuthToken(): void {
-    this.authToken = null;
-    this.bookingsCache.next(null);
-    console.log('BookingService: Auth token cleared');
-  }
-
-  private getHeaders(): HttpHeaders {
-    const headers: { [key: string]: string } = {
-      'Content-Type': 'application/json',
-      'x-api-passcode': 'PourRice'
-    };
-    if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
-    } else {
+  private async getHeaders(): Promise<HttpHeaders> {
+    const token = await this.authService.getIdToken();
+    if (!token) {
       console.warn('BookingService: No auth token available for request');
     }
-    return new HttpHeaders(headers);
+    return new HttpHeaders({
+      'Content-Type': 'application/json',
+      'x-api-passcode': 'PourRice',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    });
   }
 
   /**
@@ -113,11 +81,12 @@ export class BookingService {
     console.log('BookingService: Creating booking', booking);
     this.isLoadingSubject.next(true);
 
-    return this.httpClient.post<{ id: string }>(
-      this.apiUrl,
-      booking,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.post<{ id: string }>(
+        this.apiUrl,
+        booking,
+        { headers }
+      )),
       tap(response => {
         console.log('BookingService: Booking created with ID:', response.id);
         this.bookingsCache.next(null);
@@ -143,10 +112,11 @@ export class BookingService {
     console.log('BookingService: Fetching user bookings from API');
     this.isLoadingSubject.next(true);
 
-    return this.httpClient.get<{ count: number; data: Booking[] }>(
-      this.apiUrl,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.get<{ count: number; data: Booking[] }>(
+        this.apiUrl,
+        { headers }
+      )),
       map(response => response.data || []),
       tap(bookings => {
         this.bookingsCache.next(bookings);
@@ -169,10 +139,11 @@ export class BookingService {
       console.error('BookingService: Cannot fetch booking without ID');
       return of(null);
     }
-    return this.httpClient.get<Booking>(
-      `${this.apiUrl}/${encodeURIComponent(id)}`,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.get<Booking>(
+        `${this.apiUrl}/${encodeURIComponent(id)}`,
+        { headers }
+      )),
       catchError((error: HttpErrorResponse) => {
         if (error.status === 404) return of(null);
         console.error('BookingService: Error fetching booking:', error);
@@ -194,11 +165,12 @@ export class BookingService {
     console.log('BookingService: Updating booking:', id, updates);
     this.isLoadingSubject.next(true);
 
-    return this.httpClient.put<void>(
-      `${this.apiUrl}/${encodeURIComponent(id)}`,
-      updates,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.put<void>(
+        `${this.apiUrl}/${encodeURIComponent(id)}`,
+        updates,
+        { headers }
+      )),
       tap(() => {
         console.log('BookingService: Booking updated successfully');
         this.bookingsCache.next(null);
@@ -231,10 +203,11 @@ export class BookingService {
     console.log('BookingService: Deleting booking:', id);
     this.isLoadingSubject.next(true);
 
-    return this.httpClient.delete<void>(
-      `${this.apiUrl}/${encodeURIComponent(id)}`,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.delete<void>(
+        `${this.apiUrl}/${encodeURIComponent(id)}`,
+        { headers }
+      )),
       tap(() => {
         console.log('BookingService: Booking deleted successfully');
         this.bookingsCache.next(null);
@@ -316,10 +289,11 @@ export class BookingService {
     console.log('BookingService: Fetching bookings for restaurant:', restaurantId);
     this.isLoadingSubject.next(true);
 
-    return this.httpClient.get<{ count: number; data: Booking[] }>(
-      `${this.apiUrl}/restaurant/${encodeURIComponent(restaurantId)}`,
-      { headers: this.getHeaders() }
-    ).pipe(
+    return from(this.getHeaders()).pipe(
+      switchMap(headers => this.httpClient.get<{ count: number; data: Booking[] }>(
+        `${this.apiUrl}/restaurant/${encodeURIComponent(restaurantId)}`,
+        { headers }
+      )),
       retry(1),
       map(response => response.data || []),
       tap(bookings => {
