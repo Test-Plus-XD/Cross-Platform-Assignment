@@ -4,7 +4,7 @@ import { AlertController, ModalController, ToastController } from '@ionic/angula
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { Auth, getIdToken } from '@angular/fire/auth';
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
@@ -43,6 +43,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Cleanup subject
     private destroy$ = new Subject<void>();
+
+    // Deep link listener handle for cleanup
+    private appUrlOpenListener?: PluginListenerHandle;
 
     // Guard: prevent presenting the account-type modal more than once per session
     private hasShownTypeSelector = false;
@@ -84,7 +87,7 @@ export class AppComponent implements OnInit, OnDestroy {
       // AppStateService now handles state management automatically
 
       // Set up deep link listener for native platforms (OAuth redirects, QR codes, etc.)
-      this.setupDeepLinkListener();
+      void this.setupDeepLinkListener();
 
       // Show notification permission prompt if not yet granted
       this.promptNotificationPermission();
@@ -95,10 +98,10 @@ export class AppComponent implements OnInit, OnDestroy {
       this.watchForMissingUserType();
     }
 
-    private setupDeepLinkListener(): void {
+    private async setupDeepLinkListener(): Promise<void> {
       if (!Capacitor.isNativePlatform()) return;
 
-      CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
+      this.appUrlOpenListener = await CapacitorApp.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
         this.ngZone.run(() => {
           const url = event.url;
           console.log('[AppComponent] Deep link received');
@@ -128,8 +131,8 @@ export class AppComponent implements OnInit, OnDestroy {
                 return;
               }
 
-              // Fallback for other recognised links
-              this.router.navigateByUrl(`/${host}${parsed.pathname}`);
+              // Unsupported deep-link type
+              void this.presentDeepLinkError();
               return;
             }
 
@@ -142,6 +145,7 @@ export class AppComponent implements OnInit, OnDestroy {
             }
           } catch (err) {
             console.error('[AppComponent] Error processing deep link:', err);
+            void this.presentDeepLinkError();
           }
         });
       });
@@ -338,7 +342,18 @@ export class AppComponent implements OnInit, OnDestroy {
       }
     }
 
+    private async presentDeepLinkError(): Promise<void> {
+      const isTc = this.language.getCurrentLanguage() === 'TC';
+      const toast = await this.toastController.create({
+        message: isTc ? '連結無效或已過期。' : 'This link is invalid or expired.',
+        duration: 2500,
+        position: 'top',
+      });
+      await toast.present();
+    }
+
     ngOnDestroy(): void {
+      void this.appUrlOpenListener?.remove();
       this.destroy$.next();
       this.destroy$.complete();
     }
