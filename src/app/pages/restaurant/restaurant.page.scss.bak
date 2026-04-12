@@ -1,13 +1,11 @@
 // Modern restaurant detail page styling - Comprehensive redesign
 :host {
-
   // Restaurant page styling with green theme and purple-blue gradient accents
   .restaurant-page {
     background: var(--ion-background-color);
     color: var(--ion-text-color);
     min-height: 100vh;
   }
-
   // === HERO SECTION === //
   .hero-section {
     position: relative;
@@ -84,7 +82,6 @@
         }
       }
     }
-
     // White shadow in light mode
     :host-context(body:not(.dark)) .hero-content {
       .restaurant-name-en {
@@ -99,7 +96,6 @@
         text-shadow: 0 1px 4px rgba(255, 255, 255, 0.6);
       }
     }
-
     // Dark shadow in dark mode
     :host-context(.dark) .hero-content {
       .restaurant-name-en {
@@ -115,7 +111,6 @@
       }
     }
   }
-
   // === TAB NAVIGATION === //
   .tab-navigation {
     background: var(--surface);
@@ -137,14 +132,12 @@
       }
     }
   }
-
   // === TAB CONTENT === //
   .tab-content {
     padding: 1.5rem 1rem;
     max-width: 1400px;
     margin: 0 auto;
   }
-
   // === DIETARY TAGS SECTION === //
   .dietary-tags-section {
     margin-bottom: 2rem;
@@ -176,7 +169,6 @@
       }
     }
   }
-
   // === INFO GRID === //
   .info-grid {
     display: grid;
@@ -267,7 +259,6 @@
       }
     }
   }
-
   // === OPENING HOURS SECTION === //
   .opening-hours-section {
     background: var(--ion-card-background);
@@ -344,7 +335,6 @@
       }
     }
   }
-
   // === ADDRESS & MAP SECTION === //
   .address-map-section {
     margin-bottom: 2rem;
@@ -420,7 +410,6 @@
       font-weight: 600;
     }
   }
-
   // === MENU SECTION === //
   .menu-section {
     margin-bottom: 2rem;
@@ -496,7 +485,6 @@
       padding: 2rem 0;
     }
   }
-
   // === REVIEW TAB === //
   .review-tab {
     .review-stats {
@@ -740,9 +728,8 @@
       }
     }
   }
-
-  // === MOBILE-FIRST BASE LAYOUT (was .mobile-layout) === //
-  .restaurant-page {
+  // === MOBILE LAYOUT === //
+  .mobile-layout {
     padding: 0;
 
     .tab-content {
@@ -786,24 +773,20 @@
       }
     }
   }
+  // === WEB LAYOUT === //
+  .web-layout {
+    .tab-content {
+      padding: 2rem 3rem;
+    }
 
-  // === DESKTOP OVERRIDES (was .web-layout) === //
-  @media (min-width: 768px) {
-    .restaurant-page {
-      .tab-content {
-        padding: 2rem 3rem;
-      }
+    .hero-section {
+      max-height: 40vh;
 
-      .hero-section {
-        max-height: 40vh;
-
-        .hero-content {
-          padding: 3rem 2rem;
-        }
+      .hero-content {
+        padding: 3rem 2rem;
       }
     }
   }
-
   // === LOADING & ERROR STATES === //
   .loading-container,
   .error-container {
@@ -832,7 +815,6 @@
       color: var(--ion-text-color);
     }
   }
-
   // === IMAGE UPLOAD (FOR UNCLAIMED RESTAURANTS) === //
   .edit-image-card {
     margin: 1rem;
@@ -909,7 +891,6 @@
       }
     }
   }
-
   // === BOOKING SECTION === //
   .booking-section {
     margin-top: 2rem;
@@ -1070,7 +1051,6 @@
       }
     }
   }
-
   // === BOTTOM SPACER === //
   .bottom-spacer {
     height: 2rem;

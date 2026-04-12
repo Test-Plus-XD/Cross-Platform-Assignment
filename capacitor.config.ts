@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.example.app',
-  appName: 'Cross Platform Assignment',
+  appId: 'com.example.cross_platform_assignment',
+  appName: 'PourRice',
   webDir: 'www',
   server: {
     androidScheme: 'https'

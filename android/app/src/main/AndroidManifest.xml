@@ -27,7 +27,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="com.example.app" android:host="callback" />
+                <data android:scheme="com.example.cross_platform_assignment" android:host="callback" />
             </intent-filter>
 
             <!-- Deep link for pourrice:// app-internal navigation (QR codes, notifications) -->

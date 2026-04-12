@@ -1,0 +1,104 @@
+{
+  "project_info": {
+    "project_number": "937491674619",
+    "project_id": "cross-platform-assignmen-b97cc",
+    "storage_bucket": "cross-platform-assignmen-b97cc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937491674619:android:3ed2cc7c79ba35fd3a475e",
+        "android_client_info": {
+          "package_name": "com.example.android_assignment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "937491674619-q3anj222m1rve2jdp5s4qm6rsfgo97de.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.android_assignment",
+            "certificate_hash": "11144a51dc5fb923e7a7921d5f2153f9a809018b"
+          }
+        },
+        {
+          "client_id": "937491674619-r1e5di42mi8tdgkqfhe2fubdms7jks9f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyButlKdDpD6u6XAmkCiafU8Litar5FLK1Q"
+        },
+        {
+          "current_key": "AIzaSyAi6m9BiU38Rdi6xr94QfwpQ4pktecDh7Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "937491674619-827jls2f3ijjh0r2c2or587ra9sdfmkj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "937491674619-tjm24ih1qlgss7eosl1vb1mn7t3fqe61.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "Pour-Rice.Pour-Rice"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:937491674619:android:2d9e26872f8779293a475e",
+        "android_client_info": {
+          "package_name": "com.example.cross_platform_assignment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "937491674619-jspva24v3ipol8q0uo4pldilloert4re.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cross_platform_assignment",
+            "certificate_hash": "11144a51dc5fb923e7a7921d5f2153f9a809018b"
+          }
+        },
+        {
+          "client_id": "937491674619-r1e5di42mi8tdgkqfhe2fubdms7jks9f.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyButlKdDpD6u6XAmkCiafU8Litar5FLK1Q"
+        },
+        {
+          "current_key": "AIzaSyAi6m9BiU38Rdi6xr94QfwpQ4pktecDh7Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "937491674619-827jls2f3ijjh0r2c2or587ra9sdfmkj.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "937491674619-tjm24ih1qlgss7eosl1vb1mn7t3fqe61.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "Pour-Rice.Pour-Rice"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.app",
+  "applicationId": "com.example.cross_platform_assignment",
   "variantName": "debug",
   "elements": [
     {

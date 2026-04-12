@@ -1886,3 +1886,55 @@ API (verify) → Extract UID → Ownership checks
 - **v1.2** (2025-11-27): Socket.IO + Gemini integration.
 - **v1.1** (2025-11-27): Eclipse.gif loading states.
 - **v1.0** (2025-11-26): Initial documentation.
+
+---
+
+## Android Blank Page Bug Fix (v1.17.6)
+
+### Root Cause
+
+All page templates (home, search, restaurant, user, booking, store) wrapped their entire content in:
+
+```html
+<ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
+  <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
+    ...all page content...
+  </div>
+</ng-container>
+```
+
+On Android WebView (Capacitor), the `async` pipe resolves asynchronously even for a `BehaviorSubject`. The `ng-container *ngIf` evaluates the object `{ mobile: false }` — which is truthy — but only **after** the async pipe emits. In certain Android WebView versions (API 36+), there is a timing window where the async pipe has not yet emitted, causing the `ng-container` to render nothing. The result: a completely blank page with only the header and tab bar visible.
+
+Additionally, `PlatformService` was persisting the detected platform to `localStorage` and reading it back on init. On a fresh Android install or after clearing app data, `localStorage` could return `'web'`, causing the service to seed `isMobile$` with `false` — making the app think it was running on desktop.
+
+### Fix Applied
+
+1. **Removed all `*ngIf="{ mobile: (isMobile$ | async) ?? false } as platform"` wrappers** from all page templates. Page content now renders unconditionally.
+
+2. **Removed `[class.mobile-layout]` / `[class.web-layout]` conditional class bindings** from page containers. CSS is now mobile-first using `@media (min-width: 768px)` breakpoints only.
+
+3. **Removed localStorage persistence from `PlatformService`** (`readPersistedPlatform()` / `saveCurrentPlatform()`). The service now detects platform fresh on every init, relying on Capacitor's synchronous `isNativePlatform()` check and the static `earlyMobileCheck()` seed.
+
+4. **Converted `restaurant.page.scss`** `.mobile-layout` / `.web-layout` blocks to mobile-first base styles + `@media (min-width: 768px)` overrides.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/app/services/platform.service.ts` | Removed localStorage read/write; simplified init |
+| `src/app/pages/home/home.page.html` | Removed `ng-container *ngIf` wrapper; hardcoded swiper attributes |
+| `src/app/pages/search/search.page.html` | Removed `ng-container *ngIf` wrapper |
+| `src/app/pages/restaurant/restaurant.page.html` | Removed `ng-container *ngIf` wrapper |
+| `src/app/pages/user/user.page.html` | Removed `ng-container *ngIf` wrapper |
+| `src/app/pages/booking/booking.page.html` | Removed `ng-container *ngIf` wrapper |
+| `src/app/pages/store/store.page.html` | Removed `ng-container *ngIf` wrapper |
+| `src/app/pages/restaurant/restaurant.page.scss` | Converted `.mobile-layout`/`.web-layout` to mobile-first |
+| `src/app/pages/store/store.page.scss` | Added `.page-container` base styles |
+
+Backup files (`.bak`) are preserved alongside each changed file.
+
+### Rule Going Forward
+
+**Never gate page content behind an async observable `*ngIf`.** If platform-specific behaviour is needed in templates, use synchronous getters or CSS media queries. The `isMobile$` observable is still available for the header (back button vs nav links) and tab bar visibility — those are additive UI elements, not page content gates.
+
+- **v1.17.6** (2026-04-12): Android blank page fix. Removed `*ngIf="{ mobile: (isMobile$ | async) }"` content gates from all page templates. Removed localStorage platform persistence. Made CSS mobile-first. All pages now render correctly on Android WebView (API 36+).

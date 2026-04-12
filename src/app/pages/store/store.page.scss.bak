@@ -1,10 +1,4 @@
 // Store page styling - Modern, clean design
-.page-container {
-  padding: 1rem;
-  padding-bottom: 5rem;
-  min-height: 100%;
-}
-
 .store-container {
   padding: 0;
 }

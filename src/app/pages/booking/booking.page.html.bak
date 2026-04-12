@@ -1,0 +1,200 @@
+<ion-content class="booking-page-content">
+<br><br>
+  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
+    <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
+
+      <!-- Pull to Refresh -->
+      <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+        <ion-refresher-content></ion-refresher-content>
+      </ion-refresher>
+
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="isLoading">
+        <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+        <p>{{ (lang$ | async) === 'TC' ? '載入中...' : 'Loading...' }}</p>
+      </div>
+
+      <!-- Booking Content -->
+      <div class="booking-container" *ngIf="!isLoading">
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="calendar-outline" color="primary"></ion-icon>
+              <div class="stat-value">{{ getUpcomingCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.upcoming.TC : translations.upcoming.EN }}</div>
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="time-outline" color="success"></ion-icon>
+              <div class="stat-value">{{ getPastCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.past.TC : translations.past.EN }}</div>
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="ban-outline" color="danger"></ion-icon>
+              <div class="stat-value">{{ getDeclinedCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}</div>
+            </ion-card-content>
+          </ion-card>
+
+          <ion-card class="stat-card">
+            <ion-card-content>
+              <ion-icon name="close-circle-outline" color="medium"></ion-icon>
+              <div class="stat-value">{{ getCancelledCount() }}</div>
+              <div class="stat-label">{{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}</div>
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-section">
+          <ion-segment [(ngModel)]="currentFilter" (ionChange)="applyFilter()" class="booking-segment">
+            <ion-segment-button value="upcoming">
+              <ion-label>
+                <ion-icon name="arrow-forward-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.upcoming.TC : translations.upcoming.EN }}
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="past">
+              <ion-label>
+                <ion-icon name="checkmark-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.past.TC : translations.past.EN }}
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="declined">
+              <ion-label>
+                <ion-icon name="ban-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.declined.TC : translations.declined.EN }}
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="cancelled">
+              <ion-label>
+                <ion-icon name="close-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.cancelled.TC : translations.cancelled.EN }}
+              </ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="all">
+              <ion-label>
+                <ion-icon name="layers-outline"></ion-icon>
+                {{ (lang$ | async) === 'TC' ? translations.all.TC : translations.all.EN }}
+              </ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+
+        <!-- Booking List -->
+        <div class="booking-list" *ngIf="filteredBooking.length > 0">
+          <ion-card class="booking-card" *ngFor="let booking of filteredBooking" (click)="viewRestaurant(booking.restaurantId)">
+            <ion-card-content>
+              <!-- Card Header with Restaurant Name and Status -->
+              <div class="booking-card-header">
+                <div class="restaurant-info">
+                  <h3 class="restaurant-name">{{ booking.restaurantName }}</h3>
+                  <ion-badge [color]="getStatusColor(booking.status)" class="status-badge">
+                    {{ (lang$ | async) === 'TC' ? translations[booking.status]?.TC : translations[booking.status]?.EN }}
+                  </ion-badge>
+                </div>
+                <div class="card-actions">
+                  <ion-button *ngIf="canEdit(booking)" fill="clear" size="small" color="primary"
+                    (click)="editBooking(booking); $event.stopPropagation()" class="action-btn">
+                    <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button *ngIf="canCancel(booking)" fill="clear" size="small" color="danger"
+                    (click)="cancelBooking(booking); $event.stopPropagation()" class="action-btn">
+                    <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                  <ion-button *ngIf="canDelete(booking)" fill="clear" size="small" color="medium"
+                    (click)="deleteBooking(booking); $event.stopPropagation()" class="action-btn">
+                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                  </ion-button>
+                </div>
+              </div>
+
+              <!-- Card Body with Details Grid -->
+              <div class="booking-details-grid">
+                <div class="detail-item">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <div class="detail-text">
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.date.TC : translations.date.EN }}</span>
+                    <span class="detail-value">{{ formatDate(booking.dateTime, (lang$ | async) === 'TC') }}</span>
+                  </div>
+                </div>
+
+                <div class="detail-item">
+                  <ion-icon name="time-outline"></ion-icon>
+                  <div class="detail-text">
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.time.TC : translations.time.EN }}</span>
+                    <span class="detail-value">{{ formatTime(booking.dateTime, (lang$ | async) === 'TC') }}</span>
+                  </div>
+                </div>
+
+                <div class="detail-item">
+                  <ion-icon name="people-outline"></ion-icon>
+                  <div class="detail-text">
+                    <span class="detail-label">{{ (lang$ | async) === 'TC' ? translations.numberOfGuests.TC : translations.numberOfGuests.EN }}</span>
+                    <span class="detail-value">{{ booking.numberOfGuests }} {{ booking.numberOfGuests === 1 ? ((lang$ | async) === 'TC' ? translations.guest.TC : translations.guest.EN) : ((lang$ | async) === 'TC' ? translations.guests.TC : translations.guests.EN) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Special Requests Section -->
+              <div class="special-requests-section" *ngIf="booking.specialRequests">
+                <div class="requests-header">
+                  <ion-icon name="document-text-outline"></ion-icon>
+                  <span class="request-label">{{ (lang$ | async) === 'TC' ? translations.specialRequests.TC : translations.specialRequests.EN }}</span>
+                </div>
+                <p class="request-text">{{ booking.specialRequests }}</p>
+              </div>
+
+              <!-- Decline Message Section -->
+              <div class="decline-message-section" *ngIf="booking.status === 'declined' && booking.declineMessage">
+                <div class="requests-header">
+                  <ion-icon name="information-circle-outline" color="danger"></ion-icon>
+                  <span class="request-label" style="color: var(--ion-color-danger)">{{ (lang$ | async) === 'TC' ? translations.declineMessage.TC : translations.declineMessage.EN }}</span>
+                </div>
+                <p class="request-text decline-text">{{ booking.declineMessage }}</p>
+              </div>
+
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredBooking.length === 0">
+          <ion-icon name="calendar-clear-outline" class="empty-icon"></ion-icon>
+          <h3>
+            <ng-container *ngIf="currentFilter === 'upcoming'">
+              {{ (lang$ | async) === 'TC' ? translations.noUpcoming.TC : translations.noUpcoming.EN }}
+            </ng-container>
+            <ng-container *ngIf="currentFilter === 'past'">
+              {{ (lang$ | async) === 'TC' ? translations.noPast.TC : translations.noPast.EN }}
+            </ng-container>
+            <ng-container *ngIf="currentFilter === 'declined'">
+              {{ (lang$ | async) === 'TC' ? translations.noDeclined.TC : translations.noDeclined.EN }}
+            </ng-container>
+            <ng-container *ngIf="currentFilter === 'cancelled'">
+              {{ (lang$ | async) === 'TC' ? translations.noCancelled.TC : translations.noCancelled.EN }}
+            </ng-container>
+            <ng-container *ngIf="currentFilter === 'all'">
+              {{ (lang$ | async) === 'TC' ? translations.noBooking.TC : translations.noBooking.EN }}
+            </ng-container>
+          </h3>
+          <ion-button fill="outline" size="small" routerLink="/search">
+            <ion-icon name="search-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '尋找餐廳' : 'Find Restaurants' }}
+          </ion-button>
+        </div>
+
+        <!-- Bottom Spacer -->
+        <div class="bottom-spacer"></div>
+      </div>
+
+    </div>
+  </ng-container>
+</ion-content>

@@ -36,12 +36,18 @@
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import "@ionic/angular/css/palettes/dark.system.css";
 
+/* Universal top margin for all page content — keeps content from sitting flush against the header */
+ion-content::part(scroll) {
+  padding-top: 16px;
+}
+
 /* Eclipse.gif loading overlay — used with LoadingController({ cssClass: 'eclipse-loading' }) */
 .eclipse-loading::part(message) {
   padding-top: 56px;
   background: url('/assets/icon/Eclipse.gif') center top / 48px 48px no-repeat;
   text-align: center;
-  min-width: 120px; }
+  min-width: 120px;
+}
 
 /* QR Scanner — native transparent-WebView mode.
    When BarcodeScanner.startScan() runs, .barcode-scanner-active is added to <html>

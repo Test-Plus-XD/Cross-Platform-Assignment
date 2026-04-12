@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Cross Platform Assignment</string>
-    <string name="title_activity_main">Cross Platform Assignment</string>
-    <string name="package_name">com.example.app</string>
-    <string name="custom_url_scheme">com.example.app</string>
+    <string name="app_name">PourRice</string>
+    <string name="title_activity_main">PourRice</string>
+    <string name="package_name">com.example.cross_platform_assignment</string>
+    <string name="custom_url_scheme">com.example.cross_platform_assignment</string>
 </resources>

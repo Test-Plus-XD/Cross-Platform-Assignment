@@ -1,225 +1,225 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
 <ion-content class="search-page-content">
-  <ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
-    <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
+  <div class="page-container">
 
-      <!-- Page Title (Non-sticky) -->
-      <div class="search-title-container">
-        <h1 class="page-title">
-          {{ (lang$ | async) === 'TC' ? translations.searchTitle.TC : translations.searchTitle.EN }}
-        </h1>
-        <p class="page-subtitle">
-          {{ (lang$ | async) === 'TC' ? translations.searchSubtitle.TC : translations.searchSubtitle.EN }}
-        </p>
-      </div>
-
-      <!-- Sticky Search & Filter Section -->
-      <div class="search-header">
-        <!-- Search Bar -->
-        <div class="search-bar-container">
-          <ion-searchbar [(ngModel)]="searchQuery" (ionInput)="onSearchInput()"
-            [placeholder]="(lang$ | async) === 'TC' ? translations.searchPlaceholder.TC : translations.searchPlaceholder.EN"
-            [debounce]="300" animated class="search-bar">
-          </ion-searchbar>
-        </div>
-
-        <!-- Filter Chips -->
-        <div class="filter-section">
-          <div class="filter-chips-container">
-            <!-- District Filter Button -->
-            <ion-chip [outline]="selectedDistrictTokens.length === 0"
-              [color]="selectedDistrictTokens.length > 0 ? 'primary' : 'medium'" (click)="openDistrictFilter()"
-              class="filter-chip filter-button">
-              <ion-icon name="location-outline"></ion-icon>
-              <ion-label>
-                {{ selectedDistrictTokens.length > 0
-                ? ((lang$ | async) === 'TC' ? '地區' : 'Districts')
-                : ((lang$ | async) === 'TC' ? translations.allDistricts.TC : translations.allDistricts.EN) }}
-              </ion-label>
-              <ion-icon name="close-circle" *ngIf="selectedDistrictTokens.length > 0"
-                (click)="clearDistrict($event)"></ion-icon>
-            </ion-chip>
-
-            <!-- District Tags -->
-            <ion-chip *ngFor="let district of selectedDistrictTokens" class="filter-tag green-badge">
-              <ion-label>{{ getDistrictLabel(district) }}</ion-label>
-              <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
-            </ion-chip>
-
-            <!-- Keyword Filter Button -->
-            <ion-chip [outline]="selectedKeywordTokens.length === 0"
-              [color]="selectedKeywordTokens.length > 0 ? 'primary' : 'medium'" (click)="openKeywordFilter()"
-              class="filter-chip filter-button">
-              <ion-icon name="pricetag-outline"></ion-icon>
-              <ion-label>
-                {{ selectedKeywordTokens.length > 0
-                ? ((lang$ | async) === 'TC' ? '分類' : 'Categories')
-                : ((lang$ | async) === 'TC' ? translations.allCategories.TC : translations.allCategories.EN) }}
-              </ion-label>
-              <ion-icon name="close-circle" *ngIf="selectedKeywordTokens.length > 0"
-                (click)="clearKeyword($event)"></ion-icon>
-            </ion-chip>
-
-            <!-- Keyword Tags -->
-            <ion-chip *ngFor="let keyword of selectedKeywordTokens" class="filter-tag green-badge">
-              <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
-              <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
-            </ion-chip>
-
-            <!-- Near Me Chip -->
-            <ion-chip [class.near-me-active]="isNearMeActive" [color]="isNearMeActive ? 'success' : 'medium'"
-              (click)="isNearMeActive ? deactivateNearMe() : activateNearMe()" class="filter-chip near-me-chip">
-              <!-- crosshair2 (filled) when active/loading -->
-              <svg *ngIf="isNearMeActive || isNearMeLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                fill="currentColor" class="near-me-svg" viewBox="0 0 16 16">
-                <path
-                  d="M8 0a.5.5 0 0 1 .5.5v.518A7 7 0 0 1 14.982 7.5h.518a.5.5 0 0 1 0 1h-.518A7 7 0 0 1 8.5 14.982v.518a.5.5 0 0 1-1 0v-.518A7 7 0 0 1 1.018 8.5H.5a.5.5 0 0 1 0-1h.518A7 7 0 0 1 7.5 1.018V.5A.5.5 0 0 1 8 0m-.5 2.02A6 6 0 0 0 2.02 7.5h1.005A5 5 0 0 1 7.5 3.025zm1 1.005A5 5 0 0 1 12.975 7.5h1.005A6 6 0 0 0 8.5 2.02zM12.975 8.5A5 5 0 0 1 8.5 12.975v1.005a6 6 0 0 0 5.48-5.48zM7.5 12.975A5 5 0 0 1 3.025 8.5H2.02a6 6 0 0 0 5.48 5.48zM10 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0" />
-              </svg>
-              <!-- crosshair (outline) when inactive -->
-              <svg *ngIf="!isNearMeActive && !isNearMeLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                fill="currentColor" class="near-me-svg" viewBox="0 0 16 16">
-                <path
-                  d="M8.5.5a.5.5 0 0 0-1 0v.518A7 7 0 0 0 1.018 7.5H.5a.5.5 0 0 0 0 1h.518A7 7 0 0 0 7.5 14.982v.518a.5.5 0 0 0 1 0v-.518A7 7 0 0 0 14.982 8.5h.518a.5.5 0 0 0 0-1h-.518A7 7 0 0 0 8.5 1.018zm-6.48 7A6 6 0 0 1 7.5 2.02v.48a.5.5 0 0 0 1 0v-.48a6 6 0 0 1 5.48 5.48h-.48a.5.5 0 0 0 0 1h.48a6 6 0 0 1-5.48 5.48v-.48a.5.5 0 0 0-1 0v.48A6 6 0 0 1 2.02 8.5h.48a.5.5 0 0 0 0-1zM8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4" />
-              </svg>
-              <ion-label>{{ (lang$ | async) === 'TC' ? translations.nearMe.TC : translations.nearMe.EN }}</ion-label>
-              <ion-icon name="close-circle" *ngIf="isNearMeActive"
-                (click)="deactivateNearMe(); $event.stopPropagation()"></ion-icon>
-            </ion-chip>
-
-            <!-- Clear All Filters Button -->
-            <ion-chip *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0" color="danger"
-              (click)="clearAllFilters()" class="filter-chip clear-chip">
-              <ion-icon name="close-outline"></ion-icon>
-              <ion-label>{{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN
-                }}</ion-label>
-            </ion-chip>
-          </div>
-        </div>
-
-        <!-- View Toggle -->
-        <div class="view-toggle">
-          <ion-segment [(ngModel)]="viewMode" (ionChange)="toggleViewMode()">
-            <ion-segment-button value="list">
-              <ion-icon name="list-outline"></ion-icon>
-            </ion-segment-button>
-            <ion-segment-button value="map">
-              <ion-icon name="map-outline"></ion-icon>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
-      </div>
-
-      <!-- Results Summary -->
-      <div class="results-summary" *ngIf="!isLoading && !isNearMeLoading">
-        <p class="results-count">
-          <span class="count-number">{{ isNearMeActive ? nearbyRestaurants.length : totalResults }}</span>
-          {{ isNearMeActive
-          ? ((lang$ | async) === 'TC' ? '間餐廳在附近' : 'restaurants nearby')
-          : ((lang$ | async) === 'TC' ? translations.restaurantsFound.TC : translations.restaurantsFound.EN) }}
-        </p>
-      </div>
-
-      <!-- Loading State -->
-      <div class="loading-container" *ngIf="isLoading || isNearMeLoading">
-        <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
-        <p>{{ isNearMeLoading
-          ? ((lang$ | async) === 'TC' ? translations.gettingLocation.TC : translations.gettingLocation.EN)
-          : ((lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN) }}</p>
-      </div>
-
-      <!-- No Results State -->
-      <div class="empty-state" *ngIf="!isLoading && !isNearMeLoading && getDisplayRestaurants().length === 0">
-        <ion-icon name="search-outline" class="empty-icon"></ion-icon>
-        <h2>{{ (lang$ | async) === 'TC' ? translations.noResults.TC : translations.noResults.EN }}</h2>
-        <p>{{ (lang$ | async) === 'TC' ? translations.tryDifferent.TC : translations.tryDifferent.EN }}</p>
-        <ion-button fill="outline" (click)="clearAllFilters(); deactivateNearMe()"
-          *ngIf="selectedDistrict || selectedKeyword || searchQuery || isNearMeActive">
-          {{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}
-        </ion-button>
-      </div>
-
-      <!-- Map View -->
-      <div class="map-view-container" *ngIf="viewMode === 'map' && !isLoading && !isNearMeLoading">
-        <div id="search-map" class="search-map"></div>
-      </div>
-
-      <!-- Restaurant Results Grid -->
-      <div class="results-grid"
-        *ngIf="viewMode === 'list' && !isLoading && !isNearMeLoading && getDisplayRestaurants().length > 0">
-        <ion-card *ngFor="let restaurant of getDisplayRestaurants()" class="restaurant-card"
-          [routerLink]="['/restaurant', restaurant.id]" button>
-
-          <!-- Restaurant Thumbnail -->
-          <div class="card-image-container">
-            <img [src]="restaurant.ImageUrl || placeholderImage"
-              [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="restaurant-image">
-            <div class="image-overlay"></div>
-            <!-- Opening status badge: bottom-left -->
-            <span class="opening-badge open" *ngIf="getOpeningStatus(restaurant) === 'open'">
-              {{ (lang$ | async) === 'TC' ? '營業中' : 'Open' }}
-            </span>
-            <span class="opening-badge closed" *ngIf="getOpeningStatus(restaurant) === 'closed'">
-              {{ (lang$ | async) === 'TC' ? '已關閉' : 'Closed' }}
-            </span>
-            <!-- Distance badge: top-right -->
-            <div class="distance-badge" *ngIf="getDistanceBadge(restaurant) as badge"
-              [class]="'distance-badge badge-' + badge.color">
-              <ion-icon name="location"></ion-icon>
-              <span>{{ badge.text }}</span>
-            </div>
-            <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
-            <span class="rating-badge">
-              <ng-container *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0; else newBadge">
-                {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
-                <ng-container *ngIf="ratingMap[restaurant.id]?.totalReviews">({{ ratingMap[restaurant.id]!.totalReviews }})</ng-container>
-              </ng-container>
-              <ng-template #newBadge>{{ (lang$ | async) === 'TC' ? '全新' : 'New' }}</ng-template>
-            </span>
-          </div>
-
-          <!-- Restaurant Info -->
-          <ion-card-content class="card-content">
-            <h3 class="restaurant-name">
-              {{ (lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}
-            </h3>
-            <div class="card-meta">
-              <!-- Keywords (above district) -->
-              <div class="meta-row keywords-row" *ngIf="getDisplayKeywords(restaurant).length > 0">
-                <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant)">{{ kw }}</span>
-                <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant) > 2">+{{
-                  getKeywordCount(restaurant) - 2 }}</span>
-              </div>
-              <!-- District -->
-              <div class="meta-row" *ngIf="restaurant.District_EN || restaurant.District_TC">
-                <ion-icon name="location-outline"></ion-icon>
-                <span>{{ (lang$ | async) === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</span>
-              </div>
-              <!-- Address (replaces distance in info section) -->
-              <div class="meta-row address-row"
-                *ngIf="(lang$ | async) === 'TC' ? restaurant.Address_TC : restaurant.Address_EN">
-                <ion-icon name="map-outline"></ion-icon>
-                <span>{{ (lang$ | async) === 'TC' ? restaurant.Address_TC : restaurant.Address_EN }}</span>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </div>
-
-      <!-- Infinite Scroll -->
-      <ion-infinite-scroll
-        *ngIf="viewMode === 'list' && !isNearMeActive && !isLoading && restaurants.length > 0 && currentPage < totalPages - 1"
-        threshold="15%" (ionInfinite)="loadMore($event)">
-        <ion-infinite-scroll-content loadingSpinner="null"
-          [loadingText]="(lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...'">
-          <div class="infinite-scroll-loading">
-            <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner-small">
-            <span>{{ (lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...' }}</span>
-          </div>
-        </ion-infinite-scroll-content>
-      </ion-infinite-scroll>
-
-      <!-- Bottom Spacer -->
-      <div class="bottom-spacer"></div>
+    <!-- Page Title (Non-sticky) -->
+    <div class="search-title-container">
+      <h1 class="page-title">
+        {{ (lang$ | async) === 'TC' ? translations.searchTitle.TC : translations.searchTitle.EN }}
+      </h1>
+      <p class="page-subtitle">
+        {{ (lang$ | async) === 'TC' ? translations.searchSubtitle.TC : translations.searchSubtitle.EN }}
+      </p>
     </div>
-  </ng-container>
+
+    <!-- Sticky Search & Filter Section -->
+    <div class="search-header">
+      <!-- Search Bar -->
+      <div class="search-bar-container">
+        <ion-searchbar [(ngModel)]="searchQuery" (ionInput)="onSearchInput()"
+          [placeholder]="(lang$ | async) === 'TC' ? translations.searchPlaceholder.TC : translations.searchPlaceholder.EN"
+          [debounce]="300" animated class="search-bar">
+        </ion-searchbar>
+      </div>
+
+      <!-- Filter Chips -->
+      <div class="filter-section">
+        <div class="filter-chips-container">
+          <!-- District Filter Button -->
+          <ion-chip [outline]="selectedDistrictTokens.length === 0"
+            [color]="selectedDistrictTokens.length > 0 ? 'primary' : 'medium'" (click)="openDistrictFilter()"
+            class="filter-chip filter-button">
+            <ion-icon name="location-outline"></ion-icon>
+            <ion-label>
+              {{ selectedDistrictTokens.length > 0
+              ? ((lang$ | async) === 'TC' ? '地區' : 'Districts')
+              : ((lang$ | async) === 'TC' ? translations.allDistricts.TC : translations.allDistricts.EN) }}
+            </ion-label>
+            <ion-icon name="close-circle" *ngIf="selectedDistrictTokens.length > 0"
+              (click)="clearDistrict($event)"></ion-icon>
+          </ion-chip>
+
+          <!-- District Tags -->
+          <ion-chip *ngFor="let district of selectedDistrictTokens" class="filter-tag green-badge">
+            <ion-label>{{ getDistrictLabel(district) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Keyword Filter Button -->
+          <ion-chip [outline]="selectedKeywordTokens.length === 0"
+            [color]="selectedKeywordTokens.length > 0 ? 'primary' : 'medium'" (click)="openKeywordFilter()"
+            class="filter-chip filter-button">
+            <ion-icon name="pricetag-outline"></ion-icon>
+            <ion-label>
+              {{ selectedKeywordTokens.length > 0
+              ? ((lang$ | async) === 'TC' ? '分類' : 'Categories')
+              : ((lang$ | async) === 'TC' ? translations.allCategories.TC : translations.allCategories.EN) }}
+            </ion-label>
+            <ion-icon name="close-circle" *ngIf="selectedKeywordTokens.length > 0"
+              (click)="clearKeyword($event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Keyword Tags -->
+          <ion-chip *ngFor="let keyword of selectedKeywordTokens" class="filter-tag green-badge">
+            <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Near Me Chip -->
+          <ion-chip [class.near-me-active]="isNearMeActive" [color]="isNearMeActive ? 'success' : 'medium'"
+            (click)="isNearMeActive ? deactivateNearMe() : activateNearMe()" class="filter-chip near-me-chip">
+            <!-- crosshair2 (filled) when active/loading -->
+            <svg *ngIf="isNearMeActive || isNearMeLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+              fill="currentColor" class="near-me-svg" viewBox="0 0 16 16">
+              <path
+                d="M8 0a.5.5 0 0 1 .5.5v.518A7 7 0 0 1 14.982 7.5h.518a.5.5 0 0 1 0 1h-.518A7 7 0 0 1 8.5 14.982v.518a.5.5 0 0 1-1 0v-.518A7 7 0 0 1 1.018 8.5H.5a.5.5 0 0 1 0-1h.518A7 7 0 0 1 7.5 1.018V.5A.5.5 0 0 1 8 0m-.5 2.02A6 6 0 0 0 2.02 7.5h1.005A5 5 0 0 1 7.5 3.025zm1 1.005A5 5 0 0 1 12.975 7.5h1.005A6 6 0 0 0 8.5 2.02zM12.975 8.5A5 5 0 0 1 8.5 12.975v1.005a6 6 0 0 0 5.48-5.48zM7.5 12.975A5 5 0 0 1 3.025 8.5H2.02a6 6 0 0 0 5.48 5.48zM10 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0" />
+            </svg>
+            <!-- crosshair (outline) when inactive -->
+            <svg *ngIf="!isNearMeActive && !isNearMeLoading" xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+              fill="currentColor" class="near-me-svg" viewBox="0 0 16 16">
+              <path
+                d="M8.5.5a.5.5 0 0 0-1 0v.518A7 7 0 0 0 1.018 7.5H.5a.5.5 0 0 0 0 1h.518A7 7 0 0 0 7.5 14.982v.518a.5.5 0 0 0 1 0v-.518A7 7 0 0 0 14.982 8.5h.518a.5.5 0 0 0 0-1h-.518A7 7 0 0 0 8.5 1.018zm-6.48 7A6 6 0 0 1 7.5 2.02v.48a.5.5 0 0 0 1 0v-.48a6 6 0 0 1 5.48 5.48h-.48a.5.5 0 0 0 0 1h.48a6 6 0 0 1-5.48 5.48v-.48a.5.5 0 0 0-1 0v.48A6 6 0 0 1 2.02 8.5h.48a.5.5 0 0 0 0-1zM8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4" />
+            </svg>
+            <ion-label>{{ (lang$ | async) === 'TC' ? translations.nearMe.TC : translations.nearMe.EN }}</ion-label>
+            <ion-icon name="close-circle" *ngIf="isNearMeActive"
+              (click)="deactivateNearMe(); $event.stopPropagation()"></ion-icon>
+          </ion-chip>
+
+          <!-- Clear All Filters Button -->
+          <ion-chip *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0" color="danger"
+            (click)="clearAllFilters()" class="filter-chip clear-chip">
+            <ion-icon name="close-outline"></ion-icon>
+            <ion-label>{{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN
+              }}</ion-label>
+          </ion-chip>
+        </div>
+      </div>
+
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <ion-segment [(ngModel)]="viewMode" (ionChange)="toggleViewMode()">
+          <ion-segment-button value="list">
+            <ion-icon name="list-outline"></ion-icon>
+          </ion-segment-button>
+          <ion-segment-button value="map">
+            <ion-icon name="map-outline"></ion-icon>
+          </ion-segment-button>
+        </ion-segment>
+      </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="results-summary" *ngIf="!isLoading && !isNearMeLoading">
+      <p class="results-count">
+        <span class="count-number">{{ isNearMeActive ? nearbyRestaurants.length : totalResults }}</span>
+        {{ isNearMeActive
+        ? ((lang$ | async) === 'TC' ? '間餐廳在附近' : 'restaurants nearby')
+        : ((lang$ | async) === 'TC' ? translations.restaurantsFound.TC : translations.restaurantsFound.EN) }}
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="isLoading || isNearMeLoading">
+      <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+      <p>{{ isNearMeLoading
+        ? ((lang$ | async) === 'TC' ? translations.gettingLocation.TC : translations.gettingLocation.EN)
+        : ((lang$ | async) === 'TC' ? translations.loading.TC : translations.loading.EN) }}</p>
+    </div>
+
+    <!-- No Results State -->
+    <div class="empty-state" *ngIf="!isLoading && !isNearMeLoading && getDisplayRestaurants().length === 0">
+      <ion-icon name="search-outline" class="empty-icon"></ion-icon>
+      <h2>{{ (lang$ | async) === 'TC' ? translations.noResults.TC : translations.noResults.EN }}</h2>
+      <p>{{ (lang$ | async) === 'TC' ? translations.tryDifferent.TC : translations.tryDifferent.EN }}</p>
+      <ion-button fill="outline" (click)="clearAllFilters(); deactivateNearMe()"
+        *ngIf="selectedDistrict || selectedKeyword || searchQuery || isNearMeActive">
+        {{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}
+      </ion-button>
+    </div>
+
+    <!-- Map View -->
+    <div class="map-view-container" *ngIf="viewMode === 'map' && !isLoading && !isNearMeLoading">
+      <div id="search-map" class="search-map"></div>
+    </div>
+
+    <!-- Restaurant Results Grid -->
+    <div class="results-grid"
+      *ngIf="viewMode === 'list' && !isLoading && !isNearMeLoading && getDisplayRestaurants().length > 0">
+      <ion-card *ngFor="let restaurant of getDisplayRestaurants()" class="restaurant-card"
+        [routerLink]="['/restaurant', restaurant.id]" button>
+
+        <!-- Restaurant Thumbnail -->
+        <div class="card-image-container">
+          <img [src]="restaurant.ImageUrl || placeholderImage"
+            [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="restaurant-image">
+          <div class="image-overlay"></div>
+          <!-- Opening status badge: bottom-left -->
+          <span class="opening-badge open" *ngIf="getOpeningStatus(restaurant) === 'open'">
+            {{ (lang$ | async) === 'TC' ? '營業中' : 'Open' }}
+          </span>
+          <span class="opening-badge closed" *ngIf="getOpeningStatus(restaurant) === 'closed'">
+            {{ (lang$ | async) === 'TC' ? '已關閉' : 'Closed' }}
+          </span>
+          <!-- Distance badge: top-right -->
+          <div class="distance-badge" *ngIf="getDistanceBadge(restaurant) as badge"
+            [class]="'distance-badge badge-' + badge.color">
+            <ion-icon name="location"></ion-icon>
+            <span>{{ badge.text }}</span>
+          </div>
+          <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
+          <span class="rating-badge">
+            <ng-container
+              *ngIf="(ratingMap[restaurant.id]?.totalReviews ?? 0) > 0 || (restaurant.rating ?? 0) > 0; else newBadge">
+              {{ formatRatingStars(ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0) }}
+              <ng-container *ngIf="ratingMap[restaurant.id]?.totalReviews">({{ ratingMap[restaurant.id]!.totalReviews
+                }})</ng-container>
+            </ng-container>
+            <ng-template #newBadge>{{ (lang$ | async) === 'TC' ? '全新' : 'New' }}</ng-template>
+          </span>
+        </div>
+
+        <!-- Restaurant Info -->
+        <ion-card-content class="card-content">
+          <h3 class="restaurant-name">
+            {{ (lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}
+          </h3>
+          <div class="card-meta">
+            <!-- Keywords (above district) -->
+            <div class="meta-row keywords-row" *ngIf="getDisplayKeywords(restaurant).length > 0">
+              <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant)">{{ kw }}</span>
+              <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant) > 2">+{{
+                getKeywordCount(restaurant) - 2 }}</span>
+            </div>
+            <!-- District -->
+            <div class="meta-row" *ngIf="restaurant.District_EN || restaurant.District_TC">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ (lang$ | async) === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</span>
+            </div>
+            <!-- Address (replaces distance in info section) -->
+            <div class="meta-row address-row"
+              *ngIf="(lang$ | async) === 'TC' ? restaurant.Address_TC : restaurant.Address_EN">
+              <ion-icon name="map-outline"></ion-icon>
+              <span>{{ (lang$ | async) === 'TC' ? restaurant.Address_TC : restaurant.Address_EN }}</span>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <!-- Infinite Scroll -->
+    <ion-infinite-scroll
+      *ngIf="viewMode === 'list' && !isNearMeActive && !isLoading && restaurants.length > 0 && currentPage < totalPages - 1"
+      threshold="15%" (ionInfinite)="loadMore($event)">
+      <ion-infinite-scroll-content loadingSpinner="null"
+        [loadingText]="(lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...'">
+        <div class="infinite-scroll-loading">
+          <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner-small">
+          <span>{{ (lang$ | async) === 'TC' ? '載入更多...' : 'Loading more...' }}</span>
+        </div>
+      </ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+
+    <!-- Bottom Spacer -->
+    <div class="bottom-spacer"></div>
+  </div>
 </ion-content>
