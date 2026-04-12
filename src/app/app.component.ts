@@ -116,9 +116,9 @@ export class AppComponent implements OnInit, OnDestroy {
                 return;
               }
 
-              // pourrice://bookings → /bookings
+              // pourrice://bookings → /booking
               if (host === 'bookings') {
-                this.router.navigateByUrl('/bookings');
+                this.router.navigateByUrl('/booking');
                 return;
               }
 
