@@ -1,14 +1,5 @@
 .shared-tab {
   --ion-toolbar-background: var(--ion-color-primary);
-  padding-bottom: env(safe-area-inset-bottom);
-  left: 0;
-  right: 0;
-  bottom: 0 !important;
-  height: calc(50px + env(safe-area-inset-bottom)) !important;
-  z-index: 60 !important;
-  background: var(--ion-background-color);
-  border-top: 3px solid var(--ion-color-light-shade);
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.12);
 }
 
 ion-tab-bar {
@@ -19,4 +10,7 @@ ion-tab-bar {
   z-index: 60 !important;
   --background: var(--ion-background-color);
   --color: var(--ion-text-color);
+  border-top: 3px solid var(--ion-color-light-shade);
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.12);
+  padding-bottom: env(safe-area-inset-bottom);
 }

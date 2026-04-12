@@ -12,8 +12,10 @@
 
         <ng-container *ngIf="!(isMobile$ | async)">
           <ion-title class="brand-title">
-            <img [src]="brandIcon$ | async" alt="Brand"
-                 class="brand-img" />
+            <a routerLink="/" class="brand-link">
+              <img [src]="brandIcon$ | async" alt="Brand"
+                   class="brand-img" />
+            </a>
           </ion-title>
         </ng-container>
       </div>

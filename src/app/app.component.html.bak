@@ -4,7 +4,7 @@
     <app-shared-menu></app-shared-menu>
   </ion-menu>
   <!-- Content that the menu will push; id must match menu contentId -->
-  <div id="menu-content" class="app-content">
+  <ion-content id="menu-content" class="app-content">
     <!-- Global header -->
     <app-shared-header></app-shared-header>
     <!-- Router outlet -->
@@ -15,5 +15,5 @@
     <app-shared-tab></app-shared-tab>
     <!-- AI Assistant (Global) -->
     <app-gemini-button></app-gemini-button>
-  </div>
+  </ion-content>
 </ion-app>

@@ -1,13 +1,22 @@
-// Header sits above the router outlet in the flex column.
-// Each page scrolls within its own <ion-content>, so the header
-// stays visible without position: fixed.
+// App shell: flex column filling the full viewport height.
+// ion-router-outlet takes the remaining space between header and tab bar.
+.app-content {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 app-shared-header {
   display: block;
+  flex-shrink: 0;
   z-index: 100;
 }
 
 // Router outlet fills the remaining vertical space
 ion-router-outlet {
   flex: 1;
+  min-height: 0;
   position: relative;
 }

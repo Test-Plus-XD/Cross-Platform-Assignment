@@ -4,7 +4,7 @@
     "type": "APK",
     "kind": "Directory"
   },
-  "applicationId": "com.example.app.test",
+  "applicationId": "com.example.cross_platform_assignment.test",
   "variantName": "debugAndroidTest",
   "elements": [
     {

@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-12 | **Version:** 1.17.5 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-12 | **Version:** 1.17.7 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1832,7 +1832,8 @@ npm run start:api        # Backend only (port 3000)
 npm test                 # Run tests
 npm run build            # Production build → www/
 npm run lint             # ESLint
-npx cap sync             # Sync to native projects
+npx ionic build           # Ionic build (production config)
+npx cap sync             # Sync to native projects (Android for now) 
 ```
 
 ### Firestore Collections
@@ -1850,9 +1851,11 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.17.5 | **Maintainer:** AI Assistant
+**Document Version:** 1.17.7 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.7** (2026-04-13): **Android blank page fix (structural) — dual router outlet + ion-content shell + cold-start layout + content margin.** Four compounding issues. **(1) `<ion-tabs>` auto-injects `<ion-router-outlet tabs="true">`** at runtime, creating two competing primary outlets; navigation was intercepted by the tabs outlet and rendered inside a 50 px-tall `.tabs-inner` (invisible). Fixed by removing `<ion-tabs>` from `tab.component.html`; standalone `<ion-tab-bar>` with `routerLink` creates no secondary outlet. **(2) `<ion-content>` as app shell wrapper** prevented `flex: 1` from taking effect on `<ion-router-outlet>` (shadow DOM scroll container ignores flex children). Fixed by replacing with `<div id="menu-content" class="app-content">` and adding flex layout. **(3) `height: 100%` failed during cold start** for unauthenticated routes (Home, Search) — `<ion-app>` has `contain: layout size style`; percentage height cannot resolve across this containment boundary in the first paint tick on Android WebView. Auth-guarded pages happened to work because the ~300–800ms Firebase auth init delay gave the layout time to settle. Fixed by changing `.app-content` to `position: absolute; inset: 0` in `app.component.scss` — resolves immediately via layout constraints. **(4) Content rendered too high on mobile** — `ion-content::part(scroll) { padding-top: 16px }` left content flush against the header. Increased to `1.5rem` in `global.scss`. **Files modified:** `app.component.html`, `app.component.scss`, `tab.component.html`, `tab.component.scss`, `global.scss`. Backup: `app.component.html.bak`.
+- **v1.17.6** (2026-04-12): Android blank page fix. Removed `*ngIf="{ mobile: (isMobile$ | async) }"` content gates from all page templates. Removed localStorage platform persistence. Made CSS mobile-first. All pages now render correctly on Android WebView (API 36+).
 - **v1.17.5** (2026-04-12): **Android native Google Sign-In + web One Tap `origin_mismatch` fix.** **(1) Android:** Replaced `signInWithRedirect()` (which caused `disallowed_useragent` in Capacitor WebView) with `@capgo/capacitor-social-login` native SDK. `SocialLogin.login()` shows the system account picker sheet — no browser involved. `SocialLogin.initialize()` called in `AppComponent.ngOnInit()`. Returns `idToken` passed to `signInWithCredential()`. `handleRedirectResult()` removed. `com.example.app://callback` intent filter removed. `accounts.google.com` removed from `capacitor.config.ts` `allowNavigation`. **(2) Web One Tap:** Added `use_fedcm_for_prompt: true` + `itp_support: true` to GSI config — FedCM (Chrome 108+) replaces the old iframe flow and avoids the JavaScript-origin check that caused `origin_mismatch`. Added `prompt(notification => ...)` callback so suppressed prompts log silently instead of opening an error page. TypeScript `google.accounts.id` declaration extended with `use_fedcm_for_prompt`, `itp_support`, `getNotDisplayedReason()`, `getMomentType()`. **Files modified:** `auth.service.ts`, `app.component.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `login.page.ts`, `package.json`.
 - **v1.17.4** (2026-04-11): **Android rendering, menu overlap, and OAuth redirect fixes.** First physical Android device test (Samsung S24U, Android 16) revealed three critical issues. **(1) Blank pages fix:** 6 page templates (`home`, `search`, `restaurant`, `store`, `booking`, `user`) wrapped all content in `*ngIf="isMobile$ | async as isMobile"` — when observable emitted `false`, Angular removed the entire DOM. Fixed by replacing with always-truthy object wrapper: `*ngIf="{ mobile: (isMobile$ | async) ?? false } as platform"` and updating all `isMobile` refs to `platform.mobile`. Login/Chat pages were unaffected (never used this pattern). **(2) App shell layout fix:** Reverted `<div class="app-shell">` (from PR #51) back to `<div class="ion-page">` — the custom shell with `overflow: hidden`, `position: absolute` on router-outlet, and `position: fixed` on header broke Ionic's layout on Android WebView. Changed menu `type="push"` to `type="overlay"`. Removed all z-index hacks (1500/2500/1000) from `app.component.scss`. **(3) Google Sign-in fix:** `signInWithPopup()` opens system browser on Android, which can't redirect back. `auth.service.ts` now uses `signInWithRedirect()` on native platforms (detected via `Capacitor.isNativePlatform()`), popup on web. Added deep link intent filter for `com.example.app` and `pourrice` schemes in `AndroidManifest.xml`. `capacitor.config.ts` configured with `androidScheme: 'https'` and `allowNavigation` narrowed to specific Firebase authDomain and Google accounts. `app.component.ts` gains `setupDeepLinkListener()` using `@capacitor/app` `appUrlOpen` event for deep link routing (`pourrice://menu/{id}` → `/restaurant/{id}`, `pourrice://bookings`, `pourrice://chat/{roomId}`, and OAuth callbacks). **(4) Capacitor v8 alignment:** `@capacitor/android` and `@capacitor/ios` upgraded from v7 to `8.3.0` (exact pin) to match `@capacitor/core` 8.3.0. Added `@capacitor/browser` `8.0.0`. **(5) PlatformService hardened:** `BehaviorSubject` now seeds with `earlyMobileCheck()` (Capacitor native bridge + UA string) before `init()` is called, ensuring mobile-first rendering. **(6) Gradle updated** from 8.11.1 to 8.13.2 for JDK 21 compatibility. **Files modified:** `home.page.html`, `search.page.html`, `restaurant.page.html`, `store.page.html`, `booking.page.html`, `user.page.html`, `app.component.html`, `app.component.scss`, `app.component.ts`, `auth.service.ts`, `platform.service.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `gradle-wrapper.properties`, `package.json`.
 - **v1.17.3** (2026-04-09): **Open/closed badge logic fix + "New" rating badge + map InfoWindow distance fallback.** (1) **`getOpeningStatus` rewritten** in both `home.page.ts` and `search.page.ts`: missing weekday in `Opening_Hours` now returns `'closed'` (not `'unknown'`); multi-period hours (`"11:30-15:00, 17:30-21:30"`) now correctly check all periods via global regex; empty `Opening_Hours` map stays `'unknown'`; default fallback changed from `'unknown'` to `'closed'`. Root cause confirmed via cURL: the test restaurant only defines Mon/Sat/Sun — Wednesday correctly now shows Closed. (2) **"New" rating badge**: when a restaurant has no reviews and no `rating` field, the badge now shows `New` / `全新` instead of being hidden — applied to search list cards, home page Nearby and Trending cards, and the map InfoWindow. (3) **Map InfoWindow distance fallback**: `distanceText` now calls `getDistanceBadge()` when `restaurant.distance` is null (non-Near-Me mode), enabling distance display for regular search results if the user has granted location permission.
@@ -1937,4 +1940,61 @@ Backup files (`.bak`) are preserved alongside each changed file.
 
 **Never gate page content behind an async observable `*ngIf`.** If platform-specific behaviour is needed in templates, use synchronous getters or CSS media queries. The `isMobile$` observable is still available for the header (back button vs nav links) and tab bar visibility — those are additive UI elements, not page content gates.
 
-- **v1.17.6** (2026-04-12): Android blank page fix. Removed `*ngIf="{ mobile: (isMobile$ | async) }"` content gates from all page templates. Removed localStorage platform persistence. Made CSS mobile-first. All pages now render correctly on Android WebView (API 36+).
+---
+
+## Android Blank Page Bug Fix (v1.17.7)
+
+### Root Causes
+
+Two structural bugs compounded to blank all pages except Login/Account/Chat on Android.
+
+#### Bug 1: `<ion-tabs>` auto-injects a secondary router outlet
+
+`tab.component.html` wrapped the tab bar in `<ion-tabs>`. Ionic's `<ion-tabs>` component **automatically injects** `<ion-router-outlet tabs="true">` into the DOM at runtime (not present in the template source):
+
+```html
+<ion-tabs>
+  <div class="tabs-inner">
+    <ion-router-outlet tabs="true" class="hydrated"></ion-router-outlet>  <!-- auto-injected by Ionic -->
+  </div>
+  <ion-tab-bar slot="bottom">...</ion-tab-bar>
+</ion-tabs>
+```
+
+This created **two competing primary router outlets**:
+1. `<ion-router-outlet>` in `app.component.html` (the intended primary outlet)
+2. `<ion-router-outlet tabs="true">` auto-injected by `<ion-tabs>` inside `app-shared-tab`
+
+Ionic's tabs outlet intercepted all navigation. Pages rendered inside `.tabs-inner` — confined within `<app-shared-tab>` which `tab.component.scss` limited to `height: calc(50px + safe-area)`. Page content rendered into an effectively invisible 50 px-tall clipped container.
+
+#### Bug 2: `<ion-content>` used as app shell wrapper
+
+`app.component.html` wrapped the router outlet in `<ion-content id="menu-content">`. `<ion-content>` manages its own virtual scroll via shadow DOM. `flex: 1` on `<ion-router-outlet>` (in `app.component.scss`) had no effect — the outlet received zero height from the scroll container. All routed page content became invisible on Android WebView.
+
+### Fix Applied
+
+1. **`tab.component.html`**: Removed `<ion-tabs>` wrapper. `<ion-tab-bar>` is now standalone — `routerLink` on `<ion-tab-button>` navigates via Angular Router without creating any secondary outlet.
+
+2. **`app.component.html`**: Replaced `<ion-content id="menu-content" class="app-content">` with `<div id="menu-content" class="app-content">`.
+
+3. **`app.component.scss`**: Changed `.app-content` to `position: absolute; inset: 0` (replacing `height: 100%`). `height: 100%` cannot resolve across `<ion-app>`'s `contain: layout size style` containment boundary during the first paint tick on Android WebView; absolute positioning resolves immediately via layout constraints. Auth-guarded pages (Booking, Store, Account) appeared to work because the Firebase auth init delay (~300–800ms) gave the layout time to settle before the route activated.
+
+4. **`tab.component.scss`**: Removed the `height: calc(50px + ...)` limit on `.shared-tab` (it was constraining the old `<ion-tabs>` container). Moved `border-top`, `box-shadow`, and `padding-bottom` onto `ion-tab-bar` directly.
+
+5. **`global.scss`**: Increased `ion-content::part(scroll) { padding-top }` from `16px` to `1.5rem` — content was rendered too close to the header on mobile.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/app/app.component.html` | `<ion-content>` → `<div>` as menu content area |
+| `src/app/app.component.scss` | `.app-content`: `height: 100%` → `position: absolute; inset: 0` |
+| `src/app/shared/tab/tab.component.html` | Removed `<ion-tabs>` wrapper; standalone `<ion-tab-bar>` |
+| `src/app/shared/tab/tab.component.scss` | Removed height constraint; moved decorative CSS to `ion-tab-bar` |
+| `src/style/global.scss` | `ion-content::part(scroll)` `padding-top`: `16px` → `1.5rem` |
+
+Backup: `src/app/app.component.html.bak`
+
+### Rules Going Forward
+1. **Never use `<ion-tabs>` unless routes are configured as tab children** in the router. `<ion-tabs>` automatically injects a secondary `<ion-router-outlet tabs="true">` which competes with the primary outlet.
+2. **Never use `<ion-content>` as the app shell wrapper**. It is designed for use inside `<ion-page>` components. Use a plain `<div>` with `position: absolute; inset: 0; display: flex; flex-direction: column` for the app shell — `height: 100%` fails across `<ion-app>`'s `contain: layout size style` boundary during Android cold start.
