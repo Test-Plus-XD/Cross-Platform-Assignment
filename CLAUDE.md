@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-12 | **Version:** 1.17.7 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-13 | **Version:** 1.17.8 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1552,6 +1552,29 @@ Register the app's **SHA-1 debug fingerprint** in **Firebase Console → Project
 
 **Files modified:** `auth.service.ts`, `app.component.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `login.page.ts`, `package.json`.
 
+### APK Blank Pages — `ion-router-outlet` Animation Promise Hang (v1.17.8)
+
+**Issue:** On Android APK, most pages (Home, Search, Store, QR scanner) rendered completely blank — only the shared header gradient and tab bar were visible. Navigating from a working page (Login) to a blank page left Login still fully visible and usable, with no visual change.
+
+**Root cause:** Ionic's `<ion-router-outlet>` manages page visibility through CSS classes (`ion-page-hidden`, `ion-page-invisible`) that are applied and removed as part of animated page transitions. The lifecycle is:
+1. Entering page starts with `ion-page-hidden` removed but `ion-page-invisible` set (transparent)
+2. An animation Promise plays (slide/elevation transition)
+3. When the Promise resolves: entering page becomes active, leaving page gets `ion-page-hidden`
+
+When `<ion-router-outlet>` is nested inside a custom `<div>` shell instead of being a direct child of `<ion-app>`, Ionic's animation engine on Android WebView fails to resolve the animation Promise. Step 3 never executes: `ion-page-hidden` / `ion-page-invisible` are never removed from the entering page — it stays permanently invisible. The leaving page retains its active state and remains visible, which is exactly what users observed.
+
+**Why Login / Bookings worked:** Login is reached via `AuthGuard` returning a `UrlTree` redirect, which Ionic processes as a direction=`none` navigation and skips the animation entirely — immediately activating the page. Bookings (for Restaurant-type users) is accessed via nav-menu `<ion-item routerLink>`, not `<ion-tab-button>`; Ionic does not apply tab-animation direction for menu-item navigations.
+
+**Why this was "very old":** The animation-Promise hang was always present. Earlier structural bugs (secondary outlet from `<ion-tabs>`, zero-height outlet from `<ion-content>` shell) masked it. Once those were fixed, the animation failure became the sole remaining cause of blank pages.
+
+**Fix:**
+1. **`[animated]="false"` on `<ion-router-outlet>`** (`app.component.html`): Bypasses the animation Promise entirely. Pages are activated synchronously on every navigation — `ion-page-hidden` / `ion-page-invisible` are removed immediately, making all pages visible.
+2. **Removed `<br><br>` and `fullscreen` attribute from `store.page.html`**: The `<br>` elements were out-of-flow siblings before `<ion-content>`, and `fullscreen` without a sibling `<ion-header>` is semantically incorrect in the shared-header shell.
+
+**Rule going forward:** Do **not** re-enable animations on `<ion-router-outlet>` unless either: (a) the outlet is moved to be a direct child of `<ion-app>`, or (b) every routed page template uses `<ion-page>` as its explicit root element (so Ionic's animation engine can measure page bounds correctly).
+
+**Files modified:** `src/app/app.component.html`, `src/app/pages/store/store.page.html`.
+
 ---
 
 ## Booking Modal Feature (v1.13.0)
@@ -1851,9 +1874,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.17.7 | **Maintainer:** AI Assistant
+**Document Version:** 1.17.8 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.8** (2026-04-13): **APK blank page root-cause fix — `[animated]="false"` on `<ion-router-outlet>`.** All previous fixes addressed structural symptoms; the underlying cause was that Ionic's animation Promise never resolved when `<ion-router-outlet>` is nested inside a `<div>` shell instead of being a direct child of `<ion-app>`. On Android WebView, the unresolved Promise means `ion-page-hidden`/`ion-page-invisible` are never removed from the entering page → page stays invisible, leaving page stays visible. Fix: `[animated]="false"` bypasses the Promise entirely, pages activate synchronously. Also removed `<br><br>` and `fullscreen` attribute from `store.page.html`. **Files modified:** `app.component.html`, `store.page.html`, `CLAUDE.md`.
 - **v1.17.7** (2026-04-13): **Android blank page fix (structural) — dual router outlet + ion-content shell + cold-start layout + content margin.** Four compounding issues. **(1) `<ion-tabs>` auto-injects `<ion-router-outlet tabs="true">`** at runtime, creating two competing primary outlets; navigation was intercepted by the tabs outlet and rendered inside a 50 px-tall `.tabs-inner` (invisible). Fixed by removing `<ion-tabs>` from `tab.component.html`; standalone `<ion-tab-bar>` with `routerLink` creates no secondary outlet. **(2) `<ion-content>` as app shell wrapper** prevented `flex: 1` from taking effect on `<ion-router-outlet>` (shadow DOM scroll container ignores flex children). Fixed by replacing with `<div id="menu-content" class="app-content">` and adding flex layout. **(3) `height: 100%` failed during cold start** for unauthenticated routes (Home, Search) — `<ion-app>` has `contain: layout size style`; percentage height cannot resolve across this containment boundary in the first paint tick on Android WebView. Auth-guarded pages happened to work because the ~300–800ms Firebase auth init delay gave the layout time to settle. Fixed by changing `.app-content` to `position: absolute; inset: 0` in `app.component.scss` — resolves immediately via layout constraints. **(4) Content rendered too high on mobile** — `ion-content::part(scroll) { padding-top: 16px }` left content flush against the header. Increased to `1.5rem` in `global.scss`. **Files modified:** `app.component.html`, `app.component.scss`, `tab.component.html`, `tab.component.scss`, `global.scss`. Backup: `app.component.html.bak`.
 - **v1.17.6** (2026-04-12): Android blank page fix. Removed `*ngIf="{ mobile: (isMobile$ | async) }"` content gates from all page templates. Removed localStorage platform persistence. Made CSS mobile-first. All pages now render correctly on Android WebView (API 36+).
 - **v1.17.5** (2026-04-12): **Android native Google Sign-In + web One Tap `origin_mismatch` fix.** **(1) Android:** Replaced `signInWithRedirect()` (which caused `disallowed_useragent` in Capacitor WebView) with `@capgo/capacitor-social-login` native SDK. `SocialLogin.login()` shows the system account picker sheet — no browser involved. `SocialLogin.initialize()` called in `AppComponent.ngOnInit()`. Returns `idToken` passed to `signInWithCredential()`. `handleRedirectResult()` removed. `com.example.app://callback` intent filter removed. `accounts.google.com` removed from `capacitor.config.ts` `allowNavigation`. **(2) Web One Tap:** Added `use_fedcm_for_prompt: true` + `itp_support: true` to GSI config — FedCM (Chrome 108+) replaces the old iframe flow and avoids the JavaScript-origin check that caused `origin_mismatch`. Added `prompt(notification => ...)` callback so suppressed prompts log silently instead of opening an error page. TypeScript `google.accounts.id` declaration extended with `use_fedcm_for_prompt`, `itp_support`, `getNotDisplayedReason()`, `getMomentType()`. **Files modified:** `auth.service.ts`, `app.component.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `login.page.ts`, `package.json`.
