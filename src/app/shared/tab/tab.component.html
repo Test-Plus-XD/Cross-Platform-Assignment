@@ -1,42 +1,68 @@
 <!-- Tab bar rendered only when UIService says to show (mobile platform) -->
 <div id="app-shared-tab" class="shared-tab" *ngIf="showTabs$ | async">
   <ng-container *ngIf="appState$ | async as appState">
-    <!-- Standalone ion-tab-bar (no ion-tabs wrapper) — avoids the auto-injected
-         secondary <ion-router-outlet tabs="true"> that ion-tabs creates, which
-         competed with the primary outlet and caused blank pages on Android. -->
-    <ion-tab-bar>
-      <!-- Chat button - left-most, only show when logged in -->
-      <ion-tab-button routerLink="/chat/main" *ngIf="appState.isLoggedIn">
+    <nav class="shared-tab__nav" aria-label="Primary navigation">
+      <a
+        class="shared-tab__link"
+        routerLink="/chat/main"
+        routerLinkActive="is-active"
+        *ngIf="appState.isLoggedIn"
+      >
         <ion-icon name="chatbubbles"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</ion-label>
-      </ion-tab-button>
+        <span>{{ (lang$ | async) === 'TC' ? '聊天' : 'Chat' }}</span>
+      </a>
 
-      <ion-tab-button routerLink="/home">
+      <a
+        class="shared-tab__link"
+        routerLink="/home"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
         <ion-icon name="home"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '主頁' : 'Home' }}</ion-label>
-      </ion-tab-button>
+        <span>{{ (lang$ | async) === 'TC' ? '主頁' : 'Home' }}</span>
+      </a>
 
-      <ion-tab-button routerLink="/search">
+      <a
+        class="shared-tab__link"
+        routerLink="/search"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
         <ion-icon name="search"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</ion-label>
-      </ion-tab-button>
+        <span>{{ (lang$ | async) === 'TC' ? '搜尋' : 'Search' }}</span>
+      </a>
 
-      <ion-tab-button routerLink="/user">
+      <a
+        class="shared-tab__link"
+        routerLink="/user"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+      >
         <ion-icon name="person"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</ion-label>
-      </ion-tab-button>
+        <span>{{ (lang$ | async) === 'TC' ? '帳戶' : 'Account' }}</span>
+      </a>
 
-      <!-- Bookings button - for Diner users -->
-      <ion-tab-button routerLink="/booking" *ngIf="appState.isLoggedIn && !(isRestaurantUser$ | async)">
+      <a
+        class="shared-tab__link"
+        routerLink="/booking"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        *ngIf="appState.isLoggedIn && !(isRestaurantUser$ | async)"
+      >
         <ion-icon name="calendar"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</ion-label>
-      </ion-tab-button>
+        <span>{{ (lang$ | async) === 'TC' ? '預約' : 'Bookings' }}</span>
+      </a>
 
-      <!-- Store button - for Restaurant users -->
-      <ion-tab-button routerLink="/store" *ngIf="appState.isLoggedIn && (isRestaurantUser$ | async)">
+      <a
+        class="shared-tab__link"
+        routerLink="/store"
+        routerLinkActive="is-active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        *ngIf="appState.isLoggedIn && (isRestaurantUser$ | async)"
+      >
         <ion-icon name="storefront"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</ion-label>
-      </ion-tab-button>
-    </ion-tab-bar>
+        <span>{{ (lang$ | async) === 'TC' ? '商鋪' : 'Store' }}</span>
+      </a>
+    </nav>
   </ng-container>
 </div>

@@ -1,5 +1,6 @@
+<app-shared-header></app-shared-header>
 <!-- Page root: ion-content keeps Ionic behaviour and provides safe area / scrolling -->
-<ion-content>
+<ion-content class="home-page-content has-tab-bar">
   <!-- Expose language for template convenience -->
   <ng-container *ngIf="lang$ | async as curLang">
     <!-- Main container: mobile-first, no async guard needed -->

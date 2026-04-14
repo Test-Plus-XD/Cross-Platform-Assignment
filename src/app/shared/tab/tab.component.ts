@@ -1,4 +1,4 @@
-// Bottom tabs component; driven by UIService
+// Bottom navigation component; driven by UIService.
 import { Component, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -36,6 +36,5 @@ export class TabComponent {
 
   constructor() {
     this.showTabs$ = this.UI.showTabs$;
-    this.showTabs$.subscribe(v => console.debug('TabComponent showTabs =>', v));
   }
 }

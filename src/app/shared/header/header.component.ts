@@ -1,8 +1,9 @@
 // Shared header component that exposes language & theme controls and brand icon
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Location } from '@angular/common';
-import { Observable, BehaviorSubject, Subscription } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { Router } from '@angular/router';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
@@ -27,6 +28,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   readonly platform = inject(PlatformService);
   readonly UI = inject(UIService);
   private location = inject(Location);
+  private router = inject(Router);
 
   // Observable boolean that is true when running on mobile
   isMobile$: Observable<boolean>;
@@ -50,13 +52,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   userProfile$ = this.userService.currentProfile$;
 
   private eventHandler = (ev: Event) => this.onPageTitleEvent(ev as CustomEvent);
-  private subscriptions: Subscription[] = [];
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
   constructor() {
-    window.addEventListener('page-title', this.eventHandler as EventListener);
     // Use service observable directly for template consumption
     this.isMobile$ = this.platform.isMobile$;
     this.showHeaderMenu$ = this.UI.showHeaderMenu$;
@@ -65,17 +65,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Register global listener for page title events
     window.addEventListener('page-title', this.eventHandler as EventListener);
-
-    // Debug logs to verify what the platform service is emitting
-    this.subscriptions.push(this.platform.platform$.subscribe(p => console.debug('HeaderComponent platform =>', p)));
-    this.subscriptions.push(this.platform.isMobile$.subscribe(flag => console.debug('HeaderComponent isMobile =>', flag)));
-    this.subscriptions.push(this.UI.showHeaderMenu$.subscribe(flag => console.debug('HeaderComponent showHeaderMenu =>', flag)));
+    this.syncTitleFromActiveRoute();
   }
 
   ngOnDestroy(): void {
-    // Remove event listener and unsubscribe subscriptions
+    // Remove event listener
     window.removeEventListener('page-title', this.eventHandler as EventListener);
-    this.subscriptions.forEach(s => s.unsubscribe());
   }
 
   // Toggle theme via ThemeService
@@ -122,5 +117,20 @@ export class HeaderComponent implements OnInit, OnDestroy {
       bubbles: true,
     });
     window.dispatchEvent(event);
+  }
+
+  private syncTitleFromActiveRoute(): void {
+    let current = this.router.routerState.snapshot.root;
+    while (current.firstChild) {
+      current = current.firstChild;
+    }
+
+    const titleData = current.data['title'];
+    if (titleData) {
+      this.pageTitleSubject.next({
+        Header_EN: titleData.Header_EN || '',
+        Header_TC: titleData.Header_TC || ''
+      });
+    }
   }
 }

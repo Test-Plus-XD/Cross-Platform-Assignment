@@ -108,7 +108,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       await BarcodeScanner.requestPermissions();
 
       // Make WebView transparent so the native camera shows through.
-      // .barcode-scanner-active hides all non-modal elements (see global.scss).
+      // .barcode-scanner-active hides all non-modal elements (see src/style/global.scss).
       document.documentElement.classList.add('barcode-scanner-active');
 
       this.nativeListener = await BarcodeScanner.addListener(

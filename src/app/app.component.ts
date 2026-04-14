@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
@@ -8,7 +8,6 @@ import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { environment } from '../environments/environment';
-import { HeaderComponent } from './shared/header/header.component';
 import { ThemeService } from './services/theme.service';
 import { LayoutService } from './services/layout.service';
 import { LanguageService } from './services/language.service';
@@ -40,8 +39,6 @@ export class AppComponent implements OnInit, OnDestroy {
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
     private ngZone = inject(NgZone);
-
-    @ViewChild(HeaderComponent) header!: HeaderComponent;
 
     // Cleanup subject
     private destroy$ = new Subject<void>();
@@ -78,10 +75,11 @@ export class AppComponent implements OnInit, OnDestroy {
           }
 
           // Read the 'title' data field if it exists
-          const titleData = current.snapshot.data['title'];
-          if (titleData && this.header) {
-            this.header.emitPageTitle(titleData);
-          }
+          const titleData = current.snapshot.data['title'] ?? { Header_EN: '', Header_TC: '' };
+          window.dispatchEvent(new CustomEvent('page-title', {
+            detail: titleData,
+            bubbles: true,
+          }));
         });
     }
 

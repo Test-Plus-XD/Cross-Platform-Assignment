@@ -1,19 +1,12 @@
 <ion-app>
   <!-- Global Menu -->
-  <ion-menu side="start" menuId="main-menu" contentId="menu-content" type="push">
+  <ion-menu side="start" menuId="main-menu" contentId="main-content" type="push">
     <app-shared-menu></app-shared-menu>
   </ion-menu>
-  <!-- Content that the menu will push; id must match menu contentId -->
-  <div id="menu-content" class="app-content">
-    <!-- Global header -->
-    <app-shared-header></app-shared-header>
-    <!-- Router outlet -->
-    <ion-router-outlet></ion-router-outlet>
-    <!-- Global footer -->
-    <app-shared-footer></app-shared-footer>
-    <!-- Mobile tab bar -->
-    <app-shared-tab></app-shared-tab>
-    <!-- AI Assistant (Global) -->
-    <app-gemini-button></app-gemini-button>
-  </div>
+  <!-- Primary routed viewport -->
+  <ion-router-outlet id="main-content"></ion-router-outlet>
+  <!-- Mobile tab bar -->
+  <app-shared-tab></app-shared-tab>
+  <!-- AI Assistant (Global) -->
+  <app-gemini-button></app-gemini-button>
 </ion-app>

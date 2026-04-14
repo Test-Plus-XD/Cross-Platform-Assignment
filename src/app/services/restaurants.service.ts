@@ -5,7 +5,6 @@ import { Observable, of, BehaviorSubject } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
-import { searchClient, SearchClient } from '@algolia/client-search';
 
 interface CacheEntry<T> {
   data: T;
@@ -70,10 +69,6 @@ export class RestaurantsService {
 
   // Base endpoint for restaurant operations
   private readonly restaurantsEndpoint = '/API/Restaurants';
-  // Algolia index name for restaurant searches
-  private readonly algoliaIndexName = 'Restaurants';
-  // Algolia client initialised with search-only key for client queries
-  private readonly algoliaClient: SearchClient;
   // Local cache to reduce network calls
   private readonly restaurantsCache = new BehaviorSubject<Restaurant[] | null>(null);
   // TTL cache for single restaurant lookups (10 min)
@@ -90,8 +85,6 @@ export class RestaurantsService {
 
   constructor() {
     console.log('RestaurantsService: Initialised');
-    // Initialise Algolia client with credentials from environment
-    this.algoliaClient = searchClient(environment.algoliaAppId, environment.algoliaSearchKey);
   }
 
   /// Sanitise image URL to handle backend em dash replacement.
@@ -118,8 +111,9 @@ export class RestaurantsService {
     return Date.now() - timestamp < ttlMs;
   }
 
-  /// Search restaurants using Algolia with pagination and filters.
-  /// Uses the array request form for broad compatibility with Algolia client.
+  /// Search restaurants using the backend search endpoint with simple district/keyword filters.
+  /// Avoid eager client-side Algolia initialisation here because pages that only need
+  /// restaurant CRUD should not pay the runtime cost or risk WebView compatibility issues.
   searchRestaurants(
     query: string,
     districtEn: string,
@@ -128,85 +122,15 @@ export class RestaurantsService {
     page = 0,
     hitsPerPage = 10
   ): Observable<{ hits: Restaurant[]; nbHits: number; page: number; nbPages: number }> {
-    // Helper function to escape and quote filter values properly
-    const quoteFilterValue = (value: string): string => {
-      const safe = String(value || '').replace(/"/g, '').trim();
-      return /\s/.test(safe) ? `"${safe}"` : safe;
-    };
-
-    // Build filter string using AND to combine multiple conditions
     const filterParts: string[] = [];
     if (districtEn && districtEn.trim() !== '') {
-      filterParts.push(`District_EN:${quoteFilterValue(districtEn)}`);
+      filterParts.push(`District_EN:"${String(districtEn).replace(/"/g, '\\"').trim()}"`);
     }
     if (selectedKeywordEn && selectedKeywordEn.trim() !== '') {
-      filterParts.push(`Keyword_EN:${quoteFilterValue(selectedKeywordEn)}`);
+      filterParts.push(`Keyword_EN:"${String(selectedKeywordEn).replace(/"/g, '\\"').trim()}"`);
     }
     const filtersString = filterParts.length ? filterParts.join(' AND ') : undefined;
-
-    // Build params object for Algolia search request
-    const params: any = {
-      query: query ?? '',
-      page,
-      hitsPerPage
-    };
-    if (filtersString) params.filters = filtersString;
-
-    console.log('RestaurantsService: Algolia search params:', JSON.stringify(params));
-
-    // Use the array-request form which reliably returns results[0]
-    return new Observable(observer => {
-      this.algoliaClient.search([
-        {
-          indexName: this.algoliaIndexName,
-          params
-        }
-      ])
-        .then((result: any) => {
-          // Normalise result structure expecting result.results[0]
-          const searchResult = result && Array.isArray(result.results) ? result.results[0] : null;
-          if (!searchResult) {
-            observer.next({ hits: [], nbHits: 0, page: 0, nbPages: 0 });
-            observer.complete();
-            return;
-          }
-
-          // Map Algolia hits to Restaurant interface
-          const hits: Restaurant[] = (searchResult.hits || []).map((h: any) => ({
-            id: h.objectID,
-            Name_EN: h.Name_EN ?? null,
-            Name_TC: h.Name_TC ?? null,
-            Address_EN: h.Address_EN ?? null,
-            Address_TC: h.Address_TC ?? null,
-            District_EN: h.District_EN ?? null,
-            District_TC: h.District_TC ?? null,
-            Latitude: h.Latitude ?? null,
-            Longitude: h.Longitude ?? null,
-            Keyword_EN: h.Keyword_EN ?? null,
-            Keyword_TC: h.Keyword_TC ?? null,
-            Opening_Hours: h.Opening_Hours ?? null,
-            Seats: h.Seats ?? null,
-            Contacts: h.Contacts ?? null,
-            ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
-            Payments: this.sanitizePayments(h.Payments),
-            ownerId: h.Owner ?? h.ownerId ?? null,
-            reviewsId: h.reviewsId ?? null,
-            rating: h.rating ?? null
-          }));
-
-          observer.next({
-            hits,
-            nbHits: searchResult.nbHits ?? 0,
-            page: searchResult.page ?? 0,
-            nbPages: searchResult.nbPages ?? 0
-          });
-          observer.complete();
-        })
-        .catch((err: any) => {
-          console.error('RestaurantsService: Algolia search error:', err);
-          observer.error(err);
-        });
-    });
+    return this.searchRestaurantsWithFilters(query, filtersString, lang, page, hitsPerPage);
   }
 
   /// Search using Algolia with custom filter string and pagination.

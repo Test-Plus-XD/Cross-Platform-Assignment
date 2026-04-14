@@ -1,0 +1,52 @@
+<app-shared-header></app-shared-header>
+
+<ion-content class="has-tab-bar">
+  <div class="page-container">
+    <ion-card class="test-card">
+      <ion-card-header>
+        <ion-card-subtitle>Temporary APK diagnostics</ion-card-subtitle>
+        <ion-card-title>{{ routeLabel }}</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content>
+        <p>{{ routeDescription }}</p>
+        <p><strong>Current route:</strong> <code>{{ currentUrl }}</code></p>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card class="test-card">
+      <ion-card-header>
+        <ion-card-title>routerLink buttons</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content class="button-grid">
+        <ion-button
+          *ngFor="let target of linkTargets"
+          expand="block"
+          fill="outline"
+          color="primary"
+          [routerLink]="target.url"
+        >
+          {{ target.label }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card class="test-card">
+      <ion-card-header>
+        <ion-card-title>navigateByUrl() buttons</ion-card-title>
+      </ion-card-header>
+
+      <ion-card-content class="button-grid">
+        <ion-button
+          *ngFor="let target of linkTargets"
+          expand="block"
+          color="secondary"
+          (click)="navigate(target.url)"
+        >
+          {{ target.label }}
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </div>
+</ion-content>

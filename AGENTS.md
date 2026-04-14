@@ -1,6 +1,6 @@
 # AGENTS.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-14 | **Version:** 1.17.11 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-15 | **Version:** 1.17.12 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -114,6 +114,8 @@ src/app/
 - **Socket.IO:** `..\Railway-Socket` (deployed to Railway)
 
 **IMPORTANT FOR AI AGENTS:**
+Treat `CLAUDE.md` as the canonical companion AGENT/session log for this repo. Read `CLAUDE.md` at the start of every session and update `CLAUDE.md` before ending every session.
+
 When working with API endpoints, **always read `..\Vercel-Express-API\API.md`** to verify:
 - Correct endpoint paths and HTTP methods
 - Required request body fields and their types

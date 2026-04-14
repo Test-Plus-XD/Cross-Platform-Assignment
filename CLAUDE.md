@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-14 | **Version:** 1.17.11 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-04-15 | **Version:** 1.17.12 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -114,6 +114,8 @@ src/app/
 - **Socket.IO:** `..\Railway-Socket` (deployed to Railway)
 
 **IMPORTANT FOR AI AGENTS:**
+Treat `CLAUDE.md` as the canonical companion AGENT/session log for this repo. Read `CLAUDE.md` at the start of every session and update `CLAUDE.md` before ending every session.
+
 When working with API endpoints, **always read `..\Vercel-Express-API\API.md`** to verify:
 - Correct endpoint paths and HTTP methods
 - Required request body fields and their types
@@ -700,6 +702,7 @@ ngOnInit() {
 **Features:**
 - Image URL sanitization (em dash fix, v1.5.2)
 - Menu item management (sub-collection)
+- Search now routes through the backend `/API/Algolia/Restaurants` endpoint only. Do not restore eager direct Algolia client initialization inside `RestaurantsService`; that dead constructor-time path broke native route activation on pages that inject the service (Home/Search/Store/QR scanner).
 
 ### 4. UserService (`user.service.ts`)
 **Purpose:** User profile management
@@ -1024,7 +1027,7 @@ isRestaurantUser$ = this.userService.currentProfile$.pipe(
 - **Web (Chrome/Edge 83+):** `getUserMedia({ facingMode: 'environment' })` → `<video>` element + `BarcodeDetector` API polling every 400 ms.
 - **Web fallback:** If `BarcodeDetector` is unavailable, shows an informational message prompting the user to use Chrome/Edge or the native app.
 - On a valid scan: validates URL scheme (`pourrice:` + hostname `menu`), fetches restaurant via `RestaurantsService.getRestaurantById()`, then navigates to `/restaurant/:id`.
-- CSS modal class `.qr-scanner-modal` (full-screen, no border-radius) defined in `global.scss`.
+- CSS modal class `.qr-scanner-modal` (full-screen, no border-radius) defined in `src/style/global.scss`.
 
 ### Button Mutual Exclusivity (v1.8.0)
 **ChatVisibilityService** ensures only one chat interface (Chat or Gemini) is visible at a time. Opening one automatically closes the other to prevent user confusion from overlapping chat boxes.
@@ -1552,38 +1555,6 @@ Register the app's **SHA-1 debug fingerprint** in **Firebase Console → Project
 
 **Files modified:** `auth.service.ts`, `app.component.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `login.page.ts`, `package.json`.
 
-### APK Blank Pages — `ion-router-outlet` Animation Promise Hang (v1.17.8)
-
-**Issue:** On Android APK, most pages (Home, Search, Store, QR scanner) rendered completely blank — only the shared header gradient and tab bar were visible. Navigating from a working page (Login) to a blank page left Login still fully visible and usable, with no visual change.
-
-**Root cause:** Ionic's `<ion-router-outlet>` manages page visibility through CSS classes (`ion-page-hidden`, `ion-page-invisible`) that are applied and removed as part of animated page transitions. The lifecycle is:
-1. Entering page starts with `ion-page-hidden` removed but `ion-page-invisible` set (transparent)
-2. An animation Promise plays (slide/elevation transition)
-3. When the Promise resolves: entering page becomes active, leaving page gets `ion-page-hidden`
-
-When `<ion-router-outlet>` is nested inside a custom `<div>` shell instead of being a direct child of `<ion-app>`, Ionic's animation engine on Android WebView fails to resolve the animation Promise. Step 3 never executes: `ion-page-hidden` / `ion-page-invisible` are never removed from the entering page — it stays permanently invisible. The leaving page retains its active state and remains visible, which is exactly what users observed.
-
-**Why Login / Bookings worked:** Login is reached via `AuthGuard` returning a `UrlTree` redirect, which Ionic processes as a direction=`none` navigation and skips the animation entirely — immediately activating the page. Bookings (for Restaurant-type users) is accessed via nav-menu `<ion-item routerLink>`, not `<ion-tab-button>`; Ionic does not apply tab-animation direction for menu-item navigations.
-
-**Why this was "very old":** The animation-Promise hang was always present. Earlier structural bugs (secondary outlet from `<ion-tabs>`, zero-height outlet from `<ion-content>` shell) masked it. Once those were fixed, the animation failure became the sole remaining cause of blank pages.
-
-**Fix (v1.17.8 — partial):**
-1. **`[animated]="false"` on `<ion-router-outlet>`** (`app.component.html`): Intended to bypass the animation Promise, but insufficient alone — see v1.17.9.
-2. **Removed `<br><br>` and `fullscreen` attribute from `store.page.html`**: The `<br>` elements were out-of-flow siblings before `<ion-content>`, and `fullscreen` without a sibling `<ion-header>` is semantically incorrect in the shared-header shell.
-
-**Completing fix (v1.17.9):**
-3. **`IonicModule.forRoot({ animated: false })` in `app.module.ts`**: In Ionic 8's module-based Angular setup, `IonRouterOutlet` reads the `animated` flag from the **global Ionic config** via `getIonicConfig('animated')`, not from the component-level `@Input() animated` binding. Because `IonicModule.forRoot()` was called with no config object, the global defaulted to `animated: true`, silently overriding the `[animated]="false"` template binding. Adding `{ animated: false }` to `forRoot()` sets the authoritative global config, ensuring `IonRouterOutlet` skips the animation pipeline for ALL navigations.
-
-**Rule going forward:** To disable animations on `<ion-router-outlet>` when it is nested in a custom shell (not a direct child of `<ion-app>`), **both** of the following are required:
-- `IonicModule.forRoot({ animated: false })` in `app.module.ts` — sets the global Ionic config (authoritative).
-- `[animated]="false"` on `<ion-router-outlet>` in `app.component.html` — component-level guard.
-
-Neither alone is sufficient in Ionic 8 module-based Angular. Do **not** re-enable animations unless the outlet is moved to be a direct child of `<ion-app>`, or every routed page uses `<ion-page>` as its explicit root element.
-
-**Files modified:** `src/app/app.component.html`, `src/app/pages/store/store.page.html`, `src/app/app.module.ts`, `src/style/global.scss`, `CLAUDE.md`.
-
----
-
 ## Booking Modal Feature (v1.13.0)
 
 **Component:** `BookingModalComponent` (`restaurant/booking-modal.component.ts|html|scss`)
@@ -1768,7 +1739,7 @@ app.method('/API/Resource', authenticate, async (request, response) => {
 8. Don't skip ownership checks on protected routes
 9. **Never use `transition: all` in CSS** — it causes `transitionend` events to flood zone.js during Ionic modal animations, freezing the entire PWA. Always scope transitions to specific properties (e.g. `transition: transform 0.3s ease, box-shadow 0.3s ease`)
 10. ~~**Never use `<ion-router-outlet>` in a custom div shell** — superseded by rule 11.~~
-11. **Never use plain Angular `<router-outlet>` in an Ionic app.** `<ion-router-outlet>` MUST be a direct child of `<ion-app>`, and every routed page component MUST start with `<ion-page>`. These are mandated by Ionic's `StackController` (which manages `ion-page-hidden`/`ion-page-invisible` CSS classes to hand the viewport to the entering page). Without `<ion-page>`, `StackController.getIonPageElement()` finds nothing to activate and the page stays permanently invisible on Android WebView. Without `<ion-router-outlet>` as a direct child of `<ion-app>`, `StackController.containerEl.commit()` hangs. Both conditions must hold simultaneously.
+11. **Never use plain Angular `<router-outlet>` in an Ionic app.** `<ion-router-outlet>` should remain the primary routed viewport and should sit directly under `<ion-app>`. In Ionic Angular, routed page templates should expose `ion-header` / `ion-content` directly and must **not** add an extra inner `<ion-page>` wrapper; the routed component host already serves as the page. The shell-level outlet ownership rule and the page-level no-extra-`ion-page` rule must both hold together.
 
 ### When Making Changes
 
@@ -1889,8 +1860,8 @@ API (verify) → Extract UID → Ownership checks
 - **v1.17.12** (2026-04-15): **APK blank pages — definitive fix: Ionic-native shell refactor.** Root cause: the shell used a plain Angular `<router-outlet>` inside a `<div>` wrapper, and no routed page had an `<ion-page>` wrapper. Ionic's `StackController.getIonPageElement()` queries for `.ion-page` descendants to toggle `ion-page-hidden`/`ion-page-invisible`; with no `.ion-page` present the entering component stays permanently invisible. Previous attempts (v1.17.8–v1.17.11) tried workarounds (disabling animations, `delay(0)` guards, ViewEncapsulation moves) — all treated symptoms rather than the structural mismatch. **Fix (three batches):** **(Batch A)** Every routed page wrapped in `<ion-page>` with `<app-shared-header>` placed before `<ion-content>` (9 files). `<ion-content class="has-tab-bar">` applied to all pages except login (Batch C). **(Batch B — atomic shell swap)** `app.component.html`: `<router-outlet>` → `<ion-router-outlet id="main-content">` as direct child of `<ion-app>`; custom `<div id="menu-content">` shell removed; `<app-shared-header>` removed from shell (now per-page); `ion-menu contentId` changed to `"main-content"`, `type` to `"overlay"`. `app.component.ts`: removed `@ViewChild(HeaderComponent)`, replaced `this.header.emitPageTitle()` with `window.dispatchEvent(new CustomEvent('page-title', ...))` — every per-page `HeaderComponent` instance already listens on `window` for this event. `app.component.scss`: emptied (no shell layout rules needed). `global.scss`: removed `router-outlet + *` sizing rule; added `ion-content.has-tab-bar { --padding-bottom: calc(56px + env(safe-area-inset-bottom)) }`. `app-routing.module.ts`: removed `LayoutGuard` import and all `canActivate: [LayoutGuard]` entries. `guard.service.ts`: deleted `LayoutGuard` class, pruned unused `delay`/`of` imports. 5 page modules (`home`, `search`, `user`, `booking`, `login`) gained `SharedModule` import so `<app-shared-header>` resolves. **New rule 11:** Never use plain `<router-outlet>` in an Ionic app — `<ion-router-outlet>` must be a direct child of `<ion-app>` and every routed page must start with `<ion-page>`. Supersedes the v1.17.10/v1.17.11 guidance to use `<router-outlet>`. **Files modified:** `app.component.html`, `app.component.ts`, `app.component.scss`, `global.scss`, `app-routing.module.ts`, `guard.service.ts`, `home/search/restaurant/user/booking/store/login/chat .page.html`, `restaurant-info-modal.component.html`, `home/search/user/booking/login .module.ts`, `CLAUDE.md`.
 - **v1.17.11** (2026-04-14): **APK blank pages — complete fix: `<router-outlet>` + global CSS + LayoutGuard.** Three compounding issues. **(1) ViewEncapsulation:** v1.17.10 placed `router-outlet + *` CSS in `app.component.scss`, but Angular's `ViewEncapsulation.Emulated` scoped it with `[_ngcontent-XXX]` attributes that dynamically inserted route components don't carry. Moved to `global.scss`. **(2) overflow: hidden:** The `overflow: hidden` on `router-outlet + *` prevented Android WebView from repainting the compositing layer when components were swapped. Removed. **(3) Sync vs async route activation:** Routes with `AuthGuard` worked on APK while unguarded routes didn't. `AuthGuard` returns an Observable pipeline (`filter` → `switchMap` → `map`) which forces Angular's router to process activation asynchronously. Unguarded routes activate synchronously — on Android WebView, synchronous component insertion doesn't trigger a repaint of the rendering pipeline. Created `LayoutGuard` (`of(true).pipe(delay(0))`) and added it to all public routes (`/home`, `/search`, `/restaurant/:id`, `/login`). The `delay(0)` schedules emission in a macrotask, giving the WebView time to process layout changes. **Files modified:** `app.component.html`, `app.component.scss`, `global.scss`, `guard.service.ts`, `app-routing.module.ts`, `CLAUDE.md`.
 - **v1.17.10** (2026-04-14): **APK blank pages — partial fix attempt via `<router-outlet>` (incomplete).** Root cause confirmed: `StackController.transition()` unconditionally calls `containerEl.commit()` on Android WebView regardless of `animated` setting; the Promise hangs when `<ion-router-outlet>` is nested in a `<div>` shell; `ion-page-invisible` never removed. Switched `<ion-router-outlet>` to `<router-outlet>` in template and reverted `IonicModule.forRoot({ animated: false })` to `IonicModule.forRoot()`. **However:** `app.component.scss` was not updated (still targeted `ion-router-outlet`), so all pages went blank. `app.component.html` was reverted. Fix completed in v1.17.11. Root cause confirmed from Ionic 8 source (`ionic-angular-common.mjs`): `StackController.transition()` unconditionally calls `containerEl.commit()` on the `ion-router-outlet` Stencil web component regardless of `animated` setting. `animated: false` only sets `duration: 0` inside `commit()` — it does NOT prevent `commit()` from being called. On Android WebView, `commit()` hangs when `ion-router-outlet` is nested inside a `<div>` shell. Since `ion-page-invisible` removal only runs after `commit()` resolves, entering pages stay permanently transparent. v1.17.8 (`[animated]="false"`) and v1.17.9 (`IonicModule.forRoot({ animated: false })`) both failed because they targeted the animation duration, not the `commit()` call itself. **Fix:** Replace `<ion-router-outlet>` with standard Angular `<router-outlet>` in `app.component.html`. Angular's router outlet creates/destroys components directly without `StackController`, `wait()`, `commit()`, or any `ion-page-hidden`/`ion-page-invisible` management. Pages are immediately visible on activation. `app.component.scss` updated: `ion-router-outlet` styles replaced with `router-outlet + *` (targets the dynamically inserted page component sibling). `IonicModule.forRoot({ animated: false })` reverted to `IonicModule.forRoot()` — restores natural overlay animations for modals/alerts/toasts (previously only disabled to work around routing; CSS `transition: all` bug was already fixed in v1.14.0). `ionViewWillEnter()` removed from `store.page.ts` (with standard router-outlet, `/store/edit-info` is a sibling route — navigating back to `/store` destroys and recreates `StorePage`, so `ngOnInit()` handles data reload automatically). `ionViewDidLeave()` removed from `user.page.ts` (component destruction resets instance state). **New rule:** Never use `<ion-router-outlet>` when the outlet is not a direct child of `<ion-app>`. In a custom div shell, always use `<router-outlet>`. **Files modified:** `app.component.html`, `app.component.scss`, `app.module.ts`, `store.page.ts`, `user.page.ts`, `CLAUDE.md`.
-- **v1.17.9** (2026-04-14): **APK blank pages — completing fix via `IonicModule.forRoot({ animated: false })`.** PR #53 / v1.17.8 added `[animated]="false"` to `<ion-router-outlet>` in the template, which was necessary but insufficient. In Ionic 8 module-based Angular, `IonRouterOutlet` reads the `animated` flag from the global Ionic config (`getIonicConfig('animated')`) before consulting the component `@Input`. Because `IonicModule.forRoot()` was called without a config object, the global default `animated: true` remained active and the template binding was silently ignored. Fix: changed `IonicModule.forRoot()` to `IonicModule.forRoot({ animated: false })` in `app.module.ts`. Also reverted uncommitted local modification in `global.scss` (`padding-top: 1.2px` → `padding-top: 16px`). **Files modified:** `src/app/app.module.ts`, `src/style/global.scss`, `CLAUDE.md`.
-- **v1.17.8** (2026-04-13): **APK blank page root-cause fix — `[animated]="false"` on `<ion-router-outlet>`.** All previous fixes addressed structural symptoms; the underlying cause was that Ionic's animation Promise never resolved when `<ion-router-outlet>` is nested inside a `<div>` shell instead of being a direct child of `<ion-app>`. On Android WebView, the unresolved Promise means `ion-page-hidden`/`ion-page-invisible` are never removed from the entering page → page stays invisible, leaving page stays visible. Fix: `[animated]="false"` bypasses the Promise entirely, pages activate synchronously. Also removed `<br><br>` and `fullscreen` attribute from `store.page.html`. **Files modified:** `app.component.html`, `store.page.html`, `CLAUDE.md`.
+- **v1.17.9** (2026-04-14): **Superseded APK blank-page investigation.** This session incorrectly attributed the remaining native blank pages to Ionic animation config (`IonicModule.forRoot({ animated: false })`). Keep it only as history; the accurate combined shell + `RestaurantsService` root cause is documented in the dedicated **Android Blank Page Bug Fix (v1.17.12)** section below.
+- **v1.17.8** (2026-04-13): **Superseded APK blank-page investigation.** This session incorrectly treated `[animated]="false"` on `<ion-router-outlet>` as the root-cause fix. It was not the durable fix. Keep it only as history; use the v1.17.12 explanation instead.
 - **v1.17.7** (2026-04-13): **Android blank page fix (structural) — dual router outlet + ion-content shell + cold-start layout + content margin.** Four compounding issues. **(1) `<ion-tabs>` auto-injects `<ion-router-outlet tabs="true">`** at runtime, creating two competing primary outlets; navigation was intercepted by the tabs outlet and rendered inside a 50 px-tall `.tabs-inner` (invisible). Fixed by removing `<ion-tabs>` from `tab.component.html`; standalone `<ion-tab-bar>` with `routerLink` creates no secondary outlet. **(2) `<ion-content>` as app shell wrapper** prevented `flex: 1` from taking effect on `<ion-router-outlet>` (shadow DOM scroll container ignores flex children). Fixed by replacing with `<div id="menu-content" class="app-content">` and adding flex layout. **(3) `height: 100%` failed during cold start** for unauthenticated routes (Home, Search) — `<ion-app>` has `contain: layout size style`; percentage height cannot resolve across this containment boundary in the first paint tick on Android WebView. Auth-guarded pages happened to work because the ~300–800ms Firebase auth init delay gave the layout time to settle. Fixed by changing `.app-content` to `position: absolute; inset: 0` in `app.component.scss` — resolves immediately via layout constraints. **(4) Content rendered too high on mobile** — `ion-content::part(scroll) { padding-top: 16px }` left content flush against the header. Increased to `1.5rem` in `global.scss`. **Files modified:** `app.component.html`, `app.component.scss`, `tab.component.html`, `tab.component.scss`, `global.scss`. Backup: `app.component.html.bak`.
 - **v1.17.6** (2026-04-12): Android blank page fix. Removed `*ngIf="{ mobile: (isMobile$ | async) }"` content gates from all page templates. Removed localStorage platform persistence. Made CSS mobile-first. All pages now render correctly on Android WebView (API 36+).
 - **v1.17.5** (2026-04-12): **Android native Google Sign-In + web One Tap `origin_mismatch` fix.** **(1) Android:** Replaced `signInWithRedirect()` (which caused `disallowed_useragent` in Capacitor WebView) with `@capgo/capacitor-social-login` native SDK. `SocialLogin.login()` shows the system account picker sheet — no browser involved. `SocialLogin.initialize()` called in `AppComponent.ngOnInit()`. Returns `idToken` passed to `signInWithCredential()`. `handleRedirectResult()` removed. `com.example.app://callback` intent filter removed. `accounts.google.com` removed from `capacitor.config.ts` `allowNavigation`. **(2) Web One Tap:** Added `use_fedcm_for_prompt: true` + `itp_support: true` to GSI config — FedCM (Chrome 108+) replaces the old iframe flow and avoids the JavaScript-origin check that caused `origin_mismatch`. Added `prompt(notification => ...)` callback so suppressed prompts log silently instead of opening an error page. TypeScript `google.accounts.id` declaration extended with `use_fedcm_for_prompt`, `itp_support`, `getNotDisplayedReason()`, `getMomentType()`. **Files modified:** `auth.service.ts`, `app.component.ts`, `capacitor.config.ts`, `AndroidManifest.xml`, `login.page.ts`, `package.json`.
@@ -1898,7 +1869,7 @@ API (verify) → Extract UID → Ownership checks
 - **v1.17.3** (2026-04-09): **Open/closed badge logic fix + "New" rating badge + map InfoWindow distance fallback.** (1) **`getOpeningStatus` rewritten** in both `home.page.ts` and `search.page.ts`: missing weekday in `Opening_Hours` now returns `'closed'` (not `'unknown'`); multi-period hours (`"11:30-15:00, 17:30-21:30"`) now correctly check all periods via global regex; empty `Opening_Hours` map stays `'unknown'`; default fallback changed from `'unknown'` to `'closed'`. Root cause confirmed via cURL: the test restaurant only defines Mon/Sat/Sun — Wednesday correctly now shows Closed. (2) **"New" rating badge**: when a restaurant has no reviews and no `rating` field, the badge now shows `New` / `全新` instead of being hidden — applied to search list cards, home page Nearby and Trending cards, and the map InfoWindow. (3) **Map InfoWindow distance fallback**: `distanceText` now calls `getDistanceBadge()` when `restaurant.distance` is null (non-Near-Me mode), enabling distance display for regular search results if the user has granted location permission.
 - **v1.17.2** (2026-04-09): **Opening/rating badge fixes + trending restaurants from real API.** (1) **Home page Trending section now loads real restaurants from API** sorted by `rating` descending (replaces static mock data); this gives cards access to `Opening_Hours` and `rating` so all badges render correctly. (2) **`rating` field added to Algolia hit mappings** in both `searchRestaurants()` and `searchRestaurantsWithFilters()` in `restaurants.service.ts` — search results now carry `restaurant.rating` directly. (3) **Search page map InfoWindow content built at click time** (moved from marker-creation time) so `ratingMap` is always fresh; `restaurant.rating` used as immediate fallback when `ratingMap` hasn't loaded yet. (4) **Rating badge review count** now uses `*ngIf` guard so `()` is never shown without a count — fixed in `home.page.html` (both Nearby and Trending cards) and `search.page.html`.
 - **v1.17.1** (2026-04-06): **Cross-platform feature parity.** (1) **Account type selector**: `UserTypeSelectionComponent` shown as a non-dismissable bottom sheet to new users (post-registration). Calls `PUT /API/Users/:uid { type }` on selection; `UserService` exposes `needsAccountTypeSelection$` observable; sheet auto-dismisses on success. (2) **Opening status badges on Home page cards**: Nearby and Trending restaurant cards now show green `Open` / red `Closed` pill overlaid on the card thumbnail. Badge computed from `Restaurant.Opening_Hours` using `Intl.DateTimeFormat` with `Asia/Hong_Kong` timezone — same `getOpeningStatus()` helper as search cards. (3) **Review image upload**: `ReviewsService` gains `uploadReviewImage(file: File, token: string): Observable<string>` calling `POST /API/Images/upload?folder=Reviews` (multipart). `RestaurantPage` review submission form includes file input with preview; selected image is uploaded before `createReview()` is called; `imageUrl` included in the review payload.
-- **v1.17.0** (2026-04-02): **QR code feature — generator + scanner.** Deep-link format `pourrice://menu/{restaurantId}` (identical to iOS/Android). **Generator**: `MenuQrModalComponent` (`store/menu-qr-modal/`) uses `qrcode` npm package (canvas, error correction H, 200 px display / 600 px download PNG). Opened via "Menu QR Code" button in Store → Menu tab action bar. Features: display, full-screen expand, download PNG. **Scanner**: `QrScannerModalComponent` (`shared/qr-scanner/`) accessible from nav drawer (all users, no login). Native: `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` transparent-WebView pattern + torch toggle. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+) polling every 400 ms; falls back to informational message if API unavailable. Validates URL scheme, fetches restaurant via `RestaurantsService`, navigates to `/restaurant/:id`. Global CSS (`.barcode-scanner-active`, `.qr-scanner-modal`) added to `src/global.scss`. `QrScannerModalComponent` declared in `SharedModule`; `MenuQrModalComponent` declared in `StorePageModule`.
+- **v1.17.0** (2026-04-02): **QR code feature — generator + scanner.** Deep-link format `pourrice://menu/{restaurantId}` (identical to iOS/Android). **Generator**: `MenuQrModalComponent` (`store/menu-qr-modal/`) uses `qrcode` npm package (canvas, error correction H, 200 px display / 600 px download PNG). Opened via "Menu QR Code" button in Store → Menu tab action bar. Features: display, full-screen expand, download PNG. **Scanner**: `QrScannerModalComponent` (`shared/qr-scanner/`) accessible from nav drawer (all users, no login). Native: `@capacitor-mlkit/barcode-scanning` v8 `startScan()` with `.barcode-scanner-active` transparent-WebView pattern + torch toggle. Web: `getUserMedia` + `BarcodeDetector` API (Chrome/Edge 83+) polling every 400 ms; falls back to informational message if API unavailable. Validates URL scheme, fetches restaurant via `RestaurantsService`, navigates to `/restaurant/:id`. Global CSS was originally added to `src/global.scss`; this was later corrected in v1.17.12 when it was discovered the compiled global stylesheet is `src/style/global.scss`. `QrScannerModalComponent` declared in `SharedModule`; `MenuQrModalComponent` declared in `StorePageModule`.
 - **v1.16.0** (2026-03-30): **Add New Restaurant modal.** `AddRestaurantModalComponent` (`store/add-restaurant-modal/`) lets Restaurant-type users who can't find their restaurant in the claim search create a new listing. **API flow** (no `/claim` call): `POST /API/Restaurants` with `ownerId: uid` in body (no auth, uses existing `RestaurantsService.createRestaurant()`) → `PUT /API/Users/:uid { restaurantId }` (auth auto-attached by UserService). **Form**: bilingual names (EN/TC, at least one required), address (EN/TC), district (radio AlertDialog), seats, contacts (phone/email/website), Google Maps location pin (tap to place, same `initializeMap()`/`onMapClick()` pattern as `restaurant-info-modal`), opening hours (text-input AlertDialog per weekday, `"HH:MM-HH:MM"` format), keywords (checkbox AlertDialog, shown in active language), payments (checkbox AlertDialog, shown in active language, stores EN strings). **Trigger**: "Add New Restaurant" `ion-button` in the empty-state block of `store.page.html`. `StorePage.openAddRestaurantModal()` re-calls `loadRestaurantData()` on `{ created: true }`. `StorePageModule` declares the new component. CSS: all transitions scoped to `transform, box-shadow` — no `transition: all`.
 - **v1.15.3** (2026-03-25): **API batch-stats fix + unified restaurant card redesign.** (1) Fixed critical `GET /API/Reviews/batch-stats` returning `{"error":"Review not found"}` — root cause: route was defined after `/:id`, so Express matched `batch-stats` as an ID. Fixed by moving the `/batch-stats` route before `/:id` in `Reviews.ts`. (2) Search page list card redesign: **distance badge** (blue pill, top-right of thumbnail, Near Me only), **rating badge** (gold text on dark pill, bottom-right of thumbnail), **opening status badge** (bottom-left, unchanged). Info section now shows: name → keywords row (2 tags + overflow count, above district) → district → address (replacing the old distance row). (3) Home page restaurant cards (Nearby + Trending) updated to match: rating badge on thumbnail bottom-right, keywords row in card-content, `&::part(native) { padding: 0; }` for edge-to-edge thumbnails. `HomePage` gains `ratingMap`, `formatRatingStars()`, `getDisplayKeywords()`, `getKeywordCount()`, and batch stats loading for both nearby and trending restaurants. (4) Fixed `transition: all` → `transition: transform, box-shadow` on home page cards and review card.
 - **v1.15.2** (2026-03-21): **Search card star ratings, thumbnail fix, Near Me icon fix.** (1) Near Me chip icon now uses explicit `*ngIf` switch between `locate` (filled, when active/loading) and `locate-outline` (default), fixing Ionicons dynamic `[name]` binding issue. (2) Restaurant card thumbnails now fill edge-to-edge: added `&::part(native) { padding: 0; }` to remove Ionic `ion-card` default inner padding. (3) Added star ratings to search result cards and map InfoWindows. New backend endpoint `GET /API/Reviews/batch-stats?restaurantIds=id1,id2,...` (max 50 IDs) returns `{ [restaurantId]: { totalReviews, averageRating } }` using Firestore `in` queries (chunked at 30). Frontend: `ReviewsService.getBatchStats()` method, `SearchPage.ratingMap` populated after each search/nearby call, rating row shows `★★★★☆ (12)` with gold star colour. (4) Updated `ReviewsService` exports with `getBatchStats()` method.
@@ -1929,109 +1900,61 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-## Android Blank Page Bug Fix (v1.17.6)
+## Android Blank Page Bug Fix (v1.17.12)
 
-### Root Cause
+### Accurate Root Cause
 
-All page templates (home, search, restaurant, user, booking, store) wrapped their entire content in:
+The APK blank-page bug was a two-layer native-build failure, not four unrelated page bugs:
 
-```html
-<ng-container *ngIf="{ mobile: (isMobile$ | async) ?? false } as platform">
-  <div class="page-container" [class.mobile-layout]="platform.mobile" [class.web-layout]="!platform.mobile">
-    ...all page content...
-  </div>
-</ng-container>
-```
+1. `app.component.html` wrapped the primary `ion-router-outlet` in a custom shell instead of letting Ionic own the routed viewport directly.
+2. The shared header lived outside routed pages, so route changes could leave stale header state visible while the body failed to switch.
+3. The bottom navigation was still using Ionic tab semantics even though the app is not structured as real tab-child routes.
+4. The QR-scanner transparent-WebView rules lived in dead `src/global.scss` instead of compiled `src/style/global.scss`.
+5. After the shell was corrected, the still-broken pages all shared one runtime dependency: `RestaurantsService`. That service still performed dead eager direct Algolia initialization even though the app already searches through the backend API. The working `/test/*` routes do not inject `RestaurantsService`, which is why they became the first routes to render cleanly after the shell fix.
 
-On Android WebView (Capacitor), the `async` pipe resolves asynchronously even for a `BehaviorSubject`. The `ng-container *ngIf` evaluates the object `{ mobile: false }` — which is truthy — but only **after** the async pipe emits. In certain Android WebView versions (API 36+), there is a timing window where the async pipe has not yet emitted, causing the `ng-container` to render nothing. The result: a completely blank page with only the header and tab bar visible.
-
-Additionally, `PlatformService` was persisting the detected platform to `localStorage` and reading it back on init. On a fresh Android install or after clearing app data, `localStorage` could return `'web'`, causing the service to seed `isMobile$` with `false` — making the app think it was running on desktop.
+This explains the observed symptom set:
+- stale titles and blank/stale routed bodies came from the invalid Ionic shell/header/tab composition
+- the remaining Home/Search/Store/QR failures came from the shared `RestaurantsService` runtime path
 
 ### Fix Applied
 
-1. **Removed all `*ngIf="{ mobile: (isMobile$ | async) ?? false } as platform"` wrappers** from all page templates. Page content now renders unconditionally.
-
-2. **Removed `[class.mobile-layout]` / `[class.web-layout]` conditional class bindings** from page containers. CSS is now mobile-first using `@media (min-width: 768px)` breakpoints only.
-
-3. **Removed localStorage persistence from `PlatformService`** (`readPersistedPlatform()` / `saveCurrentPlatform()`). The service now detects platform fresh on every init, relying on Capacitor's synchronous `isNativePlatform()` check and the static `earlyMobileCheck()` seed.
-
-4. **Converted `restaurant.page.scss`** `.mobile-layout` / `.web-layout` blocks to mobile-first base styles + `@media (min-width: 768px)` overrides.
+1. `ion-router-outlet` is now the direct main routed viewport under `ion-app`, with the menu attached via `contentId`.
+2. Primary routed pages now keep the Angular/Ionic page structure on the routed component host itself. In Ionic Angular, routed pages must not introduce their own inner `<ion-page>` wrapper because `ion-router-outlet` already pages the routed component host. The local shared header is flattened with `:host { display: contents; }` so its `ion-header` still behaves like a direct page child.
+3. `app.component.ts` no longer talks to the header directly. It emits a `page-title` event on `NavigationEnd`, and each routed-page header listens locally.
+4. The bottom navigation now uses plain fixed router links plus `routerLinkActive`, not Ionic tabs primitives.
+5. The active QR-scanner visibility rules were moved into `src/style/global.scss`, and `src/global.scss` was explicitly deprecated so future global fixes are not written into a dead file.
+6. `RestaurantsService` no longer imports or eagerly initializes the direct Algolia browser client. `searchRestaurants()` now delegates to the backend search path instead of constructing an unused client-side Algolia instance.
+7. A temporary public `test` feature was added at `/test/a`, `/test/b`, and `/test/c` with minimal buttons for both `[routerLink]` and `navigateByUrl()` navigation. Those routes verified that the fixed shell could switch routes correctly even before the shared restaurant-data runtime path was corrected.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/app/services/platform.service.ts` | Removed localStorage read/write; simplified init |
-| `src/app/pages/home/home.page.html` | Removed `ng-container *ngIf` wrapper; hardcoded swiper attributes |
-| `src/app/pages/search/search.page.html` | Removed `ng-container *ngIf` wrapper |
-| `src/app/pages/restaurant/restaurant.page.html` | Removed `ng-container *ngIf` wrapper |
-| `src/app/pages/user/user.page.html` | Removed `ng-container *ngIf` wrapper |
-| `src/app/pages/booking/booking.page.html` | Removed `ng-container *ngIf` wrapper |
-| `src/app/pages/store/store.page.html` | Removed `ng-container *ngIf` wrapper |
-| `src/app/pages/restaurant/restaurant.page.scss` | Converted `.mobile-layout`/`.web-layout` to mobile-first |
-| `src/app/pages/store/store.page.scss` | Added `.page-container` base styles |
-
-Backup files (`.bak`) are preserved alongside each changed file.
-
-### Rule Going Forward
-
-**Never gate page content behind an async observable `*ngIf`.** If platform-specific behaviour is needed in templates, use synchronous getters or CSS media queries. The `isMobile$` observable is still available for the header (back button vs nav links) and tab bar visibility — those are additive UI elements, not page content gates.
-
----
-
-## Android Blank Page Bug Fix (v1.17.7)
-
-### Root Causes
-
-Two structural bugs compounded to blank all pages except Login/Account/Chat on Android.
-
-#### Bug 1: `<ion-tabs>` auto-injects a secondary router outlet
-
-`tab.component.html` wrapped the tab bar in `<ion-tabs>`. Ionic's `<ion-tabs>` component **automatically injects** `<ion-router-outlet tabs="true">` into the DOM at runtime (not present in the template source):
-
-```html
-<ion-tabs>
-  <div class="tabs-inner">
-    <ion-router-outlet tabs="true" class="hydrated"></ion-router-outlet>  <!-- auto-injected by Ionic -->
-  </div>
-  <ion-tab-bar slot="bottom">...</ion-tab-bar>
-</ion-tabs>
-```
-
-This created **two competing primary router outlets**:
-1. `<ion-router-outlet>` in `app.component.html` (the intended primary outlet)
-2. `<ion-router-outlet tabs="true">` auto-injected by `<ion-tabs>` inside `app-shared-tab`
-
-Ionic's tabs outlet intercepted all navigation. Pages rendered inside `.tabs-inner` — confined within `<app-shared-tab>` which `tab.component.scss` limited to `height: calc(50px + safe-area)`. Page content rendered into an effectively invisible 50 px-tall clipped container.
-
-#### Bug 2: `<ion-content>` used as app shell wrapper
-
-`app.component.html` wrapped the router outlet in `<ion-content id="menu-content">`. `<ion-content>` manages its own virtual scroll via shadow DOM. `flex: 1` on `<ion-router-outlet>` (in `app.component.scss`) had no effect — the outlet received zero height from the scroll container. All routed page content became invisible on Android WebView.
-
-### Fix Applied
-
-1. **`tab.component.html`**: Removed `<ion-tabs>` wrapper. `<ion-tab-bar>` is now standalone — `routerLink` on `<ion-tab-button>` navigates via Angular Router without creating any secondary outlet.
-
-2. **`app.component.html`**: Replaced `<ion-content id="menu-content" class="app-content">` with `<div id="menu-content" class="app-content">`.
-
-3. **`app.component.scss`**: Changed `.app-content` to `position: absolute; inset: 0` (replacing `height: 100%`). `height: 100%` cannot resolve across `<ion-app>`'s `contain: layout size style` containment boundary during the first paint tick on Android WebView; absolute positioning resolves immediately via layout constraints. Auth-guarded pages (Booking, Store, Account) appeared to work because the Firebase auth init delay (~300–800ms) gave the layout time to settle before the route activated.
-
-4. **`tab.component.scss`**: Removed the `height: calc(50px + ...)` limit on `.shared-tab` (it was constraining the old `<ion-tabs>` container). Moved `border-top`, `box-shadow`, and `padding-bottom` onto `ion-tab-bar` directly.
-
-5. **`global.scss`**: Increased `ion-content::part(scroll) { padding-top }` from `16px` to `1.5rem` — content was rendered too close to the header on mobile.
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `src/app/app.component.html` | `<ion-content>` → `<div>` as menu content area |
-| `src/app/app.component.scss` | `.app-content`: `height: 100%` → `position: absolute; inset: 0` |
-| `src/app/shared/tab/tab.component.html` | Removed `<ion-tabs>` wrapper; standalone `<ion-tab-bar>` |
-| `src/app/shared/tab/tab.component.scss` | Removed height constraint; moved decorative CSS to `ion-tab-bar` |
-| `src/style/global.scss` | `ion-content::part(scroll)` `padding-top`: `16px` → `1.5rem` |
-
-Backup: `src/app/app.component.html.bak`
+| `src/app/app.component.html` | Removed the custom shell wrapper and made `ion-router-outlet` the direct main viewport |
+| `src/app/app.component.ts` | Replaced direct header control with `page-title` events on navigation |
+| `src/app/pages/home/home.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/search/search.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/restaurant/restaurant.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/user/user.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/booking/booking.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/store/store.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/login/login.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/pages/chat/chat.page.html` | Added page-local Ionic structure with shared header |
+| `src/app/shared/header/header.component.html` | Removed the extra wrapper so the shared header exposes `ion-header` directly |
+| `src/app/shared/header/header.component.scss` | Flattened the shared header host with `display: contents` so `ion-header` behaves as a page child |
+| `src/app/shared/tab/tab.component.html` | Replaced pseudo-tabs markup with plain router-link navigation |
+| `src/app/shared/tab/tab.component.scss` | Styled the plain fixed bottom nav |
+| `src/style/global.scss` | Became the single active home for global tab-bar spacing and QR-scanner rules |
+| `src/global.scss` | Deprecated explicitly so future fixes do not land in a non-built stylesheet |
+| `src/app/services/restaurants.service.ts` | Removed dead eager direct Algolia client initialization and routed search through the backend API only |
+| `src/app/pages/test/*` | Added temporary lightweight APK routing diagnostics pages |
+| `src/app/shared/menu/menu.component.html` | Added temporary debug/test navigation entries |
 
 ### Rules Going Forward
-1. **Never use `<ion-tabs>` unless routes are configured as tab children** in the router. `<ion-tabs>` automatically injects a secondary `<ion-router-outlet tabs="true">` which competes with the primary outlet.
-2. **Never use `<ion-content>` as the app shell wrapper**. It is designed for use inside `<ion-page>` components. Use a plain `<div>` with `position: absolute; inset: 0; display: flex; flex-direction: column` for the app shell — `height: 100%` fails across `<ion-app>`'s `contain: layout size style` boundary during Android cold start.
+
+1. Keep `ion-router-outlet` as the canonical routed viewport. Do not wrap it in a custom shell that replaces Ionic page ownership.
+2. In Ionic Angular, do not add an extra `<ion-page>` inside routed page templates. The routed component host is already the page.
+3. Use plain Angular router links for the bottom nav unless the router is restructured into true Ionic tab-child routes.
+4. Treat `src/style/global.scss` as the only active global stylesheet.
+5. Do not reintroduce direct eager Algolia client setup into `RestaurantsService` unless the native build is explicitly revalidated.
+6. Keep the temporary `/test/*` routes until APK verification is complete, then remove them in a cleanup pass.
