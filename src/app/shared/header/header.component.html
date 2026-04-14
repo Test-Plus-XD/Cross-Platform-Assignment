@@ -1,6 +1,7 @@
 <!-- Shared header: brand, nav links, language and theme controls -->
-<ion-header [translucent]="true">
-  <ion-toolbar>
+<header id="app-shared-header">
+  <ion-header [translucent]="true">
+    <ion-toolbar>
     <!-- Start slot: menu + brand (on non-mobile) -->
     <div slot="start" class="header-start">
       <ng-container *ngIf="(showHeaderMenu$ | async)">
@@ -59,5 +60,6 @@
         </button>
       </ng-container>
     </div>
-  </ion-toolbar>
-</ion-header>
+    </ion-toolbar>
+  </ion-header>
+</header>

@@ -51,30 +51,7 @@
       </ng-container>
     </ng-container>
   </ion-list>
-
-  <!-- Temporary APK diagnostics -->
-  <div class="settings-section mt-4">
-    <ion-list-header class="px-4">
-      <ion-label>{{ (lang$ | async) === 'TC' ? '除錯 / 測試導航（暫時）' : 'Debug / Test Navigation (Temporary)' }}</ion-label>
-    </ion-list-header>
-
-    <ion-list class="px-2">
-      <ion-item button routerLink="/test/a" (click)="closeMenu()" lines="none" detail="false">
-        <ion-icon name="flask-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '測試 A' : 'Test A' }}</ion-label>
-      </ion-item>
-
-      <ion-item button routerLink="/test/b" (click)="closeMenu()" lines="none" detail="false">
-        <ion-icon name="flask-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '測試 B' : 'Test B' }}</ion-label>
-      </ion-item>
-
-      <ion-item button routerLink="/test/c" (click)="closeMenu()" lines="none" detail="false">
-        <ion-icon name="flask-outline" slot="start"></ion-icon>
-        <ion-label>{{ (lang$ | async) === 'TC' ? '測試 C' : 'Test C' }}</ion-label>
-      </ion-item>
-    </ion-list>
-  </div>
+  <br><br><br><br><br>
 
   <!-- Settings Section -->
   <div class="settings-section mt-4">

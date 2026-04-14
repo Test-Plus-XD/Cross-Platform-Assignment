@@ -35,10 +35,6 @@ const routes: Routes = [
     loadChildren: () => import('./pages/login/login.module').then(m => m.LoginPageModule)
   },
   {
-    path: 'test',
-    loadChildren: () => import('./pages/test/test.module').then(m => m.TestPageModule)
-  },
-  {
     path: 'booking',
     data: { title: { Header_EN: 'Booking', Header_TC: '預訂' } },
     canActivate: [AuthGuard],

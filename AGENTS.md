@@ -63,7 +63,6 @@ src/app/
 │   │   └── menu-qr-modal/                    # QR code generator modal (v1.17.0)
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
-│   └── test/                  # Development/testing
 ├── services/                  # 24 core services
 │   ├── auth.service.ts                # Firebase authentication
 │   ├── app-state.service.ts           # Centralized state (v1.7.0)

@@ -63,7 +63,6 @@ src/app/
 │   │   └── menu-qr-modal/                    # QR code generator modal (v1.17.0)
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
-│   └── test/                  # Development/testing
 ├── services/                  # 24 core services
 │   ├── auth.service.ts                # Firebase authentication
 │   ├── app-state.service.ts           # Centralized state (v1.7.0)
@@ -1904,57 +1903,33 @@ API (verify) → Extract UID → Ownership checks
 
 ### Accurate Root Cause
 
-The APK blank-page bug was a two-layer native-build failure, not four unrelated page bugs:
+Follow-up APK validation confirmed the durable root cause was the shared `RestaurantsService` runtime path, not the temporary shell/UI refactor:
 
-1. `app.component.html` wrapped the primary `ion-router-outlet` in a custom shell instead of letting Ionic own the routed viewport directly.
-2. The shared header lived outside routed pages, so route changes could leave stale header state visible while the body failed to switch.
-3. The bottom navigation was still using Ionic tab semantics even though the app is not structured as real tab-child routes.
-4. The QR-scanner transparent-WebView rules lived in dead `src/global.scss` instead of compiled `src/style/global.scss`.
-5. After the shell was corrected, the still-broken pages all shared one runtime dependency: `RestaurantsService`. That service still performed dead eager direct Algolia initialization even though the app already searches through the backend API. The working `/test/*` routes do not inject `RestaurantsService`, which is why they became the first routes to render cleanly after the shell fix.
-
-This explains the observed symptom set:
-- stale titles and blank/stale routed bodies came from the invalid Ionic shell/header/tab composition
-- the remaining Home/Search/Store/QR failures came from the shared `RestaurantsService` runtime path
+1. `RestaurantsService` still performed dead eager direct Algolia initialization even though the app already searches through the backend API.
+2. The pages that stayed blank on APK all injected `RestaurantsService` directly or indirectly: Home, Search, Store, and QR scanner validation.
+3. The temporary `/test/*` routes rendered because they did not inject `RestaurantsService`, which isolated the failure away from the router itself.
+4. QR scanner visibility rules also had to live in compiled `src/style/global.scss`, not dead `src/global.scss`.
 
 ### Fix Applied
 
-1. `ion-router-outlet` is now the direct main routed viewport under `ion-app`, with the menu attached via `contentId`.
-2. Primary routed pages now keep the Angular/Ionic page structure on the routed component host itself. In Ionic Angular, routed pages must not introduce their own inner `<ion-page>` wrapper because `ion-router-outlet` already pages the routed component host. The local shared header is flattened with `:host { display: contents; }` so its `ion-header` still behaves like a direct page child.
-3. `app.component.ts` no longer talks to the header directly. It emits a `page-title` event on `NavigationEnd`, and each routed-page header listens locally.
-4. The bottom navigation now uses plain fixed router links plus `routerLinkActive`, not Ionic tabs primitives.
-5. The active QR-scanner visibility rules were moved into `src/style/global.scss`, and `src/global.scss` was explicitly deprecated so future global fixes are not written into a dead file.
-6. `RestaurantsService` no longer imports or eagerly initializes the direct Algolia browser client. `searchRestaurants()` now delegates to the backend search path instead of constructing an unused client-side Algolia instance.
-7. A temporary public `test` feature was added at `/test/a`, `/test/b`, and `/test/c` with minimal buttons for both `[routerLink]` and `navigateByUrl()` navigation. Those routes verified that the fixed shell could switch routes correctly even before the shared restaurant-data runtime path was corrected.
+1. `RestaurantsService` no longer imports or eagerly initializes the direct Algolia browser client. `searchRestaurants()` now delegates to the backend search path instead of constructing an unused client-side Algolia instance.
+2. The active QR-scanner visibility rules were moved into `src/style/global.scss`, and `src/global.scss` was explicitly deprecated so future global fixes are not written into a dead file.
+3. The temporary shell/header/tab/test-page refactor was used only to isolate the issue. After APK confirmation that `RestaurantsService` was the real root cause, the UI was rolled back to the prior global-header / `ion-tab-bar` presentation and the temporary `/test/*` routes were removed.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/app/app.component.html` | Removed the custom shell wrapper and made `ion-router-outlet` the direct main viewport |
-| `src/app/app.component.ts` | Replaced direct header control with `page-title` events on navigation |
-| `src/app/pages/home/home.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/search/search.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/restaurant/restaurant.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/user/user.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/booking/booking.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/store/store.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/login/login.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/pages/chat/chat.page.html` | Added page-local Ionic structure with shared header |
-| `src/app/shared/header/header.component.html` | Removed the extra wrapper so the shared header exposes `ion-header` directly |
-| `src/app/shared/header/header.component.scss` | Flattened the shared header host with `display: contents` so `ion-header` behaves as a page child |
-| `src/app/shared/tab/tab.component.html` | Replaced pseudo-tabs markup with plain router-link navigation |
-| `src/app/shared/tab/tab.component.scss` | Styled the plain fixed bottom nav |
-| `src/style/global.scss` | Became the single active home for global tab-bar spacing and QR-scanner rules |
-| `src/global.scss` | Deprecated explicitly so future fixes do not land in a non-built stylesheet |
 | `src/app/services/restaurants.service.ts` | Removed dead eager direct Algolia client initialization and routed search through the backend API only |
-| `src/app/pages/test/*` | Added temporary lightweight APK routing diagnostics pages |
-| `src/app/shared/menu/menu.component.html` | Added temporary debug/test navigation entries |
+| `src/style/global.scss` | Became the active home for QR-scanner visibility rules |
+| `src/global.scss` | Deprecated explicitly so future fixes do not land in a non-built stylesheet |
+| `src/app/shared/qr-scanner/qr-scanner-modal.component.ts` | Comment updated to point to the real compiled global stylesheet |
+| `src/app/app.component.html`, `src/app/shared/tab/*`, routed page templates | Temporary UI rollback restored the prior global-header / `ion-tab-bar` shell after the rendering root cause was confirmed |
+| `src/app/pages/test/*`, `src/app/app-routing.module.ts`, `src/app/shared/menu/menu.component.html` | Temporary APK diagnostics routes and menu entries were removed after confirmation |
 
 ### Rules Going Forward
 
-1. Keep `ion-router-outlet` as the canonical routed viewport. Do not wrap it in a custom shell that replaces Ionic page ownership.
-2. In Ionic Angular, do not add an extra `<ion-page>` inside routed page templates. The routed component host is already the page.
-3. Use plain Angular router links for the bottom nav unless the router is restructured into true Ionic tab-child routes.
-4. Treat `src/style/global.scss` as the only active global stylesheet.
-5. Do not reintroduce direct eager Algolia client setup into `RestaurantsService` unless the native build is explicitly revalidated.
-6. Keep the temporary `/test/*` routes until APK verification is complete, then remove them in a cleanup pass.
+1. Do not reintroduce direct eager Algolia client setup into `RestaurantsService` unless the native build is explicitly revalidated.
+2. Treat `src/style/global.scss` as the only active global stylesheet for QR scanner and other app-wide runtime rules.
+3. If APK-only rendering bugs return, isolate shared injected services before rewriting the app shell again.
+4. Temporary diagnostic routes should be removed once the suspected runtime path is confirmed.
