@@ -3,15 +3,15 @@
 buildscript {
 
     ext {
-        agp_version = '8.13.2'
+        agp_version = '9.1.1'
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:$agp_version"
-        classpath 'com.google.gms:google-services:4.4.2'
+        classpath libs.gradle
+        classpath libs.google.services
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -24,6 +24,13 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+    configurations.all {
+        resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'org.jetbrains.kotlin' && (details.requested.name == 'kotlin-stdlib-jdk7' || details.requested.name == 'kotlin-stdlib-jdk8')) {
+                details.useVersion '2.1.20'
+            }
+        }
     }
 }
 

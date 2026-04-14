@@ -237,13 +237,15 @@ span {
   background: linear-gradient(135deg, var(--ion-color-primary) 0%, var(--ion-color-secondary) 100%) !important;
 }
 
-/* === LAYOUT ADJUSTMENTS === */
-// Removed global router outlet and content margins that were breaking web view
-// Page-specific layouts now handled via .mobile-layout and .web-layout classes
+/* Clearance for the fixed tab bar at <ion-app> level. Applied on pages where the
+   tab bar is visible so content never scrolls under it. */
+ion-content.has-tab-bar {
+  --padding-bottom: calc(56px + env(safe-area-inset-bottom));
+}
 
 /* Hide scrollbar for the entire page */
 ion-content::part(scroll) {
-  padding-top: 16px;
+  padding-top: 1.6px;
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
 
