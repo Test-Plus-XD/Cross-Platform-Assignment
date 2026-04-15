@@ -381,5 +381,6 @@
 
   <!-- Chat Button -->
   <app-chat-button *ngIf="restaurant" [restaurantId]="restaurant.id"
-    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"></app-chat-button>
+    [restaurantName]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
+    [restaurantOwnerId]="restaurant.ownerId || ''"></app-chat-button>
 </ion-content>

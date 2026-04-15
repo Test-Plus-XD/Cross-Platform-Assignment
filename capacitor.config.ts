@@ -1,3 +1,5 @@
+/// <reference types="@capacitor-firebase/messaging" />
+
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
@@ -8,6 +10,9 @@ const config: CapacitorConfig = {
     androidScheme: 'https'
   },
   plugins: {
+    FirebaseMessaging: {
+      presentationOptions: ['badge', 'sound']
+    },
     SplashScreen: {
       launchShowDuration: 0,
       androidSplashResourceName: "splash",

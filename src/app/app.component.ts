@@ -3,7 +3,6 @@ import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
-import { Auth, getIdToken } from '@angular/fire/auth';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
 import { SocialLogin } from '@capgo/capacitor-social-login';
@@ -15,6 +14,7 @@ import { PlatformService } from './services/platform.service';
 import { UIService } from './services/UI.service';
 import { AppStateService } from './services/app-state.service';
 import { MessagingService, NotificationPayload } from './services/messaging.service';
+import { NotificationCoordinatorService } from './services/notification-coordinator.service';
 import { UserService } from './services/user.service';
 import { AccountTypeSelectorComponent } from './shared/account-type-selector/account-type-selector.component';
 
@@ -33,8 +33,8 @@ export class AppComponent implements OnInit, OnDestroy {
     readonly appState = inject(AppStateService);
     readonly router = inject(Router);
     readonly messagingService = inject(MessagingService);
+    readonly notificationCoordinator = inject(NotificationCoordinatorService);
     private readonly userService = inject(UserService);
-    private readonly auth = inject(Auth);
     private readonly modalController = inject(ModalController);
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
@@ -102,9 +102,12 @@ export class AppComponent implements OnInit, OnDestroy {
       // Set up deep link listener for native platforms (QR codes, notification taps, etc.)
       void this.setupDeepLinkListener();
 
+      this.notificationCoordinator.start();
+
       // Show notification permission prompt if not yet granted
-      this.promptNotificationPermission();
+      void this.promptNotificationPermission();
       this.subscribeToInAppMessages();
+      this.subscribeToNotificationActions();
 
       // Watch for logged-in users whose profile has no type set.
       // When detected, present the account-type selector modal once per session.
@@ -168,8 +171,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     private subscribeToInAppMessages(): void {
-      this.messagingService.getMessages$().pipe(
-        filter((payload): payload is NotificationPayload => payload !== null),
+      this.notificationCoordinator.displayNotifications$.pipe(
         takeUntil(this.destroy$)
       ).subscribe(payload => {
         this.presentInAppMessage(payload).catch((error) => {
@@ -178,9 +180,20 @@ export class AppComponent implements OnInit, OnDestroy {
       });
     }
 
+    private subscribeToNotificationActions(): void {
+      this.notificationCoordinator.notificationActions$.pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(payload => {
+        this.navigateFromNotification(payload).catch((error) => {
+          console.error('[AppComponent] Failed to route notification action:', error);
+        });
+      });
+    }
+
     private async presentInAppMessage(payload: NotificationPayload): Promise<void> {
+      const route = this.messagingService.resolveRoute(payload.data);
       const buttonText = this.language.getCurrentLanguage() === 'TC' ? '查看' : 'View';
-      const buttons = payload.data?.url
+      const buttons = route
         ? [{ text: buttonText, role: 'open' }]
         : [];
 
@@ -195,31 +208,19 @@ export class AppComponent implements OnInit, OnDestroy {
       await toast.present();
       const result = await toast.onDidDismiss();
 
-      if (result.role === 'open' && payload.data?.url) {
-        await this.router.navigateByUrl(payload.data.url);
+      if (result.role === 'open') {
+        await this.navigateFromNotification(payload);
       }
     }
 
     private async promptNotificationPermission(): Promise<void> {
       try {
-        if (!this.messagingService?.isSupported()) return;
+        if (!(await this.messagingService.isSupported())) return;
 
-        const permission = Notification.permission;
+        const permission = await this.messagingService.checkPermission();
 
         if (permission === 'granted') {
-          // Already granted — silently obtain token and register with backend
-          this.messagingService.requestPermission().then(async token => {
-            if (token && this.auth.currentUser) {
-              try {
-                const idToken = await getIdToken(this.auth.currentUser);
-                await this.messagingService.registerTokenWithBackend(token, idToken);
-              } catch (err) {
-                console.error('[AppComponent] Failed to register FCM token with backend:', err);
-              }
-            }
-          }).catch(err => {
-            console.error('[AppComponent] FCM token error (auto):', err);
-          });
+          await this.messagingService.syncTokenIfPermitted();
           return;
         }
 
@@ -228,8 +229,9 @@ export class AppComponent implements OnInit, OnDestroy {
         if (dismissed && permission === 'denied') return;
 
         const isTC = this.language.getCurrentLanguage() === 'TC';
+        const isNativePlatform = Capacitor.isNativePlatform();
 
-        if (permission === 'default') {
+        if (permission === 'prompt') {
           // Never asked — show custom prompt before triggering the browser popup
           const alert = await this.alertController.create({
             header: isTC ? '啟用通知' : 'Enable Notifications',
@@ -247,46 +249,25 @@ export class AppComponent implements OnInit, OnDestroy {
               {
                 text: isTC ? '允許' : 'Allow',
                 handler: () => {
-                  // Call Notification.requestPermission() DIRECTLY in the click
-                  // handler to preserve the transient user activation. Routing
-                  // through the async service method first can lose the gesture
-                  // context due to Ionic's overlay dismiss processing, causing
-                  // the browser to silently skip the native permission popup.
-                  Notification.requestPermission().then(permission => {
-                    console.log('[AppComponent] Browser permission result:', permission);
-                    if (permission === 'granted') {
-                      // Permission granted — obtain FCM token and register with backend
-                      this.messagingService.requestPermission().then(async token => {
-                        if (token) {
-                          console.log('[AppComponent] FCM token obtained.');
-                          if (this.auth.currentUser) {
-                            try {
-                              const idToken = await getIdToken(this.auth.currentUser);
-                              await this.messagingService.registerTokenWithBackend(token, idToken);
-                            } catch (err) {
-                              console.error('[AppComponent] Failed to register FCM token with backend:', err);
-                            }
-                          }
-                        } else {
-                          console.warn('[AppComponent] Permission granted but no FCM token returned.');
-                        }
-                      }).catch(err => console.error('[AppComponent] FCM token error:', err));
-                    } else {
-                      console.warn('[AppComponent] Notification permission not granted:', permission);
-                    }
-                  }).catch(err => console.error('[AppComponent] Permission request error:', err));
+                  void this.notificationCoordinator.requestPermissionAndSync().catch((error) => {
+                    console.error('[AppComponent] Permission request error:', error);
+                  });
                 }
               }
             ]
           });
           await alert.present();
         } else if (permission === 'denied') {
-          // Previously denied in browser — guide user to reset
+          // Previously denied — guide the user to the appropriate browser or system settings.
           const alert = await this.alertController.create({
             header: isTC ? '通知已被封鎖' : 'Notifications Blocked',
             message: isTC
-              ? '通知已在瀏覽器中被封鎖。如要啟用，請點擊網址列旁的鎖定圖示，將「通知」改為「允許」，然後重新載入頁面。'
-              : 'Notifications are blocked in your browser. To enable them, click the lock/tune icon next to the URL bar, change "Notifications" to "Allow", then reload the page.',
+              ? (isNativePlatform
+                ? '系統設定已封鎖通知。請前往裝置設定，將 PourRice 的通知重新啟用。'
+                : '通知已在瀏覽器中被封鎖。如要啟用，請點擊網址列旁的鎖定圖示，將「通知」改為「允許」，然後重新載入頁面。')
+              : (isNativePlatform
+                ? 'Notifications are blocked in system settings. Re-enable them for PourRice in your device settings.'
+                : 'Notifications are blocked in your browser. To enable them, click the lock or tune icon next to the URL bar, change Notifications to Allow, then reload the page.'),
             buttons: [
               {
                 text: isTC ? '知道了' : 'Got It',
@@ -301,6 +282,13 @@ export class AppComponent implements OnInit, OnDestroy {
       } catch (err) {
         console.error('[AppComponent] Notification prompt error:', err);
       }
+    }
+
+    private async navigateFromNotification(payload: NotificationPayload): Promise<void> {
+      const route = this.messagingService.resolveRoute(payload.data);
+      if (!route) return;
+
+      await this.router.navigateByUrl(route);
     }
 
     // Watch auth state + user profile; present the account-type modal when a

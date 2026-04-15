@@ -47,6 +47,7 @@
     "@angular/router": "^20.3.3",
     "@angular/service-worker": "^20.3.3",
     "@augmentcode/auggie": "^0.5.7",
+    "@capacitor-firebase/messaging": "^8.2.0",
     "@capacitor-mlkit/barcode-scanning": "^8.0.1",
     "@capacitor/android": "^8.3.0",
     "@capacitor/app": "8.1.0",

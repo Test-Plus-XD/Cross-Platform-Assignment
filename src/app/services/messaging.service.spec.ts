@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { MessagingService, NOTIFICATION_TEMPLATES } from './messaging.service';
 
 describe('MessagingService', () => {
   let service: MessagingService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule]
+    });
     service = TestBed.inject(MessagingService);
   });
 
@@ -13,8 +16,8 @@ describe('MessagingService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should check if notifications are supported', () => {
-    const isSupported = service.isSupported();
+  it('should check if notifications are supported', async () => {
+    const isSupported = await service.isSupported();
     expect(typeof isSupported).toBe('boolean');
   });
 
@@ -25,32 +28,26 @@ describe('MessagingService', () => {
 
   it('should return current permission status', () => {
     const permission = service.getCurrentPermission();
-    expect(['granted', 'denied', 'default'].includes(permission)).toBeTruthy();
+    expect(['granted', 'denied', 'prompt'].includes(permission)).toBeTruthy();
   });
 
-  it('should expose token observable', (done) => {
-    service.getToken$().subscribe(token => {
-      expect(token === null || typeof token === 'string').toBeTruthy();
-      done();
-    });
+  it('should expose token observable', () => {
+    expect(service.getToken$()).toBeTruthy();
   });
 
-  it('should expose message observable', (done) => {
-    service.getMessages$().subscribe(message => {
-      expect(message === null || typeof message === 'object').toBeTruthy();
-      done();
-    });
+  it('should expose message observable', () => {
+    expect(service.getMessages$()).toBeTruthy();
   });
 
   it('should expose permission observable', (done) => {
     service.getPermission$().subscribe(permission => {
-      expect(['granted', 'denied', 'default'].includes(permission)).toBeTruthy();
+      expect(['granted', 'denied', 'prompt'].includes(permission)).toBeTruthy();
       done();
     });
   });
 
-  it('should check if permission is granted', () => {
-    const isGranted = service.isPermissionGranted();
+  it('should check if permission is granted', async () => {
+    const isGranted = await service.isPermissionGranted();
     expect(typeof isGranted).toBe('boolean');
   });
 
@@ -77,19 +74,31 @@ describe('MessagingService', () => {
         bookingId: 'booking123'
       });
 
-      expect(notification.data?.url).toBe('/booking');
+      expect(notification.data?.route).toBe('/booking');
     });
   });
 
-  it('should generate non-booking template URLs that match existing route shapes', () => {
-    const params = { restaurantId: 'restaurant123', roomId: 'room123' };
+  it('should generate non-booking template routes that match existing route shapes', () => {
+    const params = {
+      restaurantId: 'restaurant123',
+      roomId: 'room123',
+      senderName: 'Test Sender',
+      messagePreview: 'Hello world',
+      messageId: 'message123'
+    };
 
-    const reviewUrl = NOTIFICATION_TEMPLATES.new_review.dataTemplate?.(params)?.url;
-    const chatUrl = NOTIFICATION_TEMPLATES.chat_message.dataTemplate?.(params)?.url;
-    const storeUrl = NOTIFICATION_TEMPLATES.restaurant_claimed.dataTemplate?.(params)?.url;
+    const reviewRoute = NOTIFICATION_TEMPLATES.new_review.dataTemplate?.(params)?.route;
+    const chatRoute = NOTIFICATION_TEMPLATES.chat_message.dataTemplate?.(params)?.route;
+    const storeRoute = NOTIFICATION_TEMPLATES.restaurant_claimed.dataTemplate?.(params)?.route;
 
-    expect(reviewUrl).toBe('/restaurant/restaurant123');
-    expect(chatUrl).toBe('/chat/room123');
-    expect(storeUrl).toBe('/store');
+    expect(reviewRoute).toBe('/restaurant/restaurant123');
+    expect(chatRoute).toBe('/chat/room123');
+    expect(storeRoute).toBe('/store');
+  });
+
+  it('should convert legacy notification URLs into Angular routes', () => {
+    expect(service.resolveRoute({ url: 'pourrice://bookings' })).toBe('/booking');
+    expect(service.resolveRoute({ url: 'pourrice://chat/room123' })).toBe('/chat/room123');
+    expect(service.resolveRoute({ url: 'pourrice://menu/restaurant123' })).toBe('/restaurant/restaurant123');
   });
 });

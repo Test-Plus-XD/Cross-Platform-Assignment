@@ -1,8 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { Messaging, getToken, onMessage, deleteToken, MessagePayload } from '@angular/fire/messaging';
+import { BehaviorSubject, Observable, Subject, firstValueFrom } from 'rxjs';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseMessaging, type Notification as FirebaseNotification } from '@capacitor-firebase/messaging';
 import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
+
+// Cross-platform permission state used by both the browser Notification API and native Capacitor messaging.
+export type NotificationPermissionStatus = 'prompt' | 'granted' | 'denied';
 
 // Firebase Cloud Messaging Models
 
@@ -15,15 +19,21 @@ export interface NotificationPayload {
 }
 
 export interface NotificationData {
+  route?: string;
   url?: string;
   restaurantId?: string;
   bookingId?: string;
   roomId?: string;
+  messageId?: string;
   type?: NotificationType;
   [key: string]: any;
 }
 
 export type NotificationType =
+  | 'booking_pending'
+  | 'booking_accepted'
+  | 'booking_declined'
+  | 'booking_completed'
   | 'booking_confirmed'
   | 'booking_cancelled'
   | 'booking_reminder'
@@ -67,6 +77,54 @@ export interface NotificationTemplate {
 }
 
 export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
+  booking_pending: {
+    type: 'booking_pending',
+    titleTemplate: () => 'New Booking Request',
+    bodyTemplate: (params) =>
+      `${params.restaurantName} has a new booking request for ${params.dateTime}.`,
+    dataTemplate: (params) => ({
+      type: 'booking_pending',
+      route: '/booking',
+      url: 'pourrice://bookings',
+      bookingId: params.bookingId
+    })
+  },
+  booking_accepted: {
+    type: 'booking_accepted',
+    titleTemplate: () => 'Booking Confirmed',
+    bodyTemplate: (params) =>
+      `Your booking at ${params.restaurantName} on ${params.dateTime} has been confirmed.`,
+    dataTemplate: (params) => ({
+      type: 'booking_accepted',
+      route: '/booking',
+      url: 'pourrice://bookings',
+      bookingId: params.bookingId
+    })
+  },
+  booking_declined: {
+    type: 'booking_declined',
+    titleTemplate: () => 'Booking Declined',
+    bodyTemplate: (params) =>
+      `Your booking at ${params.restaurantName} on ${params.dateTime} has been declined.`,
+    dataTemplate: (params) => ({
+      type: 'booking_declined',
+      route: '/booking',
+      url: 'pourrice://bookings',
+      bookingId: params.bookingId
+    })
+  },
+  booking_completed: {
+    type: 'booking_completed',
+    titleTemplate: () => 'Booking Completed',
+    bodyTemplate: (params) =>
+      `Your booking at ${params.restaurantName} has been marked as completed.`,
+    dataTemplate: (params) => ({
+      type: 'booking_completed',
+      route: '/booking',
+      url: 'pourrice://bookings',
+      bookingId: params.bookingId
+    })
+  },
   booking_confirmed: {
     type: 'booking_confirmed',
     titleTemplate: () => 'Booking Confirmed',
@@ -74,7 +132,8 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Your reservation at ${params.restaurantName} is confirmed for ${params.dateTime}`,
     dataTemplate: (params) => ({
       type: 'booking_confirmed',
-      url: '/booking',
+      route: '/booking',
+      url: 'pourrice://bookings',
       bookingId: params.bookingId
     })
   },
@@ -85,7 +144,8 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Your reservation at ${params.restaurantName} has been cancelled`,
     dataTemplate: (params) => ({
       type: 'booking_cancelled',
-      url: '/booking',
+      route: '/booking',
+      url: 'pourrice://bookings',
       bookingId: params.bookingId
     })
   },
@@ -96,7 +156,8 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Reminder: Your reservation at ${params.restaurantName} is in ${params.timeUntil}`,
     dataTemplate: (params) => ({
       type: 'booking_reminder',
-      url: '/booking',
+      route: '/booking',
+      url: 'pourrice://bookings',
       bookingId: params.bookingId
     })
   },
@@ -107,7 +168,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `Someone left a ${params.rating}-star review on your restaurant!`,
     dataTemplate: (params) => ({
       type: 'new_review',
-      url: `/restaurant/${params.restaurantId}`,
+      route: `/restaurant/${params.restaurantId}`,
       restaurantId: params.restaurantId
     })
   },
@@ -117,8 +178,10 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     bodyTemplate: (params) => params.messagePreview,
     dataTemplate: (params) => ({
       type: 'chat_message',
-      url: `/chat/${params.roomId}`,
-      roomId: params.roomId
+      route: `/chat/${params.roomId}`,
+      url: `pourrice://chat/${params.roomId}`,
+      roomId: params.roomId,
+      messageId: params.messageId
     })
   },
   restaurant_claimed: {
@@ -128,7 +191,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
       `You have successfully claimed ${params.restaurantName}`,
     dataTemplate: (params) => ({
       type: 'restaurant_claimed',
-      url: '/store',
+      route: '/store',
       restaurantId: params.restaurantId
     })
   },
@@ -140,59 +203,60 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
   }
 };
 
-/**
- * Firebase Cloud Messaging Service
- * Handles push notifications for the application
- */
+// Unified push messaging service for web and native Capacitor builds.
 @Injectable({
   providedIn: 'root'
 })
 export class MessagingService {
-  private messaging: Messaging | null = null;
-  private tokenSubject = new BehaviorSubject<string | null>(null);
-  private messageSubject = new BehaviorSubject<NotificationPayload | null>(null);
-  private permissionSubject = new BehaviorSubject<NotificationPermission>('default');
   private readonly dataService = inject(DataService);
+  private readonly tokenSubject = new BehaviorSubject<string | null>(this.getStoredToken());
+  private readonly messageSubject = new Subject<NotificationPayload>();
+  private readonly actionSubject = new Subject<NotificationPayload>();
+  private readonly permissionSubject = new BehaviorSubject<NotificationPermissionStatus>('prompt');
+  private readonly isNativePlatform = Capacitor.isNativePlatform();
+  private hasInitialised = false;
 
   public token$ = this.tokenSubject.asObservable();
   public message$ = this.messageSubject.asObservable();
+  public action$ = this.actionSubject.asObservable();
   public permission$ = this.permissionSubject.asObservable();
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
   constructor() {
-    const messaging = inject(Messaging, { optional: true });
-
-    this.initialiseMessaging(messaging);
+    void this.initialiseMessaging();
   }
 
-  /**
-   * Initialise Firebase Cloud Messaging
-   * Sets up the messaging instance and permission tracking
-   */
-  private initialiseMessaging(messaging: Messaging | null): void {
+  // Initialise the shared messaging listeners and current permission state.
+  private async initialiseMessaging(): Promise<void> {
+    if (this.hasInitialised) return;
+
     try {
-      if (!environment.fcmVapidKey) {
-        console.warn('MessagingService VAPID key not configured in environment');
+      const supported = await this.isSupported();
+      if (!supported) {
+        console.warn('MessagingService Messaging is not supported in this environment');
         return;
       }
 
-      if (typeof window === 'undefined' || !('Notification' in window)) {
-        console.warn('MessagingService Notifications not supported in this environment');
-        return;
+      this.hasInitialised = true;
+      this.permissionSubject.next(await this.checkPermission());
+
+      await FirebaseMessaging.addListener('notificationReceived', (event) => {
+        const notificationPayload = this.createPayloadFromFirebaseNotification(event.notification);
+        this.messageSubject.next(notificationPayload);
+      });
+
+      if (this.isNativePlatform) {
+        await FirebaseMessaging.addListener('tokenReceived', (event) => {
+          this.persistToken(event.token);
+        });
+
+        await FirebaseMessaging.addListener('notificationActionPerformed', (event) => {
+          const notificationPayload = this.createPayloadFromFirebaseNotification(event.notification);
+          this.actionSubject.next(notificationPayload);
+        });
       }
-
-      if (!messaging) {
-        console.warn('MessagingService Messaging instance not available (provideMessaging may not be configured)');
-        return;
-      }
-
-      this.messaging = messaging;
-      this.permissionSubject.next(Notification.permission);
-
-      // Listen for foreground messages
-      this.setupForegroundMessageListener();
 
       console.log('MessagingService Messaging service initialised successfully');
     } catch (error) {
@@ -200,22 +264,14 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Request notification permission and obtain FCM token
-   * @returns Promise resolving to FCM token or null if permission denied
-   */
+  // Request notification permission and obtain an FCM token if the user allows notifications.
   async requestPermission(): Promise<string | null> {
     try {
-      if (!this.messaging) {
-        console.error('MessagingService Messaging not initialised');
-        return null;
-      }
+      await this.initialiseMessaging();
 
-      // Request notification permission
-      const permission = await Notification.requestPermission();
+      const result = await FirebaseMessaging.requestPermissions();
+      const permission = this.normalisePermissionState(result.receive);
       this.permissionSubject.next(permission);
-
-      // Log the permission result for debugging/testing
       console.log('MessagingService Notification permission result:', permission);
 
       if (permission !== 'granted') {
@@ -223,85 +279,126 @@ export class MessagingService {
         return null;
       }
 
-      // Explicitly register the Firebase messaging service worker and pass it
-      // to getToken(). This prevents conflicts with Angular's PWA service worker
-      // (ngsw-worker.js) which is also registered at scope '/' in production.
-      // Without an explicit serviceWorkerRegistration, Firebase SDK auto-detects
-      // the SW — but ngsw-worker.js intercepts that lookup and token retrieval
-      // silently fails.
-      let serviceWorkerRegistration: ServiceWorkerRegistration | undefined;
-      if ('serviceWorker' in navigator) {
-        try {
-          serviceWorkerRegistration = await navigator.serviceWorker.register(
-            '/firebase-messaging-sw.js'
-          );
-          console.log('MessagingService Firebase SW registered:', serviceWorkerRegistration.scope);
-        } catch (swError) {
-          console.warn('MessagingService Failed to register Firebase SW:', swError);
-        }
+      return await this.obtainToken();
+    } catch (error) {
+      console.error('MessagingService Error requesting permission:', error);
+      return null;
+    }
+  }
+
+  // Retrieve the current permission state without prompting the user.
+  async checkPermission(): Promise<NotificationPermissionStatus> {
+    try {
+      const result = await FirebaseMessaging.checkPermissions();
+      return this.normalisePermissionState(result.receive);
+    } catch (error) {
+      console.error('MessagingService Error checking permission:', error);
+      return 'denied';
+    }
+  }
+
+  // Re-read a token when permission has already been granted, without showing a permission prompt.
+  async syncTokenIfPermitted(): Promise<string | null> {
+    try {
+      await this.initialiseMessaging();
+
+      const permission = await this.checkPermission();
+      this.permissionSubject.next(permission);
+
+      if (permission !== 'granted') {
+        return null;
       }
 
-      // Obtain FCM token
-      const token = await getToken(this.messaging, {
-        vapidKey: environment.fcmVapidKey,
-        serviceWorkerRegistration
-      });
+      return await this.obtainToken();
+    } catch (error) {
+      console.error('MessagingService Error syncing token:', error);
+      return null;
+    }
+  }
 
-      if (token) {
-        console.log('MessagingService Token obtained:', token.substring(0, 20) + '...');
-        this.tokenSubject.next(token);
+  // Obtain an FCM token for the current platform.
+  private async obtainToken(): Promise<string | null> {
+    try {
+      const tokenResult = await FirebaseMessaging.getToken(
+        this.isNativePlatform ? {} : await this.getWebTokenOptions()
+      );
+      const token = tokenResult.token?.trim();
 
-        // Store token in localStorage
-        localStorage.setItem('fcmToken', token);
-
-        return token;
-      } else {
+      if (!token) {
         console.warn('MessagingService No registration token available');
         return null;
       }
+
+      this.persistToken(token);
+      console.log('MessagingService Token obtained:', token.substring(0, 20) + '...');
+      return token;
     } catch (error) {
       console.error('MessagingService Error obtaining token:', error);
       return null;
     }
   }
 
-  /**
-   * Retrieve current FCM token from memory or localStorage
-   * @returns Current FCM token or null
-   */
-  getCurrentToken(): string | null {
-    return this.tokenSubject.value || localStorage.getItem('fcmToken');
+  // Build the explicit service worker registration required by FCM on the web.
+  private async getWebTokenOptions(): Promise<{ vapidKey?: string; serviceWorkerRegistration?: ServiceWorkerRegistration }> {
+    if (this.isNativePlatform) {
+      return {};
+    }
+
+    const options: { vapidKey?: string; serviceWorkerRegistration?: ServiceWorkerRegistration } = {};
+
+    if (environment.fcmVapidKey) {
+      options.vapidKey = environment.fcmVapidKey;
+    }
+
+    if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+      try {
+        options.serviceWorkerRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log('MessagingService Firebase SW registered:', options.serviceWorkerRegistration.scope);
+      } catch (error) {
+        console.warn('MessagingService Failed to register Firebase SW:', error);
+      }
+    }
+
+    return options;
   }
 
-  /**
-   * Retrieve current notification permission status
-   * @returns Current permission status
-   */
-  getCurrentPermission(): NotificationPermission {
+  // Persist the current token locally so auth restoration can re-register it later.
+  private persistToken(token: string): void {
+    this.tokenSubject.next(token);
+    localStorage.setItem('fcmToken', token);
+  }
+
+  // Retrieve the token from memory or durable storage.
+  getCurrentToken(): string | null {
+    return this.tokenSubject.value || this.getStoredToken();
+  }
+
+  // Read the last stored token from local storage.
+  private getStoredToken(): string | null {
+    try {
+      return typeof localStorage === 'undefined' ? null : localStorage.getItem('fcmToken');
+    } catch {
+      return null;
+    }
+  }
+
+  // Retrieve the last known permission state synchronously.
+  getCurrentPermission(): NotificationPermissionStatus {
     return this.permissionSubject.value;
   }
 
-  /**
-   * Delete current FCM token and remove from storage.
-   * If an authToken is provided, the token is also removed from the backend.
-   * @param authToken - Optional Firebase ID token to authenticate the backend removal
-   * @returns Promise resolving to true if successful
-   */
+  // Delete the current token locally and optionally remove it from the backend first.
   async deleteCurrentToken(authToken?: string): Promise<boolean> {
     try {
-      if (!this.messaging) {
-        console.error('MessagingService Messaging not initialised');
-        return false;
-      }
-
       const currentToken = this.getCurrentToken();
-      await deleteToken(this.messaging);
-      this.tokenSubject.next(null);
-      localStorage.removeItem('fcmToken');
 
       if (currentToken && authToken) {
         await this.removeTokenFromBackend(currentToken, authToken);
       }
+
+      await FirebaseMessaging.deleteToken();
+      this.tokenSubject.next(null);
+      localStorage.removeItem('fcmToken');
 
       console.log('MessagingService Token deleted successfully');
       return true;
@@ -311,12 +408,7 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Register an FCM token with the backend so the server can send push notifications.
-   * Should be called after the user grants notification permission.
-   * @param fcmToken - The FCM device token to register
-   * @param authToken - Firebase ID token for authentication
-   */
+  // Register the current device token with the backend for server-side push delivery.
   async registerTokenWithBackend(fcmToken: string, authToken: string): Promise<void> {
     try {
       await firstValueFrom(
@@ -328,16 +420,12 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Remove an FCM token from the backend.
-   * Should be called when the user revokes notification permission or logs out.
-   * @param fcmToken - The FCM device token to remove
-   * @param authToken - Firebase ID token for authentication
-   */
+  // Remove the current device token from the backend using the documented query parameter form.
   async removeTokenFromBackend(fcmToken: string, authToken: string): Promise<void> {
     try {
+      const encodedToken = encodeURIComponent(fcmToken);
       await firstValueFrom(
-        this.dataService.deleteWithBody<void>('/API/Messaging/register-token', { token: fcmToken }, authToken)
+        this.dataService.delete<void>(`/API/Messaging/register-token?token=${encodedToken}`, authToken)
       );
       console.log('MessagingService Token removed from backend');
     } catch (error) {
@@ -345,87 +433,113 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Set up listener for foreground messages
-   * Automatically displays notifications when app is in foreground
-   */
-  private setupForegroundMessageListener(): void {
-    if (!this.messaging) return;
-
-    onMessage(this.messaging, (payload: MessagePayload) => {
-      console.log('MessagingService Foreground message received:', payload);
-
-      const notificationPayload: NotificationPayload = {
-        title: payload.notification?.title || 'New Notification',
-        body: payload.notification?.body || '',
-        icon: payload.notification?.icon,
-        data: payload.data,
-        timestamp: Date.now()
-      };
-
-      this.messageSubject.next(notificationPayload);
-
-      // Display browser notification if permission granted
-      if (Notification.permission === 'granted') {
-        this.showNotification(notificationPayload);
-      }
-    });
+  // Convert a raw plugin notification into the shared application payload.
+  private createPayloadFromFirebaseNotification(notification: FirebaseNotification): NotificationPayload {
+    return {
+      title: notification.title || 'New Notification',
+      body: notification.body || '',
+      icon: notification.image,
+      data: this.normaliseNotificationData(notification.data),
+      timestamp: Date.now()
+    };
   }
 
-  /**
-   * Display browser notification
-   * @param payload Notification payload containing title, body, and metadata
-   */
-  private showNotification(payload: NotificationPayload): void {
-    try {
-      const notification = new Notification(payload.title, {
-        body: payload.body,
-        icon: payload.icon || '/assets/icon/icon.png',
-        badge: '/assets/icon/icon.png',
-        tag: 'fcm-notification',
-        requireInteraction: false,
-        data: payload.data
-      });
+  // Normalise unknown notification data into a plain record the app can route with.
+  private normaliseNotificationData(data: unknown): NotificationData | undefined {
+    if (!data || typeof data !== 'object') {
+      return undefined;
+    }
 
-      notification.onclick = (event) => {
-        event.preventDefault();
-        window.focus();
-        notification.close();
+    const notificationData = { ...(data as Record<string, unknown>) } as NotificationData;
+    const resolvedRoute = this.resolveRoute(notificationData);
 
-        // Navigate to specified URL if provided
-        if (payload.data?.url) {
-          window.location.href = payload.data.url;
+    if (resolvedRoute) {
+      notificationData.route = resolvedRoute;
+    }
+
+    return notificationData;
+  }
+
+  // Resolve a preferred app route using the new contract first and the legacy URL fallback second.
+  resolveRoute(data?: NotificationData | null): string | null {
+    if (!data) {
+      return null;
+    }
+
+    if (typeof data.route === 'string' && data.route.trim()) {
+      return data.route.trim();
+    }
+
+    if (typeof data.url === 'string' && data.url.trim()) {
+      return this.convertLegacyUrlToRoute(data.url.trim());
+    }
+
+    return null;
+  }
+
+  // Convert the legacy notification URL contract into an Angular route.
+  private convertLegacyUrlToRoute(url: string): string | null {
+    if (!url) {
+      return null;
+    }
+
+    if (url.startsWith('/')) {
+      return url;
+    }
+
+    if (url.startsWith('pourrice://')) {
+      try {
+        const parsed = new URL(url);
+        const slug = parsed.pathname.replace(/^\/+/, '');
+        const host = parsed.hostname.toLowerCase();
+
+        if (host === 'bookings') {
+          return '/booking';
         }
-      };
+
+        if (host === 'chat') {
+          return `/chat${slug ? '/' + slug : ''}`;
+        }
+
+        if (host === 'menu' && slug) {
+          return `/restaurant/${slug}`;
+        }
+      } catch (error) {
+        console.warn('MessagingService Failed to parse legacy notification URL:', error);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const resolvedUrl = new URL(url, window.location.origin);
+        if (resolvedUrl.origin === window.location.origin) {
+          return `${resolvedUrl.pathname}${resolvedUrl.search}${resolvedUrl.hash}`;
+        }
+      } catch (error) {
+        console.warn('MessagingService Failed to resolve notification URL:', error);
+      }
+    }
+
+    return null;
+  }
+
+  // Check whether notifications are supported on the current platform.
+  async isSupported(): Promise<boolean> {
+    try {
+      const result = await FirebaseMessaging.isSupported();
+      return result.isSupported;
     } catch (error) {
-      console.error('MessagingService Error displaying notification:', error);
+      console.error('MessagingService Error checking support:', error);
+      return false;
     }
   }
 
-  /**
-   * Check if notifications are supported in current environment
-   * @returns True if notifications are supported
-   */
-  isSupported(): boolean {
-    return typeof window !== 'undefined' && 'Notification' in window;
+  // Check if notification permission has already been granted.
+  async isPermissionGranted(): Promise<boolean> {
+    return (await this.checkPermission()) === 'granted';
   }
 
-  /**
-   * Check if notification permission has been granted
-   * @returns True if permission is granted
-   */
-  isPermissionGranted(): boolean {
-    return Notification.permission === 'granted';
-  }
-
-  /**
-   * Subscribe an FCM token to a topic via the backend.
-   * Topics allow sending notifications to groups of users.
-   * @param token - FCM device token
-   * @param topic - Topic name
-   * @param authToken - Firebase ID token for authentication
-   * @returns Promise resolving to true if successful
-   */
+  // Subscribe an FCM token to a backend topic group.
   async subscribeToTopic(token: string, topic: string, authToken: string): Promise<boolean> {
     try {
       await firstValueFrom(
@@ -439,13 +553,7 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Unsubscribe an FCM token from a topic via the backend.
-   * @param token - FCM device token
-   * @param topic - Topic name
-   * @param authToken - Firebase ID token for authentication
-   * @returns Promise resolving to true if successful
-   */
+  // Unsubscribe an FCM token from a backend topic group.
   async unsubscribeFromTopic(token: string, topic: string, authToken: string): Promise<boolean> {
     try {
       await firstValueFrom(
@@ -459,47 +567,33 @@ export class MessagingService {
     }
   }
 
-  /**
-   * Retrieve token as Observable stream
-   * @returns Observable emitting token changes
-   */
+  // Retrieve token changes as an observable stream.
   getToken$(): Observable<string | null> {
     return this.token$;
   }
 
-  /**
-   * Retrieve messages as Observable stream
-   * @returns Observable emitting incoming messages
-   */
-  getMessages$(): Observable<NotificationPayload | null> {
+  // Retrieve foreground notification events as an observable stream.
+  getMessages$(): Observable<NotificationPayload> {
     return this.message$;
   }
 
-  /**
-   * Retrieve permission status as Observable stream
-   * @returns Observable emitting permission changes
-   */
-  getPermission$(): Observable<NotificationPermission> {
+  // Retrieve notification tap events as an observable stream.
+  getActions$(): Observable<NotificationPayload> {
+    return this.action$;
+  }
+
+  // Retrieve permission state changes as an observable stream.
+  getPermission$(): Observable<NotificationPermissionStatus> {
     return this.permission$;
   }
 
-  /**
-   * Refresh FCM token by deleting current token and requesting new one
-   * Useful when token becomes invalid or needs to be regenerated
-   * @returns Promise resolving to new FCM token or null
-   */
-  async refreshToken(): Promise<string | null> {
-    await this.deleteCurrentToken();
-    return await this.requestPermission();
+  // Refresh the current token by deleting it and reading it again if permission remains granted.
+  async refreshToken(authToken?: string): Promise<string | null> {
+    await this.deleteCurrentToken(authToken);
+    return await this.syncTokenIfPermitted();
   }
 
-  /**
-   * Generate notification from template
-   * Provides consistent notification formatting across the application
-   * @param type Notification type
-   * @param params Parameters for template interpolation
-   * @returns Notification payload ready to be sent
-   */
+  // Generate a typed notification payload from a template.
   generateNotification(type: NotificationType, params: any): NotificationPayload {
     const template = NOTIFICATION_TEMPLATES[type];
     return {
@@ -508,5 +602,18 @@ export class MessagingService {
       data: template.dataTemplate ? template.dataTemplate(params) : undefined,
       timestamp: Date.now()
     };
+  }
+
+  // Convert plugin permission states into the app-level permission union.
+  private normalisePermissionState(permission: string): NotificationPermissionStatus {
+    if (permission === 'granted') {
+      return 'granted';
+    }
+
+    if (permission === 'denied') {
+      return 'denied';
+    }
+
+    return 'prompt';
   }
 }

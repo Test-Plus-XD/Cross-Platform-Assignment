@@ -7,6 +7,7 @@ import { ChatService, ChatMessage } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ChatVisibilityService } from '../../services/chat-visibility.service';
+import { NotificationCoordinatorService } from '../../services/notification-coordinator.service';
 import { UserService } from '../../services/user.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -23,6 +24,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly chatVisibilityService = inject(ChatVisibilityService);
+  private readonly notificationCoordinator = inject(NotificationCoordinatorService);
   private readonly userService = inject(UserService);
   private readonly router = inject(Router);
   private readonly httpClient = inject(HttpClient);
@@ -65,6 +67,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private OriginalParentElement: HTMLElement | null = null;
   private readonly participantAvatarUrlCache = new Map<string, string>();
   private readonly participantAvatarRequestIds = new Set<string>();
+  private HasEnsuredRoom = false;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -83,19 +86,17 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
       this.ngZone.run(() => {
         this.isConnected = State === 'connected';
         console.log('ChatButton: Connection state changed to', State);
-
-        // Room joining is triggered automatically when connection is established
-        if (this.isConnected && this.isOpen) {
-          this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
-            if (Registered) {
-              console.log('ChatButton: User registered, joining room');
-              this.joinRoom();
-            }
-          });
-        }
-
-        // Trigger change detection to update UI
         this.changeDetectorRef.markForCheck();
+      });
+    });
+
+    // Room joining is triggered once registration succeeds on the shared socket.
+    this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
+      this.ngZone.run(() => {
+        if (Registered && this.isOpen) {
+          console.log('ChatButton: User registered, joining room');
+          this.joinRoom();
+        }
       });
     });
 
@@ -275,6 +276,45 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     this.HasConnected = true;
   }
 
+  /// Ensures the restaurant room exists with both the current user and the restaurant owner before messaging starts.
+  private async ensureRestaurantRoom(): Promise<void> {
+    const CurrentUser = this.authService.currentUser;
+    if (!CurrentUser || this.HasEnsuredRoom) {
+      return;
+    }
+
+    const Token = await this.authService.getIdToken();
+    if (!Token) {
+      console.warn('ChatButton: Cannot ensure chat room without auth token');
+      return;
+    }
+
+    const Participants = [...new Set(
+      [CurrentUser.uid, this.restaurantOwnerId?.trim() || '']
+        .filter((ParticipantId): ParticipantId is string => Boolean(ParticipantId))
+    )];
+
+    const Headers = new HttpHeaders({
+      'Authorization': `Bearer ${Token}`,
+      'Content-Type': 'application/json',
+      'x-api-passcode': 'PourRice'
+    });
+
+    await this.httpClient.post(
+      `${environment.apiUrl}/API/Chat/Rooms`,
+      {
+        roomId: this.getRoomId(),
+        participants: Participants,
+        roomName: this.restaurantName || 'Restaurant Chat',
+        type: 'group'
+      },
+      { headers: Headers }
+    ).toPromise();
+
+    this.notificationCoordinator.trackRoom(this.getRoomId());
+    this.HasEnsuredRoom = true;
+  }
+
   /// Joins the restaurant-specific chat room via Socket.IO
   private joinRoom(): void {
     const RoomId = this.getRoomId();
@@ -332,6 +372,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.isOpen) {
       // Opening chat triggers connection and room joining
       this.unreadCount = 0;
+      await this.ensureRestaurantRoom();
       console.log('ChatButton: Opening chat, connecting to Socket.IO');
       await this.connectAndRegister();
 

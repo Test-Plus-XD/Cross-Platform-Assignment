@@ -5,33 +5,33 @@ import { io, Socket } from 'socket.io-client';
 import { environment } from '../../environments/environment';
 import { AuthService } from './auth.service';
 
-/// Chat message interface defines the structure of messages exchanged in chat rooms
+// Chat message interface defines the structure of messages exchanged in chat rooms.
 export interface ChatMessage {
   messageId: string;
   roomId: string;
   userId: string;
   displayName: string;
   message: string;
-  imageUrl?: string; // Optional image URL for image messages
+  imageUrl?: string;
   timestamp: string;
   type?: 'text' | 'image' | 'file';
 }
 
-/// Chat room interface defines the structure of chat rooms and their metadata
+// Chat room interface defines the structure of chat rooms and their metadata.
 export interface ChatRoom {
   roomId: string;
   name?: string;
   participants: string[];
-  participantsData?: any[]; // Populated participant user data
+  participantsData?: any[];
   type: 'direct' | 'group';
   lastMessage?: string;
   lastMessageAt?: string;
   messageCount?: number;
   unreadCount?: number;
-  recentMessages?: ChatMessage[]; // Recent messages for preview
+  recentMessages?: ChatMessage[];
 }
 
-/// Typing indicator interface tracks which users are currently typing in a room
+// Typing indicator interface tracks which users are currently typing in a room.
 export interface TypingIndicator {
   roomId: string;
   userId: string;
@@ -42,74 +42,77 @@ export interface TypingIndicator {
 @Injectable({
   providedIn: 'root'
 })
-
 export class ChatService {
-  private readonly AuthService = inject(AuthService);
+  private readonly authService = inject(AuthService);
+  private socket: Socket | null = null;
+  private readonly socketUrl = environment.socketUrl;
+  private readonly persistentRoomIds = new Set<string>();
+  private readonly transientRoomIds = new Set<string>();
+  private readonly joinedRoomIds = new Set<string>();
+  private readonly joiningRoomIds = new Set<string>();
+  private isRegistering = false;
 
-  private Socket: Socket | null = null;
-  private readonly SocketUrl = environment.socketUrl;
+  // Connection state tracks the current Socket.IO connection status.
+  private readonly connectionState = new BehaviorSubject<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  public readonly ConnectionState$ = this.connectionState.asObservable();
 
-  // Connection state tracks the current Socket.IO connection status
-  private ConnectionState = new BehaviorSubject<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  public ConnectionState$ = this.ConnectionState.asObservable();
+  // Messages stream emits all incoming chat messages from rooms.
+  private readonly messages = new Subject<ChatMessage>();
+  public readonly Messages$ = this.messages.asObservable();
 
-  // Messages stream emits all incoming chat messages from rooms
-  private Messages = new Subject<ChatMessage>();
-  public Messages$ = this.Messages.asObservable();
+  // Message history stream emits loaded message history for rooms.
+  private readonly messageHistory = new Subject<{ roomId: string; messages: ChatMessage[] }>();
+  public readonly MessageHistory$ = this.messageHistory.asObservable();
 
-  // Message history stream emits loaded message history for rooms
-  private MessageHistory = new Subject<{ roomId: string; messages: ChatMessage[] }>();
-  public MessageHistory$ = this.MessageHistory.asObservable();
+  // Typing indicators stream emits typing status updates for all rooms.
+  private readonly typingIndicators = new Subject<TypingIndicator>();
+  public readonly TypingIndicators$ = this.typingIndicators.asObservable();
 
-  // Typing indicators stream emits typing status updates for all rooms
-  private TypingIndicators = new Subject<TypingIndicator>();
-  public TypingIndicators$ = this.TypingIndicators.asObservable();
+  // Active rooms tracks which chat rooms the socket is currently joined to.
+  private readonly activeRooms = new BehaviorSubject<string[]>([]);
+  public readonly ActiveRooms$ = this.activeRooms.asObservable();
 
-  // Active rooms tracks which chat rooms the user has joined
-  private ActiveRooms = new BehaviorSubject<string[]>([]);
-  public ActiveRooms$ = this.ActiveRooms.asObservable();
+  // Online users map tracks the online/offline status of all known users.
+  private readonly onlineUsers = new BehaviorSubject<Map<string, boolean>>(new Map());
+  public readonly OnlineUsers$ = this.onlineUsers.asObservable();
 
-  // Online users map tracks the online/offline status of all known users
-  private OnlineUsers = new BehaviorSubject<Map<string, boolean>>(new Map());
-  public OnlineUsers$ = this.OnlineUsers.asObservable();
-
-  // Registration state tracks whether user is registered with Socket.IO server
-  private IsRegistered = new BehaviorSubject<boolean>(false);
-  public IsRegistered$ = this.IsRegistered.asObservable();
+  // Registration state tracks whether user is registered with the Socket.IO server.
+  private readonly isRegisteredSubject = new BehaviorSubject<boolean>(false);
+  public readonly IsRegistered$ = this.isRegisteredSubject.asObservable();
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
   constructor() {
-    console.log('ChatService: Initialised (manual connect mode)');
-    // DO NOT auto-connect - connection is triggered manually when chat is opened
+    console.log('ChatService: Initialised with persistent room tracking');
   }
 
-  /// Establishes connection to the Socket.IO server with authentication
+  // Establishes a connection to the Socket.IO server for the current authenticated user.
   connect(): void {
-    // Prevent duplicate connections
-    if (this.Socket?.connected) {
-      console.log('ChatService: Already connected');
-      return;
-    }
-
-    // Prevent connection if already connecting
-    if (this.ConnectionState.value === 'connecting') {
-      console.log('ChatService: Connection already in progress');
-      return;
-    }
-
-    const User = this.AuthService.currentUser;
-    if (!User) {
+    const user = this.authService.currentUser;
+    if (!user) {
       console.warn('ChatService: Cannot connect without authenticated user');
       return;
     }
 
-    console.log('ChatService: Connecting to', this.SocketUrl);
-    this.ConnectionState.next('connecting');
+    if (this.socket?.connected) {
+      return;
+    }
 
-    // Socket instance is created with reconnection settings for reliability
-    this.Socket = io(this.SocketUrl, {
+    if (this.connectionState.value === 'connecting') {
+      return;
+    }
+
+    if (this.socket) {
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
+    }
+
+    console.log('ChatService: Connecting to', this.socketUrl);
+    this.connectionState.next('connecting');
+
+    this.socket = io(this.socketUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
@@ -120,291 +123,347 @@ export class ChatService {
     this.setupListeners();
   }
 
-  /// Configures all Socket.IO event listeners for connection, messages, and presence
+  // Configures all Socket.IO event listeners for connection, messages, and presence.
   private setupListeners(): void {
-    if (!this.Socket) return;
+    if (!this.socket) return;
 
-    // Connection event indicates successful Socket.IO connection
-    this.Socket.on('connect', () => {
-      console.log('ChatService: Connected to server, socket ID:', this.Socket?.id);
-      this.ConnectionState.next('connected');
-      this.registerUser();
+    this.socket.on('connect', () => {
+      console.log('ChatService: Connected to server, socket ID:', this.socket?.id);
+      this.connectionState.next('connected');
+      void this.registerUser();
     });
 
-    // Disconnect event fires when connection to server is lost
-    this.Socket.on('disconnect', (Reason) => {
-      console.log('ChatService: Disconnected:', Reason);
-      this.ConnectionState.next('disconnected');
-      this.IsRegistered.next(false);
+    this.socket.on('disconnect', (reason) => {
+      console.log('ChatService: Disconnected:', reason);
+      this.connectionState.next('disconnected');
+      this.isRegisteredSubject.next(false);
+      this.isRegistering = false;
+      this.joiningRoomIds.clear();
+      this.joinedRoomIds.clear();
+      this.activeRooms.next([]);
     });
 
-    // Connection error event handles failed connection attempts
-    this.Socket.on('connect_error', (Error) => {
-      console.error('ChatService: Connection error:', Error);
-      this.ConnectionState.next('disconnected');
-      this.IsRegistered.next(false);
+    this.socket.on('connect_error', (error) => {
+      console.error('ChatService: Connection error:', error);
+      this.connectionState.next('disconnected');
+      this.isRegisteredSubject.next(false);
+      this.isRegistering = false;
     });
 
-    // Registration response confirms user registration with server
-    this.Socket.on('registered', (Data: { success: boolean; userId: string; socketId: string; error?: string }) => {
-      if (Data.success) {
-        console.log('ChatService: Registered successfully', Data);
-        this.IsRegistered.next(true);
+    this.socket.on('registered', (data: { success: boolean; userId: string; socketId: string; error?: string }) => {
+      this.isRegistering = false;
+
+      if (data.success) {
+        console.log('ChatService: Registered successfully', data);
+        this.isRegisteredSubject.next(true);
+        this.syncRooms();
       } else {
-        console.error('ChatService: Registration failed', Data.error);
-        this.IsRegistered.next(false);
+        console.error('ChatService: Registration failed', data.error);
+        this.isRegisteredSubject.next(false);
       }
     });
 
-    // Joined room event confirms successful room join operation
-    this.Socket.on('joined-room', (Data: { roomId: string; success: boolean; error?: string }) => {
-      if (Data.success) {
-        console.log('ChatService: Joined room', Data.roomId);
-        const Rooms = this.ActiveRooms.value;
-        if (!Rooms.includes(Data.roomId)) this.ActiveRooms.next([...Rooms, Data.roomId]);
+    this.socket.on('joined-room', (data: { roomId: string; success: boolean; error?: string }) => {
+      this.joiningRoomIds.delete(data.roomId);
+
+      if (data.success) {
+        console.log('ChatService: Joined room', data.roomId);
+        this.joinedRoomIds.add(data.roomId);
+        this.publishActiveRooms();
       } else {
-        console.error('ChatService: Failed to join room', Data.roomId, Data.error);
+        console.error('ChatService: Failed to join room', data.roomId, data.error);
       }
     });
 
-    // Message history event delivers loaded message history from Firestore
-    this.Socket.on('message-history', (Data: { roomId: string; messages: ChatMessage[] }) => {
-      console.log('ChatService: Received message history for', Data.roomId, '-', Data.messages.length, 'messages');
-      this.MessageHistory.next(Data);
+    this.socket.on('message-history', (data: { roomId: string; messages: ChatMessage[] }) => {
+      console.log('ChatService: Received message history for', data.roomId, '-', data.messages.length, 'messages');
+      this.messageHistory.next(data);
     });
 
-    // User joined room event notifies when another user joins a room
-    this.Socket.on('user-joined-room', (Data: { roomId: string; userId: string; timestamp: string }) => {
-      console.log('ChatService: User joined room', Data);
+    this.socket.on('user-joined-room', (data: { roomId: string; userId: string; timestamp: string }) => {
+      console.log('ChatService: User joined room', data);
     });
 
-    // User left room event notifies when another user leaves a room
-    this.Socket.on('user-left-room', (Data: { roomId: string; userId: string; timestamp: string }) => {
-      console.log('ChatService: User left room', Data);
+    this.socket.on('user-left-room', (data: { roomId: string; userId: string; timestamp: string }) => {
+      console.log('ChatService: User left room', data);
     });
 
-    // New message event delivers incoming messages from chat rooms
-    this.Socket.on('new-message', (Message: ChatMessage) => {
-      console.log('ChatService: New message received', Message);
-      this.Messages.next(Message);
+    this.socket.on('new-message', (message: ChatMessage) => {
+      console.log('ChatService: New message received', message);
+      this.messages.next(message);
     });
 
-    // Message sent confirmation event provides delivery status feedback
-    this.Socket.on('message-sent', (Data: { success: boolean; messageId: string; timestamp: string; error?: string }) => {
-      if (Data.success) {
-        console.log('ChatService: Message sent successfully', Data.messageId);
+    this.socket.on('message-sent', (data: { success: boolean; messageId: string; timestamp: string; error?: string }) => {
+      if (data.success) {
+        console.log('ChatService: Message sent successfully', data.messageId);
       } else {
-        console.error('ChatService: Message failed to send', Data.error);
+        console.error('ChatService: Message failed to send', data.error);
       }
     });
 
-    // User typing event indicates when users are actively typing
-    this.Socket.on('user-typing', (Data: TypingIndicator) => {
-      console.log('ChatService: User typing', Data);
-      this.TypingIndicators.next(Data);
+    this.socket.on('user-typing', (data: TypingIndicator) => {
+      console.log('ChatService: User typing', data);
+      this.typingIndicators.next(data);
     });
 
-    // User online event updates presence status when users come online
-    this.Socket.on('user-online', (Data: { userId: string; displayName: string; timestamp: string }) => {
-      console.log('ChatService: User online', Data.userId);
-      const Users = this.OnlineUsers.value;
-      Users.set(Data.userId, true);
-      this.OnlineUsers.next(new Map(Users));
+    this.socket.on('user-online', (data: { userId: string; displayName: string; timestamp: string }) => {
+      const nextUsers = new Map(this.onlineUsers.value);
+      nextUsers.set(data.userId, true);
+      this.onlineUsers.next(nextUsers);
     });
 
-    // User offline event updates presence status when users go offline
-    this.Socket.on('user-offline', (Data: { userId: string; displayName: string; lastSeen: string }) => {
-      console.log('ChatService: User offline', Data.userId);
-      const Users = this.OnlineUsers.value;
-      Users.set(Data.userId, false);
-      this.OnlineUsers.next(new Map(Users));
+    this.socket.on('user-offline', (data: { userId: string; displayName: string; lastSeen: string }) => {
+      const nextUsers = new Map(this.onlineUsers.value);
+      nextUsers.set(data.userId, false);
+      this.onlineUsers.next(nextUsers);
     });
   }
 
-  /// Registers the current user with the Socket.IO server for presence tracking
+  // Registers the current user with the Socket.IO server for presence and room synchronisation.
   private async registerUser(): Promise<void> {
-    const User = this.AuthService.currentUser;
-    if (!User || !this.Socket) return;
+    const user = this.authService.currentUser;
+    if (!user || !this.socket || this.isRegistering) return;
 
-    // Firebase ID token is retrieved for API authentication
-    const AuthToken = await this.AuthService.getIdToken();
-    if (!AuthToken) {
+    const authToken = await this.authService.getIdToken();
+    if (!authToken) {
       console.error('ChatService: Cannot register without auth token');
       return;
     }
 
-    console.log('ChatService: Registering user', User.uid);
-    this.Socket.emit('register', {
-      userId: User.uid,
-      displayName: User.displayName || User.email || 'Anonymous',
-      authToken: AuthToken
+    this.isRegistering = true;
+    console.log('ChatService: Registering user', user.uid);
+
+    this.socket.emit('register', {
+      userId: user.uid,
+      displayName: user.displayName || user.email || 'Anonymous',
+      authToken
     });
   }
 
-  /// Joins a chat room with authentication token for API verification
-  async joinRoom(RoomId: string): Promise<void> {
-    const User = this.AuthService.currentUser;
-    if (!User) {
-      console.warn('ChatService: Cannot join room, no user authenticated');
-      return;
-    }
+  // Replace the persistent room subscription set used for app-wide socket notifications.
+  setPersistentRooms(roomIds: string[]): void {
+    this.persistentRoomIds.clear();
+    roomIds
+      .filter((roomId): roomId is string => typeof roomId === 'string' && roomId.trim().length > 0)
+      .forEach((roomId) => this.persistentRoomIds.add(roomId));
 
-    if (!this.Socket?.connected) {
-      console.warn('ChatService: Cannot join room, not connected');
-      return;
-    }
-
-    console.log('ChatService: Joining room', RoomId);
-    this.Socket.emit('join-room', {
-      roomId: RoomId,
-      userId: User.uid
-    });
+    this.syncRooms();
   }
 
-  /// Leaves a chat room with authentication token for API verification
-  async leaveRoom(RoomId: string): Promise<void> {
-    const User = this.AuthService.currentUser;
-    if (!User || !this.Socket?.connected) {
-      console.warn('ChatService: Cannot leave room, not connected');
+  // Add a single room to the persistent subscription set.
+  addPersistentRoom(roomId: string): void {
+    if (!roomId || !roomId.trim()) return;
+
+    this.persistentRoomIds.add(roomId);
+    this.syncRooms();
+  }
+
+  // Remove a single room from the persistent subscription set.
+  removePersistentRoom(roomId: string): void {
+    if (!roomId) return;
+
+    this.persistentRoomIds.delete(roomId);
+    this.syncRooms();
+  }
+
+  // Join a room for the active chat UI while keeping persistent tracking separate.
+  async joinRoom(roomId: string): Promise<void> {
+    if (!roomId || !roomId.trim()) return;
+
+    this.transientRoomIds.add(roomId);
+    this.connect();
+    this.syncRooms();
+  }
+
+  // Leave a room for the active chat UI without breaking persistent notification subscriptions.
+  async leaveRoom(roomId: string): Promise<void> {
+    if (!roomId || !roomId.trim()) return;
+
+    this.transientRoomIds.delete(roomId);
+    this.syncRooms();
+  }
+
+  // Synchronise the desired union of persistent and transient rooms with the live socket connection.
+  private syncRooms(): void {
+    if (!this.socket?.connected || !this.isRegistered) {
       return;
     }
 
-    console.log('ChatService: Leaving room', RoomId);
-    this.Socket.emit('leave-room', {
-      roomId: RoomId,
-      userId: User.uid
+    const user = this.authService.currentUser;
+    if (!user) {
+      return;
+    }
+
+    const desiredRoomIds = new Set<string>([
+      ...this.persistentRoomIds,
+      ...this.transientRoomIds
+    ]);
+
+    desiredRoomIds.forEach((roomId) => {
+      if (this.joinedRoomIds.has(roomId) || this.joiningRoomIds.has(roomId)) {
+        return;
+      }
+
+      console.log('ChatService: Joining room', roomId);
+      this.joiningRoomIds.add(roomId);
+      this.socket?.emit('join-room', {
+        roomId,
+        userId: user.uid
+      });
     });
 
-    // Room is removed from active rooms list after leaving
-    const Rooms = this.ActiveRooms.value.filter(Room => Room !== RoomId);
-    this.ActiveRooms.next(Rooms);
+    [...this.joinedRoomIds].forEach((roomId) => {
+      if (desiredRoomIds.has(roomId)) {
+        return;
+      }
+
+      console.log('ChatService: Leaving room', roomId);
+      this.socket?.emit('leave-room', {
+        roomId,
+        userId: user.uid
+      });
+
+      this.joinedRoomIds.delete(roomId);
+      this.joiningRoomIds.delete(roomId);
+    });
+
+    this.publishActiveRooms();
   }
 
-  /// Sends a message to a chat room (text and/or image URL)
-  async sendMessage(RoomId: string, Message: string, ImageUrl?: string): Promise<void> {
-    const User = this.AuthService.currentUser;
-    if (!User || !this.Socket?.connected) {
+  // Publish the joined room set for any UI that wants to observe current room membership.
+  private publishActiveRooms(): void {
+    this.activeRooms.next([...this.joinedRoomIds].sort());
+  }
+
+  // Sends a message to a chat room with optional image content.
+  async sendMessage(roomId: string, message: string, imageUrl?: string): Promise<void> {
+    const user = this.authService.currentUser;
+    if (!user || !this.socket?.connected) {
       console.warn('ChatService: Cannot send message, not connected');
       return;
     }
 
-    console.log('ChatService: Sending message to room', RoomId, 'with image:', !!ImageUrl);
-
-    // Message payload must include userId for Firestore API
-    const MessagePayload: any = {
-      roomId: RoomId,
-      userId: User.uid,  // CRITICAL: userId is required
-      displayName: User.displayName || User.email || 'Anonymous',
-      message: Message
+    const messagePayload: any = {
+      roomId,
+      userId: user.uid,
+      displayName: user.displayName || user.email || 'Anonymous',
+      message
     };
 
-    // Image URL is conditionally added to avoid sending undefined values
-    if (ImageUrl) MessagePayload.imageUrl = ImageUrl;
+    if (imageUrl) {
+      messagePayload.imageUrl = imageUrl;
+    }
 
-    this.Socket.emit('send-message', MessagePayload);
+    this.socket.emit('send-message', messagePayload);
   }
 
-  /// Sends typing indicator to notify other users of typing activity
-  sendTypingIndicator(RoomId: string, IsTyping: boolean): void {
-    const User = this.AuthService.currentUser;
-    if (!User || !this.Socket?.connected) return;
+  // Sends a typing indicator to other members of a room.
+  sendTypingIndicator(roomId: string, isTyping: boolean): void {
+    const user = this.authService.currentUser;
+    if (!user || !this.socket?.connected) return;
 
-    this.Socket.emit('typing', {
-      roomId: RoomId,
-      userId: User.uid,
-      displayName: User.displayName || User.email || 'Anonymous',
-      isTyping: IsTyping
+    this.socket.emit('typing', {
+      roomId,
+      userId: user.uid,
+      displayName: user.displayName || user.email || 'Anonymous',
+      isTyping
     });
   }
 
-  /// Disconnects from the Socket.IO server and clears connection state
+  // Disconnect from the socket server and reset connection-scoped state.
   disconnect(): void {
-    if (this.Socket) {
+    if (this.socket) {
       console.log('ChatService: Disconnecting');
-      this.Socket.disconnect();
-      this.Socket = null;
-      this.ConnectionState.next('disconnected');
-      this.IsRegistered.next(false);
-      this.ActiveRooms.next([]);
+      this.socket.removeAllListeners();
+      this.socket.disconnect();
+      this.socket = null;
     }
+
+    this.connectionState.next('disconnected');
+    this.isRegisteredSubject.next(false);
+    this.isRegistering = false;
+    this.joiningRoomIds.clear();
+    this.joinedRoomIds.clear();
+    this.transientRoomIds.clear();
+    this.activeRooms.next([]);
   }
 
-  /// Checks if a specific user is currently online
-  isUserOnline(UserId: string): boolean {
-    return this.OnlineUsers.value.get(UserId) || false;
+  // Checks whether a specific user is currently online.
+  isUserOnline(userId: string): boolean {
+    return this.onlineUsers.value.get(userId) || false;
   }
 
-  /// Returns the current Socket.IO connection status
+  // Returns the current Socket.IO connection status.
   get isConnected(): boolean {
-    return this.Socket?.connected || false;
+    return this.socket?.connected || false;
   }
 
-  /// Returns the current user registration status
+  // Returns the current user registration status.
   get isRegistered(): boolean {
-    return this.IsRegistered.value;
+    return this.isRegisteredSubject.value;
   }
 }
 
 export class ChatApiService {
-  private readonly ApiUrl = `${environment.apiUrl}/API/Chat`;
+  private readonly apiUrl = `${environment.apiUrl}/API/Chat`;
 
   constructor(
-    private readonly HttpClient: HttpClient,
-    private readonly AuthService: AuthService
+    private readonly httpClient: HttpClient,
+    private readonly authService: AuthService
   ) { }
 
-  // HTTP headers include authentication token for API requests
+  // HTTP headers include authentication token for API requests.
   private async getHeaders(): Promise<HttpHeaders> {
-    const Token = await this.AuthService.getIdToken();
+    const token = await this.authService.getIdToken();
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'x-api-passcode': 'PourRice',
-      ...(Token && { 'Authorization': `Bearer ${Token}` })
+      ...(token && { 'Authorization': `Bearer ${token}` })
     });
   }
 
-  /// Retrieves chat history for a specific room from the API
-  async getRoomMessages(RoomId: string, Limit: number = 50): Promise<Observable<any>> {
-    const Headers = await this.getHeaders();
-    return this.HttpClient.get(
-      `${this.ApiUrl}/Rooms/${RoomId}/Messages?limit=${Limit}`,
-      { headers: Headers }
+  // Retrieves chat history for a specific room from the API.
+  async getRoomMessages(roomId: string, limit: number = 50): Promise<Observable<any>> {
+    const headers = await this.getHeaders();
+    return this.httpClient.get(
+      `${this.apiUrl}/Rooms/${roomId}/Messages?limit=${limit}`,
+      { headers }
     );
   }
 
-  /// Retrieves all chat records for a specific user
-  async getUserChatRecords(UserId: string): Promise<Observable<any>> {
-    const Headers = await this.getHeaders();
-    return this.HttpClient.get(
-      `${this.ApiUrl}/Records/${UserId}`,
-      { headers: Headers }
+  // Retrieves all chat records for a specific user.
+  async getUserChatRecords(userId: string): Promise<Observable<any>> {
+    const headers = await this.getHeaders();
+    return this.httpClient.get(
+      `${this.apiUrl}/Records/${userId}`,
+      { headers }
     );
   }
 
-  /// Retrieves all available chat rooms with participant data
+  // Retrieves all available chat rooms with participant data.
   async getAllRooms(): Promise<Observable<any>> {
-    const Headers = await this.getHeaders();
-    return this.HttpClient.get(
-      `${this.ApiUrl}/Rooms`,
-      { headers: Headers }
+    const headers = await this.getHeaders();
+    return this.httpClient.get(
+      `${this.apiUrl}/Rooms`,
+      { headers }
     );
   }
 
-  /// Retrieves public chat rooms (can be called without authentication)
-  getRoomsPublic(Limit: number = 50): Observable<any> {
-    return this.HttpClient.get(
-      `${this.ApiUrl}/RoomsPublic?limit=${Limit}`,
+  // Retrieves public chat rooms and recent activity without authentication.
+  getRoomsPublic(limit: number = 50): Observable<any> {
+    return this.httpClient.get(
+      `${this.apiUrl}/RoomsPublic?limit=${limit}`,
       { headers: new HttpHeaders({ 'x-api-passcode': 'PourRice' }) }
     );
   }
 
-  /// Creates a new chat room with specified participants
-  async createRoom(RoomId: string, Participants: string[], RoomName?: string, Type?: 'private' | 'group'): Promise<Observable<any>> {
-    const Headers = await this.getHeaders();
-    return this.HttpClient.post(
-      `${this.ApiUrl}/Rooms`,
-      { roomId: RoomId, participants: Participants, roomName: RoomName, type: Type },
-      { headers: Headers }
+  // Creates a new chat room with specified participants.
+  async createRoom(roomId: string, participants: string[], roomName?: string, type?: 'private' | 'group'): Promise<Observable<any>> {
+    const headers = await this.getHeaders();
+    return this.httpClient.post(
+      `${this.apiUrl}/Rooms`,
+      { roomId, participants, roomName, type },
+      { headers }
     );
   }
 }

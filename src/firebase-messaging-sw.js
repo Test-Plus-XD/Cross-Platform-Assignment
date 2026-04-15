@@ -19,6 +19,43 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+function resolveRoute(data) {
+  if (!data) {
+    return '/';
+  }
+
+  if (typeof data.route === 'string' && data.route.trim()) {
+    return data.route.trim();
+  }
+
+  if (typeof data.url === 'string' && data.url.startsWith('pourrice://')) {
+    try {
+      const parsed = new URL(data.url);
+      const slug = parsed.pathname.replace(/^\/+/, '');
+
+      if (parsed.hostname === 'bookings') {
+        return '/booking';
+      }
+
+      if (parsed.hostname === 'chat') {
+        return `/chat${slug ? '/' + slug : ''}`;
+      }
+
+      if (parsed.hostname === 'menu' && slug) {
+        return `/restaurant/${slug}`;
+      }
+    } catch (error) {
+      console.warn('[firebase-messaging-sw.js] Failed to parse legacy URL:', error);
+    }
+  }
+
+  if (typeof data.url === 'string' && data.url.trim()) {
+    return data.url.trim();
+  }
+
+  return '/';
+}
+
 // Handle background messages
 // This is triggered when the app is not in focus
 messaging.onBackgroundMessage((payload) => {
@@ -33,7 +70,7 @@ messaging.onBackgroundMessage((payload) => {
     tag: 'fcm-notification',
     requireInteraction: false,
     vibrate: [200, 100, 200], // Vibration pattern for mobile devices
-    actions: payload.data?.url ? [
+    actions: resolveRoute(payload.data) ? [
       { action: 'open', title: 'Open', icon: '/assets/icon/icon.png' }
     ] : []
   };
@@ -50,13 +87,17 @@ self.addEventListener('notificationclick', (event) => {
 
   // Handle action buttons
   if (event.action === 'open' || !event.action) {
-    const urlToOpen = event.notification.data?.url || '/';
+    const routeToOpen = resolveRoute(event.notification.data);
+    const urlToOpen = new URL(routeToOpen, self.location.origin).href;
 
     event.waitUntil(
       clients.matchAll({ type: 'window', includeUncontrolled: true })
         .then((clientList) => {
           // Check if there's already a window open
           for (const client of clientList) {
+            if ('navigate' in client && client.url.startsWith(self.location.origin)) {
+              return client.navigate(urlToOpen).then(() => client.focus());
+            }
             if (client.url === urlToOpen && 'focus' in client) {
               return client.focus();
             }

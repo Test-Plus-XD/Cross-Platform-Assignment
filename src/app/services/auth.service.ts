@@ -20,6 +20,7 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
 import { UserService, UserProfile } from './user.service';
+import { MessagingService } from './messaging.service';
 
 export interface User {
   uid: string;
@@ -59,6 +60,7 @@ export class AuthService {
   private ngZone = inject(NgZone);
   private platform = inject(Platform);
   private userService = inject(UserService);
+  private messagingService = inject(MessagingService);
   // Flag to track if we're on a mobile platform
   private readonly isMobile: boolean;
   // Flag to prevent duplicate profile creation attempts
@@ -369,6 +371,12 @@ export class AuthService {
   public async logout(): Promise<void> {
     try {
       console.log('AuthService: Logging out user');
+      const idToken = await this.getIdToken();
+
+      if (idToken) {
+        await this.messagingService.deleteCurrentToken(idToken);
+      }
+
       await signOut(this.auth);
       this.currentUserSubject.next(null);
       this.userService.clearAuthToken();
