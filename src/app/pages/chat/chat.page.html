@@ -102,7 +102,7 @@
 
               <div class="room-preview">
                 <p class="last-message">
-                  {{ room.lastMessage || ((lang$ | async) === 'TC' ? '開始對話...' : 'Start conversation...') }}
+                  {{ getRoomPreviewText(room) }}
                 </p>
                 <span class="message-count" *ngIf="room.messageCount && room.messageCount > 0">
                   {{ room.messageCount }}

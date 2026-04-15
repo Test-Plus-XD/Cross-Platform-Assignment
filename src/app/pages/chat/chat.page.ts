@@ -292,6 +292,25 @@ export class ChatPage implements OnInit, OnDestroy {
     return OtherParticipant.photoURL || null;
   }
 
+  /// Formats chat room preview text so image-only messages do not show raw Firebase Storage URLs
+  getRoomPreviewText(Room: ChatRoom): string {
+    const LastMessage = Room.lastMessage ? Room.lastMessage.trim() : '';
+
+    if (!LastMessage) {
+      return this.languageService.getCurrentLanguage() === 'TC'
+        ? '開始對話...'
+        : 'Start conversation...';
+    }
+
+    if (LastMessage.startsWith('https://firebasestorage.googleapis.com/')) {
+      return this.languageService.getCurrentLanguage() === 'TC'
+        ? '[圖片]'
+        : '[Image]';
+    }
+
+    return LastMessage;
+  }
+
   /// Formats timestamp to human-readable format with language support
   formatTimestamp(Timestamp: string | undefined): string {
     if (!Timestamp) return '';

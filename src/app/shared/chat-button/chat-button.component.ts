@@ -545,17 +545,14 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     try {
       // Message text is trimmed to remove whitespace
       const MessageText = this.newMessage.trim();
-
-      // Image URL becomes the message if no text was typed
-      const FinalMessage = MessageText || (this.UploadedImageUrl ? this.UploadedImageUrl : '');
       const ImageUrl = this.UploadedImageUrl ? this.UploadedImageUrl : '';
 
       console.log('ChatButton: Sending message to room', RoomId);
-      console.log('ChatButton: Message text:', FinalMessage);
+      console.log('ChatButton: Message text:', MessageText);
       console.log('ChatButton: Image URL:', ImageUrl);
 
       // Message is sent via Socket.IO with both text and image URL
-      await this.chatService.sendMessage(RoomId, FinalMessage, ImageUrl);
+      await this.chatService.sendMessage(RoomId, MessageText, ImageUrl);
 
       // Input fields are cleared after successful send
       this.ngZone.run(() => {
@@ -613,20 +610,36 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /// Checks if message contains an image URL
   hasImage(Message: ChatMessage): boolean {
-    return !!(Message as any).imageUrl;
+    return !!this.getImageUrl(Message);
   }
 
   /// Gets image URL from message
   getImageUrl(Message: ChatMessage): string {
-    return (Message as any).imageUrl || '';
+    const StoredImageUrl = typeof Message.imageUrl === 'string'
+      ? Message.imageUrl.trim()
+      : '';
+
+    if (StoredImageUrl) {
+      return StoredImageUrl;
+    }
+
+    return this.isFirebaseStorageImageUrl(Message.message) ? Message.message : '';
   }
 
   /// Checks if message text should be displayed (not Firebase Storage reference text)
   shouldShowMessageText(Message: ChatMessage): boolean {
     if (!Message.message) return false;
 
-    // Message text containing Firebase Storage URL is hidden
-    return !Message.message.includes('firebasestorage.googleapis.com');
+    // Message text containing only a Firebase Storage image URL is hidden
+    return !this.isFirebaseStorageImageUrl(Message.message);
+  }
+
+  /// Checks whether a message string is only a Firebase Storage image URL
+  private isFirebaseStorageImageUrl(MessageText: string | null | undefined): boolean {
+    if (!MessageText) return false;
+
+    const TrimmedMessageText = MessageText.trim();
+    return TrimmedMessageText.startsWith('https://firebasestorage.googleapis.com/');
   }
 
   /// Formats message timestamps into human-readable time strings
