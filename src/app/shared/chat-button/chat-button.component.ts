@@ -1,12 +1,13 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZone, ChangeDetectorRef, Renderer2, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, firstValueFrom } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ChatService, ChatMessage } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ChatVisibilityService } from '../../services/chat-visibility.service';
+import { UserService } from '../../services/user.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
@@ -22,6 +23,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly chatVisibilityService = inject(ChatVisibilityService);
+  private readonly userService = inject(UserService);
   private readonly router = inject(Router);
   private readonly httpClient = inject(HttpClient);
   private readonly ngZone = inject(NgZone);
@@ -47,6 +49,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   uploadProgress = 0;
   selectedImage: File | null = null;
   previewUrl: string | null = null;
+  readonly participantPlaceholderAvatarUrl = 'https://www.vhv.rs/dpng/d/505-5058560_person-placeholder-image-free-hd-png-download.png';
   UploadedImageUrl: string | null = null;
   UploadedImagePath: string | null = null;
 
@@ -60,6 +63,8 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   // Flag to track whether message history has been loaded at least once
   private HasReceivedHistory = false;
   private OriginalParentElement: HTMLElement | null = null;
+  private readonly participantAvatarUrlCache = new Map<string, string>();
+  private readonly participantAvatarRequestIds = new Set<string>();
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -100,6 +105,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
         const CurrentRoomId = this.getRoomId();
         if (Message.roomId === CurrentRoomId) {
           console.log('ChatButton: Received real-time message', Message.messageId);
+          this.ensureParticipantAvatarUrls([Message]);
 
           // Duplicate messages are prevented by checking if message ID already exists
           const MessageExists = this.messages.some(ExistingMessage =>
@@ -142,6 +148,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
 
           // Message list is replaced with historical messages (create new array reference)
           this.messages = [...(Data.messages || [])];
+          this.ensureParticipantAvatarUrls(this.messages);
 
           // Loading state is always cleared when history arrives (even if empty)
           this.clearLoadingState();
@@ -606,6 +613,71 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   /// Determines whether a message was sent by the current user
   isOwnMessage(Message: ChatMessage): boolean {
     return Message.userId === this.authService.currentUser?.uid;
+  }
+
+  // Ensures every non-current participant in the loaded messages has an avatar URL cached for rendering.
+  private ensureParticipantAvatarUrls(messages: ChatMessage[]): void {
+    const currentUserId = this.authService.currentUser?.uid;
+    const participantUserIds = [...new Set(
+      messages
+        .map(message => message.userId)
+        .filter((userId): userId is string => Boolean(userId) && userId !== currentUserId)
+    )];
+
+    participantUserIds.forEach((participantUserId) => {
+      if (this.participantAvatarUrlCache.has(participantUserId) || this.participantAvatarRequestIds.has(participantUserId)) return;
+
+      // The requested placeholder is stored immediately so the UI has a stable fallback whilst the profile loads.
+      this.participantAvatarUrlCache.set(participantUserId, this.participantPlaceholderAvatarUrl);
+      this.participantAvatarRequestIds.add(participantUserId);
+      void this.loadParticipantAvatarUrl(participantUserId);
+    });
+  }
+
+  // Loads a participant photo from the public user profile endpoint without overwriting the logged-in user cache.
+  private async loadParticipantAvatarUrl(participantUserId: string): Promise<void> {
+    try {
+      const participantProfile = await firstValueFrom(this.userService.getPublicUserProfile(participantUserId));
+      const participantAvatarUrl = this.getSanitisedParticipantAvatarUrl(participantProfile?.photoURL);
+      this.participantAvatarUrlCache.set(participantUserId, participantAvatarUrl);
+    } catch (error) {
+      console.warn('ChatButton: Failed to load participant avatar, using placeholder', participantUserId, error);
+      this.participantAvatarUrlCache.set(participantUserId, this.participantPlaceholderAvatarUrl);
+    } finally {
+      this.participantAvatarRequestIds.delete(participantUserId);
+      this.changeDetectorRef.markForCheck();
+    }
+  }
+
+  // Returns a valid participant avatar URL or the fixed placeholder when the profile photo is missing.
+  private getSanitisedParticipantAvatarUrl(photoUrl: string | null | undefined): string {
+    const trimmedPhotoUrl = typeof photoUrl === 'string' ? photoUrl.trim() : '';
+
+    if (!trimmedPhotoUrl || trimmedPhotoUrl === '—' || trimmedPhotoUrl === 'null' || trimmedPhotoUrl === 'undefined') {
+      return this.participantPlaceholderAvatarUrl;
+    }
+
+    return trimmedPhotoUrl;
+  }
+
+  // Exposes the cached participant avatar URL to the template and falls back to the placeholder during loading.
+  getParticipantAvatarUrl(userId: string | null | undefined): string {
+    if (!userId) {
+      return this.participantPlaceholderAvatarUrl;
+    }
+
+    return this.participantAvatarUrlCache.get(userId) || this.participantPlaceholderAvatarUrl;
+  }
+
+  // Falls back to the placeholder permanently if a participant photo URL fails to load in the browser.
+  onParticipantAvatarError(event: Event, userId: string): void {
+    const avatarElement = event.target as HTMLImageElement | null;
+
+    this.participantAvatarUrlCache.set(userId, this.participantPlaceholderAvatarUrl);
+
+    if (avatarElement && avatarElement.src !== this.participantPlaceholderAvatarUrl) {
+      avatarElement.src = this.participantPlaceholderAvatarUrl;
+    }
   }
 
   /// Checks if message contains an image URL

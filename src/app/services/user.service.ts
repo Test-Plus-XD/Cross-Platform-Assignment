@@ -199,12 +199,29 @@ export class UserService {
     return url;
   }
 
-  /**
-   * Get user profile by UID from the API.
-   * This method returns null if the profile doesn't exist (404), which is expected
-   * for new users who haven't had their profile created yet.
-   */
-  getUserProfile(uid: string): Observable<UserProfile | null> {
+  // Maps the raw API payload into the local UserProfile shape and sanitises nullable image fields.
+  private mapApiUserProfile(response: UserProfile, uid: string): UserProfile {
+    return {
+      uid: response.uid || uid,
+      email: response.email || null,
+      displayName: response.displayName || null,
+      photoURL: this.sanitizeImageUrl(response.photoURL),
+      emailVerified: response.emailVerified || false,
+      createdAt: response.createdAt,
+      modifiedAt: response.modifiedAt,
+      phoneNumber: response.phoneNumber || null,
+      bio: response.bio || null,
+      preferences: response.preferences || {},
+      lastLoginAt: response.lastLoginAt,
+      loginCount: response.loginCount || 0,
+      type: response.type || null,
+      restaurantId: response.restaurantId || null,
+      fcmTokens: response.fcmTokens || []
+    };
+  }
+
+  // Fetches a user profile and optionally promotes it into the logged-in profile cache.
+  private fetchUserProfile(uid: string, updateCurrentProfileCache: boolean): Observable<UserProfile | null> {
     if (!uid) {
       console.error('UserService: Cannot fetch profile without uid');
       return throwError(() => new Error('UID is required'));
@@ -218,48 +235,55 @@ export class UserService {
     ).pipe(
       map(response => {
         console.log('UserService: Profile fetched successfully:', response);
-        const profile: UserProfile = {
-          uid: response.uid || uid,
-          email: response.email || null,
-          displayName: response.displayName || null,
-          photoURL: this.sanitizeImageUrl(response.photoURL),
-          emailVerified: response.emailVerified || false,
-          createdAt: response.createdAt,
-          modifiedAt: response.modifiedAt,
-          phoneNumber: response.phoneNumber || null,
-          bio: response.bio || null,
-          preferences: response.preferences || {},
-          lastLoginAt: response.lastLoginAt,
-          loginCount: response.loginCount || 0,
-          type: response.type || null, // Ensure 'type' is mapped correctly
-          restaurantId: response.restaurantId || null
-        };
-        console.log('UserService: Profile mapped with restaurantId:', profile.restaurantId);
-        this.currentProfileSubject.next(profile);
-        // Persist profile fields to localStorage (Requirement 10.2)
-        try {
-          const cacheEntry: UserProfileCache = {
-            type: profile.type ?? null,
-            restaurantId: profile.restaurantId ?? null,
-            displayName: profile.displayName ?? null,
-            photoURL: profile.photoURL ?? null
-          };
-          localStorage.setItem('userProfileCache', JSON.stringify(cacheEntry));
-        } catch (e) {
-          console.warn('UserService: Could not write localStorage profile cache', e);
+        const profile = this.mapApiUserProfile(response, uid);
+
+        if (updateCurrentProfileCache) {
+          console.log('UserService: Profile mapped with restaurantId:', profile.restaurantId);
+          this.currentProfileSubject.next(profile);
+
+          // Persist profile fields to localStorage so the active user cache survives refreshes.
+          try {
+            const cacheEntry: UserProfileCache = {
+              type: profile.type ?? null,
+              restaurantId: profile.restaurantId ?? null,
+              displayName: profile.displayName ?? null,
+              photoURL: profile.photoURL ?? null
+            };
+            localStorage.setItem('userProfileCache', JSON.stringify(cacheEntry));
+          } catch (e) {
+            console.warn('UserService: Could not write localStorage profile cache', e);
+          }
         }
+
         return profile;
       }),
       catchError((error: HttpErrorResponse) => {
         if (error.status === 404) {
           console.log('UserService: Profile not found (404) for uid:', uid);
-          // Return null for non-existent profiles, this is expected for new users
+          // Return null for non-existent profiles, this is expected for new users.
           return of(null);
         }
         console.error('UserService: Error fetching profile:', error);
         return throwError(() => this.handleError(error));
       })
     );
+  }
+
+  /**
+   * Get user profile by UID from the API.
+   * This method returns null if the profile doesn't exist (404), which is expected
+   * for new users who haven't had their profile created yet.
+   */
+  getUserProfile(uid: string): Observable<UserProfile | null> {
+    return this.fetchUserProfile(uid, true);
+  }
+
+  /**
+   * Get any public user profile by UID without replacing the active logged-in profile cache.
+   * This is used by features such as chat, where other participants' display data is needed.
+   */
+  getPublicUserProfile(uid: string): Observable<UserProfile | null> {
+    return this.fetchUserProfile(uid, false);
   }
 
   /**

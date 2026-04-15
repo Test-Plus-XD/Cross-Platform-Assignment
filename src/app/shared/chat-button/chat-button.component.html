@@ -64,6 +64,12 @@
       <div *ngFor="let message of messages"
            class="message"
            [class.own]="isOwnMessage(message)">
+        <img *ngIf="!isOwnMessage(message)"
+             class="message-avatar"
+             [src]="getParticipantAvatarUrl(message.userId)"
+             [alt]="message.displayName || 'Participant profile photo'"
+             loading="lazy"
+             (error)="onParticipantAvatarError($event, message.userId)" />
         <div class="message-content">
           <span class="message-author" *ngIf="!isOwnMessage(message)">{{ message.displayName }}</span>
 
