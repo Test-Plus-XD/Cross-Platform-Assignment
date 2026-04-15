@@ -1,103 +1,130 @@
-<!-- QR Scanner Modal
+<!-- QR Scanner Modal — iOS-native look
      Native: transparent ion-content — camera shows through; overlay rendered on top.
      Web:    <video> element with live camera feed + BarcodeDetector polling. -->
-<ion-header class="scanner-header">
-  <ion-toolbar class="scanner-toolbar">
-    <ion-title>{{ lang === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</ion-title>
-    <ion-buttons slot="end">
-      <!-- Torch toggle (native only) -->
-      <ion-button *ngIf="isNative" (click)="toggleTorch()" [title]="lang === 'TC' ? '閃光燈' : 'Torch'">
-        <ion-icon *ngIf="torchEnabled" name="flash" slot="icon-only"></ion-icon>
-        <ion-icon *ngIf="!torchEnabled" name="flash-off-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-      <ion-button (click)="dismissModal()">
-        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
 
-<ion-content class="scanner-content" [class.native-mode]="isNative">
+<!-- No ion-header — we render our own floating toolbar for full-bleed camera -->
+<ion-content class="scanner-content" [class.native-mode]="isNative" scrollY="false">
 
   <!-- ── Web mode: camera feed via getUserMedia ──────────────────────────── -->
-  <ng-container *ngIf="!isNative">
-
-    <!-- BarcodeDetector available: show live viewfinder -->
-    <ng-container *ngIf="hasBarcodeDetector">
-      <div class="viewfinder-wrapper">
-        <video #videoEl autoplay playsinline muted class="camera-feed"></video>
-        <div class="scan-overlay">
-          <div class="scan-frame">
-            <span class="corner tl"></span>
-            <span class="corner tr"></span>
-            <span class="corner bl"></span>
-            <span class="corner br"></span>
-          </div>
-        </div>
-      </div>
-      <div class="hint-bar">
-        <ion-icon name="qr-code-outline"></ion-icon>
-        <p>{{ lang === 'TC' ? '將鏡頭對準二維碼，自動掃描' : 'Point camera at QR code — scans automatically' }}</p>
-      </div>
-    </ng-container>
-
-    <!-- BarcodeDetector unavailable: informational fallback -->
-    <ng-container *ngIf="isUnsupportedWebMode">
-      <div class="unsupported-state">
-        <ion-icon name="warning-outline" color="warning" class="unsupported-icon"></ion-icon>
-        <h3>{{ lang === 'TC' ? '不支援即時掃描' : 'Live scanning not supported' }}</h3>
-        <p>
-          {{ lang === 'TC'
-            ? '此裝置或瀏覽器不支援即時掃描。你可以立即上傳含有 QR Code 的圖片進行掃描。'
-            : 'Live scanning is unavailable on this device or browser. You can upload an image containing a QR code to scan now.' }}
-        </p>
-        <label class="upload-qr-button">
-          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-          {{ lang === 'TC' ? '上傳圖片並掃描二維碼' : 'Upload image to scan QR' }}
-        </label>
-        <ion-button fill="outline" (click)="dismissModal()">
-          {{ lang === 'TC' ? '關閉' : 'Close' }}
-        </ion-button>
-      </div>
-    </ng-container>
-
+  <ng-container *ngIf="!isNative && hasBarcodeDetector">
+    <video #videoEl autoplay playsinline muted class="camera-feed"></video>
   </ng-container>
 
-  <!-- ── Native mode: transparent content; camera renders beneath ─────── -->
-  <ng-container *ngIf="isNative">
-    <div class="viewfinder-wrapper">
-      <div class="scan-overlay">
-        <div class="scan-frame">
+  <!-- ── Shared: dim mask + viewfinder cutout ──────────────────────────── -->
+  <ng-container *ngIf="!isUnsupportedWebMode && !isNativeCameraFallback">
+    <div class="scanner-ui">
+
+      <!-- Top dim region -->
+      <div class="dim-region dim-top"></div>
+
+      <!-- Middle row: left dim | clear window | right dim -->
+      <div class="dim-middle">
+        <div class="dim-region dim-side"></div>
+
+        <!-- The clear viewfinder window -->
+        <div class="viewfinder-window" [class.success]="isProcessing && !isDecodingImage">
+          <!-- iOS-style rounded corner brackets -->
           <span class="corner tl"></span>
           <span class="corner tr"></span>
           <span class="corner bl"></span>
           <span class="corner br"></span>
+          <!-- Animated scan line -->
+          <div class="scan-line" *ngIf="!isProcessing"></div>
         </div>
+
+        <div class="dim-region dim-side"></div>
       </div>
-    </div>
-    <div class="hint-bar">
-      <ion-icon name="qr-code-outline"></ion-icon>
-      <p>{{ lang === 'TC' ? '將鏡頭對準餐廳的二維碼，自動掃描' : 'Point camera at the restaurant\'s QR code — scans automatically' }}</p>
+
+      <!-- Bottom dim region -->
+      <div class="dim-region dim-bottom">
+        <p class="hint-text">
+          {{ isNative
+          ? (lang === 'TC' ? '將鏡頭對準餐廳的二維碼' : 'Point camera at the restaurant\'s QR code')
+          : (lang === 'TC' ? '將鏡頭對準二維碼，自動掃描' : 'Point camera at a QR code to scan') }}
+        </p>
+        <!-- Image upload pill (web only) -->
+        <label class="upload-pill" *ngIf="!isNative">
+          <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+          <ion-icon name="image-outline"></ion-icon>
+          {{ lang === 'TC' ? '從相簿選取' : 'Choose from Photos' }}
+        </label>
+      </div>
+
     </div>
   </ng-container>
 
-  <div class="image-upload-fallback" *ngIf="isNativeCameraFallback">
-    <label class="upload-qr-button">
-      <input type="file" accept="image/*" (change)="onImageSelected($event)" />
-      {{ lang === 'TC' ? '上傳圖片並掃描二維碼' : 'Upload image to scan QR' }}
-    </label>
+  <!-- ── Floating top bar (close + torch) ─────────────────────────────── -->
+  <div class="floating-bar" *ngIf="!isUnsupportedWebMode && !isNativeCameraFallback">
+    <button class="icon-pill" (click)="dismissModal()" [attr.aria-label]="lang === 'TC' ? '關閉' : 'Close'">
+      <ion-icon name="close"></ion-icon>
+    </button>
+    <span class="bar-title">{{ lang === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</span>
+    <button class="icon-pill" *ngIf="isNative" (click)="toggleTorch()"
+      [attr.aria-label]="lang === 'TC' ? '閃光燈' : 'Torch'">
+      <ion-icon [name]="torchEnabled ? 'flash' : 'flash-outline'"></ion-icon>
+    </button>
+    <!-- Spacer when torch not shown (web) -->
+    <span class="icon-pill invisible" *ngIf="!isNative" aria-hidden="true"></span>
   </div>
 
-  <!-- ── Processing overlay (both modes) ──────────────────────────────── -->
+  <!-- ── BarcodeDetector unavailable: informational fallback ──────────── -->
+  <ng-container *ngIf="isUnsupportedWebMode">
+    <div class="unsupported-state">
+      <div class="unsupported-icon-wrap">
+        <ion-icon name="qr-code-outline"></ion-icon>
+      </div>
+      <h3>{{ lang === 'TC' ? '不支援即時掃描' : 'Live Scanning Unavailable' }}</h3>
+      <p>
+        {{ lang === 'TC'
+        ? '此瀏覽器不支援即時掃描。請上傳含有 QR Code 的圖片。'
+        : 'Your browser doesn\'t support live scanning. Upload a photo of a QR code instead.' }}
+      </p>
+      <label class="upload-pill large">
+        <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+        <ion-icon name="image-outline"></ion-icon>
+        {{ lang === 'TC' ? '上傳圖片掃描' : 'Upload Image to Scan' }}
+      </label>
+      <button class="close-text-btn" (click)="dismissModal()">
+        {{ lang === 'TC' ? '關閉' : 'Close' }}
+      </button>
+    </div>
+    <!-- Still show close button -->
+    <div class="floating-bar">
+      <button class="icon-pill" (click)="dismissModal()" [attr.aria-label]="lang === 'TC' ? '關閉' : 'Close'">
+        <ion-icon name="close"></ion-icon>
+      </button>
+      <span class="bar-title">{{ lang === 'TC' ? '掃描二維碼' : 'Scan QR Code' }}</span>
+      <span class="icon-pill invisible" aria-hidden="true"></span>
+    </div>
+  </ng-container>
+
+  <!-- ── Native camera fallback (device unsupported) ──────────────────── -->
+  <div class="unsupported-state" *ngIf="isNativeCameraFallback">
+    <div class="unsupported-icon-wrap">
+      <ion-icon name="camera-outline"></ion-icon>
+    </div>
+    <h3>{{ lang === 'TC' ? '無法啟動相機' : 'Camera Unavailable' }}</h3>
+    <p>{{ lang === 'TC' ? '請上傳含有 QR Code 的圖片。' : 'Upload a photo of a QR code instead.' }}</p>
+    <label class="upload-pill large">
+      <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+      <ion-icon name="image-outline"></ion-icon>
+      {{ lang === 'TC' ? '上傳圖片掃描' : 'Upload Image to Scan' }}
+    </label>
+    <button class="close-text-btn" (click)="dismissModal()">
+      {{ lang === 'TC' ? '關閉' : 'Close' }}
+    </button>
+  </div>
+
+  <!-- ── Processing overlay ────────────────────────────────────────────── -->
   <div class="processing-overlay" *ngIf="isProcessing || isDecodingImage">
-    <img src="assets/icon/Eclipse.gif" alt="" class="loading-spinner">
-    <p>
-      {{
-        isDecodingImage
-          ? (lang === 'TC' ? '正在分析圖片...' : 'Reading QR from image...')
-          : (lang === 'TC' ? '處理中...' : 'Processing...')
-      }}
-    </p>
+    <div class="processing-card">
+      <img src="assets/icon/Eclipse.gif" alt="" class="loading-spinner">
+      <p>
+        {{ isDecodingImage
+        ? (lang === 'TC' ? '正在分析圖片…' : 'Reading QR code…')
+        : (lang === 'TC' ? '正在載入餐廳…' : 'Loading restaurant…') }}
+      </p>
+    </div>
   </div>
 
 </ion-content>

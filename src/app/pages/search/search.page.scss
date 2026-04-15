@@ -44,7 +44,7 @@
   // Sticky search & filter section - positioned below header
   .search-header {
     position: sticky;
-    top: var(--header-spacing, 48px);
+    top: 0;
     z-index: 10;
     background: var(--ion-background-color);
     padding: 1rem;

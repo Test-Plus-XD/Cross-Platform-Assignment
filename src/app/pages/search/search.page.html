@@ -1,5 +1,5 @@
 <!-- Search page UI: bilingual search, district select, veggie/vegan quick filters -->
-<ion-content class="search-page-content">
+<ion-content class="search-page-content" (ionScroll)="onContentScroll($event)" scrollEvents="true">
   <div class="page-container">
 
     <!-- Page Title (Non-sticky) -->
@@ -13,7 +13,11 @@
     </div>
 
     <!-- Sticky Search & Filter Section -->
-    <div class="search-header">
+    <div class="search-header" [class.search-header--collapsed]="isSearchHeaderCollapsed">
+      <button *ngIf="isSearchHeaderCollapsed" type="button" class="search-header-expand-overlay"
+        [attr.aria-label]="(lang$ | async) === 'TC' ? '展開搜尋與篩選' : 'Expand search and filters'"
+        (click)="expandSearchHeader($event)">
+      </button>
       <!-- Search Bar -->
       <div class="search-bar-container">
         <ion-searchbar [(ngModel)]="searchQuery" (ionInput)="onSearchInput()"
@@ -24,7 +28,7 @@
 
       <!-- Filter Chips -->
       <div class="filter-section">
-        <div class="filter-chips-container">
+        <div class="filter-chips-primary">
           <!-- District Filter Button -->
           <ion-chip [outline]="selectedDistrictTokens.length === 0"
             [color]="selectedDistrictTokens.length > 0 ? 'primary' : 'medium'" (click)="openDistrictFilter()"
@@ -39,12 +43,6 @@
               (click)="clearDistrict($event)"></ion-icon>
           </ion-chip>
 
-          <!-- District Tags -->
-          <ion-chip *ngFor="let district of selectedDistrictTokens" class="filter-tag green-badge">
-            <ion-label>{{ getDistrictLabel(district) }}</ion-label>
-            <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
-          </ion-chip>
-
           <!-- Keyword Filter Button -->
           <ion-chip [outline]="selectedKeywordTokens.length === 0"
             [color]="selectedKeywordTokens.length > 0 ? 'primary' : 'medium'" (click)="openKeywordFilter()"
@@ -57,12 +55,6 @@
             </ion-label>
             <ion-icon name="close-circle" *ngIf="selectedKeywordTokens.length > 0"
               (click)="clearKeyword($event)"></ion-icon>
-          </ion-chip>
-
-          <!-- Keyword Tags -->
-          <ion-chip *ngFor="let keyword of selectedKeywordTokens" class="filter-tag green-badge">
-            <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
-            <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
           </ion-chip>
 
           <!-- Near Me Chip -->
@@ -84,10 +76,23 @@
             <ion-icon name="close-circle" *ngIf="isNearMeActive"
               (click)="deactivateNearMe(); $event.stopPropagation()"></ion-icon>
           </ion-chip>
+        </div>
+
+        <div class="filter-chips-tags" *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0">
+          <!-- District Tags -->
+          <ion-chip *ngFor="let district of selectedDistrictTokens" class="filter-tag green-badge">
+            <ion-label>{{ getDistrictLabel(district) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeDistrictTag(district, $event)"></ion-icon>
+          </ion-chip>
+
+          <!-- Keyword Tags -->
+          <ion-chip *ngFor="let keyword of selectedKeywordTokens" class="filter-tag green-badge">
+            <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
+          </ion-chip>
 
           <!-- Clear All Filters Button -->
-          <ion-chip *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0" color="danger"
-            (click)="clearAllFilters()" class="filter-chip clear-chip">
+          <ion-chip color="danger" (click)="clearAllFilters()" class="filter-chip clear-chip">
             <ion-icon name="close-outline"></ion-icon>
             <ion-label>{{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN
               }}</ion-label>

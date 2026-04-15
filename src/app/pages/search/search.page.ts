@@ -57,6 +57,24 @@ export class SearchPage implements OnInit, OnDestroy {
   private readonly reviewsService = inject(ReviewsService);
   private readonly router = inject(Router);
 
+  // Search header collapse state shrinks the sticky controls once the user scrolls down.
+  public isSearchHeaderCollapsed: boolean = false;
+
+  // Handle content scrolling so the sticky header compacts after the hero title scrolls away.
+  public onContentScroll(event: any): void {
+    const scrollTop = event.detail?.scrollTop ?? 0;
+
+    if (scrollTop > 60 && !this.isSearchHeaderCollapsed) this.isSearchHeaderCollapsed = true;
+    if (scrollTop <= 20 && this.isSearchHeaderCollapsed) this.isSearchHeaderCollapsed = false;
+  }
+
+  // Expand the sticky header back to full size when the collapsed bar is tapped.
+  public expandSearchHeader(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isSearchHeaderCollapsed = false;
+  }
+
   // Search and filter state
   public searchQuery: string = ''; // Free-text query (user input)
   public selectedDistrictTokens: string[] = []; // EN tokens for districts (canonical)

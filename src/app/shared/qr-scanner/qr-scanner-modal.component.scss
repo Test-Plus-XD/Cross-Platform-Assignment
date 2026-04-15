@@ -1,33 +1,24 @@
-// Scanner modal fills the full screen
+// ─────────────────────────────────────────────────────────────────────────────
+// QR Scanner Modal — iOS-native aesthetic
+// Full-bleed camera, rectangular dim mask with clear cutout, white corner
+// brackets, animated scan line, frosted-glass floating toolbar.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── ion-content base ─────────────────────────────────────────────────────────
+
 ion-content.scanner-content {
   --background: #000;
-  --color: #fff;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
 
-  // Native mode: transparent so the Capacitor camera renders underneath
   &.native-mode {
     --background: transparent;
   }
 }
 
-.scanner-header {
-  ion-toolbar.scanner-toolbar {
-    --background: rgba(0, 0, 0, 0.85);
-    --color: #fff;
-    --border-color: transparent;
-  }
-}
-
-// ── Viewfinder ──────────────────────────────────────────────────────────────
-
-.viewfinder-wrapper {
-  position: relative;
-  width: 100%;
-  height: calc(100% - 80px); // leave room for hint bar
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
+// ── Camera feed (web mode) ────────────────────────────────────────────────────
 
 .camera-feed {
   position: absolute;
@@ -35,139 +26,211 @@ ion-content.scanner-content {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  z-index: 0;
 }
 
-// ── Scan overlay ─────────────────────────────────────────────────────────────
+// ── Scanner UI layout (dim mask + viewfinder) ─────────────────────────────────
+// Uses a flex column so the three rows (top dim / middle row / bottom dim)
+// fill the full viewport height precisely.
 
-.scan-overlay {
+.scanner-ui {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  // Dark vignette around the scan frame
-  background: radial-gradient(
-    ellipse 260px 260px at center,
-    transparent 40%,
-    rgba(0, 0, 0, 0.55) 100%
-  );
+  flex-direction: column;
+  z-index: 1;
+  pointer-events: none; // children opt-in via pointer-events: auto
 }
 
-.scan-frame {
-  position: relative;
-  width: 240px;
-  height: 240px;
+// Shared dim colour
+$dim: rgba(0, 0, 0, 0.62);
 
-  .corner {
-    position: absolute;
-    width: 32px;
-    height: 32px;
-    border-color: var(--ion-color-primary, #3880ff);
-    border-style: solid;
-    border-width: 0;
-
-    &.tl { top: 0;    left: 0;  border-top-width: 4px; border-left-width: 4px;  border-top-left-radius: 4px; }
-    &.tr { top: 0;    right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 4px; }
-    &.bl { bottom: 0; left: 0;  border-bottom-width: 4px; border-left-width: 4px;  border-bottom-left-radius: 4px; }
-    &.br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 4px; }
-  }
+.dim-region {
+  background: $dim;
 }
 
-// ── Hint bar ─────────────────────────────────────────────────────────────────
+.dim-top {
+  // Grows to push the viewfinder row to vertical centre-ish (slightly above)
+  flex: 1.1;
+  min-height: 120px; // always leave room for the floating bar
+}
 
-.hint-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 20px 24px 32px;
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+.dim-middle {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #fff;
-
-  ion-icon {
-    font-size: 28px;
-    flex-shrink: 0;
-    color: var(--ion-color-primary, #3880ff);
-  }
-
-  p {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.4;
-  }
+  flex-direction: row;
+  align-items: stretch;
+  // Fixed height = viewfinder square size
+  height: 260px;
+  flex-shrink: 0;
 }
 
-// ── Unsupported fallback (web / no BarcodeDetector) ──────────────────────────
+.dim-side {
+  flex: 1;
+}
 
-.unsupported-state {
+.dim-bottom {
+  flex: 1.4;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 32px 24px;
-  text-align: center;
-  color: #fff;
+  justify-content: flex-start;
+  padding-top: 28px;
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  gap: 20px;
+}
 
-  .unsupported-icon {
-    font-size: 64px;
-    margin-bottom: 16px;
+// ── Viewfinder window ─────────────────────────────────────────────────────────
+
+$vf-size: 260px;
+$corner-len: 28px;
+$corner-thick: 4px;
+$corner-radius: 6px;
+$corner-color: #fff;
+$corner-color-success: #34c759; // iOS green
+
+.viewfinder-window {
+  position: relative;
+  width: $vf-size;
+  height: $vf-size;
+  flex-shrink: 0;
+  // Transparent — camera shows through
+  background: transparent;
+  overflow: hidden;
+
+  // iOS-style corner brackets
+  .corner {
+    position: absolute;
+    width: $corner-len;
+    height: $corner-len;
+    border-color: $corner-color;
+    border-style: solid;
+    border-width: 0;
+    transition: border-color 0.25s ease;
+
+    &.tl {
+      top: 0;
+      left: 0;
+      border-top-width: $corner-thick;
+      border-left-width: $corner-thick;
+      border-top-left-radius: $corner-radius;
+    }
+
+    &.tr {
+      top: 0;
+      right: 0;
+      border-top-width: $corner-thick;
+      border-right-width: $corner-thick;
+      border-top-right-radius: $corner-radius;
+    }
+
+    &.bl {
+      bottom: 0;
+      left: 0;
+      border-bottom-width: $corner-thick;
+      border-left-width: $corner-thick;
+      border-bottom-left-radius: $corner-radius;
+    }
+
+    &.br {
+      bottom: 0;
+      right: 0;
+      border-bottom-width: $corner-thick;
+      border-right-width: $corner-thick;
+      border-bottom-right-radius: $corner-radius;
+    }
   }
 
-  h3 {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0 0 12px;
-  }
-
-  p {
-    font-size: 14px;
-    opacity: 0.8;
-    line-height: 1.6;
-    margin: 0 0 24px;
-  }
-
-  ion-button {
-    --color: #fff;
-    --border-color: rgba(255,255,255,0.5);
+  // Success state — corners flash green
+  &.success .corner {
+    border-color: $corner-color-success;
   }
 }
 
-.image-upload-fallback {
+// ── Animated scan line ────────────────────────────────────────────────────────
+
+.scan-line {
   position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 3;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.15) 20%,
+      rgba(255, 255, 255, 0.9) 50%,
+      rgba(255, 255, 255, 0.15) 80%,
+      transparent 100%);
+  animation: scan-sweep 2s ease-in-out infinite;
+  will-change: transform;
 }
 
-.upload-qr-button {
+@keyframes scan-sweep {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(#{$vf-size - 16px});
+    opacity: 0;
+  }
+}
+
+// ── Hint text ─────────────────────────────────────────────────────────────────
+
+.hint-text {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-align: center;
+  line-height: 1.45;
+  padding: 0 32px;
+  pointer-events: none;
+}
+
+// ── Upload pill (web — "Choose from Photos") ──────────────────────────────────
+
+.upload-pill {
   position: relative;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 10px 14px;
+  gap: 7px;
+  padding: 11px 22px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  pointer-events: auto;
+  transition: background 0.18s ease, border-color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
 
-  &:hover {
-    background: rgba(0, 0, 0, 0.6);
-    border-color: rgba(255, 255, 255, 0.55);
+  ion-icon {
+    font-size: 18px;
+    flex-shrink: 0;
   }
 
-  &:focus-within {
-    outline: 2px solid rgba(255, 255, 255, 0.9);
-    outline-offset: 2px;
-    border-color: rgba(255, 255, 255, 0.8);
+  &:active {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  &.large {
+    padding: 14px 28px;
+    font-size: 15px;
   }
 
   input[type='file'] {
@@ -183,28 +246,162 @@ ion-content.scanner-content {
   }
 }
 
+// ── Floating top bar ──────────────────────────────────────────────────────────
+// Sits above the scanner UI. Frosted glass pill on iOS, semi-opaque on Android.
+
+.floating-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px 12px;
+  pointer-events: none; // children opt-in
+
+  .bar-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+}
+
+// Circular frosted-glass icon button
+.icon-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease;
+
+  ion-icon {
+    font-size: 18px;
+  }
+
+  &:active {
+    background: rgba(0, 0, 0, 0.65);
+  }
+
+  &.invisible {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+// ── Unsupported / fallback state ──────────────────────────────────────────────
+
+.unsupported-state {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px calc(env(safe-area-inset-bottom, 0px) + 40px);
+  text-align: center;
+  background: #111;
+  color: #fff;
+  gap: 0;
+}
+
+.unsupported-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+
+  ion-icon {
+    font-size: 40px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+.unsupported-state h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: #fff;
+}
+
+.unsupported-state p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.close-text-btn {
+  margin-top: 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 16px;
+  -webkit-tap-highlight-color: transparent;
+
+  &:active {
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
 // ── Processing overlay ────────────────────────────────────────────────────────
 
 .processing-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.processing-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  z-index: 10;
-  color: #fff;
+  gap: 14px;
+  padding: 28px 36px;
+  border-radius: 20px;
+  background: rgba(30, 30, 30, 0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
   .loading-spinner {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
   }
 
   p {
     margin: 0;
-    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
     font-weight: 500;
+    letter-spacing: 0.01em;
   }
 }

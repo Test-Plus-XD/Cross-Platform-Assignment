@@ -1,14 +1,17 @@
 // Home page styling with updated green theme and purple-blue gradient accents
 :host {
+
   // Page content background uses light green gradient
   .home-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
   }
+
   // Main container with responsive padding
   .page-container {
     min-height: 100%;
     padding-bottom: 5rem; // Space for bottom tabs on mobile
   }
+
   // Hero section with auto-rotating banner
   .hero-section {
     margin-bottom: 2rem;
@@ -30,6 +33,7 @@
           height: 100%;
           object-fit: cover;
         }
+
         // Gradient overlay for text readability
         .hero-overlay {
           position: absolute;
@@ -39,6 +43,7 @@
           bottom: 0;
           background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.7) 100%);
         }
+
         // Hero content positioned over the image
         .hero-content {
           position: absolute;
@@ -82,6 +87,7 @@
       }
     }
   }
+
   // Content sections styling
   .content-section {
     padding: 0 1rem;
@@ -100,6 +106,7 @@
       padding-right: 1rem;
     }
   }
+
   // Section header with title and "See All" button
   .section-header {
     display: flex;
@@ -126,10 +133,11 @@
       }
     }
   }
+
   // Swiper containers for all sections
   swiper-container {
     width: 100%;
-    padding: 0.5rem 0;
+    padding: 0 0 100 0;
   }
 
   // Reviews swiper specific styling to support fixed width cards
@@ -138,6 +146,7 @@
       width: auto !important; // Allow slides to use card's fixed width
     }
   }
+
   // Card styling shared across all sections
   .offer-card,
   .article-card,
@@ -312,6 +321,7 @@
       }
     }
   }
+
   // Review card specific styling
   .review-card {
     margin: 0;
@@ -412,6 +422,7 @@
       }
     }
   }
+
   // Mobile app promotion section with gradient background
   .app-promo-section {
     .app-promo-card {
@@ -468,6 +479,7 @@
       }
     }
   }
+
   // Nearby section specific styling
   .nearby-section {
     .section-header {
@@ -531,10 +543,12 @@
   .bottom-spacer {
     height: 2rem;
   }
+
   // Responsive adjustments for tablets and larger screens
   @media (min-width: 768px) {
     .page-container {
-      padding: 2rem;
+      padding: 1rem;
+      padding-top: 0rem;
       padding-bottom: 3rem;
     }
 
@@ -580,11 +594,13 @@
       }
     }
   }
+
   // Desktop adjustments
   @media (min-width: 1024px) {
     .page-container {
       max-width: none; // Remove max-width constraint for web-layout to work
       margin: 0 auto;
+      padding: 0 auto;
     }
 
     .hero-section .hero-swiper {
