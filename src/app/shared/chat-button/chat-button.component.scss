@@ -1,6 +1,14 @@
+:host {
+  display: block;
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+}
+
 // Floating action button
 .chat-fab {
-  position: fixed;
+  position: absolute;
   bottom: 80px;
   right: 20px;
   display: flex;
@@ -12,7 +20,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1000;
+  pointer-events: auto;
+  z-index: 100;
 
   &:hover {
     transform: translateY(-2px);
@@ -70,7 +79,7 @@
 
 // Chat window
 .chat-window {
-  position: fixed;
+  position: absolute;
   bottom: 80px;
   right: 20px;
   width: 400px;
@@ -87,7 +96,7 @@
   opacity: 0;
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 999;
+  z-index: 997;
 
   &.open {
     transform: scale(1) translateY(0);
@@ -533,5 +542,11 @@
     width: auto;
     max-width: none;
     height: calc(100vh - 160px);
+  }
+}
+
+@media (min-width: 769px) {
+  .chat-fab {
+    z-index: 998;
   }
 }

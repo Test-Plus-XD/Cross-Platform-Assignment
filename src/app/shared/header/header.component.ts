@@ -1,9 +1,11 @@
-// Shared header component that exposes language & theme controls and brand icon
+// Shared header component that exposes language, theme, back navigation, and contextual page actions.
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Location } from '@angular/common';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import { ToastController } from '@ionic/angular';
+import { Share } from '@capacitor/share';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
@@ -14,6 +16,14 @@ import { AppStateService } from '../../services/app-state.service';
 interface PageTitle {
   Header_EN: string;
   Header_TC: string;
+}
+
+interface PageShareDetail {
+  isVisible: boolean;
+  title?: string;
+  text?: string;
+  url?: string;
+  dialogTitle?: string;
 }
 
 @Component({
@@ -27,6 +37,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   readonly theme = inject(ThemeService);
   readonly platform = inject(PlatformService);
   readonly UI = inject(UIService);
+  private readonly toastController = inject(ToastController);
   private location = inject(Location);
   private router = inject(Router);
 
@@ -42,8 +53,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   brandIcon$ = this.isDark$.pipe(map(d => d ? 'assets/icon/App-Dark.png?theme=dark' : 'assets/icon/App-Light.png?theme=light'));
   // Subject that holds the latest page titles
   private pageTitleSubject = new BehaviorSubject<PageTitle>({ Header_EN: '', Header_TC: '' });
+  // Subject that holds the latest contextual share payload for the active page.
+  private pageShareSubject = new BehaviorSubject<PageShareDetail>({ isVisible: false });
   // Observable that emits the currently visible title (resolved by language)
   pageTitle$ = this.pageTitleSubject.asObservable();
+  // Observable that emits the current share configuration for the active page.
+  pageShare$ = this.pageShareSubject.asObservable();
   // Observable for app state to check login status
   appState$ = inject(AppStateService).appState$;
   // User service for checking user type
@@ -52,6 +67,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   userProfile$ = this.userService.currentProfile$;
 
   private eventHandler = (ev: Event) => this.onPageTitleEvent(ev as CustomEvent);
+  private shareEventHandler = (ev: Event) => this.onPageShareEvent(ev as CustomEvent<PageShareDetail>);
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -65,12 +81,16 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Register global listener for page title events
     window.addEventListener('page-title', this.eventHandler as EventListener);
+    // Register global listener for page share events
+    window.addEventListener('page-share', this.shareEventHandler as EventListener);
     this.syncTitleFromActiveRoute();
   }
 
   ngOnDestroy(): void {
     // Remove event listener
     window.removeEventListener('page-title', this.eventHandler as EventListener);
+    // Remove page share listener
+    window.removeEventListener('page-share', this.shareEventHandler as EventListener);
   }
 
   // Toggle theme via ThemeService
@@ -93,6 +113,40 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.location.back();
   }
 
+  // Open the native share sheet when the active page provides share metadata.
+  async shareCurrentPage(): Promise<void> {
+    const shareDetail = this.pageShareSubject.getValue();
+    if (!shareDetail.isVisible) return;
+
+    try {
+      const canUseNativeShare = await this.canUseNativeShare();
+      if (canUseNativeShare) {
+        await Share.share({
+          title: shareDetail.title,
+          text: shareDetail.text,
+          url: shareDetail.url,
+          dialogTitle: shareDetail.dialogTitle || shareDetail.title
+        });
+        return;
+      }
+
+      if (navigator.share) {
+        await navigator.share({
+          title: shareDetail.title,
+          text: shareDetail.text,
+          url: shareDetail.url
+        });
+        return;
+      }
+
+      await this.presentShareUnavailableToast();
+    } catch (error) {
+      if (this.isShareCancellationError(error)) return;
+      console.error('HeaderComponent: error sharing current page', error);
+      await this.presentShareUnavailableToast();
+    }
+  }
+
   // Handler for custom page title events
   private onPageTitleEvent(ev: CustomEvent): void {
     try {
@@ -108,6 +162,27 @@ export class HeaderComponent implements OnInit, OnDestroy {
       }
     } catch (err) {
       console.error('HeaderComponent: error handling page title event', err);
+    }
+  }
+
+  // Handler for custom page share events that provide contextual share metadata.
+  private onPageShareEvent(ev: CustomEvent<PageShareDetail>): void {
+    try {
+      const detail = ev.detail;
+      if (!detail || typeof detail.isVisible !== 'boolean') {
+        console.warn('HeaderComponent: page-share event had invalid detail', detail);
+        return;
+      }
+
+      this.pageShareSubject.next({
+        isVisible: detail.isVisible,
+        title: typeof detail.title === 'string' ? detail.title : undefined,
+        text: typeof detail.text === 'string' ? detail.text : undefined,
+        url: typeof detail.url === 'string' ? detail.url : undefined,
+        dialogTitle: typeof detail.dialogTitle === 'string' ? detail.dialogTitle : undefined,
+      });
+    } catch (err) {
+      console.error('HeaderComponent: error handling page share event', err);
     }
   }
 
@@ -132,5 +207,34 @@ export class HeaderComponent implements OnInit, OnDestroy {
         Header_TC: titleData.Header_TC || ''
       });
     }
+  }
+
+  // Check whether the native Capacitor Share plugin can open the OS share sheet.
+  private async canUseNativeShare(): Promise<boolean> {
+    try {
+      const canShareResult = await Share.canShare();
+      return canShareResult.value;
+    } catch {
+      return false;
+    }
+  }
+
+  // Treat common cancellation responses as a normal user action instead of an error.
+  private isShareCancellationError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const message = 'message' in error && typeof error.message === 'string' ? error.message.toLowerCase() : '';
+    return message.includes('cancel') || message.includes('dismiss');
+  }
+
+  // Show a short warning when sharing is unavailable on the current platform.
+  private async presentShareUnavailableToast(): Promise<void> {
+    const isTraditionalChinese = this.lang.getCurrentLanguage() === 'TC';
+    const toast = await this.toastController.create({
+      message: isTraditionalChinese ? '此裝置暫時無法分享' : 'Sharing is not available on this device',
+      duration: 2500,
+      position: 'bottom',
+      color: 'warning'
+    });
+    await toast.present();
   }
 }

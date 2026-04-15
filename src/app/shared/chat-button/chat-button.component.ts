@@ -1,4 +1,5 @@
-import { Component, Input, OnInit, OnDestroy, ViewChild, ElementRef, NgZone, ChangeDetectorRef, inject } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { Component, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZone, ChangeDetectorRef, Renderer2, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -16,7 +17,7 @@ import PhotoSwipeLightbox from 'photoswipe/lightbox';
   styleUrls: ['./chat-button.component.scss'],
   standalone: false
 })
-export class ChatButtonComponent implements OnInit, OnDestroy {
+export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly chatService = inject(ChatService);
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
@@ -25,6 +26,9 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   private readonly httpClient = inject(HttpClient);
   private readonly ngZone = inject(NgZone);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
+  private readonly document = inject(DOCUMENT);
+  private readonly elementRef = inject(ElementRef<HTMLElement>);
+  private readonly renderer = inject(Renderer2);
 
   @Input() restaurantId!: string;
   @Input() restaurantName!: string;
@@ -55,12 +59,17 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   private HistoryTimeout: any;
   // Flag to track whether message history has been loaded at least once
   private HasReceivedHistory = false;
+  private OriginalParentElement: HTMLElement | null = null;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
   constructor() {
     this.geminiButtonOpen$ = this.chatVisibilityService.geminiButtonOpen$;
+  }
+
+  ngAfterViewInit(): void {
+    this.moveHostToOverlayRoot();
   }
 
   ngOnInit(): void {
@@ -177,6 +186,8 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.restoreHostToOriginalParent();
+
     // Uploaded images are deleted when component is destroyed without sending
     if (this.UploadedImageUrl && this.UploadedImagePath) {
       this.deleteUploadedImage(this.UploadedImagePath);
@@ -191,6 +202,26 @@ export class ChatButtonComponent implements OnInit, OnDestroy {
     if (this.TypingTimeout) clearTimeout(this.TypingTimeout);
     if (this.HistoryTimeout) clearTimeout(this.HistoryTimeout);
     if (this.Lightbox) this.Lightbox.destroy();
+  }
+
+  /// Moves the chat host out of the page ion-content so it shares the app-level overlay layer used by the global AI button
+  private moveHostToOverlayRoot(): void {
+    const HostElement = this.elementRef.nativeElement;
+    const OverlayRootElement = this.document.querySelector('ion-app') as HTMLElement | null;
+
+    if (!HostElement || !OverlayRootElement || HostElement.parentElement === OverlayRootElement) return;
+
+    this.OriginalParentElement = HostElement.parentElement;
+    this.renderer.appendChild(OverlayRootElement, HostElement);
+  }
+
+  /// Restores the host to its original Angular parent before destruction so Angular can tear the view down normally
+  private restoreHostToOriginalParent(): void {
+    const HostElement = this.elementRef.nativeElement;
+
+    if (!HostElement || !this.OriginalParentElement) return;
+
+    this.renderer.appendChild(this.OriginalParentElement, HostElement);
   }
 
   /// Clears the loading state and any associated timeouts

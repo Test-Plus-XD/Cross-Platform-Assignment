@@ -119,6 +119,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     // Keep currentLanguage snapshot in sync for methods that cannot use async pipe
     this.lang$.pipe(takeUntil(this.destroy$)).subscribe(lang => {
       this.currentLanguage = lang;
+      this.updatePageShareData();
     });
 
     // Try to get user's location for distance calculation
@@ -181,15 +182,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         this.restaurant = restaurant;
         console.log('RestaurantPage: Restaurant loaded successfully:', restaurant.Name_EN);
 
-        // Emit dynamic restaurant name to header
-        const titleEvent = new CustomEvent('page-title', {
-          detail: {
-            Header_EN: restaurant.Name_EN || 'Restaurant',
-            Header_TC: restaurant.Name_TC || '餐廳'
-          },
-          bubbles: true
-        });
-        window.dispatchEvent(titleEvent);
+        // Emit dynamic restaurant name and share payload to the shared header.
+        this.emitRestaurantPageTitle(restaurant);
+        this.updatePageShareData();
 
         // After restaurant loaded, initialise the map if coordinates exist
         setTimeout(() => this.initialiseMapIfNeeded(), 20);
@@ -278,6 +273,68 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         this.changeDetectionReference.markForCheck();
       }
     });
+  }
+
+  // Emit the loaded restaurant name so the shared header reflects the current page context.
+  private emitRestaurantPageTitle(restaurant: Restaurant): void {
+    const titleEvent = new CustomEvent('page-title', {
+      detail: {
+        Header_EN: restaurant.Name_EN || 'Restaurant',
+        Header_TC: restaurant.Name_TC || '餐廳'
+      },
+      bubbles: true
+    });
+    window.dispatchEvent(titleEvent);
+  }
+
+  // Publish the current restaurant share payload so the shared header can open the native share sheet.
+  private updatePageShareData(): void {
+    if (!this.restaurant) return;
+
+    const restaurantName = this.currentLanguage === 'TC'
+      ? (this.restaurant.Name_TC || this.restaurant.Name_EN || '餐廳')
+      : (this.restaurant.Name_EN || this.restaurant.Name_TC || 'Restaurant');
+    const restaurantAddress = this.currentLanguage === 'TC'
+      ? (this.restaurant.Address_TC || this.restaurant.Address_EN || '')
+      : (this.restaurant.Address_EN || this.restaurant.Address_TC || '');
+    const shareText = this.currentLanguage === 'TC'
+      ? `我啱啱發現咗呢間好正斗嘅素食餐廳！\n\n${restaurantName}${restaurantAddress ? `\n${restaurantAddress}` : ''}`
+      : `I found this great vegan restaurant!\n\n${restaurantName}${restaurantAddress ? `\n${restaurantAddress}` : ''}`;
+    const shareEvent = new CustomEvent('page-share', {
+      detail: {
+        isVisible: true,
+        title: restaurantName,
+        text: shareText,
+        url: this.getRestaurantShareMapUrl(),
+        dialogTitle: this.currentLanguage === 'TC' ? '分享餐廳' : 'Share Restaurant'
+      },
+      bubbles: true
+    });
+    window.dispatchEvent(shareEvent);
+  }
+
+  // Build a public Google Maps URL so shared content stays useful outside the app shell.
+  private getRestaurantShareMapUrl(): string | undefined {
+    if (!this.restaurant) return undefined;
+    if (typeof this.restaurant.Latitude === 'number' && typeof this.restaurant.Longitude === 'number') {
+      return `https://www.google.com/maps/search/?api=1&query=${this.restaurant.Latitude},${this.restaurant.Longitude}`;
+    }
+
+    const restaurantAddress = this.currentLanguage === 'TC'
+      ? (this.restaurant.Address_TC || this.restaurant.Address_EN || '')
+      : (this.restaurant.Address_EN || this.restaurant.Address_TC || '');
+    if (!restaurantAddress.trim()) return undefined;
+
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurantAddress)}`;
+  }
+
+  // Remove the contextual share action when the restaurant page is destroyed.
+  private clearPageShareData(): void {
+    const shareEvent = new CustomEvent('page-share', {
+      detail: { isVisible: false },
+      bubbles: true
+    });
+    window.dispatchEvent(shareEvent);
   }
 
   /// Retrieves the count for a specific rating from the distribution
@@ -1148,6 +1205,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
   /// Clean up on destroy
   ngOnDestroy(): void {
+    this.clearPageShareData();
     this.destroy$.next();
     this.destroy$.complete();
     if (this.marker) {

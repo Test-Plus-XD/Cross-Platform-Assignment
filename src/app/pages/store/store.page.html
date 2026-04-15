@@ -1,6 +1,13 @@
-<!-- Store management page: Info | Menu | Bookings | Ads sections -->
+ <!-- Store management page: Info | Menu | Bookings | Ads sections -->
 <ion-content>
-  <div class="page-container">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
+    <p>{{ (lang$ | async) === 'TC' ? '載入中...' : 'Loading...' }}</p>
+  </div>
+
+  <!-- Existing content -->
+  <div class="page-container" *ngIf="!isLoading">
 
     <!-- Pull-to-refresh reloads restaurant, menu, and bookings -->
     <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">

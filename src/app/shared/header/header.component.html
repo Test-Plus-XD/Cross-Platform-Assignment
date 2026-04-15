@@ -1,7 +1,7 @@
 <!-- Shared header: brand, nav links, language and theme controls -->
 <header id="app-shared-header">
-  <ion-header [translucent]="true">
-    <ion-toolbar>
+  <ion-header [translucent]="true" class="shared-header-shell">
+    <ion-toolbar [class.mobile-toolbar]="isMobile$ | async">
     <!-- Start slot: menu + brand (on non-mobile) -->
     <div slot="start" class="header-start">
       <ng-container *ngIf="(showHeaderMenu$ | async)">
@@ -34,8 +34,26 @@
     <div slot="end" class="header-end">
       <!-- Mobile: show back button -->
       <ng-container *ngIf="isMobile$ | async">
-        <ion-button (click)="goBack()" fill="clear" size="small" color="medium" aria-label="Go back">
-          <ion-icon name="return-up-back-outline"></ion-icon>
+        <ion-button
+          *ngIf="(pageShare$ | async)?.isVisible"
+          (click)="shareCurrentPage()"
+          fill="clear"
+          size="small"
+          color="medium"
+          class="mobile-header-action"
+          [attr.aria-label]="(lang$ | async) === 'TC' ? '分享餐廳' : 'Share restaurant'"
+          [attr.title]="(lang$ | async) === 'TC' ? '分享餐廳' : 'Share restaurant'">
+          <ion-icon slot="icon-only" name="share-social-outline"></ion-icon>
+        </ion-button>
+        <ion-button
+          (click)="goBack()"
+          fill="clear"
+          size="small"
+          color="medium"
+          class="mobile-header-action"
+          [attr.aria-label]="(lang$ | async) === 'TC' ? '返回' : 'Go back'"
+          [attr.title]="(lang$ | async) === 'TC' ? '返回' : 'Go back'">
+          <ion-icon slot="icon-only" name="return-up-back-outline"></ion-icon>
         </ion-button>
       </ng-container>
 

@@ -1,5 +1,4 @@
-/* Basic styling for shared header */
-.shared-header {
+.shared-header-shell {
   --ion-toolbar-background: var(--ion-color-primary);
   padding-bottom: env(safe-area-inset-bottom);
   display: flex;
@@ -17,6 +16,8 @@
 .header-end {
   display: flex;
   align-items: center;
+  position: relative;
+  z-index: 2;
 }
 
 .brand-title {
@@ -51,6 +52,28 @@
   color: var(--ion-text-color);
 }
 
+.mobile-toolbar {
+  --min-height: 56px;
+}
+
+.mobile-toolbar .toolbar-title {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding-inline: 5.25rem;
+  pointer-events: none;
+}
+
+.mobile-toolbar .header-start,
+.mobile-toolbar .header-end {
+  min-width: 3rem;
+}
+
 .nav-link {
   margin-left: 1rem;
   margin-right: 1rem;
@@ -78,16 +101,21 @@
   margin-left: 1rem;
   background: var(--ion-color-light);
   border: 1px solid var(--ion-color-medium);
-  padding: 0.3rem 0.6rem;
+  padding: 0.15rem 0.3rem;
   font-family: 'Arial Unicode MS', sans-serif;
   min-width: 3rem;
   cursor: pointer;
   color: var(--ion-text-color);
 }
 
+.mobile-header-action + .mobile-header-action {
+  margin-inline-start: 0.006rem;
+}
+
 // Ensure all header text uses theme colors
 ion-toolbar {
   --color: var(--ion-text-color);
+  position: relative;
 
   ion-title,
   ion-button,

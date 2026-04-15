@@ -56,23 +56,79 @@ export class SearchPage implements OnInit, OnDestroy {
   private readonly locationService = inject(LocationService);
   private readonly reviewsService = inject(ReviewsService);
   private readonly router = inject(Router);
+  private readonly searchHeaderCollapseThreshold: number = 72;
+  private readonly searchHeaderExpandThreshold: number = 24;
+  private readonly searchHeaderCollapseTravel: number = 18;
+  private readonly searchHeaderExpandTravel: number = 10;
+  private readonly searchHeaderStateLockMs: number = 240;
+  private lastSearchHeaderScrollTop: number = 0;
+  private searchHeaderScrollAccumulator: number = 0;
+  private searchHeaderStateLockUntil: number = 0;
+  private lastSearchHeaderScrollDirection: 'up' | 'down' | 'idle' = 'idle';
 
   // Search header collapse state shrinks the sticky controls once the user scrolls down.
   public isSearchHeaderCollapsed: boolean = false;
 
-  // Handle content scrolling so the sticky header compacts after the hero title scrolls away.
+  // Handle content scrolling with hysteresis so layout shifts from the sticky animation do not cause flicker.
   public onContentScroll(event: any): void {
-    const scrollTop = event.detail?.scrollTop ?? 0;
+    const scrollTop = Math.max(0, event.detail?.scrollTop ?? 0);
+    const scrollDelta = scrollTop - this.lastSearchHeaderScrollTop;
+    const currentTime = Date.now();
 
-    if (scrollTop > 60 && !this.isSearchHeaderCollapsed) this.isSearchHeaderCollapsed = true;
-    if (scrollTop <= 20 && this.isSearchHeaderCollapsed) this.isSearchHeaderCollapsed = false;
+    if (currentTime < this.searchHeaderStateLockUntil) {
+      this.lastSearchHeaderScrollTop = scrollTop;
+      return;
+    }
+
+    if (Math.abs(scrollDelta) < 1) {
+      this.lastSearchHeaderScrollTop = scrollTop;
+      return;
+    }
+
+    const scrollDirection: 'up' | 'down' = scrollDelta > 0 ? 'down' : 'up';
+
+    if (scrollDirection !== this.lastSearchHeaderScrollDirection) {
+      this.searchHeaderScrollAccumulator = 0;
+    }
+
+    this.searchHeaderScrollAccumulator += scrollDelta;
+    this.lastSearchHeaderScrollDirection = scrollDirection;
+
+    if (!this.isSearchHeaderCollapsed) {
+      if (scrollTop <= this.searchHeaderCollapseThreshold) this.searchHeaderScrollAccumulator = 0;
+
+      if (scrollTop > this.searchHeaderCollapseThreshold
+        && this.searchHeaderScrollAccumulator >= this.searchHeaderCollapseTravel) {
+        this.setSearchHeaderCollapsed(true);
+      }
+    } else if (scrollTop <= this.searchHeaderExpandThreshold
+      || this.searchHeaderScrollAccumulator <= -this.searchHeaderExpandTravel) {
+      this.setSearchHeaderCollapsed(false);
+    }
+
+    this.lastSearchHeaderScrollTop = scrollTop;
   }
 
-  // Expand the sticky header back to full size when the collapsed bar is tapped.
-  public expandSearchHeader(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isSearchHeaderCollapsed = false;
+  // Expand the sticky header back to full size when the compact bar is tapped or focused.
+  public expandSearchHeader(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    this.setSearchHeaderCollapsed(false);
+  }
+
+  // Update the sticky header state and briefly lock transitions while the height animation settles.
+  private setSearchHeaderCollapsed(isCollapsed: boolean): void {
+    if (this.isSearchHeaderCollapsed === isCollapsed) {
+      return;
+    }
+
+    this.isSearchHeaderCollapsed = isCollapsed;
+    this.searchHeaderScrollAccumulator = 0;
+    this.lastSearchHeaderScrollDirection = 'idle';
+    this.searchHeaderStateLockUntil = Date.now() + this.searchHeaderStateLockMs;
   }
 
   // Search and filter state

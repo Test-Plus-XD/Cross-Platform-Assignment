@@ -80,6 +80,12 @@ export class AppComponent implements OnInit, OnDestroy {
             detail: titleData,
             bubbles: true,
           }));
+
+          // Reset any contextual share action on every route change.
+          window.dispatchEvent(new CustomEvent('page-share', {
+            detail: { isVisible: false },
+            bubbles: true,
+          }));
         });
     }
 
