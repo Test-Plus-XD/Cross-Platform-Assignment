@@ -60,6 +60,7 @@ export class LoginPage implements OnDestroy, AfterViewInit {
   public displayName: string = '';
   public isLoginMode: boolean = true;
   public errorMessage: string = '';
+  public showPassword: boolean = false;
 
   // Language observable
   public lang$ = this.languageService.lang$;
@@ -290,7 +291,12 @@ export class LoginPage implements OnDestroy, AfterViewInit {
   // Toggle between login and registration modes
   public toggleMode(): void {
     this.isLoginMode = !this.isLoginMode;
+    this.showPassword = false;
     this.clearForm();
+  }
+
+  public togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   // Handle password reset
@@ -336,5 +342,6 @@ export class LoginPage implements OnDestroy, AfterViewInit {
     this.email = '';
     this.password = '';
     this.displayName = '';
+    this.showPassword = false;
   }
 }

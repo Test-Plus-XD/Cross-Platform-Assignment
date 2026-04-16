@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { environment } from '../environments/environment';
 import { ThemeService } from './services/theme.service';
@@ -48,6 +49,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Guard: prevent presenting the account-type modal more than once per session
     private hasShownTypeSelector = false;
+    private isPresentingTypeSelector = false;
+    private enforceAccountSetup = false;
 
     /** Inserted by Angular inject() migration for backwards compatibility */
     constructor(...args: unknown[]);
@@ -86,6 +89,12 @@ export class AppComponent implements OnInit, OnDestroy {
             detail: { isVisible: false },
             bubbles: true,
           }));
+
+          // During account-type setup, keep the user on Account page.
+          const activeUrl = this.router.url.split('?')[0];
+          if (this.enforceAccountSetup && activeUrl !== '/user') {
+            void this.router.navigateByUrl('/user', { replaceUrl: true });
+          }
         });
     }
 
@@ -155,6 +164,20 @@ export class AppComponent implements OnInit, OnDestroy {
             // pourrice://chat/{roomId} → /chat/{roomId}
             if (host === 'chat') {
               this.router.navigateByUrl(`/chat${slug ? '/' + slug : ''}`);
+              return;
+            }
+
+            // pourrice://store?payment_success=true&session_id=... → /store with query params
+            if (host === 'store') {
+              const paymentSuccess = parsed.searchParams.get('payment_success');
+              const sessionId = parsed.searchParams.get('session_id');
+              const query = paymentSuccess === 'true' && sessionId
+                ? `?payment_success=true&session_id=${encodeURIComponent(sessionId)}`
+                : '';
+              void Browser.close().catch(() => {
+                // noop: browser may already be closed
+              });
+              this.router.navigateByUrl(`/store${query}`);
               return;
             }
 
@@ -295,26 +318,35 @@ export class AppComponent implements OnInit, OnDestroy {
     // logged-in user has no type field.  The guard flag prevents re-presentation
     // on each navigation (appState$ emits on every route change).
     private watchForMissingUserType(): void {
-      this.appState.appState$.pipe(
+      combineLatest([
+        this.appState.appState$,
+        this.userService.currentProfile$,
+      ]).pipe(
         takeUntil(this.destroy$)
-      ).subscribe(state => {
-        if (!state.isLoggedIn || !state.uid) return;
+      ).subscribe(async ([state, userProfile]) => {
+        if (!state.isLoggedIn || !state.uid) {
+          this.enforceAccountSetup = false;
+          this.hasShownTypeSelector = false;
+          this.isPresentingTypeSelector = false;
+          return;
+        }
 
-        // Read the cached profile synchronously; if type is already set, skip
-        const profile = this.userService.currentProfile;
-        if (profile?.type) return;
+        // Wait until profile is available to avoid false positives during initial load.
+        if (!userProfile) return;
 
-        // Subscribe to the profile observable for one emission to check type
-        this.userService.currentProfile$.pipe(
-          takeUntil(this.destroy$)
-        ).subscribe(async userProfile => {
-          // Only act if logged in and profile has no type
-          if (!userProfile || userProfile.type) return;
-          if (this.hasShownTypeSelector) return;
+        const requiresSetup = !userProfile.type;
+        this.enforceAccountSetup = requiresSetup;
+        if (!requiresSetup || this.hasShownTypeSelector || this.isPresentingTypeSelector) return;
 
-          this.hasShownTypeSelector = true;
-          await this.presentAccountTypeModal();
-        });
+        this.hasShownTypeSelector = true;
+        this.isPresentingTypeSelector = true;
+
+        // Force user onto Account page before showing the required setup modal.
+        if (this.router.url.split('?')[0] !== '/user') {
+          await this.router.navigateByUrl('/user', { replaceUrl: true });
+        }
+
+        await this.presentAccountTypeModal();
       });
     }
 
@@ -325,8 +357,9 @@ export class AppComponent implements OnInit, OnDestroy {
           component: AccountTypeSelectorComponent,
           // Prevent swipe-to-dismiss — user must complete the selection
           canDismiss: false,
-          breakpoints: [0, 0.6, 1],
-          initialBreakpoint: 0.6,
+          breakpoints: [0, 1],
+          initialBreakpoint: 1,
+          backdropBreakpoint: 1,
           cssClass: 'account-type-modal',
         });
         await modal.present();
@@ -335,14 +368,21 @@ export class AppComponent implements OnInit, OnDestroy {
         const { data } = await modal.onWillDismiss();
         if (data?.type) {
           console.log('[AppComponent] Account type selected:', data.type);
+          this.enforceAccountSetup = false;
           // Re-fetch profile so navigation guards and tabs reflect the new type
           const uid = this.appState.appState.uid;
           if (uid) {
             this.userService.getUserProfile(uid).pipe(takeUntil(this.destroy$)).subscribe();
           }
+        } else {
+          // Should not happen because canDismiss=false, but keep flow recoverable.
+          this.hasShownTypeSelector = false;
         }
       } catch (err) {
         console.error('[AppComponent] Error presenting account type modal:', err);
+        this.hasShownTypeSelector = false;
+      } finally {
+        this.isPresentingTypeSelector = false;
       }
     }
 

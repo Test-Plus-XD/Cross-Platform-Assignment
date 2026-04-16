@@ -60,7 +60,7 @@ $dim: rgba(0, 0, 0, 0.62);
   flex-direction: row;
   align-items: stretch;
   // Fixed height = viewfinder square size
-  height: 260px;
+  height: 280px;
   flex-shrink: 0;
 }
 
@@ -81,7 +81,7 @@ $dim: rgba(0, 0, 0, 0.62);
 
 // ── Viewfinder window ─────────────────────────────────────────────────────────
 
-$vf-size: 260px;
+$vf-size: 280px;
 $corner-len: 28px;
 $corner-thick: 4px;
 $corner-radius: 6px;
