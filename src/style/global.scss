@@ -257,6 +257,7 @@ ion-content.has-tab-bar {
 
 .barcode-scanner-active ion-modal.qr-scanner-modal {
   visibility: visible;
+  --background: transparent;
 
   .ion-page,
   ion-header,
@@ -265,6 +266,11 @@ ion-content.has-tab-bar {
     background: transparent !important;
     --background: transparent;
   }
+
+  &::part(backdrop),
+  &::part(content) {
+    background: transparent !important;
+  }
 }
 
 /* QR Scanner modal — full screen, no border radius */
@@ -272,6 +278,14 @@ ion-content.has-tab-bar {
   --width: 100%;
   --height: 100%;
   --border-radius: 0;
+}
+
+/* Account type setup modal — full-screen blocking sheet to enforce onboarding. */
+ion-modal.account-type-modal {
+  --width: 100%;
+  --height: 100%;
+  --border-radius: 0;
+  --backdrop-opacity: 0.6;
 }
 
 /* Hide scrollbar for the entire page */

@@ -8,6 +8,8 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, AfterViewInit, inject } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, ToastController, LoadingController, ModalController, ViewWillEnter } from '@ionic/angular';
+import { Capacitor } from '@capacitor/core';
+import { Browser } from '@capacitor/browser';
 import { Subject, Observable } from 'rxjs';
 import { takeUntil, take } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
@@ -769,8 +771,13 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     await loading.present();
 
     try {
-      const successUrl = `${window.location.origin}/store?payment_success=true&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl  = `${window.location.origin}/store`;
+      const isNative = Capacitor.isNativePlatform();
+      const successUrl = isNative
+        ? 'pourrice://store?payment_success=true&session_id={CHECKOUT_SESSION_ID}'
+        : `${window.location.origin}/store?payment_success=true&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = isNative
+        ? 'pourrice://store'
+        : `${window.location.origin}/store`;
       const token = await this.feature.auth.getIdToken();
 
       const response = await this.dataService.post<{ sessionId: string; url: string }>(
@@ -781,8 +788,18 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
       await loading.dismiss();
 
-      // Redirect the browser to the Stripe-hosted payment page
-      if (response?.url) window.location.href = response.url;
+      // Redirect to Stripe-hosted payment page.
+      // Native uses Chrome Custom Tabs / SFSafariViewController; web uses same-tab.
+      if (response?.url) {
+        if (isNative) {
+          await Browser.open({
+            url: response.url,
+            presentationStyle: 'fullscreen'
+          });
+        } else {
+          window.location.href = response.url;
+        }
+      }
 
     } catch (err: any) {
       console.error('StorePage: payment initiation failed:', err);
