@@ -223,15 +223,14 @@ export class ChatPage implements OnInit, OnDestroy {
 
       console.log('ChatPage: Opening chatbox for restaurant:', this.selectedRestaurantId);
 
-      // Wait for view to update with new inputs
-      setTimeout(() => {
-        // Programmatically open the ChatButton chatbox
-        if (this.chatButton) {
-          this.chatButton.toggleChat();
-        } else {
-          console.warn('ChatPage: ChatButton component not found');
-        }
-      }, 100);
+      // Wait for view to update with new inputs before opening the child chat window.
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      if (this.chatButton) {
+        await this.chatButton.openChatWindow();
+      } else {
+        console.warn('ChatPage: ChatButton component not found');
+      }
     } else {
       // Other room types could be handled here in future
       console.log('ChatPage: Room type not yet supported');

@@ -1,3 +1,20 @@
+:host {
+  // Light mode uses a deeper layered edge shadow so the header reads as a separate panel.
+  --shared-header-shadow:
+    0 0 0.53rem rgba(26, 46, 31, 0.2),
+    0 0 1.58rem rgba(26, 46, 31, 0.14),
+    0 0 2.8rem rgba(26, 46, 31, 0.1);
+}
+
+:host-context(html.dark),
+:host-context(.dark) {
+  // Dark mode pushes the white glow harder so it remains visible against deep surfaces.
+  --shared-header-shadow:
+    0 0 0.61rem rgba(255, 255, 255, 0.34),
+    0 0 1.75rem rgba(255, 255, 255, 0.24),
+    0 0 3.15rem rgba(255, 255, 255, 0.16);
+}
+
 .shared-header-shell {
   --ion-toolbar-background: var(--ion-color-primary);
   padding-bottom: env(safe-area-inset-bottom);
@@ -10,6 +27,9 @@
   scroll-margin-top: 0px !important;
   top: 1px !important;
   z-index: 1 !important;
+  position: relative;
+  overflow: visible;
+  box-shadow: var(--shared-header-shadow);
 }
 
 .header-start,
@@ -116,6 +136,9 @@
 ion-toolbar {
   --color: var(--ion-text-color);
   position: relative;
+  z-index: 1;
+  border-radius: 0;
+  overflow: visible;
 
   ion-title,
   ion-button,

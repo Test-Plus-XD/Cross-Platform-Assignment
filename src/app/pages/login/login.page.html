@@ -31,7 +31,7 @@
       </ion-item>
 
       <!-- Password Field -->
-      <ion-item>
+      <ion-item class="password-item">
         <ion-label position="floating">{{ (lang$ | async) === 'TC' ? translations.password.TC : translations.password.EN }}</ion-label>
         <ion-input [type]="showPassword ? 'text' : 'password'"
                    required
@@ -39,7 +39,7 @@
                    name="password"
                    autocomplete="current-password">
         </ion-input>
-        <ion-button fill="clear" slot="end" type="button" (click)="togglePasswordVisibility()">
+        <ion-button fill="clear" slot="end" type="button" class="password-toggle-button" (click)="togglePasswordVisibility()">
           <ion-icon [name]="showPassword ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
         </ion-button>
       </ion-item>
@@ -53,21 +53,21 @@
     </form>
 
     <!-- Forgot Password Link (only in login mode) -->
-    <ion-item lines="none" class="ion-margin-top" *ngIf="isLoginMode">
-      <ion-label class="ion-text-center">
-        <ion-button fill="clear" size="small" (click)="forgotPassword()">
+    <ion-item lines="none" class="ion-margin-top forgot-password-item" *ngIf="isLoginMode">
+      <ion-label class="ion-text-center forgot-password-content">
+        <ion-button fill="clear" size="small" class="forgot-password-button" (click)="forgotPassword()">
           {{ (lang$ | async) === 'TC' ? translations.forgetPassword.TC : translations.forgetPassword.EN }}
         </ion-button>
       </ion-label>
     </ion-item>
 
     <!-- Toggle Mode Button -->
-    <ion-item lines="none" class="ion-margin-top">
-      <ion-label class="ion-text-center">
-        <ion-text color="medium">
+    <ion-item lines="none" class="ion-margin-top mode-toggle-item">
+      <ion-label class="ion-text-center mode-toggle-content">
+        <ion-text color="medium" class="mode-toggle-copy">
           {{ (lang$ | async) === 'TC' ? (isLoginMode ? translations.dontHaveAccount.TC : translations.alreadyHaveAccount.TC) : (isLoginMode ? translations.dontHaveAccount.EN : translations.alreadyHaveAccount.EN) }}
         </ion-text>
-        <ion-button fill="clear" (click)="toggleMode()">
+        <ion-button fill="clear" class="mode-toggle-button" (click)="toggleMode()">
           {{ (lang$ | async) === 'TC' ? (isLoginMode ? translations.signup.TC : translations.login.TC) : (isLoginMode ? translations.signup.EN : translations.login.EN) }}
         </ion-button>
       </ion-label>

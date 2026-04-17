@@ -1,7 +1,12 @@
 import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, firstValueFrom } from 'rxjs';
 import { Capacitor } from '@capacitor/core';
-import { FirebaseMessaging, type Notification as FirebaseNotification } from '@capacitor-firebase/messaging';
+import {
+  FirebaseMessaging,
+  Importance,
+  Visibility,
+  type Notification as FirebaseNotification
+} from '@capacitor-firebase/messaging';
 import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
 
@@ -75,6 +80,10 @@ export interface NotificationTemplate {
   bodyTemplate: (params: any) => string;
   dataTemplate?: (params: any) => NotificationData;
 }
+
+export const defaultAndroidNotificationChannelId = 'pourrice_default_notifications';
+const defaultAndroidNotificationChannelName = 'PourRice Alerts';
+const defaultAndroidNotificationChannelDescription = 'Chat messages, bookings, and app activity';
 
 export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
   booking_pending: {
@@ -242,18 +251,25 @@ export class MessagingService {
       this.hasInitialised = true;
       this.permissionSubject.next(await this.checkPermission());
 
+      if (this.isNativePlatform && Capacitor.getPlatform() === 'android') {
+        await this.ensureAndroidNotificationChannel();
+      }
+
       await FirebaseMessaging.addListener('notificationReceived', (event) => {
         const notificationPayload = this.createPayloadFromFirebaseNotification(event.notification);
+        console.log('MessagingService Notification received:', notificationPayload.title, notificationPayload.data);
         this.messageSubject.next(notificationPayload);
       });
 
       if (this.isNativePlatform) {
         await FirebaseMessaging.addListener('tokenReceived', (event) => {
+          console.log('MessagingService Native token refresh received');
           this.persistToken(event.token);
         });
 
         await FirebaseMessaging.addListener('notificationActionPerformed', (event) => {
           const notificationPayload = this.createPayloadFromFirebaseNotification(event.notification);
+          console.log('MessagingService Notification action performed:', notificationPayload.title, notificationPayload.data);
           this.actionSubject.next(notificationPayload);
         });
       }
@@ -290,7 +306,9 @@ export class MessagingService {
   async checkPermission(): Promise<NotificationPermissionStatus> {
     try {
       const result = await FirebaseMessaging.checkPermissions();
-      return this.normalisePermissionState(result.receive);
+      const permission = this.normalisePermissionState(result.receive);
+      console.log('MessagingService Current notification permission:', permission);
+      return permission;
     } catch (error) {
       console.error('MessagingService Error checking permission:', error);
       return 'denied';
@@ -366,6 +384,7 @@ export class MessagingService {
   private persistToken(token: string): void {
     this.tokenSubject.next(token);
     localStorage.setItem('fcmToken', token);
+    console.log('MessagingService Token persisted locally');
   }
 
   // Retrieve the token from memory or durable storage.
@@ -411,6 +430,7 @@ export class MessagingService {
   // Register the current device token with the backend for server-side push delivery.
   async registerTokenWithBackend(fcmToken: string, authToken: string): Promise<void> {
     try {
+      console.log('MessagingService Registering token with backend');
       await firstValueFrom(
         this.dataService.post<void>('/API/Messaging/register-token', { token: fcmToken }, authToken)
       );
@@ -423,6 +443,7 @@ export class MessagingService {
   // Remove the current device token from the backend using the documented query parameter form.
   async removeTokenFromBackend(fcmToken: string, authToken: string): Promise<void> {
     try {
+      console.log('MessagingService Removing token from backend');
       const encodedToken = encodeURIComponent(fcmToken);
       await firstValueFrom(
         this.dataService.delete<void>(`/API/Messaging/register-token?token=${encodedToken}`, authToken)
@@ -531,6 +552,25 @@ export class MessagingService {
     } catch (error) {
       console.error('MessagingService Error checking support:', error);
       return false;
+    }
+  }
+
+  // Creates the Android notification channel used by server-sent FCM notifications.
+  private async ensureAndroidNotificationChannel(): Promise<void> {
+    try {
+      await FirebaseMessaging.createChannel({
+        id: defaultAndroidNotificationChannelId,
+        name: defaultAndroidNotificationChannelName,
+        description: defaultAndroidNotificationChannelDescription,
+        importance: Importance.High,
+        visibility: Visibility.Public,
+        lightColor: '#A746F0',
+        lights: true,
+        vibration: true
+      });
+      console.log('MessagingService Android notification channel ensured:', defaultAndroidNotificationChannelId);
+    } catch (error) {
+      console.error('MessagingService Failed to create Android notification channel:', error);
     }
   }
 

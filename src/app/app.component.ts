@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
-import { filter, takeUntil } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, takeUntil } from 'rxjs/operators';
 import { Subject, combineLatest } from 'rxjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
@@ -115,10 +115,47 @@ export class AppComponent implements OnInit, OnDestroy {
       void this.promptNotificationPermission();
       this.subscribeToInAppMessages();
       this.subscribeToNotificationActions();
+      this.syncProfilePreferences();
 
       // Watch for logged-in users whose profile has no type set.
       // When detected, present the account-type selector modal once per session.
       this.watchForMissingUserType();
+    }
+
+    // Keep the live app language and saved theme aligned with the authenticated user's preferences.
+    private syncProfilePreferences(): void {
+      combineLatest([
+        this.appState.appState$,
+        this.userService.currentProfile$
+      ]).pipe(
+        map(([state, profile]) => {
+          if (!state.isLoggedIn || !state.uid || !profile?.preferences) {
+            return null;
+          }
+
+          return {
+            language: profile.preferences.language ?? null,
+            theme: profile.preferences.theme ?? null
+          };
+        }),
+        distinctUntilChanged((previousPreferences, nextPreferences) =>
+          previousPreferences?.language === nextPreferences?.language &&
+          previousPreferences?.theme === nextPreferences?.theme
+        ),
+        takeUntil(this.destroy$)
+      ).subscribe((preferences) => {
+        if (!preferences) {
+          return;
+        }
+
+        if (preferences.language) {
+          this.language.setLang(preferences.language);
+        }
+
+        if (preferences.theme) {
+          this.theme.setSavedTheme(preferences.theme === 'dark');
+        }
+      });
     }
 
     private async setupDeepLinkListener(): Promise<void> {
@@ -342,7 +379,7 @@ export class AppComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Present the AccountTypeSelectorComponent as a non-dismissable bottom sheet
+    // Present the AccountTypeSelectorComponent as a centred, non-dismissable modal.
     private async presentAccountTypeModal(): Promise<void> {
       this.isAccountTypeModalOpen = true;
       try {
@@ -351,8 +388,6 @@ export class AppComponent implements OnInit, OnDestroy {
           // Prevent dismiss/navigation escape — user must complete the selection
           canDismiss: false,
           backdropDismiss: false,
-          breakpoints: [1],
-          initialBreakpoint: 1,
           cssClass: 'account-type-modal',
         });
         await modal.present();

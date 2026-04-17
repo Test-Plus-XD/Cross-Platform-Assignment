@@ -18,6 +18,7 @@ import {
   BarcodesScannedEvent,
 } from '@capacitor-mlkit/barcode-scanning';
 import { RestaurantsService } from '../../services/restaurants.service';
+import { ThemeService } from '../../services/theme.service';
 import jsQR from 'jsqr';
 
 // BarcodeDetector is a browser API not yet in the TS lib — declare it locally
@@ -42,6 +43,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   private readonly toastController = inject(ToastController);
   private readonly router = inject(Router);
   private readonly restaurantsService = inject(RestaurantsService);
+  private readonly themeService = inject(ThemeService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   @Input() lang: 'EN' | 'TC' = 'EN';
@@ -68,6 +70,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   private isDismissed = false;
   private isDestroyed = false;
   private nativeListener: { remove: () => Promise<void> } | null = null;
+  private hasTemporaryLightThemeOverride = false;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -125,6 +128,7 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       );
 
       await BarcodeScanner.startScan({ formats: [BarcodeFormat.QrCode] });
+      this.applyTemporaryLightThemeOverride();
     } catch (err) {
       console.error('[QrScanner] native start error', err);
       this.cleanup();
@@ -182,7 +186,14 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
         if (this.videoEl?.nativeElement) {
           this.videoEl.nativeElement.srcObject = stream;
           this.videoEl.nativeElement.play().then(() => {
+            this.applyTemporaryLightThemeOverride();
             this.scanInterval = setInterval(() => this.detectFromVideo(), 400);
+          }).catch((error) => {
+            console.error('[QrScanner] web video play error', error);
+            this.cleanup();
+            this.hasBarcodeDetector = false;
+            this.isUnsupportedWebMode = true;
+            this.cdr.markForCheck();
           });
         }
       }, 100);
@@ -367,6 +378,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   private cleanup(): void {
+    this.clearTemporaryLightThemeOverride();
+
     // Native teardown
     if (this.isNative) {
       document.documentElement.classList.remove('barcode-scanner-active');
@@ -401,5 +414,21 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
       position: 'top',
     });
     await toast.present();
+  }
+
+  // Applies a temporary light-theme override whilst the live camera view is active.
+  private applyTemporaryLightThemeOverride(): void {
+    if (this.hasTemporaryLightThemeOverride) return;
+
+    this.themeService.setTemporaryThemeOverride(false);
+    this.hasTemporaryLightThemeOverride = true;
+  }
+
+  // Restores the saved theme once the live camera session ends or falls back.
+  private clearTemporaryLightThemeOverride(): void {
+    if (!this.hasTemporaryLightThemeOverride) return;
+
+    this.themeService.clearTemporaryThemeOverride();
+    this.hasTemporaryLightThemeOverride = false;
   }
 }

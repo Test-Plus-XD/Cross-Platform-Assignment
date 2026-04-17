@@ -82,6 +82,11 @@
   --accent: #a746f0;
   // Border: Light green-tinted border
   --border: #d4e5d7;
+  // Shared onboarding selection green used across light mode.
+  --app-selection-green-bg: rgb(232, 255, 234);
+  --app-selection-green-border: #8ac798;
+  --app-selection-green-icon: #2f8f43;
+  --app-selection-green-surface: #f6fff7;
   /* Apply semantic palette to Ionic core variables */
   --ion-background-color: var(--bg);
   --ion-text-color: var(--text);
@@ -172,6 +177,11 @@ html.dark,
   --accent: #9f5ce8;
   // Border: Subtle green-tinted border
   --border: #364a3a;
+  // Shared onboarding selection green used across dark mode.
+  --app-selection-green-bg: rgb(36, 66, 41);
+  --app-selection-green-border: #5d9466;
+  --app-selection-green-icon: #9fdba9;
+  --app-selection-green-surface: #2b3c2f;
   /* Apply dark semantic palette to Ionic core variables */
   --ion-background-color: var(--bg);
   --ion-text-color: var(--text);
@@ -280,12 +290,28 @@ ion-content.has-tab-bar {
   --border-radius: 0;
 }
 
-/* Account type setup modal — full-screen blocking sheet to enforce onboarding. */
+/* Account type setup modal — centred blocking dialog that still enforces onboarding. */
 ion-modal.account-type-modal {
-  --width: 100%;
-  --height: 100%;
-  --border-radius: 0;
-  --backdrop-opacity: 0.6;
+  --width: min(92vw, 44rem);
+  --max-width: 44rem;
+  --height: auto;
+  --max-height: min(80vh, 42rem);
+  --border-radius: 28px;
+  --backdrop-opacity: 0.52;
+  --box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+
+  &::part(content) {
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+  }
+}
+
+@media (max-width: 576px) {
+  ion-modal.account-type-modal {
+    --width: calc(100% - 1.5rem);
+    --max-height: calc(100% - 2rem);
+    --border-radius: 24px;
+  }
 }
 
 /* Hide scrollbar for the entire page */

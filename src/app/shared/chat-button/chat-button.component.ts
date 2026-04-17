@@ -68,6 +68,8 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly participantAvatarUrlCache = new Map<string, string>();
   private readonly participantAvatarRequestIds = new Set<string>();
   private HasEnsuredRoom = false;
+  private currentRoomId: string | null = null;
+  private historyLoadRequestId = 0;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -93,9 +95,9 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     // Room joining is triggered once registration succeeds on the shared socket.
     this.chatService.IsRegistered$.pipe(takeUntil(this.Destroy$)).subscribe(Registered => {
       this.ngZone.run(() => {
-        if (Registered && this.isOpen) {
+        if (Registered && this.isOpen && this.currentRoomId) {
           console.log('ChatButton: User registered, joining room');
-          this.joinRoom();
+          this.joinRoom(this.currentRoomId);
         }
       });
     });
@@ -103,32 +105,21 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     // Messages subscription handles real-time message delivery from Socket.IO
     this.chatService.Messages$.pipe(takeUntil(this.Destroy$)).subscribe(Message => {
       this.ngZone.run(() => {
-        const CurrentRoomId = this.getRoomId();
-        if (Message.roomId === CurrentRoomId) {
+        if (Message.roomId === this.currentRoomId) {
           console.log('ChatButton: Received real-time message', Message.messageId);
+          const previousMessageCount = this.messages.length;
+          this.messages = this.mergeMessages(this.messages, [Message]);
           this.ensureParticipantAvatarUrls([Message]);
+          const hasAddedMessage = this.messages.length > previousMessageCount;
 
-          // Duplicate messages are prevented by checking if message ID already exists
-          const MessageExists = this.messages.some(ExistingMessage =>
-            ExistingMessage.messageId === Message.messageId
-          );
-
-          if (!MessageExists) {
-            // Create new array reference to trigger Angular change detection
-            this.messages = [...this.messages, Message];
+          if (hasAddedMessage) {
             console.log('ChatButton: Added new message, total:', this.messages.length);
-
-            // Trigger change detection
             this.changeDetectorRef.markForCheck();
           }
 
           // Unread count is incremented only when chat window is closed
-          if (!this.isOpen) this.unreadCount++;
-
-          // Loading state is cleared when first message arrives after joining
-          if (this.isLoadingHistory) {
-            console.log('ChatButton: Clearing loading state due to new message');
-            this.clearLoadingState();
+          if (hasAddedMessage && !this.isOpen) {
+            this.unreadCount++;
           }
 
           // Scroll position is adjusted after DOM updates
@@ -140,27 +131,9 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     // Message history subscription handles initial message loading
     this.chatService.MessageHistory$.pipe(takeUntil(this.Destroy$)).subscribe(Data => {
       this.ngZone.run(() => {
-        const CurrentRoomId = this.getRoomId();
-        if (Data.roomId === CurrentRoomId) {
+        if (Data.roomId === this.currentRoomId) {
           console.log('ChatButton: Received message history -', Data.messages?.length || 0, 'messages');
-
-          // History flag is set to indicate successful history load
-          this.HasReceivedHistory = true;
-
-          // Message list is replaced with historical messages (create new array reference)
-          this.messages = [...(Data.messages || [])];
-          this.ensureParticipantAvatarUrls(this.messages);
-
-          // Loading state is always cleared when history arrives (even if empty)
-          this.clearLoadingState();
-
-          console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
-
-          // Trigger change detection
-          this.changeDetectorRef.markForCheck();
-
-          // Scroll position is adjusted to show most recent messages
-          setTimeout(() => this.scrollToBottom(), 100);
+          this.applyRoomHistory(Data.roomId, Data.messages || []);
         }
       });
     });
@@ -168,11 +141,10 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     // Typing indicators subscription shows when other users are typing
     this.chatService.TypingIndicators$.pipe(takeUntil(this.Destroy$)).subscribe(Indicator => {
       this.ngZone.run(() => {
-        const CurrentRoomId = this.getRoomId();
         const CurrentUserId = this.authService.currentUser?.uid;
 
         // Typing indicator is only shown for other users in the same room
-        if (Indicator.roomId === CurrentRoomId && Indicator.userId !== CurrentUserId) {
+        if (Indicator.roomId === this.currentRoomId && Indicator.userId !== CurrentUserId) {
           this.isTyping = Indicator.isTyping;
 
           // Typing indicator automatically clears after 3 seconds
@@ -202,7 +174,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Room is left if chat was open
-    if (this.isOpen) this.leaveRoom();
+    if (this.isOpen) this.leaveRoom(this.currentRoomId);
 
     this.Destroy$.next();
     this.Destroy$.complete();
@@ -253,9 +225,22 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     this.Lightbox.init();
   }
 
-  /// Generates the unique room identifier for this restaurant's chat
-  private getRoomId(): string {
-    return `restaurant-${this.restaurantId}`;
+  /// Generates the unique room identifier for this restaurant's chat when inputs are ready.
+  private resolveRoomId(): string | null {
+    if (!this.restaurantId?.trim()) {
+      return null;
+    }
+
+    return `restaurant-${this.restaurantId.trim()}`;
+  }
+
+  /// Resets room-local state so every room open or room change fetches persisted history again.
+  private resetRoomSessionState(): void {
+    this.HasReceivedHistory = false;
+    this.messages = [];
+    this.isTyping = false;
+    this.isLoadingHistory = false;
+    this.clearLoadingState();
   }
 
   /// Connects to Socket.IO server and registers user
@@ -279,7 +264,9 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   /// Ensures the restaurant room exists with both the current user and the restaurant owner before messaging starts.
   private async ensureRestaurantRoom(): Promise<void> {
     const CurrentUser = this.authService.currentUser;
-    if (!CurrentUser || this.HasEnsuredRoom) {
+    const roomId = this.currentRoomId || this.resolveRoomId();
+
+    if (!CurrentUser || this.HasEnsuredRoom || !roomId) {
       return;
     }
 
@@ -303,7 +290,7 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     await this.httpClient.post(
       `${environment.apiUrl}/API/Chat/Rooms`,
       {
-        roomId: this.getRoomId(),
+        roomId,
         participants: Participants,
         roomName: this.restaurantName || 'Restaurant Chat',
         type: 'group'
@@ -311,49 +298,147 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
       { headers: Headers }
     ).toPromise();
 
-    this.notificationCoordinator.trackRoom(this.getRoomId());
+    this.notificationCoordinator.trackRoom(roomId);
     this.HasEnsuredRoom = true;
   }
 
   /// Joins the restaurant-specific chat room via Socket.IO
-  private joinRoom(): void {
-    const RoomId = this.getRoomId();
+  private joinRoom(RoomId: string): void {
     console.log('ChatButton: Joining room', RoomId);
-
-    // Loading state is only set if history hasn't been received yet
-    if (!this.HasReceivedHistory) {
-      this.isLoadingHistory = true;
-      this.changeDetectorRef.markForCheck();
-
-      // Timeout is set to clear loading state if history doesn't arrive within 8 seconds
-      this.HistoryTimeout = setTimeout(() => {
-        this.ngZone.run(() => {
-          if (this.isLoadingHistory && !this.HasReceivedHistory) {
-            console.log('ChatButton: History timeout reached, clearing loading state');
-            this.clearLoadingState();
-          }
-        });
-      }, 8000);
-    }
-
     this.chatService.joinRoom(RoomId);
   }
 
   /// Leaves the current chat room
-  private leaveRoom(): void {
-    const RoomId = this.getRoomId();
+  private leaveRoom(RoomId: string | null): void {
+    if (!RoomId) return;
+
     console.log('ChatButton: Leaving room', RoomId);
     this.chatService.leaveRoom(RoomId);
   }
 
-  /// Toggles the visibility of the chat interface window
-  async toggleChat(): Promise<void> {
-    // Uploaded images are deleted when chat is closed without sending
-    if (this.isOpen && this.UploadedImageUrl && this.UploadedImagePath) {
-      await this.deleteUploadedImage(this.UploadedImagePath);
+  /// Merges persisted history with any live socket messages already received for the current room.
+  private applyRoomHistory(roomId: string, messages: ChatMessage[]): void {
+    if (roomId !== this.currentRoomId) {
+      return;
     }
 
-    // User authentication is checked before opening chat
+    this.HasReceivedHistory = true;
+    this.messages = this.mergeMessages(messages, this.messages);
+    this.ensureParticipantAvatarUrls(this.messages);
+    this.clearLoadingState();
+
+    console.log('ChatButton: Loading complete, displaying', this.messages.length, 'messages');
+
+    this.changeDetectorRef.markForCheck();
+    setTimeout(() => this.scrollToBottom(), 100);
+  }
+
+  /// Loads persisted room history from the chat API so reopening a room never depends on socket replay timing.
+  private async loadRoomHistory(roomId: string): Promise<void> {
+    const currentRequestId = ++this.historyLoadRequestId;
+    const Token = await this.authService.getIdToken();
+    const HeadersConfig: Record<string, string> = {
+      'x-api-passcode': 'PourRice'
+    };
+
+    if (Token) {
+      HeadersConfig['Authorization'] = `Bearer ${Token}`;
+    }
+
+    this.isLoadingHistory = true;
+    this.changeDetectorRef.markForCheck();
+
+    this.HistoryTimeout = setTimeout(() => {
+      this.ngZone.run(() => {
+        if (this.currentRoomId !== roomId || this.historyLoadRequestId !== currentRequestId) {
+          return;
+        }
+
+        if (this.isLoadingHistory) {
+          console.log('ChatButton: Persisted history request timed out');
+          this.clearLoadingState();
+        }
+      });
+    }, 8000);
+
+    try {
+      const Response = await firstValueFrom(this.httpClient.get<{
+        roomId: string;
+        count: number;
+        messages: ChatMessage[];
+      }>(
+        `${environment.apiUrl}/API/Chat/Rooms/${encodeURIComponent(roomId)}/Messages?limit=50`,
+        {
+          headers: new HttpHeaders(HeadersConfig)
+        }
+      ));
+
+      this.ngZone.run(() => {
+        if (this.currentRoomId !== roomId || this.historyLoadRequestId !== currentRequestId) {
+          return;
+        }
+
+        console.log('ChatButton: Persisted history loaded -', Response.messages?.length || 0, 'messages');
+        this.applyRoomHistory(roomId, Response.messages || []);
+      });
+    } catch (Error) {
+      console.error('ChatButton: Failed to load persisted history', Error);
+
+      this.ngZone.run(() => {
+        if (this.currentRoomId !== roomId || this.historyLoadRequestId !== currentRequestId) {
+          return;
+        }
+
+        this.clearLoadingState();
+      });
+    }
+  }
+
+  /// Prepares the active room for a fresh history fetch every time the chat opens or switches rooms.
+  private async prepareRoomSession(forceReload: boolean): Promise<void> {
+    const nextRoomId = this.resolveRoomId();
+
+    if (!nextRoomId) {
+      console.warn('ChatButton: Cannot prepare room session without a restaurant ID');
+      return;
+    }
+
+    const roomChanged = this.currentRoomId !== nextRoomId;
+
+    if (roomChanged && this.currentRoomId) {
+      this.leaveRoom(this.currentRoomId);
+      this.HasEnsuredRoom = false;
+    }
+
+    this.currentRoomId = nextRoomId;
+
+    if (roomChanged || forceReload) {
+      this.resetRoomSessionState();
+    }
+
+    await this.ensureRestaurantRoom();
+    await this.connectAndRegister();
+
+    if (this.chatService.isConnected && this.chatService.isRegistered) {
+      this.joinRoom(nextRoomId);
+    }
+
+    await this.loadRoomHistory(nextRoomId);
+  }
+
+  /// Toggles the visibility of the chat interface window
+  async toggleChat(): Promise<void> {
+    if (this.isOpen) {
+      await this.closeChatWindow();
+      return;
+    }
+
+    await this.openChatWindow();
+  }
+
+  /// Opens the chat interface and forces a fresh persisted-history load for the active room.
+  async openChatWindow(): Promise<void> {
+    // Uploaded images are deleted when chat is closed without sending
     if (!this.authService.currentUser) {
       this.isOpen = true;
       this.showLoginPrompt = true;
@@ -362,31 +447,29 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    // Chat window state is toggled
-    this.isOpen = !this.isOpen;
+    // Chat window state is opened explicitly so room selection never closes it accidentally.
+    this.isOpen = true;
     this.showLoginPrompt = false;
+    this.chatVisibilityService.setChatButtonOpen(true);
+    this.unreadCount = 0;
 
-    // Update visibility service
-    this.chatVisibilityService.setChatButtonOpen(this.isOpen);
+    console.log('ChatButton: Opening chat with persisted history reload');
+    await this.prepareRoomSession(true);
+    setTimeout(() => this.scrollToBottom(), 100);
 
-    if (this.isOpen) {
-      // Opening chat triggers connection and room joining
-      this.unreadCount = 0;
-      await this.ensureRestaurantRoom();
-      console.log('ChatButton: Opening chat, connecting to Socket.IO');
-      await this.connectAndRegister();
+    this.changeDetectorRef.markForCheck();
+  }
 
-      // Room is joined immediately if already connected
-      if (this.chatService.isConnected && this.chatService.isRegistered) {
-        this.joinRoom();
-      }
-
-      setTimeout(() => this.scrollToBottom(), 100);
-    } else {
-      // Closing chat triggers room leaving
-      this.leaveRoom();
+  /// Closes the chat interface and leaves the transient room subscription.
+  private async closeChatWindow(): Promise<void> {
+    if (this.UploadedImageUrl && this.UploadedImagePath) {
+      await this.deleteUploadedImage(this.UploadedImagePath);
     }
 
+    this.isOpen = false;
+    this.showLoginPrompt = false;
+    this.chatVisibilityService.setChatButtonOpen(false);
+    this.leaveRoom(this.currentRoomId);
     this.changeDetectorRef.markForCheck();
   }
 
@@ -582,10 +665,10 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /// Sends the composed message (text and/or image URL) to the chat room
   async sendMessage(): Promise<void> {
-    const RoomId = this.getRoomId();
+    const RoomId = this.currentRoomId || this.resolveRoomId();
 
     // Message validation ensures content exists (text or image)
-    if ((!this.newMessage.trim() && !this.UploadedImageUrl) || !this.isConnected) {
+    if (!RoomId || (!this.newMessage.trim() && !this.UploadedImageUrl) || !this.isConnected) {
       console.warn('ChatButton: Cannot send message - not connected or empty message');
       return;
     }
@@ -632,7 +715,9 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   onTyping(): void {
     if (!this.isConnected) return;
 
-    const RoomId = this.getRoomId();
+    const RoomId = this.currentRoomId || this.resolveRoomId();
+    if (!RoomId) return;
+
     this.chatService.sendTypingIndicator(RoomId, true);
 
     if (this.TypingTimeout) clearTimeout(this.TypingTimeout);
@@ -759,5 +844,40 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   formatTime(Timestamp: string): string {
     const date = new Date(Timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // Merges multiple message lists with message-ID deduplication and chronological sorting.
+  private mergeMessages(...messageGroups: ChatMessage[][]): ChatMessage[] {
+    const messagesById = new Map<string, ChatMessage>();
+
+    messageGroups.flat().forEach((message) => {
+      const deduplicationKey = this.buildMessageDeduplicationKey(message);
+      messagesById.set(deduplicationKey, message);
+    });
+
+    return [...messagesById.values()].sort((firstMessage, secondMessage) =>
+      this.getTimestampSortValue(firstMessage.timestamp) - this.getTimestampSortValue(secondMessage.timestamp)
+    );
+  }
+
+  // Builds a stable deduplication key even if a legacy message somehow lacks a messageId.
+  private buildMessageDeduplicationKey(message: ChatMessage): string {
+    if (message.messageId?.trim()) {
+      return message.messageId.trim();
+    }
+
+    return [
+      message.roomId,
+      message.userId,
+      message.timestamp,
+      message.message,
+      message.imageUrl || ''
+    ].join('|');
+  }
+
+  // Converts ISO timestamps into sortable numbers whilst tolerating malformed values.
+  private getTimestampSortValue(timestamp: string): number {
+    const sortValue = new Date(timestamp).getTime();
+    return Number.isFinite(sortValue) ? sortValue : 0;
   }
 }

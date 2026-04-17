@@ -1,3 +1,7 @@
+:host {
+  --login-accent-color: var(--app-selection-green-icon);
+}
+
 ion-content {
   --background: var(--ion-background-color, #f5f5f5);
 }
@@ -42,6 +46,53 @@ form {
 ion-item {
   --background: transparent;
   margin-bottom: 0.5rem;
+}
+
+.password-item {
+  --inner-padding-end: 0.25rem;
+}
+
+/* Align the password toggle button with the input field */
+.password-toggle-button {
+  --color: var(--login-accent-color);
+  margin: 0.35rem;
+  align-self: flex-end;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.75rem;
+}
+
+.password-toggle-button ion-icon {
+  font-size: 1.25rem;
+}
+
+.forgot-password-item,
+.mode-toggle-item {
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.forgot-password-content,
+.mode-toggle-content {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 0;
+}
+
+.forgot-password-button,
+.mode-toggle-button {
+  --color: var(--login-accent-color);
+  margin: 0;
+}
+
+.mode-toggle-copy {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.4;
 }
 
 .submit-button {

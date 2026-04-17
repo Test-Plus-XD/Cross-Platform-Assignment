@@ -4,4 +4,5 @@
     <string name="title_activity_main">PourRice</string>
     <string name="package_name">com.example.cross_platform_assignment</string>
     <string name="custom_url_scheme">com.example.cross_platform_assignment</string>
+    <string name="default_notification_channel_id">pourrice_default_notifications</string>
 </resources>

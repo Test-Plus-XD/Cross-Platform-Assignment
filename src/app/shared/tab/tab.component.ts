@@ -37,4 +37,18 @@ export class TabComponent {
   constructor() {
     this.showTabs$ = this.UI.showTabs$;
   }
+
+  // Trigger additional light-green ripples in light DOM so they stack above Ionic's native tab ripple.
+  onTabPointerDown(event: PointerEvent): void {
+    const tabButtonElement = event.currentTarget;
+    if (!(tabButtonElement instanceof HTMLElement)) return;
+    const rippleElements = Array.from(
+      tabButtonElement.querySelectorAll('ion-ripple-effect.extra-tab-ripple')
+    ) as HTMLIonRippleEffectElement[];
+    rippleElements.forEach((rippleElement) => {
+      void rippleElement.addRipple(event.clientX, event.clientY).then(removeRipple => {
+        setTimeout(removeRipple, 0);
+      });
+    });
+  }
 }

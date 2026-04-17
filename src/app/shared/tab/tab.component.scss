@@ -1,3 +1,18 @@
+:host {
+  // Native ripple keeps the tightest light-green core, while the extra layers sit above it.
+  --tab-ripple-core-color: rgba(159, 219, 169, 0.68);
+  --tab-ripple-middle-color: rgba(159, 219, 169, 0.5);
+  --tab-ripple-outer-color: rgba(159, 219, 169, 0.34);
+}
+
+:host-context(html.dark),
+:host-context(.dark) {
+  // Dark mode needs a much brighter glow so the layered ripple does not get lost.
+  --tab-ripple-core-color: rgba(210, 255, 220, 0.82);
+  --tab-ripple-middle-color: rgba(180, 245, 194, 0.62);
+  --tab-ripple-outer-color: rgba(150, 226, 168, 0.42);
+}
+
 .shared-tab {
   --ion-toolbar-background: var(--ion-color-primary);
 }
@@ -13,4 +28,105 @@ ion-tab-bar {
   border-top: 3px solid var(--ion-color-light-shade);
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.12);
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+ion-tab-button {
+  --ripple-color: var(--tab-ripple-core-color);
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+}
+
+ion-tab-button::part(native) {
+  border-radius: 0;
+}
+
+ion-tab-button .tab-icon-shell {
+  position: relative;
+  display: block;
+  align-self: center;
+  order: -1;
+  width: 1.35rem;
+  height: 1.35rem;
+}
+
+ion-tab-button .tab-icon-default,
+ion-tab-button .tab-icon-gradient {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 180ms ease;
+}
+
+ion-tab-button .tab-icon-default {
+  opacity: 1;
+}
+
+ion-tab-button .tab-icon-gradient {
+  opacity: 0;
+  background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+ion-tab-button.tab-selected .tab-icon-default {
+  opacity: 0;
+}
+
+ion-tab-button.tab-selected .tab-icon-gradient {
+  opacity: 1;
+}
+
+ion-tab-button .tab-icon-chatbubbles .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/chatbubbles.svg');
+  mask-image: url('/assets/tab-icons/chatbubbles.svg');
+}
+
+ion-tab-button .tab-icon-home .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/home.svg');
+  mask-image: url('/assets/tab-icons/home.svg');
+}
+
+ion-tab-button .tab-icon-search .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/search.svg');
+  mask-image: url('/assets/tab-icons/search.svg');
+}
+
+ion-tab-button .tab-icon-person .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/person.svg');
+  mask-image: url('/assets/tab-icons/person.svg');
+}
+
+ion-tab-button .tab-icon-calendar .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/calendar.svg');
+  mask-image: url('/assets/tab-icons/calendar.svg');
+}
+
+ion-tab-button .tab-icon-storefront .tab-icon-gradient {
+  -webkit-mask-image: url('/assets/tab-icons/storefront.svg');
+  mask-image: url('/assets/tab-icons/storefront.svg');
+}
+
+ion-tab-button .extra-tab-ripple {
+  position: absolute;
+  inset: 0;
+  color: var(--tab-ripple-middle-color);
+  filter: saturate(1.2) brightness(1.08);
+  pointer-events: none;
+  z-index: 2;
+}
+
+ion-tab-button .extra-tab-ripple-middle {
+  inset: -0.09rem;
+  color: var(--tab-ripple-middle-color);
+}
+
+ion-tab-button .extra-tab-ripple-outer {
+  inset: -0.79rem;
+  color: var(--tab-ripple-outer-color);
 }
