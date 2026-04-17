@@ -59,6 +59,7 @@ export class LoginPage implements OnDestroy, AfterViewInit {
   public password: string = '';
   public displayName: string = '';
   public isLoginMode: boolean = true;
+  public showPassword: boolean = false;
   public errorMessage: string = '';
 
   // Language observable
@@ -293,6 +294,10 @@ export class LoginPage implements OnDestroy, AfterViewInit {
     this.clearForm();
   }
 
+  public togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
   // Handle password reset
   public async forgotPassword(): Promise<void> {
     if (!this.email) {
@@ -336,5 +341,6 @@ export class LoginPage implements OnDestroy, AfterViewInit {
     this.email = '';
     this.password = '';
     this.displayName = '';
+    this.showPassword = false;
   }
 }

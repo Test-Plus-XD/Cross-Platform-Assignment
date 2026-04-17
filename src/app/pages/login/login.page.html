@@ -33,12 +33,15 @@
       <!-- Password Field -->
       <ion-item>
         <ion-label position="floating">{{ (lang$ | async) === 'TC' ? translations.password.TC : translations.password.EN }}</ion-label>
-        <ion-input type="password"
+        <ion-input [type]="showPassword ? 'text' : 'password'"
                    required
                    [(ngModel)]="password"
                    name="password"
                    autocomplete="current-password">
         </ion-input>
+        <ion-button fill="clear" slot="end" type="button" (click)="togglePasswordVisibility()">
+          <ion-icon [name]="showPassword ? 'eye-outline' : 'eye-off-outline'"></ion-icon>
+        </ion-button>
       </ion-item>
 
       <!-- Submit Button -->

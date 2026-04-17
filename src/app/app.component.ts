@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { filter, takeUntil } from 'rxjs/operators';
-import { Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { environment } from '../environments/environment';
 import { ThemeService } from './services/theme.service';
@@ -48,6 +49,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Guard: prevent presenting the account-type modal more than once per session
     private hasShownTypeSelector = false;
+    private isAccountTypeModalOpen = false;
 
     /** Inserted by Angular inject() migration for backwards compatibility */
     constructor(...args: unknown[]);
@@ -86,6 +88,11 @@ export class AppComponent implements OnInit, OnDestroy {
             detail: { isVisible: false },
             bubbles: true,
           }));
+
+          // Keep users on Account page until account type setup is completed.
+          if (this.mustCompleteAccountTypeSetup() && !this.router.url.startsWith('/user')) {
+            void this.router.navigate(['/user'], { replaceUrl: true });
+          }
         });
     }
 
@@ -155,6 +162,20 @@ export class AppComponent implements OnInit, OnDestroy {
             // pourrice://chat/{roomId} → /chat/{roomId}
             if (host === 'chat') {
               this.router.navigateByUrl(`/chat${slug ? '/' + slug : ''}`);
+              return;
+            }
+
+            // pourrice://store?payment_success=true&session_id=... → /store with query params
+            if (host === 'store') {
+              const paymentSuccess = parsed.searchParams.get('payment_success');
+              const sessionId = parsed.searchParams.get('session_id');
+              const query = paymentSuccess === 'true' && sessionId
+                ? `?payment_success=true&session_id=${encodeURIComponent(sessionId)}`
+                : '';
+              void Browser.close().catch(() => {
+                // noop: browser may already be closed
+              });
+              this.router.navigateByUrl(`/store${query}`);
               return;
             }
 
@@ -295,38 +316,43 @@ export class AppComponent implements OnInit, OnDestroy {
     // logged-in user has no type field.  The guard flag prevents re-presentation
     // on each navigation (appState$ emits on every route change).
     private watchForMissingUserType(): void {
-      this.appState.appState$.pipe(
+      combineLatest([
+        this.appState.appState$,
+        this.userService.currentProfile$
+      ]).pipe(
         takeUntil(this.destroy$)
-      ).subscribe(state => {
-        if (!state.isLoggedIn || !state.uid) return;
+      ).subscribe(async ([state, profile]) => {
+        if (!state.isLoggedIn || !state.uid) {
+          this.hasShownTypeSelector = false;
+          this.isAccountTypeModalOpen = false;
+          return;
+        }
 
-        // Read the cached profile synchronously; if type is already set, skip
-        const profile = this.userService.currentProfile;
-        if (profile?.type) return;
+        if (!profile) {
+          this.userService.getUserProfile(state.uid).pipe(takeUntil(this.destroy$)).subscribe();
+          return;
+        }
 
-        // Subscribe to the profile observable for one emission to check type
-        this.userService.currentProfile$.pipe(
-          takeUntil(this.destroy$)
-        ).subscribe(async userProfile => {
-          // Only act if logged in and profile has no type
-          if (!userProfile || userProfile.type) return;
-          if (this.hasShownTypeSelector) return;
+        if (profile.type) return;
+        if (this.hasShownTypeSelector || this.isAccountTypeModalOpen) return;
 
-          this.hasShownTypeSelector = true;
-          await this.presentAccountTypeModal();
-        });
+        this.hasShownTypeSelector = true;
+        await this.router.navigate(['/user'], { replaceUrl: true });
+        await this.presentAccountTypeModal();
       });
     }
 
     // Present the AccountTypeSelectorComponent as a non-dismissable bottom sheet
     private async presentAccountTypeModal(): Promise<void> {
+      this.isAccountTypeModalOpen = true;
       try {
         const modal = await this.modalController.create({
           component: AccountTypeSelectorComponent,
-          // Prevent swipe-to-dismiss — user must complete the selection
+          // Prevent dismiss/navigation escape — user must complete the selection
           canDismiss: false,
-          breakpoints: [0, 0.6, 1],
-          initialBreakpoint: 0.6,
+          backdropDismiss: false,
+          breakpoints: [1],
+          initialBreakpoint: 1,
           cssClass: 'account-type-modal',
         });
         await modal.present();
@@ -343,7 +369,18 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } catch (err) {
         console.error('[AppComponent] Error presenting account type modal:', err);
+        this.hasShownTypeSelector = false;
+      } finally {
+        this.isAccountTypeModalOpen = false;
       }
+    }
+
+    private mustCompleteAccountTypeSetup(): boolean {
+      const state = this.appState.appState;
+      if (!state.isLoggedIn) return false;
+
+      const profile = this.userService.currentProfile;
+      return !!profile && !profile.type && (this.isAccountTypeModalOpen || this.hasShownTypeSelector);
     }
 
     private async presentDeepLinkError(): Promise<void> {
