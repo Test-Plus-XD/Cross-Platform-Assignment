@@ -715,6 +715,14 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
         return;
       }
 
+      // Already handled via query-param callback path (or prior recovery path).
+      if (sessionId === this.lastHandledStripeSessionId) {
+        localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+        return;
+      }
+
+      this.lastHandledStripeSessionId = sessionId;
+
       // Poll until restaurant data is ready, then reopen the ad modal
       const checkReady = setInterval(() => {
         if (!this.isRestaurantLoading && this.restaurantId) {
@@ -823,6 +831,8 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // Open the AdModalComponent to collect ad content after a successful Stripe payment.
   // The sessionId is used by the modal to associate the ad with the payment.
   async openAdModal(sessionId: string): Promise<void> {
+    this.lastHandledStripeSessionId = sessionId;
+
     const modal = await this.modalController.create({
       component: AdModalComponent,
       componentProps: {
