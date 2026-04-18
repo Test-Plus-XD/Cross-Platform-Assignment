@@ -11,7 +11,7 @@ import { AlertController, ToastController, LoadingController, ModalController, V
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { Subject, Observable } from 'rxjs';
-import { takeUntil, take } from 'rxjs/operators';
+import { takeUntil } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { AdModalComponent } from './ad-modal/ad-modal.component';
 import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
@@ -111,6 +111,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // If the ad creation modal is closed after payment, the session is stored here
   // so the user can reopen the modal on their next visit to the store page.
   private readonly PENDING_AD_SESSION_KEY = 'pendingAdSession';
+  private lastHandledStripeSessionId: string | null = null;
 
   // ── Bilingual UI strings ──────────────────────────────────────────────────────
   translations = {
@@ -204,37 +205,8 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     // Kick off the main data loading chain (user profile → restaurant → sub-resources)
     this.loadRestaurantData();
 
-    // Detect a successful Stripe payment redirect: ?payment_success=true&session_id=...
-    this.route.queryParams.pipe(take(1)).subscribe(params => {
-      if (params['payment_success'] === 'true' && params['session_id']) {
-        const sessionId = params['session_id'];
-
-        // Persist the session ID to localStorage immediately so it survives an
-        // accidental modal close before the ad content is submitted.
-        localStorage.setItem(this.PENDING_AD_SESSION_KEY, JSON.stringify({
-          sessionId,
-          timestamp: Date.now()
-        }));
-
-        // Strip the query params from the URL so a page refresh doesn't re-open the modal
-        this.router.navigate(['/store'], { replaceUrl: true });
-
-        // Wait until the restaurant has loaded before presenting the modal
-        const checkReady = setInterval(() => {
-          if (!this.isRestaurantLoading && this.restaurantId) {
-            clearInterval(checkReady);
-            this.openAdModal(sessionId);
-          }
-        }, 300);
-
-        // Safety valve: stop polling after 10 s in case data load stalls
-        setTimeout(() => clearInterval(checkReady), 10000);
-
-      } else {
-        // No Stripe params in URL — check localStorage for a leftover pending session
-        this.checkPendingAdSession();
-      }
-    });
+    this.subscribeToStripeReturnParams();
+    this.checkPendingAdSession();
   }
 
   ngOnDestroy(): void {
@@ -248,6 +220,10 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     if (this.restaurantId && !this.isLoading) {
       this.loadRestaurant();
     }
+
+    // Re-check pending Stripe sessions whenever StorePage becomes active.
+    // Covers native return flows that reuse the same route component instance.
+    this.checkPendingAdSession();
   }
 
   // ── Data loading ──────────────────────────────────────────────────────────────
@@ -733,11 +709,19 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
       const { sessionId, timestamp } = JSON.parse(raw);
       const TWO_HOURS = 2 * 60 * 60 * 1000;
 
-      if (!sessionId || Date.now() - timestamp > TWO_HOURS) {
+      if (!sessionId || !this.isValidStripeCheckoutSessionId(sessionId) || Date.now() - timestamp > TWO_HOURS) {
         // Expired — discard the stored session
         localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
         return;
       }
+
+      // Already handled via query-param callback path (or prior recovery path).
+      if (sessionId === this.lastHandledStripeSessionId) {
+        localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+        return;
+      }
+
+      this.lastHandledStripeSessionId = sessionId;
 
       // Poll until restaurant data is ready, then reopen the ad modal
       const checkReady = setInterval(() => {
@@ -753,6 +737,47 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
       // Malformed JSON — discard the entry
       localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
     }
+  }
+
+  // Keep listening for Stripe success query params for the full StorePage lifecycle.
+  // Do not use take(1): native deep-link callbacks can arrive after initial render.
+  private subscribeToStripeReturnParams(): void {
+    this.route.queryParams
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(params => {
+        const sessionId = params['session_id'];
+        const isSuccessfulStripeReturn =
+          params['payment_success'] === 'true' &&
+          this.isValidStripeCheckoutSessionId(sessionId);
+        if (!isSuccessfulStripeReturn) return;
+
+        // Avoid duplicate modal openings for repeated router emissions.
+        if (this.lastHandledStripeSessionId === sessionId) return;
+        this.lastHandledStripeSessionId = sessionId;
+
+        localStorage.setItem(this.PENDING_AD_SESSION_KEY, JSON.stringify({
+          sessionId,
+          timestamp: Date.now()
+        }));
+
+        // Remove callback params after processing.
+        void this.router.navigate(['/store'], { replaceUrl: true });
+
+        const checkReady = setInterval(() => {
+          if (!this.isRestaurantLoading && this.restaurantId) {
+            clearInterval(checkReady);
+            this.openAdModal(sessionId);
+          }
+        }, 300);
+
+        setTimeout(() => clearInterval(checkReady), 10000);
+      });
+  }
+
+  // Stripe Checkout returns a Checkout Session ID (cs_...), not a PaymentIntent ID (pi_...).
+  private isValidStripeCheckoutSessionId(sessionId: unknown): sessionId is string {
+    if (typeof sessionId !== 'string') return false;
+    return /^cs_[a-zA-Z0-9_]+$/.test(sessionId);
   }
 
   // Redirect the user to Stripe Checkout to pay for an advertisement placement (HK$10).
@@ -814,6 +839,8 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // Open the AdModalComponent to collect ad content after a successful Stripe payment.
   // The sessionId is used by the modal to associate the ad with the payment.
   async openAdModal(sessionId: string): Promise<void> {
+    this.lastHandledStripeSessionId = sessionId;
+
     const modal = await this.modalController.create({
       component: AdModalComponent,
       componentProps: {
