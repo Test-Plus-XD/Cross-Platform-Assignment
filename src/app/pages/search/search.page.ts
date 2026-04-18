@@ -701,17 +701,18 @@ export class SearchPage implements OnInit, OnDestroy {
         title: name
       });
 
-      // Pre-compute static parts (image doesn't change after marker creation)
+      // Pre-compute static parts (image and distance don't change after marker creation)
       const imgSrc = restaurant.ImageUrl || this.placeholderImage;
-      // Distance: use pre-calculated value (Near Me) or fall back to live calculation
+      // Distance badge pinned top-right on the image
       const dist = (restaurant as any).distance;
-      let distanceText = '';
+      let distanceBadgeHtml = '';
       if (dist != null) {
-        distanceText = `<span style="color:#666;font-size:0.75rem;">${dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km')} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`;
+        const distText = dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km');
+        distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(16,185,129,0.92);color:#fff;backdrop-filter:blur(4px);">${distText}</span>`;
       } else {
         const badge = this.getDistanceBadge(restaurant);
         if (badge) {
-          distanceText = `<span style="color:#666;font-size:0.75rem;">${badge.text} ${this.currentLang === 'TC' ? '距離' : 'away'}</span>`;
+          distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(107,114,128,0.85);color:#fff;backdrop-filter:blur(4px);">${badge.text}</span>`;
         }
       }
 
@@ -720,29 +721,49 @@ export class SearchPage implements OnInit, OnDestroy {
       // is used as an immediate fallback so the rating badge always shows if data is available.
       marker.addListener('click', () => {
         if (this.infoWindow) {
+          // Opening badge — bottom-left on image
           const openStatus = this.getOpeningStatus(restaurant);
-          const openBadge = openStatus === 'open'
-            ? `<span style="background:#4caf50;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
+          const openBadgeHtml = openStatus === 'open'
+            ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(76,175,80,0.92);color:#fff;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
             : openStatus === 'closed'
-              ? `<span style="background:#e53935;color:#fff;font-size:0.7rem;padding:1px 6px;border-radius:8px;font-weight:600;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
+              ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(229,57,53,0.92);color:#fff;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
               : '';
 
+          // Rating badge — bottom-right on image
           const stats = this.ratingMap[restaurant.id];
           const avgRating = stats?.averageRating ?? restaurant.rating ?? 0;
-          const ratingHtml = stats && stats.totalReviews > 0
-            ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(stats.averageRating)}</span> <span style="color:#888;font-size:0.7rem;">(${stats.totalReviews})</span>`
+          const ratingBadgeHtml = stats && stats.totalReviews > 0
+            ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(stats.averageRating)} (${stats.totalReviews})</span>`
             : avgRating > 0
-              ? `<span style="color:#f5a623;font-size:0.8rem;">${this.formatRatingStars(avgRating)}</span>`
-              : `<span style="color:#888;font-size:0.7rem;">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
+              ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(avgRating)}</span>`
+              : `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
+
+          // Keyword tags row (up to 2 + overflow count)
+          const keywords = this.currentLang === 'TC'
+            ? (restaurant.Keyword_TC || [])
+            : (restaurant.Keyword_EN || []);
+          const kwDisplay = (keywords as string[]).slice(0, 2);
+          const kwExtra = keywords.length - 2;
+          const keywordsHtml = kwDisplay.length > 0
+            ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;">
+                ${kwDisplay.map((k: string) => `<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(167,70,240,0.12);color:#a746f0;white-space:nowrap;">${k}</span>`).join('')}
+                ${kwExtra > 0 ? `<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:#a746f0;color:#fff;white-space:nowrap;">+${kwExtra}</span>` : ''}
+              </div>`
+            : '';
 
           const content = `
-            <a href="/restaurant/${restaurant.id}" style="display:block;max-width:200px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;">
-              <img src="${imgSrc}" alt="${name}" style="width:100%;height:100px;object-fit:cover;border-radius:6px;margin-bottom:0.25rem;">
-              <div style="padding:0 0.25rem 0.25rem;">
-                <h4 style="margin:0.25rem 0;font-size:0.95rem;font-weight:600;color:#111;">${name}</h4>
-                <p style="margin:0.25rem 0;color:#666;font-size:0.8rem;">${district}</p>
-                <div style="margin:0.15rem 0;">${ratingHtml}</div>
-                <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem;">${distanceText}${openBadge}</div>
+            <a href="/restaurant/${restaurant.id}" style="display:block;width:256px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.14);">
+              <div style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;">
+                <img src="${imgSrc}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;">
+                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.32));"></div>
+                ${distanceBadgeHtml}
+                ${ratingBadgeHtml}
+                ${openBadgeHtml}
+              </div>
+              <div style="padding:0.625rem 0.75rem;background:#fff;">
+                <h4 style="margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;color:#111;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${name}</h4>
+                ${keywordsHtml}
+                <div style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#666;">📍 ${district}</div>
               </div>
             </a>
           `;

@@ -191,6 +191,20 @@ html.dark,
   --ion-toolbar-background: var(--surface);
 }
 
+/* === GOOGLE MAPS INFOWINDOW RESET === */
+// Strip default padding so card border-radius / overflow:hidden render flush
+.gm-style-iw,
+.gm-style-iw-d {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+.gm-style-iw-c {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
 /* === COMPONENT-LEVEL THEMING === */
 // Ensure all Ionic components inherit the theme colours
 ion-card,
