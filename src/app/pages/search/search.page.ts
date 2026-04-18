@@ -703,17 +703,14 @@ export class SearchPage implements OnInit, OnDestroy {
 
       // Pre-compute static parts (image and distance don't change after marker creation)
       const imgSrc = restaurant.ImageUrl || this.placeholderImage;
-      // Distance badge pinned top-right on the image
-      const dist = (restaurant as any).distance;
+      // Distance badge: derive color classification from getDistanceBadge()
+      const distBadge = this.getDistanceBadge(restaurant);
       let distanceBadgeHtml = '';
-      if (dist != null) {
-        const distText = dist < 1000 ? (dist + 'm') : ((dist / 1000).toFixed(1) + 'km');
-        distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(16,185,129,0.92);color:#fff;backdrop-filter:blur(4px);">${distText}</span>`;
-      } else {
-        const badge = this.getDistanceBadge(restaurant);
-        if (badge) {
-          distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(107,114,128,0.85);color:#fff;backdrop-filter:blur(4px);">${badge.text}</span>`;
-        }
+      if (distBadge) {
+        const distBg = distBadge.color === 'success' ? 'rgba(16,185,129,0.92)'
+          : distBadge.color === 'warning' ? 'rgba(245,158,11,0.92)'
+          : 'rgba(107,114,128,0.85)';
+        distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${distBg};color:#fff;backdrop-filter:blur(4px);">${distBadge.text}</span>`;
       }
 
       // Build InfoWindow content at click time so ratingMap and openStatus reflect current state.
@@ -738,38 +735,72 @@ export class SearchPage implements OnInit, OnDestroy {
               ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(avgRating)}</span>`
               : `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
 
-          // Keyword tags row (up to 2 + overflow count)
-          const keywords = this.currentLang === 'TC'
-            ? (restaurant.Keyword_TC || [])
-            : (restaurant.Keyword_EN || []);
-          const kwDisplay = (keywords as string[]).slice(0, 2);
+          // Keyword tags row (up to 2 + overflow count) — guard against non-array fields
+          const rawKw = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+          const keywords: string[] = Array.isArray(rawKw) ? rawKw : [];
+          const kwDisplay = keywords.slice(0, 2);
           const kwExtra = keywords.length - 2;
-          const kwPill = 'font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgb(232,255,234);color:#2f8f43;border:1px solid #8ac798;white-space:nowrap;';
-          const keywordsHtml = kwDisplay.length > 0
-            ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;">
-                ${kwDisplay.map((k: string) => `<span style="${kwPill}">${k}</span>`).join('')}
-                ${kwExtra > 0 ? `<span style="${kwPill}">+${kwExtra}</span>` : ''}
-              </div>`
-            : '';
+          const kwPillStyle = 'font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgb(232,255,234);color:#2f8f43;border:1px solid #8ac798;white-space:nowrap;';
 
-          const content = `
-            <a href="/restaurant/${restaurant.id}" style="display:block;width:256px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.14);">
-              <div style="position:relative;width:100%;height:100px;overflow:hidden;">
-                <img src="${imgSrc}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;">
-                <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.32));"></div>
-                ${distanceBadgeHtml}
-                ${ratingBadgeHtml}
-                ${openBadgeHtml}
-              </div>
-              <div style="padding:0.625rem 0.75rem;background:#f6fff7;">
-                <h4 style="margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;color:#111;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${name}</h4>
-                ${keywordsHtml}
-                <div style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#666;">📍 ${district}</div>
-              </div>
-            </a>
-          `;
+          // Build InfoWindow as DOM nodes to prevent XSS
+          const anchor = document.createElement('a');
+          anchor.href = `/restaurant/${restaurant.id}`;
+          anchor.style.cssText = 'display:block;width:256px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.14);';
 
-          this.infoWindow.setContent(content);
+          // Image section — badges contain only computed safe strings (no user data)
+          const imgSection = document.createElement('div');
+          imgSection.style.cssText = 'position:relative;width:100%;height:100px;overflow:hidden;';
+
+          const imgEl = document.createElement('img');
+          imgEl.src = imgSrc;
+          imgEl.alt = name;
+          imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+          imgSection.appendChild(imgEl);
+
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.32));';
+          imgSection.appendChild(overlay);
+
+          if (distanceBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', distanceBadgeHtml); }
+          imgSection.insertAdjacentHTML('beforeend', ratingBadgeHtml);
+          if (openBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', openBadgeHtml); }
+
+          anchor.appendChild(imgSection);
+
+          // Content section — user-supplied text set via textContent only
+          const contentDiv = document.createElement('div');
+          contentDiv.style.cssText = 'padding:0.625rem 0.75rem;background:#f6fff7;';
+
+          const h4 = document.createElement('h4');
+          h4.style.cssText = 'margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;color:#111;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
+          h4.textContent = name;
+          contentDiv.appendChild(h4);
+
+          if (kwDisplay.length > 0) {
+            const kwRow = document.createElement('div');
+            kwRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;';
+            kwDisplay.forEach((k: string) => {
+              const pill = document.createElement('span');
+              pill.style.cssText = kwPillStyle;
+              pill.textContent = k;
+              kwRow.appendChild(pill);
+            });
+            if (kwExtra > 0) {
+              const morePill = document.createElement('span');
+              morePill.style.cssText = kwPillStyle;
+              morePill.textContent = `+${kwExtra}`;
+              kwRow.appendChild(morePill);
+            }
+            contentDiv.appendChild(kwRow);
+          }
+
+          const districtRow = document.createElement('div');
+          districtRow.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#666;';
+          districtRow.textContent = '📍 ' + district;
+          contentDiv.appendChild(districtRow);
+
+          anchor.appendChild(contentDiv);
+          this.infoWindow.setContent(anchor);
           this.infoWindow.open(this.map!, marker);
         }
       });
