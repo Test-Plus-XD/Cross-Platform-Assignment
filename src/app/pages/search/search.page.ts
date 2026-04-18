@@ -744,23 +744,24 @@ export class SearchPage implements OnInit, OnDestroy {
             : (restaurant.Keyword_EN || []);
           const kwDisplay = (keywords as string[]).slice(0, 2);
           const kwExtra = keywords.length - 2;
+          const kwPill = 'font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgb(232,255,234);color:#2f8f43;border:1px solid #8ac798;white-space:nowrap;';
           const keywordsHtml = kwDisplay.length > 0
             ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;">
-                ${kwDisplay.map((k: string) => `<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgba(167,70,240,0.12);color:#a746f0;white-space:nowrap;">${k}</span>`).join('')}
-                ${kwExtra > 0 ? `<span style="font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:#a746f0;color:#fff;white-space:nowrap;">+${kwExtra}</span>` : ''}
+                ${kwDisplay.map((k: string) => `<span style="${kwPill}">${k}</span>`).join('')}
+                ${kwExtra > 0 ? `<span style="${kwPill}">+${kwExtra}</span>` : ''}
               </div>`
             : '';
 
           const content = `
             <a href="/restaurant/${restaurant.id}" style="display:block;width:256px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.14);">
-              <div style="position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;">
+              <div style="position:relative;width:100%;height:100px;overflow:hidden;">
                 <img src="${imgSrc}" alt="${name}" style="width:100%;height:100%;object-fit:cover;display:block;">
                 <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.32));"></div>
                 ${distanceBadgeHtml}
                 ${ratingBadgeHtml}
                 ${openBadgeHtml}
               </div>
-              <div style="padding:0.625rem 0.75rem;background:#fff;">
+              <div style="padding:0.625rem 0.75rem;background:#f6fff7;">
                 <h4 style="margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;color:#111;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${name}</h4>
                 ${keywordsHtml}
                 <div style="display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#666;">📍 ${district}</div>

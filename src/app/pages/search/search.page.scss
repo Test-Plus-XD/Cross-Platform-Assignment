@@ -537,13 +537,15 @@
               font-weight: 600;
               padding: 1px 7px;
               border-radius: 8px;
-              background: rgba(var(--ion-color-primary-rgb), 0.1);
-              color: var(--ion-color-primary);
+              background: var(--app-selection-green-bg);
+              color: var(--app-selection-green-icon);
+              border: 1px solid var(--app-selection-green-border);
               white-space: nowrap;
 
               &.more-tag {
-                background: var(--ion-color-primary);
-                color: #fff;
+                background: var(--app-selection-green-bg);
+                color: var(--app-selection-green-icon);
+                border: 1px solid var(--app-selection-green-border);
               }
             }
           }
