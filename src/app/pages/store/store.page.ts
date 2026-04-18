@@ -709,7 +709,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
       const { sessionId, timestamp } = JSON.parse(raw);
       const TWO_HOURS = 2 * 60 * 60 * 1000;
 
-      if (!sessionId || Date.now() - timestamp > TWO_HOURS) {
+      if (!sessionId || !this.isValidStripeCheckoutSessionId(sessionId) || Date.now() - timestamp > TWO_HOURS) {
         // Expired — discard the stored session
         localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
         return;
@@ -746,7 +746,9 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
         const sessionId = params['session_id'];
-        const isSuccessfulStripeReturn = params['payment_success'] === 'true' && !!sessionId;
+        const isSuccessfulStripeReturn =
+          params['payment_success'] === 'true' &&
+          this.isValidStripeCheckoutSessionId(sessionId);
         if (!isSuccessfulStripeReturn) return;
 
         // Avoid duplicate modal openings for repeated router emissions.
@@ -770,6 +772,12 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
         setTimeout(() => clearInterval(checkReady), 10000);
       });
+  }
+
+  // Stripe Checkout returns a Checkout Session ID (cs_...), not a PaymentIntent ID (pi_...).
+  private isValidStripeCheckoutSessionId(sessionId: unknown): sessionId is string {
+    if (typeof sessionId !== 'string') return false;
+    return /^cs_[a-zA-Z0-9_]+$/.test(sessionId);
   }
 
   // Redirect the user to Stripe Checkout to pay for an advertisement placement (HK$10).
