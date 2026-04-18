@@ -1,6 +1,10 @@
 // Modern restaurant detail page styling - Comprehensive redesign
 :host {
 
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Restaurant page styling with green theme and purple-blue gradient accents
   .restaurant-page {
     background: var(--ion-background-color);

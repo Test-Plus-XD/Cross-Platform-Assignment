@@ -97,6 +97,8 @@
   --header-spacing: calc(8px + env(safe-area-inset-top));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(144px + env(safe-area-inset-bottom));
+  // Blended purple-blue used for icons across all pages (matches Search filter chip icons)
+  --gradient-icon-color: color-mix(in srgb, var(--ion-color-primary) 56%, var(--ion-color-secondary) 44%);
 }
 
 /* === DARK MODE === */

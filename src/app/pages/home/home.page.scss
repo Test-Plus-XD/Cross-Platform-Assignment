@@ -1,6 +1,10 @@
 // Home page styling with updated green theme and purple-blue gradient accents
 :host {
 
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Page content background uses light green gradient
   .home-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);

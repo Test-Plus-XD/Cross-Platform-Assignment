@@ -1,4 +1,8 @@
 // Chat page styles
+ion-icon {
+  color: var(--gradient-icon-color);
+}
+
 .chat-page-container {
   max-width: 800px;
   margin: 0 auto;
