@@ -97,6 +97,8 @@
   --header-spacing: calc(8px + env(safe-area-inset-top));
   --footer-spacing: calc(108px + env(safe-area-inset-bottom));
   --min-height: calc(144px + env(safe-area-inset-bottom));
+  // Blended purple-blue used for icons across all pages (matches Search filter chip icons)
+  --gradient-icon-color: color-mix(in srgb, var(--ion-color-primary) 56%, var(--ion-color-secondary) 44%);
 }
 
 /* === DARK MODE === */
@@ -187,6 +189,20 @@ html.dark,
   --ion-text-color: var(--text);
   --ion-card-background: var(--card-bg);
   --ion-toolbar-background: var(--surface);
+}
+
+/* === GOOGLE MAPS INFOWINDOW RESET === */
+// Strip default padding so card border-radius / overflow:hidden render flush
+.gm-style-iw,
+.gm-style-iw-d {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+.gm-style-iw-c {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
 }
 
 /* === COMPONENT-LEVEL THEMING === */

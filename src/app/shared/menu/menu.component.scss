@@ -1,6 +1,10 @@
 .shared-menu {
   --ion-item-background: transparent;
   --ion-toolbar-background: var(--ion-color-primary);
+
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
   padding: 0.75rem 0 1rem;
   display: flex;
   flex-direction: column;

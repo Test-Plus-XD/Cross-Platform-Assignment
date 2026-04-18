@@ -1,4 +1,8 @@
 :host {
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Light mode uses a deeper layered edge shadow so the header reads as a separate panel.
   --shared-header-shadow:
     0 0 0.53rem rgba(26, 46, 31, 0.2),

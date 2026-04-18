@@ -1,4 +1,8 @@
 :host {
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Native ripple keeps the tightest light-green core, while the extra layers sit above it.
   --tab-ripple-core-color: rgba(159, 219, 169, 0.68);
   --tab-ripple-middle-color: rgba(159, 219, 169, 0.5);

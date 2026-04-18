@@ -79,12 +79,18 @@ export class RestaurantsService {
   private restaurantsCacheTimestamp = 0;
   // API URL exposed for direct fetch calls (e.g. DocuPipe)
   public readonly apiUrl = environment.apiUrl;
+  // Placeholder pool for restaurants with missing ImageUrl
+  private readonly restaurantPlaceholders = environment.restaurantPlaceholderImages;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
   constructor() {
     console.log('RestaurantsService: Initialised');
+  }
+
+  private randomRestaurantPlaceholder(): string {
+    return this.restaurantPlaceholders[Math.floor(Math.random() * this.restaurantPlaceholders.length)];
   }
 
   /// Sanitise image URL to handle backend em dash replacement.
@@ -197,7 +203,7 @@ export class RestaurantsService {
           Opening_Hours: h.Opening_Hours ?? null,
           Seats: h.Seats ?? null,
           Contacts: h.Contacts ?? null,
-          ImageUrl: this.sanitizeImageUrl(h.ImageUrl),
+          ImageUrl: this.sanitizeImageUrl(h.ImageUrl) ?? this.randomRestaurantPlaceholder(),
           Payments: this.sanitizePayments(h.Payments),
           ownerId: h.ownerId ?? h.Owner ?? null,
           reviewsId: h.reviewsId ?? null,
@@ -269,7 +275,7 @@ export class RestaurantsService {
           Opening_Hours: response.Opening_Hours ?? null,
           Seats: response.Seats ?? null,
           Contacts: response.Contacts ?? null,
-          ImageUrl: this.sanitizeImageUrl(response.ImageUrl),
+          ImageUrl: this.sanitizeImageUrl(response.ImageUrl) ?? this.randomRestaurantPlaceholder(),
           ownerId: response.ownerId ?? null,
           Payments: this.sanitizePayments(response.Payments),
           reviewsId: response.reviewsId ?? null,
@@ -537,7 +543,7 @@ export class RestaurantsService {
           Opening_Hours: r.Opening_Hours ?? null,
           Seats: r.Seats ?? null,
           Contacts: r.Contacts ?? null,
-          ImageUrl: this.sanitizeImageUrl(r.ImageUrl),
+          ImageUrl: this.sanitizeImageUrl(r.ImageUrl) ?? this.randomRestaurantPlaceholder(),
           Payments: this.sanitizePayments(r.Payments),
           ownerId: r.ownerId ?? r.Owner ?? null,
           reviewsId: r.reviewsId ?? null,

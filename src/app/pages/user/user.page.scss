@@ -1,5 +1,10 @@
 // Modern, aesthetic user profile page styling with inline editing support
 :host {
+
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Page content background with gradient is defined
   .user-page-content {
     --background: linear-gradient(235deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);

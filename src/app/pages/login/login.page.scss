@@ -1,5 +1,9 @@
 :host {
   --login-accent-color: var(--app-selection-green-icon);
+
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
 }
 
 ion-content {

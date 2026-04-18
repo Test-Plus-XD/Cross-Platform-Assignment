@@ -89,13 +89,19 @@
               </div>
               <ion-card-content class="card-content">
                 <h3 class="card-title">{{ curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}</h3>
-                <!-- Keywords -->
-                <div class="keywords-row" *ngIf="getDisplayKeywords(restaurant, curLang).length > 0">
-                  <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant, curLang)">{{ kw }}</span>
-                  <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant, curLang) > 2">+{{
-                    getKeywordCount(restaurant, curLang) - 2 }}</span>
+                <div class="card-meta">
+                  <!-- Keywords -->
+                  <div class="meta-row keywords-row" *ngIf="getDisplayKeywords(restaurant, curLang).length > 0">
+                    <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant, curLang)">{{ kw }}</span>
+                    <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant, curLang) > 2">+{{
+                      getKeywordCount(restaurant, curLang) - 2 }}</span>
+                  </div>
+                  <!-- District -->
+                  <div class="meta-row" *ngIf="restaurant.District_EN || restaurant.District_TC">
+                    <ion-icon name="location-outline"></ion-icon>
+                    <span>{{ curLang === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</span>
+                  </div>
                 </div>
-                <p class="card-subtitle">{{ curLang === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</p>
               </ion-card-content>
             </ion-card>
           </swiper-slide>
@@ -250,13 +256,25 @@
               </div>
               <ion-card-content class="card-content">
                 <h3 class="card-title">{{ curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN }}</h3>
-                <!-- Keywords -->
-                <div class="keywords-row" *ngIf="getDisplayKeywords(restaurant, curLang).length > 0">
-                  <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant, curLang)">{{ kw }}</span>
-                  <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant, curLang) > 2">+{{
-                    getKeywordCount(restaurant, curLang) - 2 }}</span>
+                <div class="card-meta">
+                  <!-- Keywords -->
+                  <div class="meta-row keywords-row" *ngIf="getDisplayKeywords(restaurant, curLang).length > 0">
+                    <span class="keyword-tag" *ngFor="let kw of getDisplayKeywords(restaurant, curLang)">{{ kw }}</span>
+                    <span class="keyword-tag more-tag" *ngIf="getKeywordCount(restaurant, curLang) > 2">+{{
+                      getKeywordCount(restaurant, curLang) - 2 }}</span>
+                  </div>
+                  <!-- District -->
+                  <div class="meta-row" *ngIf="restaurant.District_EN || restaurant.District_TC">
+                    <ion-icon name="location-outline"></ion-icon>
+                    <span>{{ curLang === 'TC' ? restaurant.District_TC : restaurant.District_EN }}</span>
+                  </div>
+                  <!-- Address -->
+                  <div class="meta-row address-row"
+                    *ngIf="curLang === 'TC' ? restaurant.Address_TC : restaurant.Address_EN">
+                    <ion-icon name="map-outline"></ion-icon>
+                    <span>{{ curLang === 'TC' ? restaurant.Address_TC : restaurant.Address_EN }}</span>
+                  </div>
                 </div>
-                <p class="card-subtitle">{{ curLang === 'TC' ? restaurant.Address_TC : restaurant.Address_EN }}</p>
               </ion-card-content>
             </ion-card>
           </swiper-slide>

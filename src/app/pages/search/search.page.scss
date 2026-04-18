@@ -1,6 +1,10 @@
 // Search page styling with updated green theme and purple-blue gradient accents
 :host {
 
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+
   // Page content background uses light green gradient
   .search-page-content {
     --background: linear-gradient(135deg, var(--ion-color-light) 0%, var(--ion-background-color) 100%);
@@ -507,7 +511,7 @@
 
           ion-icon {
             font-size: 0.95rem;
-            color: var(--ion-color-primary);
+            color: var(--gradient-icon-color);
             flex-shrink: 0;
           }
 
@@ -533,13 +537,15 @@
               font-weight: 600;
               padding: 1px 7px;
               border-radius: 8px;
-              background: rgba(var(--ion-color-primary-rgb), 0.1);
-              color: var(--ion-color-primary);
+              background: var(--app-selection-green-bg);
+              color: var(--app-selection-green-icon);
+              border: 1px solid var(--app-selection-green-border);
               white-space: nowrap;
 
               &.more-tag {
-                background: var(--ion-color-primary);
-                color: #fff;
+                background: var(--app-selection-green-bg);
+                color: var(--app-selection-green-icon);
+                border: 1px solid var(--app-selection-green-border);
               }
             }
           }
