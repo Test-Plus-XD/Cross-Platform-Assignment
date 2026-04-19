@@ -15,6 +15,13 @@ export interface UserProfileCache {
   photoURL: string | null;
 }
 
+export interface UserFcmTokenRecord {
+  token: string;
+  platform: 'web' | 'android-native' | 'ios-native' | string;
+  appId?: string | null;
+  registeredAt?: Timestamp;
+}
+
 // User profile interface matching Firestore schema
 export interface UserProfile {
   uid: string;
@@ -40,7 +47,7 @@ export interface UserProfile {
   modifiedAt?: Timestamp;
   lastLoginAt?: Timestamp;
   loginCount?: number;
-  fcmTokens?: string[];
+  fcmTokens?: UserFcmTokenRecord[];
 }
 
 @Injectable({
@@ -216,7 +223,11 @@ export class UserService {
       loginCount: response.loginCount || 0,
       type: response.type || null,
       restaurantId: response.restaurantId || null,
-      fcmTokens: response.fcmTokens || []
+      fcmTokens: Array.isArray(response.fcmTokens)
+        ? response.fcmTokens.filter((tokenRecord): tokenRecord is UserFcmTokenRecord =>
+          !!tokenRecord && typeof tokenRecord === 'object' && typeof tokenRecord.token === 'string'
+        )
+        : []
     };
   }
 

@@ -47,10 +47,13 @@ export type NotificationType =
   | 'restaurant_claimed'
   | 'general';
 
+export type NotificationRegistrationPlatform = 'web' | 'android-native' | 'ios-native';
+
 export interface FcmTokenInfo {
   token: string;
   userId: string;
-  deviceType: 'web' | 'ios' | 'android';
+  platform: NotificationRegistrationPlatform;
+  appId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +87,8 @@ export interface NotificationTemplate {
 export const defaultAndroidNotificationChannelId = 'pourrice_default_notifications';
 const defaultAndroidNotificationChannelName = 'PourRice Alerts';
 const defaultAndroidNotificationChannelDescription = 'Chat messages, bookings, and app activity';
+const nativeAndroidAppId = 'com.example.cross_platform_assignment';
+const nativeIosAppId = 'Pour-Rice.Pour-Rice';
 
 export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTemplate> = {
   booking_pending: {
@@ -430,9 +435,15 @@ export class MessagingService {
   // Register the current device token with the backend for server-side push delivery.
   async registerTokenWithBackend(fcmToken: string, authToken: string): Promise<void> {
     try {
+      const platform = this.getRegistrationPlatform();
+      const appId = this.getRegistrationAppId(platform);
       console.log('MessagingService Registering token with backend');
       await firstValueFrom(
-        this.dataService.post<void>('/API/Messaging/register-token', { token: fcmToken }, authToken)
+        this.dataService.post<void>('/API/Messaging/register-token', {
+          token: fcmToken,
+          platform,
+          ...(appId ? { appId } : {})
+        }, authToken)
       );
       console.log('MessagingService Token registered with backend');
     } catch (error) {
@@ -452,6 +463,42 @@ export class MessagingService {
     } catch (error) {
       console.error('MessagingService Failed to remove token from backend:', error);
     }
+  }
+
+  // Resolve the platform tag used by the backend token registry.
+  private getRegistrationPlatform(): NotificationRegistrationPlatform {
+    if (!this.isNativePlatform) {
+      return 'web';
+    }
+
+    const capacitorPlatform = Capacitor.getPlatform();
+
+    if (capacitorPlatform === 'android') {
+      return 'android-native';
+    }
+
+    if (capacitorPlatform === 'ios') {
+      return 'ios-native';
+    }
+
+    return 'web';
+  }
+
+  // Resolve a stable app identifier for diagnostics and token targeting analysis.
+  private getRegistrationAppId(platform: NotificationRegistrationPlatform): string | undefined {
+    if (platform === 'android-native') {
+      return nativeAndroidAppId;
+    }
+
+    if (platform === 'ios-native') {
+      return nativeIosAppId;
+    }
+
+    if (typeof window !== 'undefined' && typeof window.location?.origin === 'string' && window.location.origin) {
+      return window.location.origin;
+    }
+
+    return undefined;
   }
 
   // Convert a raw plugin notification into the shared application payload.
