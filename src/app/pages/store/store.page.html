@@ -577,6 +577,28 @@
         ════════════════════════════════════════════════════════════════ -->
       <div *ngIf="currentSection === 'ads'" class="section-content">
 
+        <!-- Pending ad session banner — shows when a Stripe payment succeeded
+             but the ad was not published yet (2h grace window). -->
+        <ion-card *ngIf="hasPendingAdSession" class="pending-ad-card" color="warning">
+          <ion-card-header>
+            <ion-card-title class="pending-ad-title">
+              <ion-icon name="time-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.pendingAdTitle.TC : translations.pendingAdTitle.EN }}
+            </ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p>{{ (lang$ | async) === 'TC' ? translations.pendingAdDesc.TC : translations.pendingAdDesc.EN }}</p>
+            <p class="pending-ad-timer">
+              <ion-icon name="hourglass-outline"></ion-icon>
+              <span>{{ (lang$ | async) === 'TC' ? translations.timeRemaining.TC : translations.timeRemaining.EN }} {{ pendingAdSessionRemainingText }}</span>
+            </p>
+            <ion-button expand="block" (click)="resumePendingAdPlacement()">
+              <ion-icon name="play-forward-outline" slot="start"></ion-icon>
+              {{ (lang$ | async) === 'TC' ? translations.resumeAd.TC : translations.resumeAd.EN }}
+            </ion-button>
+          </ion-card-content>
+        </ion-card>
+
         <!-- CTA card: cost label + pay button -->
         <ion-card class="ad-cta-card">
           <ion-card-content>

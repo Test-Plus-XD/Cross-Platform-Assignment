@@ -970,6 +970,31 @@
   margin-top: 16px;
 }
 
+// Pending ad placement banner (Stripe grace window)
+.pending-ad-card {
+  .pending-ad-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    ion-icon {
+      font-size: 22px;
+    }
+  }
+
+  .pending-ad-timer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 16px;
+    font-weight: 600;
+
+    ion-icon {
+      font-size: 18px;
+    }
+  }
+}
+
 // Primary colored buttons with gradient
 ion-button[color="primary"] {
   --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));

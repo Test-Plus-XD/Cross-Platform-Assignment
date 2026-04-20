@@ -110,8 +110,16 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // ── localStorage key for Stripe session persistence ───────────────────────────
   // If the ad creation modal is closed after payment, the session is stored here
   // so the user can reopen the modal on their next visit to the store page.
+  // The entry survives app quits and modal cancellations until the 2h grace
+  // window expires or the ad is successfully created.
   private readonly PENDING_AD_SESSION_KEY = 'pendingAdSession';
+  private readonly AD_SESSION_GRACE_MS = 2 * 60 * 60 * 1000;
   private lastHandledStripeSessionId: string | null = null;
+
+  // Mirror of the localStorage entry so the resume banner reacts to changes.
+  // Valid entry ⇒ banner renders; null ⇒ banner hidden.
+  pendingAdSession: { sessionId: string; timestamp: number } | null = null;
+  private pendingAdSessionTimer: ReturnType<typeof setInterval> | null = null;
 
   // ── Bilingual UI strings ──────────────────────────────────────────────────────
   translations = {
@@ -177,7 +185,11 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     addRestaurant:           { EN: 'Add New Restaurant',           TC: '新增餐廳' },
     restaurantAdded:         { EN: 'Restaurant added! Loading your dashboard...', TC: '餐廳已新增！正在載入您的主頁...' },
     menuQrCode:              { EN: 'Menu QR Code',                               TC: '菜單二維碼' },
-    menuQrCodeHint:          { EN: 'Let customers scan to view your menu',        TC: '讓顧客掃描瀏覽您的菜單' }
+    menuQrCodeHint:          { EN: 'Let customers scan to view your menu',        TC: '讓顧客掃描瀏覽您的菜單' },
+    pendingAdTitle:          { EN: 'Advertisement Placement Pending',             TC: '廣告設置待完成' },
+    pendingAdDesc:           { EN: 'Your payment was received but the advertisement has not been finalised yet.', TC: '已收到您的付款，但廣告尚未發布。' },
+    timeRemaining:           { EN: 'Time remaining:',                             TC: '剩餘時間：' },
+    resumeAd:                { EN: 'Complete Advertisement',                      TC: '完成廣告設置' }
   };
 
   /** Inserted by Angular inject() migration for backwards compatibility */
@@ -205,6 +217,8 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     // Kick off the main data loading chain (user profile → restaurant → sub-resources)
     this.loadRestaurantData();
 
+    // Hydrate the resume-banner state from localStorage before any modal flow.
+    this.refreshPendingAdSession();
     this.subscribeToStripeReturnParams();
     this.checkPendingAdSession();
   }
@@ -213,6 +227,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     // Complete all takeUntil subscriptions to prevent memory leaks
     this.destroy$.next();
     this.destroy$.complete();
+    this.stopPendingAdSessionTimer();
   }
 
   // Reload restaurant data when returning from the edit-info sub-page
@@ -223,6 +238,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
     // Re-check pending Stripe sessions whenever StorePage becomes active.
     // Covers native return flows that reuse the same route component instance.
+    this.refreshPendingAdSession();
     this.checkPendingAdSession();
   }
 
@@ -698,45 +714,108 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
   // ── Advertisement (Stripe) flow ───────────────────────────────────────────────
 
-  // Reopen the ad creation modal from a previously stored Stripe session ID.
-  // Runs on page load whenever no Stripe query params are present in the URL.
-  // Sessions expire after 2 hours to avoid stale data.
-  private checkPendingAdSession(): void {
+  // Read the pending-ad-session entry from localStorage and validate it.
+  // Expired, malformed, or missing entries are removed; valid entries are
+  // mirrored to `pendingAdSession` so the resume banner can render.
+  // Returns the valid session (or null if none).
+  private refreshPendingAdSession(): { sessionId: string; timestamp: number } | null {
     const raw = localStorage.getItem(this.PENDING_AD_SESSION_KEY);
-    if (!raw) return;
+    if (!raw) {
+      this.clearPendingAdSessionState();
+      return null;
+    }
 
     try {
       const { sessionId, timestamp } = JSON.parse(raw);
-      const TWO_HOURS = 2 * 60 * 60 * 1000;
-
-      if (!sessionId || !this.isValidStripeCheckoutSessionId(sessionId) || Date.now() - timestamp > TWO_HOURS) {
-        // Expired — discard the stored session
+      if (!this.isValidStripeCheckoutSessionId(sessionId) ||
+          typeof timestamp !== 'number' ||
+          Date.now() - timestamp > this.AD_SESSION_GRACE_MS) {
         localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
-        return;
+        this.clearPendingAdSessionState();
+        return null;
       }
 
-      // Already handled via query-param callback path (or prior recovery path).
-      if (sessionId === this.lastHandledStripeSessionId) {
-        localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
-        return;
-      }
-
-      this.lastHandledStripeSessionId = sessionId;
-
-      // Poll until restaurant data is ready, then reopen the ad modal
-      const checkReady = setInterval(() => {
-        if (!this.isRestaurantLoading && this.restaurantId) {
-          clearInterval(checkReady);
-          localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
-          this.openAdModal(sessionId);
-        }
-      }, 300);
-
-      setTimeout(() => clearInterval(checkReady), 10000);
+      this.pendingAdSession = { sessionId, timestamp };
+      this.startPendingAdSessionTimer();
+      this.cdr.markForCheck();
+      return this.pendingAdSession;
     } catch {
-      // Malformed JSON — discard the entry
       localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+      this.clearPendingAdSessionState();
+      return null;
     }
+  }
+
+  private clearPendingAdSessionState(): void {
+    this.pendingAdSession = null;
+    this.stopPendingAdSessionTimer();
+    this.cdr.markForCheck();
+  }
+
+  // Refresh the banner countdown every minute. Also picks up natural expiry.
+  private startPendingAdSessionTimer(): void {
+    if (this.pendingAdSessionTimer) return;
+    this.pendingAdSessionTimer = setInterval(() => {
+      this.refreshPendingAdSession();
+    }, 60 * 1000);
+  }
+
+  private stopPendingAdSessionTimer(): void {
+    if (this.pendingAdSessionTimer) {
+      clearInterval(this.pendingAdSessionTimer);
+      this.pendingAdSessionTimer = null;
+    }
+  }
+
+  // True while a paid-but-unplaced ad session is still within the 2h window.
+  get hasPendingAdSession(): boolean {
+    return this.pendingAdSession !== null;
+  }
+
+  // Human-readable remaining time for the resume banner: "1h 45m" / "12m".
+  get pendingAdSessionRemainingText(): string {
+    if (!this.pendingAdSession) return '';
+    const elapsed = Date.now() - this.pendingAdSession.timestamp;
+    const remaining = Math.max(0, this.AD_SESSION_GRACE_MS - elapsed);
+    const totalMinutes = Math.max(1, Math.ceil(remaining / (60 * 1000)));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours <= 0) return `${minutes}m`;
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  }
+
+  // Banner "Complete Advertisement" button handler.
+  async resumePendingAdPlacement(): Promise<void> {
+    const session = this.refreshPendingAdSession();
+    if (!session) return;
+    await this.openAdModal(session.sessionId);
+  }
+
+  // Reopen the ad creation modal from a previously stored Stripe session ID.
+  // Runs on page load whenever no Stripe query params are present in the URL.
+  // Sessions expire after 2 hours to avoid stale data. The localStorage entry
+  // is kept until the ad is successfully created or the window expires, so
+  // dismissing the modal leaves the banner available for resume.
+  private checkPendingAdSession(): void {
+    const session = this.refreshPendingAdSession();
+    if (!session) return;
+
+    // Already auto-opened (or handled via query-param path) during this
+    // component lifetime. Keep the localStorage entry so the resume banner
+    // still works, but don't re-pop the modal on sub-route returns.
+    if (session.sessionId === this.lastHandledStripeSessionId) return;
+
+    this.lastHandledStripeSessionId = session.sessionId;
+
+    // Poll until restaurant data is ready, then reopen the ad modal.
+    const checkReady = setInterval(() => {
+      if (!this.isRestaurantLoading && this.restaurantId) {
+        clearInterval(checkReady);
+        this.openAdModal(session.sessionId);
+      }
+    }, 300);
+
+    setTimeout(() => clearInterval(checkReady), 10000);
   }
 
   // Keep listening for Stripe success query params for the full StorePage lifecycle.
@@ -759,6 +838,8 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
           sessionId,
           timestamp: Date.now()
         }));
+        // Surface the resume banner immediately in case the modal is cancelled.
+        this.refreshPendingAdSession();
 
         // Remove callback params after processing.
         void this.router.navigate(['/store'], { replaceUrl: true });
@@ -855,16 +936,21 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
     const { data } = await modal.onWillDismiss();
 
-    // Always clear the localStorage session key whether or not the ad was created
-    localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
-
     if (data?.created) {
+      // Ad is live — consume the pending session so the banner disappears.
+      localStorage.removeItem(this.PENDING_AD_SESSION_KEY);
+      this.clearPendingAdSessionState();
       this.loadAdvertisements();
       const lang = this.currentLanguage;
       await this.showToast(
         lang === 'TC' ? '廣告已成功刊登！' : 'Advertisement published successfully!',
         'success'
       );
+    } else {
+      // Modal cancelled — keep the localStorage entry so the owner can resume
+      // placement via the banner within the 2h grace window. Refresh state in
+      // case the window expired whilst the modal was open.
+      this.refreshPendingAdSession();
     }
   }
 
