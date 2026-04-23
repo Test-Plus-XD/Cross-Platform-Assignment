@@ -503,11 +503,15 @@ export class MessagingService {
 
   // Convert a raw plugin notification into the shared application payload.
   private createPayloadFromFirebaseNotification(notification: FirebaseNotification): NotificationPayload {
+    const notificationData = this.normaliseNotificationData(notification.data);
+    const titleFromData = typeof notificationData?.['title'] === 'string' ? notificationData['title'] : undefined;
+    const bodyFromData = typeof notificationData?.['body'] === 'string' ? notificationData['body'] : undefined;
+
     return {
-      title: notification.title || 'New Notification',
-      body: notification.body || '',
+      title: notification.title || titleFromData || 'New Notification',
+      body: notification.body || bodyFromData || '',
       icon: notification.image,
-      data: this.normaliseNotificationData(notification.data),
+      data: notificationData,
       timestamp: Date.now()
     };
   }
