@@ -6,7 +6,7 @@ import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http
 import { AuthService } from '../../services/auth.service';
 import { UserService, UserProfile } from '../../services/user.service';
 import { LanguageService } from '../../services/language.service';
-import { ChatService, ChatRoom } from '../../services/chat.service';
+import { ChatMessage, ChatService, ChatRoom } from '../../services/chat.service';
 import { ChatButtonComponent } from '../../shared/chat-button/chat-button.component';
 import { environment } from '../../../environments/environment';
 
@@ -45,6 +45,7 @@ export class ChatPage implements OnInit, OnDestroy {
   selectedRestaurantOwnerId: string | null = null;
   private pendingRouteRoomId: string | null = null;
   private hasStartedProfileLoad = false;
+  private hasLoadedChatRoomsOnce = false;
 
   // Cleanup
   private destroy$ = new Subject<void>();
@@ -54,7 +55,20 @@ export class ChatPage implements OnInit, OnDestroy {
 
   constructor() { }
 
+  /// Refreshes the cached chat-room list whenever Ionic reuses this page instance.
+  ionViewWillEnter(): void {
+    if (!this.userProfile?.uid || !this.hasLoadedChatRoomsOnce) {
+      return;
+    }
+
+    void this.loadChatRooms(this.userProfile.uid, true);
+  }
+
   ngOnInit() {
+    this.chatService.Messages$.pipe(takeUntil(this.destroy$)).subscribe((message) => {
+      this.applyIncomingMessageToChatRoomCache(message);
+    });
+
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((paramMap) => {
       this.pendingRouteRoomId = paramMap.get('id');
 
@@ -86,6 +100,7 @@ export class ChatPage implements OnInit, OnDestroy {
         this.isLoading = false;
         this.userProfile = null;
         this.chatRooms = [];
+        this.hasLoadedChatRoomsOnce = false;
         console.log('ChatPage: No authenticated user');
         return;
       }
@@ -101,6 +116,7 @@ export class ChatPage implements OnInit, OnDestroy {
             console.warn('ChatPage: User profile not found');
             this.loadError = 'User profile not found';
             this.isLoading = false;
+            this.hasLoadedChatRoomsOnce = false;
             return;
           }
 
@@ -122,14 +138,16 @@ export class ChatPage implements OnInit, OnDestroy {
   }
 
   /// Loads chat rooms from the API with comprehensive error handling
-  private async loadChatRooms(UserId: string): Promise<void> {
+  private async loadChatRooms(UserId: string, preserveExistingCacheOnError: boolean = false): Promise<void> {
     try {
       console.log('ChatPage: Loading chat rooms for user', UserId);
 
       const Token = await this.authService.getIdToken();
       if (!Token) {
         console.warn('ChatPage: No authentication token available');
-        this.loadError = 'Authentication token not available';
+        if (!preserveExistingCacheOnError) {
+          this.loadError = 'Authentication token not available';
+        }
         return;
       }
 
@@ -153,8 +171,10 @@ export class ChatPage implements OnInit, OnDestroy {
 
       if (!Response) {
         console.error('ChatPage: No response from API');
-        this.loadError = 'No response from server';
-        this.chatRooms = [];
+        if (!preserveExistingCacheOnError) {
+          this.loadError = 'No response from server';
+          this.chatRooms = [];
+        }
         return;
       }
 
@@ -162,6 +182,8 @@ export class ChatPage implements OnInit, OnDestroy {
 
       // Chat rooms array is updated with the fetched data
       this.chatRooms = Response.rooms || [];
+      this.loadError = null;
+      this.hasLoadedChatRoomsOnce = true;
       this.tryOpenRoomFromRoute();
 
       console.log('ChatPage: Successfully loaded', this.chatRooms.length, 'chat rooms');
@@ -186,24 +208,95 @@ export class ChatPage implements OnInit, OnDestroy {
         console.error('ChatPage: HTTP error Message:', error.message);
         console.error('ChatPage: HTTP error Body:', error.error);
 
-        if (error.status === 401) {
-          this.loadError = 'Authentication failed. Please log in again.';
-        } else if (error.status === 403) {
-          this.loadError = 'Access denied. You do not have permission to view chat records.';
-        } else if (error.status === 404) {
-          this.loadError = 'Chat records endpoint not found.';
-        } else if (error.status === 500) {
-          this.loadError = 'Server error. Please try again later.';
-        } else {
-          this.loadError = `Failed to load chat rooms: ${error.message}`;
+        if (!preserveExistingCacheOnError) {
+          if (error.status === 401) {
+            this.loadError = 'Authentication failed. Please log in again.';
+          } else if (error.status === 403) {
+            this.loadError = 'Access denied. You do not have permission to view chat records.';
+          } else if (error.status === 404) {
+            this.loadError = 'Chat records endpoint not found.';
+          } else if (error.status === 500) {
+            this.loadError = 'Server error. Please try again later.';
+          } else {
+            this.loadError = `Failed to load chat rooms: ${error.message}`;
+          }
         }
       } else if (error instanceof Error) {
-        this.loadError = `error: ${error.message}`;
+        if (!preserveExistingCacheOnError) {
+          this.loadError = `error: ${error.message}`;
+        }
       } else {
-        this.loadError = 'Unknown error occurred while loading chat rooms';
+        if (!preserveExistingCacheOnError) {
+          this.loadError = 'Unknown error occurred while loading chat rooms';
+        }
       }
-      this.chatRooms = [];
+
+      if (!preserveExistingCacheOnError) {
+        this.chatRooms = [];
+      }
     }
+  }
+
+  /// Applies an incoming real-time message to the cached chat-room list shown on the Chat page.
+  private applyIncomingMessageToChatRoomCache(message: ChatMessage): void {
+    if (!message.roomId?.trim()) {
+      return;
+    }
+
+    const existingRoomIndex = this.chatRooms.findIndex((room) => room.roomId === message.roomId);
+    const cachedLastMessage = this.resolveCachedLastMessage(message);
+
+    if (existingRoomIndex === -1) {
+      const newCachedRoom: ChatRoom = {
+        roomId: message.roomId,
+        name: message.roomId.startsWith('restaurant-') ? undefined : (message.displayName || 'Chat'),
+        participants: message.userId ? [message.userId] : [],
+        participantsData: message.userId
+          ? [{ uid: message.userId, displayName: message.displayName || 'Unknown User', photoURL: null }]
+          : [],
+        type: 'group',
+        lastMessage: cachedLastMessage,
+        lastMessageAt: message.timestamp,
+        messageCount: 1,
+        recentMessages: [message]
+      };
+
+      this.chatRooms = [newCachedRoom, ...this.chatRooms];
+      this.tryOpenRoomFromRoute();
+      return;
+    }
+
+    const existingRoom = this.chatRooms[existingRoomIndex];
+    const updatedRoom: ChatRoom = {
+      ...existingRoom,
+      lastMessage: cachedLastMessage,
+      lastMessageAt: message.timestamp,
+      messageCount: (existingRoom.messageCount || 0) + 1,
+      recentMessages: [...(existingRoom.recentMessages || []), message].slice(-10)
+    };
+
+    this.chatRooms = [
+      updatedRoom,
+      ...this.chatRooms.filter((_, index) => index !== existingRoomIndex)
+    ];
+
+    if (this.selectedRoom?.roomId === updatedRoom.roomId) {
+      this.selectedRoom = updatedRoom;
+    }
+
+    this.tryOpenRoomFromRoute();
+  }
+
+  /// Resolves the preview text cached for a room so image-only messages still render meaningfully.
+  private resolveCachedLastMessage(message: ChatMessage): string {
+    const trimmedMessage = typeof message.message === 'string' ? message.message.trim() : '';
+
+    if (trimmedMessage) {
+      return trimmedMessage;
+    }
+
+    const trimmedImageUrl = typeof message.imageUrl === 'string' ? message.imageUrl.trim() : '';
+    return trimmedImageUrl;
   }
 
   /// Opens a specific chat room by opening the ChatButton chatbox
