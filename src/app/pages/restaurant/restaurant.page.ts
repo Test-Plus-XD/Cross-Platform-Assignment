@@ -13,7 +13,7 @@ import { DistanceResult } from '../../services/location.service';
 import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
 import { DataService } from '../../services/data.service';
 import { MapModalComponent } from './map-modal.component';
-import { MenuModalComponent } from './menu-modal.component';
+import { FullMenuModalComponent } from './full-menu-modal.component';
 import { BookingModalComponent } from './booking-modal.component';
 import { environment } from '../../../environments/environment';
 
@@ -44,6 +44,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   restaurant: Restaurant | null = null;
   // Menu items loaded separately from sub-collection
   menuItems: MenuItem[] = [];
+  // Randomised menu preview shown in the compact scroller before the full menu modal opens
+  menuPreviewItems: MenuItem[] = [];
   // Reviews for this restaurant
   reviews: Review[] = [];
   // Review statistics
@@ -90,8 +92,8 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isClaimingRestaurant: boolean = false;
   // Tab navigation state
   selectedTab: string = 'overview';
-  // Opening hours expansion state
-  hoursExpanded: boolean = false;
+  // Opening hours stay expanded so booking context is always visible
+  hoursExpanded: boolean = true;
   // Swiper breakpoints configuration for responsive review carousel
   readonly ReviewSwiperBreakpoints = {
     768: { slidesPerView: 2 },
@@ -107,6 +109,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isCurrentUserOwner: boolean = false;
   // Snapshot of the current language for synchronous access in methods
   currentLanguage: 'EN' | 'TC' = 'EN';
+  // Number of random menu entries loaded into the compact preview scroller
+  readonly menuPreviewLimit: number = 5;
+  // Number of menu rows that should be visible before the preview area scrolls
+  readonly visibleMenuPreviewCount: number = 3;
+  // Deep-link flag that waits until restaurant and menu loading finish before opening the menu modal
+  private pendingMenuDeepLink: boolean = false;
+  // Modal guard that prevents repeated deep-link query emissions from opening duplicate menu modals
+  private isMenuModalOpen: boolean = false;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -125,11 +135,18 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     // Try to get user's location for distance calculation
     this.feature.location.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
 
-    // Check for tab query parameter
-    const tab = this.route.snapshot.queryParamMap.get('tab');
-    if (tab === 'review') {
-      this.selectedTab = 'review';
-    }
+    // Watch route query parameters so deep links can open the full menu after this cached page re-enters.
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(queryParameters => {
+      const tab = queryParameters.get('tab');
+      const shouldOpenMenu = queryParameters.get('menu') === 'open' || queryParameters.get('section') === 'menu';
+      if (tab === 'review') this.selectedTab = 'review';
+      if (shouldOpenMenu) {
+        this.selectedTab = 'overview';
+        this.pendingMenuDeepLink = true;
+        this.openMenuModalWhenReady();
+      }
+      this.changeDetectionReference.markForCheck();
+    });
   }
 
   /// When view initialises, fetch restaurant ID and load all data
@@ -229,17 +246,34 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     ).subscribe({
       next: (items: MenuItem[]) => {
         this.menuItems = items;
+        this.menuPreviewItems = this.buildRandomMenuPreview(items);
         this.isMenuLoading = false;
+        this.openMenuModalWhenReady();
         this.changeDetectionReference.markForCheck();
         console.log('RestaurantPage: Loaded', items.length, 'menu items');
       },
       error: (error: any) => {
         console.error('RestaurantPage: Error loading menu items:', error);
         this.menuItems = [];
+        this.menuPreviewItems = [];
         this.isMenuLoading = false;
+        this.openMenuModalWhenReady();
         this.changeDetectionReference.markForCheck();
       }
     });
+  }
+
+  /// Build a compact random menu sample so the page preview stays fresh without loading every item into view.
+  private buildRandomMenuPreview(items: MenuItem[]): MenuItem[] {
+    if (items.length <= this.menuPreviewLimit) return [...items];
+
+    const shuffledItems = [...items];
+    for (let currentIndex = shuffledItems.length - 1; currentIndex > 0; currentIndex--) {
+      const randomIndex = Math.floor(Math.random() * (currentIndex + 1));
+      [shuffledItems[currentIndex], shuffledItems[randomIndex]] = [shuffledItems[randomIndex], shuffledItems[currentIndex]];
+    }
+
+    return shuffledItems.slice(0, this.menuPreviewLimit);
   }
 
   /// Load reviews for the restaurant
@@ -734,18 +768,36 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     await modal.onDidDismiss();
   }
 
-  /// Open fullscreen menu modal and pass menu array
+  /// Open the full menu modal and pass every loaded menu item.
   async openMenuModal(): Promise<void> {
-    const modal = await this.modalController.create({
-      component: MenuModalComponent,
-      componentProps: {
-        menu: this.menuItems,
-        langStream: this.feature.language.lang$
-      },
-      cssClass: 'fullscreen-modal'
-    });
-    await modal.present();
-    await modal.onDidDismiss();
+    if (this.isMenuModalOpen) return;
+
+    this.isMenuModalOpen = true;
+
+    try {
+      const modal = await this.modalController.create({
+        component: FullMenuModalComponent,
+        componentProps: {
+          menuItems: this.menuItems,
+          restaurantName: this.currentLanguage === 'TC'
+            ? (this.restaurant?.Name_TC || this.restaurant?.Name_EN || '')
+            : (this.restaurant?.Name_EN || this.restaurant?.Name_TC || ''),
+          langStream: this.feature.language.lang$
+        },
+        cssClass: 'fullscreen-modal'
+      });
+      await modal.present();
+      await modal.onDidDismiss();
+    } finally {
+      this.isMenuModalOpen = false;
+    }
+  }
+
+  /// Open a pending menu deep link only after the menu request settles and restaurant context exists.
+  private openMenuModalWhenReady(): void {
+    if (!this.pendingMenuDeepLink || this.isMenuLoading || this.isMenuModalOpen || !this.restaurant) return;
+    this.pendingMenuDeepLink = false;
+    void this.openMenuModal();
   }
 
   /// Handle double-tap on map for mobile devices
@@ -957,9 +1009,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /// Toggle opening hours expansion
+  /// Preserve the old handler contract while keeping opening hours permanently expanded.
   toggleHours(): void {
-    this.hoursExpanded = !this.hoursExpanded;
+    this.hoursExpanded = true;
     this.changeDetectionReference.markForCheck();
   }
 

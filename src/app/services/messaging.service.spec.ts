@@ -99,6 +99,6 @@ describe('MessagingService', () => {
   it('should convert legacy notification URLs into Angular routes', () => {
     expect(service.resolveRoute({ url: 'pourrice://bookings' })).toBe('/booking');
     expect(service.resolveRoute({ url: 'pourrice://chat/room123' })).toBe('/chat/room123');
-    expect(service.resolveRoute({ url: 'pourrice://menu/restaurant123' })).toBe('/restaurant/restaurant123');
+    expect(service.resolveRoute({ url: 'pourrice://menu/restaurant123' })).toBe('/restaurant/restaurant123?menu=open');
   });
 });

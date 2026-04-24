@@ -6,6 +6,7 @@ import { RestaurantPageRoutingModule } from './restaurant-routing.module';
 import { RestaurantPage } from './restaurant.page';
 import { MapModalComponent } from './map-modal.component';
 import { MenuModalComponent } from './menu-modal.component';
+import { FullMenuModalComponent } from './full-menu-modal.component';
 import { BookingModalComponent } from './booking-modal.component';
 import { SharedModule } from '../../shared/shared.module';
 
@@ -17,7 +18,7 @@ import { SharedModule } from '../../shared/shared.module';
     RestaurantPageRoutingModule,
     SharedModule
   ],
-  declarations: [RestaurantPage, MapModalComponent, MenuModalComponent, BookingModalComponent],
+  declarations: [RestaurantPage, MapModalComponent, MenuModalComponent, FullMenuModalComponent, BookingModalComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class RestaurantPageModule { }

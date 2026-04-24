@@ -562,7 +562,7 @@ export class MessagingService {
     if (url.startsWith('pourrice://')) {
       try {
         const parsed = new URL(url);
-        const slug = parsed.pathname.replace(/^\/+/, '');
+        const slug = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
         const host = parsed.hostname.toLowerCase();
 
         if (host === 'bookings') {
@@ -574,7 +574,7 @@ export class MessagingService {
         }
 
         if (host === 'menu' && slug) {
-          return `/restaurant/${slug}`;
+          return `/restaurant/${encodeURIComponent(slug)}?menu=open`;
         }
       } catch (error) {
         console.warn('MessagingService Failed to parse legacy notification URL:', error);

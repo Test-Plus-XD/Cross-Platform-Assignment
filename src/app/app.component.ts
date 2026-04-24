@@ -182,11 +182,11 @@ export class AppComponent implements OnInit, OnDestroy {
           if (url.startsWith('pourrice://')) {
             const parsed = new URL(url);
             const host = parsed.hostname.toLowerCase();
-            const slug = parsed.pathname.replace(/^\/+/, '');
+            const slug = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
 
-            // pourrice://menu/{restaurantId} → /restaurant/{restaurantId}
+            // Route menu QR deep links into the restaurant page and ask it to open the full menu modal.
             if (host === 'menu' && slug) {
-              this.router.navigateByUrl(`/restaurant/${slug}`);
+              this.router.navigateByUrl(`/restaurant/${encodeURIComponent(slug)}?menu=open`);
               return;
             }
 

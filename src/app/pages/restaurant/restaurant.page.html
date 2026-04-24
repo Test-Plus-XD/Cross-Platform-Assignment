@@ -176,11 +176,11 @@
 
       <!-- Opening Hours Section -->
       <div class="opening-hours-section">
-        <div class="section-header" (click)="toggleHours()">
+        <!-- Opening hours are intentionally pinned open so booking context is always visible. -->
+        <div class="section-header always-expanded">
           <h3 class="section-title">{{ (lang$ | async) === 'TC' ? '營業時間' : 'Opening Hours' }}</h3>
-          <ion-icon [name]="hoursExpanded ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
         </div>
-        <div class="hours-content" *ngIf="hoursExpanded">
+        <div class="hours-content">
           <ng-container *ngIf="lang$ | async as lang">
             <div *ngIf="restaurant.Opening_Hours; else noHours" class="hours-list">
               <div *ngFor="let pair of (restaurant.Opening_Hours | keyvalue)" class="hours-item">
@@ -207,17 +207,20 @@
           (restaurant.Address_EN || restaurant.Address_TC || '—') }}
         </p>
 
-        <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
-          [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant.Latitude + ',' + restaurant.Longitude"
-          class="map-link">
-          <ion-icon name="map-sharp"></ion-icon>
-          {{ (lang$ | async) === 'TC' ? '在地圖上查看' : 'See on the map' }}
-        </a>
+        <!-- Map metadata row keeps the external map link on the left and distance context on the right. -->
+        <div class="map-meta-row">
+          <a *ngIf="hasCoordinates()" target="_blank" rel="noopener noreferrer"
+            [href]="'https://www.google.com/maps/search/?api=1&query=' + restaurant.Latitude + ',' + restaurant.Longitude"
+            class="map-link">
+            <ion-icon name="map-sharp"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '在地圖上查看' : 'See on the map' }}
+          </a>
 
-        <!-- Distance Badge -->
-        <div class="distance-badge" *ngIf="distanceResult">
-          <ion-icon name="navigate-outline"></ion-icon>
-          <span>{{ distanceResult.distanceKm.toFixed(1) }} km {{ (lang$ | async) === 'TC' ? '距離' : 'away' }}</span>
+          <!-- Distance Badge -->
+          <div class="distance-badge" *ngIf="distanceResult">
+            <ion-icon name="navigate-outline"></ion-icon>
+            <span>{{ distanceResult.distanceKm.toFixed(1) }} km {{ (lang$ | async) === 'TC' ? '距離' : 'away' }}</span>
+          </div>
         </div>
 
         <!-- Embedded Map -->
@@ -226,7 +229,7 @@
         </div>
 
         <!-- Get Directions Button -->
-        <ion-button *ngIf="hasCoordinates()" expand="block" fill="outline" (click)="openDirectionsModal()"
+        <ion-button *ngIf="hasCoordinates()" expand="block" (click)="openDirectionsModal()"
           class="directions-button">
           <ion-icon slot="start" name="navigate-outline"></ion-icon>
           {{ (lang$ | async) === 'TC' ? '路線導航' : 'Get Directions' }}
@@ -241,24 +244,34 @@
           <img src="assets/icon/Eclipse.gif" alt="Loading" class="small-spinner">
         </div>
 
-        <div *ngIf="!isMenuLoading && menuItems.length > 0" class="menu-list">
-          <div *ngFor="let item of menuItems" class="menu-item">
-            <div class="menu-item-price">
-              <span *ngIf="item.price">${{ item.price }}</span>
-              <span *ngIf="!item.price">—</span>
-            </div>
-            <div class="menu-item-info">
-              <h4 class="menu-item-name">
-                {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC ||
-                '—') }}
-              </h4>
-              <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
-                {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') :
-                (item.Description_EN || item.Description_TC || '') }}
-              </p>
+        <!-- The preview scroller contains up to five random dishes while only three rows are visible. -->
+        <div *ngIf="!isMenuLoading && menuItems.length > 0" class="menu-scroller"
+          [style.max-height.px]="(visibleMenuPreviewCount * 128) + ((visibleMenuPreviewCount - 1) * 12)">
+          <div class="menu-list">
+            <div *ngFor="let item of menuPreviewItems" class="menu-item">
+              <div class="menu-item-price">
+                <span *ngIf="item.price">${{ item.price }}</span>
+                <span *ngIf="!item.price">—</span>
+              </div>
+              <div class="menu-item-info">
+                <h4 class="menu-item-name">
+                  {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC ||
+                  '—') }}
+                </h4>
+                <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
+                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') :
+                  (item.Description_EN || item.Description_TC || '') }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
+
+        <ion-button *ngIf="!isMenuLoading && menuItems.length > 0" expand="block" class="full-menu-button"
+          (click)="openMenuModal()">
+          <ion-icon slot="start" name="restaurant-outline"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? '查看完整菜單' : 'View Full Menu' }}
+        </ion-button>
 
         <p *ngIf="!isMenuLoading && menuItems.length === 0" class="no-data">
           {{ (lang$ | async) === 'TC' ? '未提供菜單' : 'Menu not available' }}
