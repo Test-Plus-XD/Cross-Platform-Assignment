@@ -1,9 +1,11 @@
-<!-- Sub-page for editing all restaurant info fields -->
-<ion-page>
+<!-- Full-screen modal for editing all restaurant info fields -->
+<div class="restaurant-info-modal-page">
 <ion-header>
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/store"></ion-back-button>
+      <ion-button (click)="dismiss()">
+        <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
+      </ion-button>
     </ion-buttons>
     <ion-title>{{ currentLanguage === 'TC' ? translations.editRestaurant.TC : translations.editRestaurant.EN }}</ion-title>
   </ion-toolbar>
@@ -300,4 +302,4 @@
     </div>
   </ion-toolbar>
 </ion-footer>
-</ion-page>
+</div>

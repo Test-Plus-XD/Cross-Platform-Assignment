@@ -4,13 +4,16 @@
 <ion-header>
   <ion-toolbar>
     <ion-title>
-      {{ isTC ? '選擇帳戶類型' : 'Choose Account Type' }}
+      {{ currentStep === 1
+        ? (isTC ? '選擇帳戶類型' : 'Choose Account Type')
+        : (isTC ? '設定帳戶' : 'Set Up Account') }}
     </ion-title>
   </ion-toolbar>
+  <ion-progress-bar [value]="currentStep / totalSteps"></ion-progress-bar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <div class="selector-container">
+  <div class="selector-container" *ngIf="currentStep === 1">
 
     <!-- Subtitle -->
     <p class="selector-subtitle">
@@ -64,16 +67,107 @@
 
     </div><!-- /.type-cards -->
 
-    <!-- Confirm button — disabled until a type is chosen -->
-    <ion-button
-      expand="block"
-      color="primary"
-      class="confirm-btn"
-      [disabled]="!selectedType || isSaving"
-      (click)="confirm()">
-      <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
-      {{ isTC ? '確認' : 'Confirm' }}
-    </ion-button>
-
   </div><!-- /.selector-container -->
+
+  <div class="setup-container" *ngIf="currentStep === 2">
+
+    <!-- Selected account type summary -->
+    <div class="selected-summary">
+      <ion-icon [name]="selectedType === 'Diner' ? 'restaurant-outline' : 'storefront-outline'"></ion-icon>
+      <div>
+        <span>{{ isTC ? '帳戶類型' : 'Account Type' }}</span>
+        <strong>
+          {{ selectedType === 'Diner'
+            ? (isTC ? '食客' : 'Diner')
+            : (isTC ? '餐廳老闆' : 'Restaurant Owner') }}
+        </strong>
+      </div>
+    </div>
+
+    <!-- Basic profile setup fields -->
+    <ion-list class="setup-list" lines="full">
+      <ion-item>
+        <ion-label position="stacked">{{ isTC ? '顯示名稱' : 'Display Name' }}</ion-label>
+        <ion-input
+          [value]="displayName"
+          [placeholder]="isTC ? '輸入顯示名稱' : 'Enter display name'"
+          (ionInput)="updateTextField('displayName', $event)">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">{{ isTC ? '電話號碼' : 'Phone Number' }}</ion-label>
+        <ion-input
+          type="tel"
+          [value]="phoneNumber"
+          [placeholder]="isTC ? '輸入電話號碼（可選）' : 'Enter phone number (optional)'"
+          (ionInput)="updateTextField('phoneNumber', $event)">
+        </ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="stacked">{{ isTC ? '簡介' : 'Bio' }}</ion-label>
+        <ion-textarea
+          rows="3"
+          [value]="bio"
+          [placeholder]="isTC ? '簡單介紹自己（可選）' : 'Tell us about yourself (optional)'"
+          (ionInput)="updateTextField('bio', $event)">
+        </ion-textarea>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>{{ isTC ? '語言' : 'Language' }}</ion-label>
+        <ion-select [value]="preferredLanguage" interface="popover" (ionChange)="updateLanguage($event)">
+          <ion-select-option value="EN">English</ion-select-option>
+          <ion-select-option value="TC">繁體中文</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>{{ isTC ? '主題' : 'Theme' }}</ion-label>
+        <ion-select [value]="preferredTheme" interface="popover" (ionChange)="updateTheme($event)">
+          <ion-select-option value="light">{{ isTC ? '淺色' : 'Light' }}</ion-select-option>
+          <ion-select-option value="dark">{{ isTC ? '深色' : 'Dark' }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+
+      <ion-item>
+        <ion-label>{{ isTC ? '啟用通知' : 'Enable Notifications' }}</ion-label>
+        <ion-toggle
+          slot="end"
+          [checked]="notificationsEnabled"
+          (ionChange)="updateNotifications($event)">
+        </ion-toggle>
+      </ion-item>
+    </ion-list>
+
+  </div><!-- /.setup-container -->
 </ion-content>
+
+<ion-footer *ngIf="currentStep === 2">
+  <ion-toolbar>
+    <div class="setup-actions">
+      <ion-button
+        fill="outline"
+        color="primary"
+        class="back-btn"
+        *ngIf="currentStep === 2"
+        [disabled]="isSaving"
+        (click)="previousStep()">
+        <ion-icon name="chevron-back-outline" slot="start"></ion-icon>
+        {{ isTC ? '返回' : 'Back' }}
+      </ion-button>
+
+      <div class="action-spacer"></div>
+
+      <ion-button
+        color="primary"
+        class="confirm-btn"
+        [disabled]="isSaving"
+        (click)="confirm()">
+        <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
+        {{ isSaving ? (isTC ? '儲存中...' : 'Saving...') : (isTC ? '完成' : 'Finish') }}
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

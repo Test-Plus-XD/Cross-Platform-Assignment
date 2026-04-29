@@ -306,17 +306,44 @@ ion-content.has-tab-bar {
   --border-radius: 0;
 }
 
+/* Restaurant info editor modal — full screen on every viewport. */
+ion-modal.restaurant-info-fullscreen-modal {
+  align-items: stretch;
+  justify-content: stretch;
+  --width: 100vw;
+  --max-width: 100vw;
+  --height: 100vh;
+  --max-height: 100vh;
+  --height: 100dvh;
+  --max-height: 100dvh;
+  --border-radius: 0;
+  --box-shadow: none;
+
+  &::part(content) {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    height: 100dvh;
+    max-width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+    overflow: hidden;
+  }
+}
+
 /* Account type setup modal — centred blocking dialog that still enforces onboarding. */
 ion-modal.account-type-modal {
   --width: min(92vw, 44rem);
   --max-width: 44rem;
-  --height: auto;
-  --max-height: min(80vh, 42rem);
+  --height: min(72vh, 38rem);
+  --max-height: calc(100vh - 2rem);
+  --background: var(--surface);
   --border-radius: 28px;
   --backdrop-opacity: 0.52;
   --box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
 
   &::part(content) {
+    background: var(--surface);
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
   }
@@ -325,6 +352,7 @@ ion-modal.account-type-modal {
 @media (max-width: 576px) {
   ion-modal.account-type-modal {
     --width: calc(100% - 1.5rem);
+    --height: min(76vh, 34rem);
     --max-height: calc(100% - 2rem);
     --border-radius: 24px;
   }

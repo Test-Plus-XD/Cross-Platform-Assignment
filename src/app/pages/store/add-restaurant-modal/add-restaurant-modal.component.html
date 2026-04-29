@@ -2,17 +2,12 @@
 <!-- Full-screen modal for restaurant owners to create a new restaurant listing -->
 <ion-header>
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-button (click)="dismiss()" [disabled]="isSaving">
-        {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
-      </ion-button>
-    </ion-buttons>
     <ion-title>
       {{ (lang$ | async) === 'TC' ? translations.title.TC : translations.title.EN }}
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="save()" [disabled]="isSaving" strong>
-        {{ (lang$ | async) === 'TC' ? translations.submit.TC : translations.submit.EN }}
+      <ion-button (click)="dismiss()" [disabled]="isSaving">
+        {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

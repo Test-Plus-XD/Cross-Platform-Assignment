@@ -2,7 +2,7 @@
 // This service handles CRUD operations and integrates with the Vercel API
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
 
@@ -299,11 +299,12 @@ export class RestaurantsService {
 
   /// Get menu items for a specific restaurant from sub-collection.
   /// Note: Menu items are stored as a sub-collection, not an array field.
-  getMenuItems(restaurantId: string): Observable<MenuItem[]> {
+  /// Pass forceRefresh after menu mutations so the management UI bypasses stale TTL cache data.
+  getMenuItems(restaurantId: string, forceRefresh = false): Observable<MenuItem[]> {
     if (!restaurantId) return of([]);
 
     // Return cached entry if still within TTL
-    if (this.menuCache.has(restaurantId) && this.isCacheValid(this.menuCache.get(restaurantId)!.timestamp, 600_000)) {
+    if (!forceRefresh && this.menuCache.has(restaurantId) && this.isCacheValid(this.menuCache.get(restaurantId)!.timestamp, 600_000)) {
       console.log('RestaurantsService: Cache hit for menu items:', restaurantId);
       return of(this.menuCache.get(restaurantId)!.data);
     }
@@ -413,6 +414,7 @@ export class RestaurantsService {
     return this.dataService.post<{ id: string }>(endpoint, payload).pipe(
       tap(response => {
         console.log('RestaurantsService: Menu item created:', response.id);
+        this.menuCache.delete(restaurantId);
       }),
       catchError((err: any) => {
         console.error('RestaurantsService: createMenuItem error', err);
@@ -429,6 +431,7 @@ export class RestaurantsService {
     return this.dataService.put<void>(endpoint, payload).pipe(
       tap(() => {
         console.log('RestaurantsService: Menu item updated successfully');
+        this.menuCache.delete(restaurantId);
       }),
       catchError((err: any) => {
         console.error('RestaurantsService: updateMenuItem error', err);
@@ -445,6 +448,7 @@ export class RestaurantsService {
     return this.dataService.delete<void>(endpoint).pipe(
       tap(() => {
         console.log('RestaurantsService: Menu item deleted successfully');
+        this.menuCache.delete(restaurantId);
       }),
       catchError((err: any) => {
         console.error('RestaurantsService: deleteMenuItem error', err);
@@ -482,13 +486,13 @@ export class RestaurantsService {
     const uploadEndpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/image`;
 
     return this.dataService.uploadFile<{ imageUrl: string }>(uploadEndpoint, file, 'image', authToken).pipe(
-      tap(response => {
+      switchMap(response => {
         console.log('RestaurantsService: Menu item image uploaded successfully:', response.imageUrl);
-        // Update the menu item with the new image URL
-        this.updateMenuItem(restaurantId, menuItemId, { imageUrl: response.imageUrl }).subscribe({
-          next: () => console.log('RestaurantsService: Menu item updated with new image URL'),
-          error: (err) => console.error('RestaurantsService: Failed to update menu item with image URL:', err)
-        });
+        // Wait for the menu item update so parent refreshes see the final image URL.
+        return this.updateMenuItem(restaurantId, menuItemId, { imageUrl: response.imageUrl }).pipe(
+          tap(() => console.log('RestaurantsService: Menu item updated with new image URL')),
+          map(() => response)
+        );
       }),
       catchError((err: any) => {
         console.error('RestaurantsService: uploadMenuItemImage error', err);

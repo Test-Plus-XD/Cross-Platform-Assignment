@@ -15,6 +15,7 @@ import { takeUntil } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { AdModalComponent } from './ad-modal/ad-modal.component';
 import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
+import { RestaurantInfoModalComponent } from './restaurant-info-modal/restaurant-info-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
 import MenuQrModalComponent from './menu-qr-modal/menu-qr-modal.component';
@@ -315,11 +316,12 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   }
 
   // Fetch all menu items belonging to this restaurant.
-  private loadMenu(): void {
+  // forceRefresh bypasses the service TTL cache after create/import/delete flows.
+  private loadMenu(forceRefresh = false): void {
     if (!this.restaurantId) return;
 
     this.isMenuLoading = true;
-    this.feature.restaurants.getMenuItems(this.restaurantId)
+    this.feature.restaurants.getMenuItems(this.restaurantId, forceRefresh)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (items) => {
@@ -387,11 +389,21 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
   // ── Modal openers ─────────────────────────────────────────────────────────────
 
-  // Navigate to the restaurant info editing sub-page.
-  // Data is reloaded via ionViewWillEnter when returning from the edit page.
-  openRestaurantInfoModal(): void {
+  // Open the restaurant info editor as a full-screen modal.
+  // Reloads the restaurant summary after a successful save.
+  async openRestaurantInfoModal(): Promise<void> {
     if (!this.restaurant || !this.restaurantId) return;
-    this.router.navigate(['/store/edit-info']);
+    const modal = await this.modalController.create({
+      component: RestaurantInfoModalComponent,
+      cssClass: 'restaurant-info-fullscreen-modal',
+      backdropDismiss: false
+    });
+    await modal.present();
+
+    const { data } = await modal.onWillDismiss();
+    if (data?.saved) {
+      this.loadRestaurant();
+    }
   }
 
   // Open the add-restaurant modal for owners who cannot find their restaurant in search.
@@ -446,7 +458,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
     const { data } = await modal.onWillDismiss();
     if (data?.saved) {
-      this.loadMenu();
+      this.loadMenu(true);
     }
   }
 
@@ -463,7 +475,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
     const { data } = await modal.onWillDismiss();
     if (data?.imported) {
-      this.loadMenu();
+      this.loadMenu(true);
     }
   }
 
@@ -494,7 +506,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
             try {
               await this.feature.restaurants.deleteMenuItem(this.restaurantId!, item.id!).toPromise();
               await this.showToast(this.translations.deleteSuccess[lang], 'success');
-              this.loadMenu();
+              this.loadMenu(true);
             } catch (error: any) {
               console.error('StorePage: error deleting menu item:', error);
               await this.showToast(error.message || this.translations.updateFailed[lang], 'danger');
@@ -543,7 +555,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
   // Reload all data sources when the user pulls to refresh.
   async doRefresh(event: any): Promise<void> {
     this.loadRestaurant();
-    this.loadMenu();
+    this.loadMenu(true);
     this.loadBookings();
     // Complete the refresher spinner after a short delay
     setTimeout(() => event.target.complete(), 1000);

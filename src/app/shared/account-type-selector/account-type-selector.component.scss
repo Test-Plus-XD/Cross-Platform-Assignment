@@ -6,6 +6,11 @@ ion-content {
   --padding-bottom: 0;
 }
 
+ion-progress-bar {
+  --progress-background: var(--ion-color-primary);
+  --background: color-mix(in srgb, var(--ion-color-primary) 18%, transparent);
+}
+
 .selector-container {
   display: flex;
   flex-direction: column;
@@ -17,6 +22,76 @@ ion-content {
   margin: 0 auto;
   padding: 0.75rem 0 1.5rem;
   text-align: center;
+}
+
+.setup-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 38rem;
+  margin: 0 auto;
+  padding: 0.75rem 0 1.5rem;
+}
+
+.selected-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--app-selection-green-border);
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--app-selection-green-surface) 0%, var(--app-selection-green-bg) 100%);
+
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 1.8rem;
+    color: var(--app-selection-green-icon);
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  span {
+    font-size: 0.78rem;
+    color: var(--ion-color-medium);
+  }
+
+  strong {
+    color: var(--ion-text-color);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+}
+
+.setup-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+
+  ion-item {
+    --background: var(--surface);
+    --border-color: var(--border);
+    --padding-start: 1rem;
+    --inner-padding-end: 1rem;
+    margin-bottom: 0;
+  }
+
+  ion-label {
+    color: var(--ion-text-color);
+    font-weight: 600;
+  }
+
+  ion-input,
+  ion-textarea,
+  ion-select {
+    --color: var(--ion-text-color);
+    --placeholder-color: var(--ion-color-medium);
+  }
 }
 
 .selector-subtitle {
@@ -110,8 +185,31 @@ ion-content {
 }
 
 // Confirm button at bottom of modal
-.confirm-btn {
-  margin-top: 0.25rem;
-  width: min(100%, 22rem);
-  --border-radius: 12px;
+.setup-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+
+  .action-spacer {
+    flex: 1;
+  }
+
+  .back-btn,
+  .confirm-btn {
+    min-width: 8rem;
+    --border-radius: 12px;
+  }
+
+  .back-btn {
+    --box-shadow: none;
+  }
+
+  @media (max-width: 390px) {
+    .back-btn,
+    .confirm-btn {
+      min-width: 0;
+      flex: 1;
+    }
+  }
 }

@@ -99,12 +99,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     768: { slidesPerView: 2 },
     1024: { slidesPerView: 3 }
   };
-  // Image upload state for unclaimed restaurants
-  selectedRestaurantImage: File | null = null;
-  restaurantImagePreview: string | null = null;
-  isUploadingRestaurantImage: boolean = false;
-  // Check if current user can edit this restaurant (no owner or is owner)
-  canEditRestaurant: boolean = false;
   // Check if current user is the owner of this restaurant
   isCurrentUserOwner: boolean = false;
   // Snapshot of the current language for synchronous access in methods
@@ -209,8 +203,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         this.calculateDistance();
         // Check if user can claim this restaurant
         this.checkClaimEligibility();
-        // Check if user can edit this restaurant (no owner)
-        this.checkEditPermission();
         // Check if current user is the owner
         this.checkIfCurrentUserIsOwner();
         // Load menu items from sub-collection
@@ -872,15 +864,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       // Get user profile to check type and restaurantId
       this.feature.user.getUserProfile(user.uid).pipe(takeUntil(this.destroy$)).subscribe({
         next: (profile: UserProfile | null) => {
-          // User can claim/edit if they have type 'Restaurant' (case insensitive) AND
+          // User can claim if they have type 'Restaurant' (case insensitive) AND
           // they haven't claimed a restaurant yet (restaurantId is empty or null)
           const isRestaurantType = profile?.type?.toLowerCase() === 'restaurant';
           const hasNoRestaurant = !profile?.restaurantId || profile.restaurantId.trim() === '';
 
           this.canClaimRestaurant = isRestaurantType && hasNoRestaurant;
-          // canEditRestaurant mirrors canClaimRestaurant — only Restaurant-type users
-          // without a restaurant may upload images to unclaimed restaurants
-          this.canEditRestaurant = isRestaurantType && hasNoRestaurant;
           this.changeDetectionReference.markForCheck();
           console.log('RestaurantPage: Can claim restaurant:', this.canClaimRestaurant,
             'User type:', profile?.type, 'Has restaurantId:', !!profile?.restaurantId);
@@ -888,7 +877,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         error: (error) => {
           console.error('RestaurantPage: Error checking claim eligibility', error);
           this.canClaimRestaurant = false;
-          this.canEditRestaurant = false;
           this.changeDetectionReference.markForCheck();
         }
       });
@@ -1141,14 +1129,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     }, 100);
   }
 
-  /// Check if current user can edit this restaurant
-  /// Only Restaurant-type users without a claimed restaurant can edit unclaimed restaurants.
-  /// canEditRestaurant is set asynchronously inside checkClaimEligibility.
-  checkEditPermission(): void {
-    this.canEditRestaurant = false;
-    this.changeDetectionReference.markForCheck();
-  }
-
   /// Check if current user is the owner of this restaurant
   checkIfCurrentUserIsOwner(): void {
     if (!this.feature.auth.isLoggedIn || !this.restaurant?.ownerId) {
@@ -1161,98 +1141,6 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       this.isCurrentUserOwner = user?.uid === this.restaurant?.ownerId;
       this.changeDetectionReference.markForCheck();
     });
-  }
-
-  /// Handle restaurant image file selection
-  onRestaurantImageSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        this.showToast('Please select an image file', 'warning');
-        return;
-      }
-
-      // Validate file size (10MB max)
-      if (file.size > 10 * 1024 * 1024) {
-        this.showToast('Image size must be less than 10MB', 'warning');
-        return;
-      }
-
-      this.selectedRestaurantImage = file;
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (event: ProgressEvent<FileReader>) => {
-        this.restaurantImagePreview = event.target?.result as string;
-        this.changeDetectionReference.markForCheck();
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  /// Upload restaurant hero image (for unclaimed restaurants)
-  async uploadRestaurantImageInline(): Promise<void> {
-    if (!this.selectedRestaurantImage || !this.restaurant?.id) return;
-
-    const lang = this.currentLanguage;
-    this.isUploadingRestaurantImage = true;
-    this.changeDetectionReference.markForCheck();
-
-    try {
-      // Get auth token
-      const token = await this.feature.auth.getIdToken();
-      if (!token) {
-        throw new Error(lang === 'TC' ? '無法獲取身份驗證令牌' : 'Failed to get authentication token');
-      }
-
-      // Upload image
-      const response = await this.feature.restaurants.uploadRestaurantImage(
-        this.restaurant.id,
-        this.selectedRestaurantImage,
-        token
-      ).toPromise();
-
-      // Update restaurant with new image URL
-      if (response && response.imageUrl) {
-        if (this.restaurant) {
-          this.restaurant.ImageUrl = response.imageUrl;
-        }
-        await this.showToast(lang === 'TC' ? '圖片上傳成功' : 'Image uploaded successfully', 'success');
-
-        // Clear selection
-        this.selectedRestaurantImage = null;
-        this.restaurantImagePreview = null;
-        this.changeDetectionReference.markForCheck();
-      }
-    } catch (error: any) {
-      console.error('RestaurantPage: Error uploading restaurant image:', error);
-      await this.showToast(error.message || (lang === 'TC' ? '圖片上傳失敗' : 'Image upload failed'), 'danger');
-    } finally {
-      this.isUploadingRestaurantImage = false;
-      this.changeDetectionReference.markForCheck();
-    }
-  }
-
-  /// Click handler for image upload button
-  clickImageUploadButton(): void {
-    const fileInput = document.getElementById('restaurant-page-image-input') as HTMLInputElement;
-    fileInput?.click();
-  }
-
-  /// Clear restaurant image selection
-  clearRestaurantImageSelection(): void {
-    this.selectedRestaurantImage = null;
-    this.restaurantImagePreview = null;
-    this.changeDetectionReference.markForCheck();
-
-    // Reset file input
-    const fileInput = document.getElementById('restaurant-page-image-input') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
   }
 
   /// Clean up on destroy

@@ -385,8 +385,8 @@ export class AppComponent implements OnInit, OnDestroy {
       try {
         const modal = await this.modalController.create({
           component: AccountTypeSelectorComponent,
-          // Prevent dismiss/navigation escape — user must complete the selection
-          canDismiss: false,
+          // Prevent escape dismissals, but allow the setup component to close itself after a successful save.
+          canDismiss: async (_data?: unknown, role?: string): Promise<boolean> => role === 'confirm',
           backdropDismiss: false,
           cssClass: 'account-type-modal',
         });

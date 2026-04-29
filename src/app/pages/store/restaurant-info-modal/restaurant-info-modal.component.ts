@@ -1,9 +1,7 @@
-// Sub-page for editing all restaurant information fields.
-// Navigated to from StorePage via /store/edit-info route.
-// On save it navigates back to /store so the parent reloads restaurant data.
+// Full-screen modal for editing all restaurant information fields.
+// Opened from StorePage through ModalController and dismissed with save state.
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { AlertController, ToastController, LoadingController } from '@ionic/angular';
+import { AlertController, ToastController, LoadingController, ModalController } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Restaurant } from '../../../services/restaurants.service';
@@ -21,10 +19,10 @@ import { Weekdays } from '../../../constants/weekdays.const';
 })
 export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   private readonly feature = inject(StoreFeatureService);
-  private readonly router = inject(Router);
   private readonly alertController = inject(AlertController);
   private readonly toastController = inject(ToastController);
   private readonly loadingController = inject(LoadingController);
+  private readonly modalController = inject(ModalController);
 
   // Loaded from user profile → restaurant service (no longer @Input)
   restaurantId: string | null = null;
@@ -115,10 +113,10 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // Navigate back to the store page without saving
-  dismiss(): void {
+  // Dismiss the modal and optionally tell StorePage that data changed.
+  dismiss(data?: { saved: boolean }): void {
     this.destroyMap();
-    this.router.navigate(['/store']);
+    this.modalController.dismiss(data);
   }
 
   // Load the restaurant data by resolving the user's restaurantId
@@ -126,7 +124,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     const currentUser = this.feature.auth.currentUser;
     if (!currentUser?.uid) {
       this.isPageLoading = false;
-      this.router.navigate(['/store']);
+      this.dismiss();
       return;
     }
 
@@ -136,7 +134,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
         next: (userProfile) => {
           if (!userProfile?.restaurantId?.trim()) {
             this.isPageLoading = false;
-            this.router.navigate(['/store']);
+            this.dismiss();
             return;
           }
 
@@ -147,7 +145,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
               next: (restaurant) => {
                 if (!restaurant) {
                   this.isPageLoading = false;
-                  this.router.navigate(['/store']);
+                  this.dismiss();
                   return;
                 }
                 this.restaurant = restaurant;
@@ -481,7 +479,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
     if (input) input.value = '';
   }
 
-  // Persist all edited fields to the API and navigate back on success.
+  // Persist all edited fields to the API and close the modal on success.
   async saveRestaurantInfo(): Promise<void> {
     if (!this.restaurantId) return;
 
@@ -518,8 +516,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       await this.feature.restaurants.updateRestaurant(this.restaurantId, payload).toPromise();
       await this.showToast(this.translations.updateSuccess[lang], 'success');
 
-      this.destroyMap();
-      this.router.navigate(['/store']);
+      this.dismiss({ saved: true });
 
     } catch (error: any) {
       console.error('RestaurantInfoEdit: save error:', error);
