@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, NgZone } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
-import { distinctUntilChanged, filter, map, takeUntil } from 'rxjs/operators';
+import { AlertController, LoadingController, ModalController, ToastController } from '@ionic/angular';
+import { distinctUntilChanged, filter, map, take, takeUntil } from 'rxjs/operators';
 import { Subject, combineLatest } from 'rxjs';
 import { Capacitor, PluginListenerHandle } from '@capacitor/core';
 import { App as CapacitorApp, URLOpenListenerEvent } from '@capacitor/app';
@@ -37,6 +37,7 @@ export class AppComponent implements OnInit, OnDestroy {
     readonly notificationCoordinator = inject(NotificationCoordinatorService);
     private readonly userService = inject(UserService);
     private readonly modalController = inject(ModalController);
+    private readonly loadingController = inject(LoadingController);
     private readonly toastController = inject(ToastController);
     private alertController = inject(AlertController);
     private ngZone = inject(NgZone);
@@ -47,9 +48,12 @@ export class AppComponent implements OnInit, OnDestroy {
     // Deep link listener handle for cleanup
     private appUrlOpenListener?: PluginListenerHandle;
 
-    // Guard: prevent presenting the account-type modal more than once per session
-    private hasShownTypeSelector = false;
+    // Account setup presentation state is UID-scoped because Android cold starts can restore stale profile cache first.
+    private activeAccountTypeUid: string | null = null;
     private isAccountTypeModalOpen = false;
+    private isAccountTypePresentationQueued = false;
+    private isProfileFetchInFlight = false;
+    private profileFetchRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
     /** Inserted by Angular inject() migration for backwards compatibility */
     constructor(...args: unknown[]);
@@ -349,40 +353,93 @@ export class AppComponent implements OnInit, OnDestroy {
       await this.router.navigateByUrl(route);
     }
 
-    // Watch auth state + user profile; present the account-type modal when a
-    // logged-in user has no type field.  The guard flag prevents re-presentation
-    // on each navigation (appState$ emits on every route change).
+    // Watch auth state + user profile; present the account-type modal whenever the active profile has no type.
+    // Android can restore auth before the profile request/create flow settles, so missing profiles are retried.
     private watchForMissingUserType(): void {
       combineLatest([
         this.appState.appState$,
         this.userService.currentProfile$
       ]).pipe(
         takeUntil(this.destroy$)
-      ).subscribe(async ([state, profile]) => {
+      ).subscribe(([state, profile]) => {
         if (!state.isLoggedIn || !state.uid) {
-          this.hasShownTypeSelector = false;
-          this.isAccountTypeModalOpen = false;
+          this.resetAccountTypeSetupState();
           return;
         }
 
-        if (!profile) {
-          this.userService.getUserProfile(state.uid).pipe(takeUntil(this.destroy$)).subscribe();
+        if (this.activeAccountTypeUid !== state.uid) {
+          this.resetAccountTypeSetupState(state.uid);
+        }
+
+        if (!profile || profile.uid !== state.uid) {
+          this.loadProfileForAccountTypeSetup(state.uid);
           return;
         }
 
+        this.clearProfileFetchRetry();
         if (profile.type) return;
-        if (this.hasShownTypeSelector || this.isAccountTypeModalOpen) return;
 
-        this.hasShownTypeSelector = true;
-        await this.router.navigate(['/user'], { replaceUrl: true });
-        await this.presentAccountTypeModal();
+        this.queueAccountTypeModalPresentation(state.uid);
       });
     }
 
+    // Fetches the active profile and retries when auth has completed before the backend profile exists.
+    private loadProfileForAccountTypeSetup(uid: string): void {
+      if (this.isProfileFetchInFlight) return;
+
+      this.isProfileFetchInFlight = true;
+      this.userService.getUserProfile(uid).pipe(
+        take(1),
+        takeUntil(this.destroy$)
+      ).subscribe({
+        next: (profile) => {
+          this.isProfileFetchInFlight = false;
+          if (!profile && this.appState.appState.uid === uid) this.scheduleProfileFetchRetry(uid);
+        },
+        error: (error) => {
+          console.error('[AppComponent] Failed to load profile for account setup:', error);
+          this.isProfileFetchInFlight = false;
+          this.scheduleProfileFetchRetry(uid);
+        }
+      });
+    }
+
+    // Schedules a lightweight retry so a newly created Firebase user is not missed before the API profile appears.
+    private scheduleProfileFetchRetry(uid: string): void {
+      if (this.profileFetchRetryTimer) return;
+
+      this.profileFetchRetryTimer = setTimeout(() => {
+        this.profileFetchRetryTimer = null;
+        if (this.appState.appState.uid === uid) this.loadProfileForAccountTypeSetup(uid);
+      }, 900);
+    }
+
+    // Clears the queued profile retry timer.
+    private clearProfileFetchRetry(): void {
+      if (!this.profileFetchRetryTimer) return;
+
+      clearTimeout(this.profileFetchRetryTimer);
+      this.profileFetchRetryTimer = null;
+    }
+
+    // Queues modal presentation once so repeated profile/router emissions cannot stack duplicate Ionic overlays.
+    private queueAccountTypeModalPresentation(uid: string): void {
+      if (this.isAccountTypeModalOpen || this.isAccountTypePresentationQueued) return;
+
+      this.isAccountTypePresentationQueued = true;
+      void this.presentAccountTypeModal(uid);
+    }
+
     // Present the AccountTypeSelectorComponent as a centred, non-dismissable modal.
-    private async presentAccountTypeModal(): Promise<void> {
+    private async presentAccountTypeModal(uid: string): Promise<void> {
       this.isAccountTypeModalOpen = true;
       try {
+        await this.router.navigate(['/user'], { replaceUrl: true });
+        await this.waitForAccountTypeOverlayWindow();
+
+        const activeProfile = this.userService.currentProfile;
+        if (this.appState.appState.uid !== uid || !activeProfile || activeProfile.uid !== uid || activeProfile.type) return;
+
         const modal = await this.modalController.create({
           component: AccountTypeSelectorComponent,
           // Prevent escape dismissals, but allow the setup component to close itself after a successful save.
@@ -404,18 +461,64 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       } catch (err) {
         console.error('[AppComponent] Error presenting account type modal:', err);
-        this.hasShownTypeSelector = false;
       } finally {
         this.isAccountTypeModalOpen = false;
+        this.isAccountTypePresentationQueued = false;
+        this.recheckAccountTypeSetup(uid);
       }
+    }
+
+    // Gives login loading overlays and notification alerts time to leave before Android presents the setup modal.
+    private async waitForAccountTypeOverlayWindow(): Promise<void> {
+      const activeAlert = await this.alertController.getTop();
+      if (activeAlert) {
+        await activeAlert.dismiss(undefined, 'account-type-setup').catch(() => undefined);
+      }
+
+      for (let attempt = 0; attempt < 25; attempt++) {
+        const activeLoading = await this.loadingController.getTop();
+        if (!activeLoading) break;
+        await this.delay(100);
+      }
+
+      await this.delay(Capacitor.isNativePlatform() ? 250 : 50);
+    }
+
+    // Re-checks after dismissal so an unexpected overlay failure cannot permanently skip mandatory setup.
+    private recheckAccountTypeSetup(uid: string): void {
+      setTimeout(() => {
+        if (this.appState.appState.uid !== uid) return;
+
+        const profile = this.userService.currentProfile;
+        if (!profile || profile.uid !== uid) {
+          this.loadProfileForAccountTypeSetup(uid);
+          return;
+        }
+
+        if (!profile.type) this.queueAccountTypeModalPresentation(uid);
+      }, 300);
+    }
+
+    // Resets account setup modal and profile retry state, optionally starting a new UID scope.
+    private resetAccountTypeSetupState(nextUid: string | null = null): void {
+      this.activeAccountTypeUid = nextUid;
+      this.isAccountTypeModalOpen = false;
+      this.isAccountTypePresentationQueued = false;
+      this.isProfileFetchInFlight = false;
+      this.clearProfileFetchRetry();
+    }
+
+    // Small promise-based delay helper used to let Android WebView settle between overlay transitions.
+    private delay(milliseconds: number): Promise<void> {
+      return new Promise(resolve => setTimeout(resolve, milliseconds));
     }
 
     private mustCompleteAccountTypeSetup(): boolean {
       const state = this.appState.appState;
-      if (!state.isLoggedIn) return false;
+      if (!state.isLoggedIn || !state.uid) return false;
 
       const profile = this.userService.currentProfile;
-      return !!profile && !profile.type && (this.isAccountTypeModalOpen || this.hasShownTypeSelector);
+      return !!profile && profile.uid === state.uid && !profile.type;
     }
 
     private async presentDeepLinkError(): Promise<void> {
@@ -430,6 +533,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     ngOnDestroy(): void {
       void this.appUrlOpenListener?.remove();
+      this.clearProfileFetchRetry();
       this.destroy$.next();
       this.destroy$.complete();
     }

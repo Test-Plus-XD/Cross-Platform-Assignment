@@ -1,5 +1,5 @@
 // QrScannerModalComponent — scans QR codes encoding pourrice://menu/{restaurantId}
-// deep links and navigates to the corresponding restaurant page.
+// deep links and navigates to the corresponding restaurant menu.
 //
 // Platform strategy:
 //   Native (iOS / Android):  @capacitor-mlkit/barcode-scanning startScan() with
@@ -7,7 +7,7 @@
 //   Web (PWA / browser):     getUserMedia() + BarcodeDetector API (Chrome / Edge 83+).
 //                             Falls back to an error message if BarcodeDetector is absent.
 //
-// On a successful scan the modal dismisses itself and navigates to /restaurant/:id.
+// On a successful scan the modal dismisses itself and navigates to /restaurant/:id?menu=open.
 import { Component, OnInit, OnDestroy, Input, ViewChild, ElementRef, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ModalController, ToastController } from '@ionic/angular';
@@ -364,8 +364,8 @@ export class QrScannerModalComponent implements OnInit, OnDestroy {
 
       // Dismiss modal then navigate so the route change happens outside the modal
       this.isDismissed = true;
-      await this.modalController.dismiss({ restaurantId });
-      await this.router.navigate(['/restaurant', restaurantId]);
+      await this.modalController.dismiss({ restaurantId, openMenu: true });
+      await this.router.navigate(['/restaurant', restaurantId], { queryParams: { menu: 'open' } });
     } catch (err: unknown) {
       if (this.isDismissed || this.isDestroyed) return;
       const msg = err instanceof Error ? err.message : String(err);

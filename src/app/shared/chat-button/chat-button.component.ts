@@ -67,6 +67,8 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
   private OriginalParentElement: HTMLElement | null = null;
   private readonly participantAvatarUrlCache = new Map<string, string>();
   private readonly participantAvatarRequestIds = new Set<string>();
+  private readonly fallbackImageLightboxDimensions = { width: 1200, height: 1600 };
+  private readonly imageLightboxDimensionsByUrl = new Map<string, { width: number; height: number }>();
   private HasEnsuredRoom = false;
   private currentRoomId: string | null = null;
   private historyLoadRequestId = 0;
@@ -822,6 +824,35 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     return this.isFirebaseStorageImageUrl(Message.message) ? Message.message : '';
+  }
+
+  // Stores the rendered image's intrinsic dimensions so PhotoSwipe opens with the correct aspect ratio.
+  onMessageImageLoaded(event: Event, message: ChatMessage): void {
+    const imageElement = event.target as HTMLImageElement | null;
+    const imageUrl = this.getImageUrl(message);
+    if (!imageElement || !imageUrl || !imageElement.naturalWidth || !imageElement.naturalHeight) return;
+
+    this.imageLightboxDimensionsByUrl.set(imageUrl, {
+      width: imageElement.naturalWidth,
+      height: imageElement.naturalHeight
+    });
+  }
+
+  // Returns the image width used by PhotoSwipe, falling back to a portrait-safe estimate before load.
+  getImageLightboxWidth(message: ChatMessage): number {
+    return this.getImageLightboxDimensions(message).width;
+  }
+
+  // Returns the image height used by PhotoSwipe, falling back to a portrait-safe estimate before load.
+  getImageLightboxHeight(message: ChatMessage): number {
+    return this.getImageLightboxDimensions(message).height;
+  }
+
+  // Resolves cached intrinsic image dimensions for full-screen image viewing.
+  private getImageLightboxDimensions(message: ChatMessage): { width: number; height: number } {
+    const imageUrl = this.getImageUrl(message);
+    const imageDimensions = imageUrl ? this.imageLightboxDimensionsByUrl.get(imageUrl) : null;
+    return imageDimensions || this.fallbackImageLightboxDimensions;
   }
 
   /// Checks if message text should be displayed (not Firebase Storage reference text)

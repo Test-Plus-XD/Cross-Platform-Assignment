@@ -76,14 +76,15 @@
           <!-- Image message -->
           <a *ngIf="hasImage(message)"
              [href]="getImageUrl(message)"
-             [attr.data-pswp-width]="800"
-             [attr.data-pswp-height]="600"
+             [attr.data-pswp-width]="getImageLightboxWidth(message)"
+             [attr.data-pswp-height]="getImageLightboxHeight(message)"
              class="message-image-link"
              target="_blank">
             <img [src]="getImageUrl(message)"
                  alt="Image"
                  class="message-image"
-                 loading="lazy" />
+                 loading="lazy"
+                 (load)="onMessageImageLoaded($event, message)" />
           </a>
 
           <!-- Text message (hidden if only contains Firebase Storage URL) -->

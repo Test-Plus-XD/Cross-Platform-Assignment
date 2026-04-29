@@ -163,6 +163,7 @@ export class AuthService {
       if (!exists) {
         console.log('AuthService: Profile does not exist, creating new profile');
         this.isCreatingProfile = true;
+        let shouldReloadProfile = false;
         
         // Create new profile with OAuth data
         const newProfile: Partial<UserProfile> = {
@@ -184,18 +185,25 @@ export class AuthService {
         try {
           const result = await firstValueFrom(this.userService.createUserProfile(newProfile));
           console.log('AuthService: User profile created successfully with ID:', result.id);
+          shouldReloadProfile = true;
         } catch (createError: any) {
           console.error('AuthService: Failed to create user profile:', createError);
           
           // If profile already exists (409), that's okay - might be a race condition
           if (createError.message?.includes('already exists')) {
             console.log('AuthService: Profile already exists (race condition), continuing');
+            shouldReloadProfile = true;
           } else {
             // For other errors, log but don't block authentication
             console.error('AuthService: Profile creation failed, but user is still authenticated');
           }
         } finally {
           this.isCreatingProfile = false;
+        }
+
+        // Reload after creation so AppComponent can reliably detect a profile that still needs account type setup.
+        if (shouldReloadProfile) {
+          await firstValueFrom(this.userService.getUserProfile(user.uid));
         }
       } else {
         console.log('AuthService: Profile already exists, loading from Firestore');
