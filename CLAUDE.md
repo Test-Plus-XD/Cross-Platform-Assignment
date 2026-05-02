@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-04-30 | **Version:** 1.17.40 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-05-02 | **Version:** 1.17.42 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1862,9 +1862,10 @@ API (verify) → Extract UID → Ownership checks
 
 ---
 
-**Document Version:** 1.17.40 | **Maintainer:** AI Assistant
+**Document Version:** 1.17.42 | **Maintainer:** AI Assistant
 
 **Changelog:**
+- **v1.17.42** (2026-05-02): **Restaurant detail now displays menu item images for all users.** `src/app/pages/restaurant/restaurant.page.html/scss/ts` now renders optional menu item thumbnails inside the overview preview scroller using a new `getMenuItemImageUrl()` helper that accepts both `imageUrl` and `ImageUrl` payload casing and hides null or placeholder-like values. `src/app/pages/restaurant/full-menu-modal.component.ts` now renders the same optional thumbnail in the full menu modal with matching sanitisation logic. Verified with `npx ng build`.
 - **v1.17.40** (2026-04-30): **Chat image aspect ratio fixed.** `src/app/shared/chat-button/chat-button.component.html/scss/ts` now preserves chat image aspect ratios in both the message bubble and PhotoSwipe full-screen viewer. Message thumbnails use bounded `object-fit: contain` sizing instead of crop-oriented cover sizing, and image load events cache each image's intrinsic `naturalWidth`/`naturalHeight` so PhotoSwipe receives real dimensions instead of the previous hard-coded `800x600` metadata. A portrait-safe fallback is used before an image finishes loading. Verified with `npx ng build` and `npx cap copy android`; existing CommonJS warnings for `qrcode`/`jsqr` and the Node 25.2.1 non-LTS warning remain unchanged.
 - **v1.17.39** (2026-04-30): **Android account-type modal presentation hardened.** `src/app/app.component.ts` no longer treats account setup as a one-shot prompt. The watcher is now UID-scoped, rejects stale hydrated profile cache, retries profile fetches while Firebase auth has restored but the API profile is not yet visible, keeps missing-type users on `/user`, and rechecks after any unexpected modal dismissal so the mandatory setup modal cannot be skipped permanently. Before presenting on Android, it dismisses any active alert and waits for login loading overlays to clear, avoiding Ionic overlay races where the setup modal could be hidden behind startup/login UI. `src/app/services/auth.service.ts` now reloads the newly created profile immediately after profile creation or a create-profile race, ensuring `currentProfile$` emits the no-type profile that drives the modal. Verified with `npx ng build` and `npx cap copy android`; existing CommonJS warnings for `qrcode`/`jsqr` and the Node 25.2.1 non-LTS warning remain unchanged.
 - **v1.17.38** (2026-04-30): **In-app QR scanner now opens the menu modal.** `src/app/shared/qr-scanner/qr-scanner-modal.component.ts` now routes validated `pourrice://menu/{restaurantId}` scans to `/restaurant/{restaurantId}?menu=open`, matching the native deep-link and notification route contract already handled by `RestaurantPage`. The scanner dismiss payload also includes `openMenu: true` for consumers that inspect modal data. Verified with `npx ng build`; existing CommonJS optimisation warnings for `qrcode` and `jsqr` remain unchanged, and Node 25.2.1 still emits the non-LTS warning.

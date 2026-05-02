@@ -202,6 +202,9 @@
           [style.max-height.px]="(visibleMenuPreviewCount * 128) + ((visibleMenuPreviewCount - 1) * 12)">
           <div class="menu-list">
             <div *ngFor="let item of menuPreviewItems" class="menu-item">
+              <div class="menu-item-image-container" *ngIf="getMenuItemImageUrl(item)">
+                <img [src]="getMenuItemImageUrl(item)!" alt="Menu item image" class="menu-item-image">
+              </div>
               <div class="menu-item-price">
                 <span *ngIf="item.price">${{ item.price }}</span>
                 <span *ngIf="!item.price">—</span>
