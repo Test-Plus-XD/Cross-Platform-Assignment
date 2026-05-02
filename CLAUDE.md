@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-05-02 | **Version:** 1.17.42 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-05-02 | **Version:** 1.17.44 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -1978,3 +1978,10 @@ Follow-up APK validation confirmed the durable root cause was the shared `Restau
 - **v1.17.41** (2026-05-02): Updated Store `Add New Restaurant` modal submit action to semantic success styling (`color="success"`) with matching contrast text and green-tinted shadow for clearer completion affordance.
 
 - **v1.17.41** (2026-05-02): Refined Restaurant-page theme handling so dark/light switches now update Google Maps styles in-place via `map.setOptions(...)` when a map already exists, avoiding map re-creation and preserving user map state.
+
+- **v1.17.43** (2026-05-02): **Global Google Maps dark-theme parity.** Centralised map style selection in `ThemeService.getGoogleMapStylesForCurrentTheme()` and applied it across all Google Maps entry points (Search page map, Restaurant map modal, Store add-restaurant map, Store edit-restaurant map, and Restaurant detail map initialisation/update). This ensures every map follows app dark mode, not only the Restaurant page.
+
+- **v1.17.44** (2026-05-02): **Post-change verification for global map dark mode update.** Ran `npx ng build` to validate type safety and production build output after global Google Maps dark-mode parity changes. Build succeeds; only existing CommonJS optimisation warnings remain for `qrcode` and `jsqr`.
+
+- **Consolidation note (<= v1.17.29):** Historical entries before **v1.17.30** are now treated as the consolidated legacy log block; keep new session updates at v1.17.30+ in chronological order.
+

@@ -6,6 +6,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Restaurant } from '../../../services/restaurants.service';
 import { StoreFeatureService } from '../../../services/store-feature.service';
+import { ThemeService } from '../../../services/theme.service';
 import { Districts } from '../../../constants/districts.const';
 import { Keywords } from '../../../constants/keywords.const';
 import { PaymentMethods } from '../../../constants/payments.const';
@@ -23,6 +24,7 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
   private readonly toastController = inject(ToastController);
   private readonly loadingController = inject(LoadingController);
   private readonly modalController = inject(ModalController);
+  private readonly themeService = inject(ThemeService);
 
   // Loaded from user profile → restaurant service (no longer @Input)
   restaurantId: string | null = null;
@@ -232,7 +234,8 @@ export class RestaurantInfoModalComponent implements OnInit, OnDestroy {
       mapTypeControl: false,
       fullscreenControl: false,
       zoomControl: true,
-      streetViewControl: false
+      streetViewControl: false,
+      styles: this.themeService.getGoogleMapStylesForCurrentTheme()
     });
 
     if (this.mapMarker) {

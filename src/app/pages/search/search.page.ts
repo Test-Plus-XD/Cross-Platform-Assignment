@@ -9,6 +9,7 @@ import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
 import { LocationService, Coordinates } from '../../services/location.service';
 import { ReviewsService } from '../../services/reviews.service';
+import { ThemeService } from '../../services/theme.service';
 import { Districts } from '../../constants/districts.const';
 import { Keywords } from '../../constants/keywords.const';
 import { environment } from '../../../environments/environment';
@@ -55,6 +56,7 @@ export class SearchPage implements OnInit, OnDestroy {
   private readonly platformService = inject(PlatformService);
   private readonly locationService = inject(LocationService);
   private readonly reviewsService = inject(ReviewsService);
+  private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
   private readonly searchHeaderCollapseThreshold: number = 72;
   private readonly searchHeaderExpandThreshold: number = 24;
@@ -655,7 +657,8 @@ export class SearchPage implements OnInit, OnDestroy {
       mapTypeControl: false,
       fullscreenControl: true,
       zoomControl: true,
-      streetViewControl: false
+      streetViewControl: false,
+      styles: this.themeService.getGoogleMapStylesForCurrentTheme()
     });
 
     this.infoWindow = new google.maps.InfoWindow();
