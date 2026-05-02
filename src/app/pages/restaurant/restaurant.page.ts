@@ -129,7 +129,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
     this.isDark$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
       this.isDarkThemeActive = isDark;
-      if (this.map && this.restaurant) this.initialiseMapIfNeeded();
+      if (!this.restaurant) return;
+      if (this.map) {
+        this.map.setOptions({ styles: isDark ? this.getGoogleDarkMapStyles() : [] });
+        return;
+      }
+      this.initialiseMapIfNeeded();
     });
 
     // Try to get user's location for distance calculation
@@ -431,7 +436,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         fullscreenControl: false,
         zoomControl: true,
         streetViewControl: false,
-        styles: this.isDarkThemeActive ? this.getGoogleDarkMapStyles() : undefined
+        styles: this.isDarkThemeActive ? this.getGoogleDarkMapStyles() : []
       });
 
       setTimeout(() => {
