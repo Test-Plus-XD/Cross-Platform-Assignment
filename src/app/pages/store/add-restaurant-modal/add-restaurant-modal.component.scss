@@ -102,6 +102,8 @@ ion-footer {
 
   .submit-btn {
     --border-radius: 12px;
+    --color: var(--ion-color-success-contrast);
+    --box-shadow: 0 8px 20px rgba(var(--ion-color-success-rgb), 0.25);
     height: 48px;
   }
 }

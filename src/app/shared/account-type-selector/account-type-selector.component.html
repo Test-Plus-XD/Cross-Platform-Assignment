@@ -148,8 +148,8 @@
   <ion-toolbar>
     <div class="setup-actions">
       <ion-button
-        fill="outline"
-        color="primary"
+        fill="solid"
+        color="warning"
         class="back-btn"
         *ngIf="currentStep === 2"
         [disabled]="isSaving"
@@ -161,7 +161,8 @@
       <div class="action-spacer"></div>
 
       <ion-button
-        color="primary"
+        color="success"
+        fill="solid"
         class="confirm-btn"
         [disabled]="isSaving"
         (click)="confirm()">

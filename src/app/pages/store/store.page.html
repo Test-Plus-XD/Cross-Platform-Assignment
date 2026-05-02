@@ -19,10 +19,13 @@
       <ion-icon name="storefront-outline" class="empty-icon"></ion-icon>
       <h2>{{ (lang$ | async) === 'TC' ? translations.noRestaurant.TC : translations.noRestaurant.EN }}</h2>
       <p>{{ (lang$ | async) === 'TC' ? translations.contactSupport.TC : translations.contactSupport.EN }}</p>
-      <ion-button fill="outline" (click)="openAddRestaurantModal()" class="add-restaurant-btn">
+      <ion-button fill="solid" (click)="openAddRestaurantModal()" class="add-restaurant-btn">
         <ion-icon name="add-circle-outline" slot="start"></ion-icon>
         {{ (lang$ | async) === 'TC' ? translations.addRestaurant.TC : translations.addRestaurant.EN }}
       </ion-button>
+      <p class="add-restaurant-hint">
+        {{ (lang$ | async) === 'TC' ? translations.addRestaurantHint.TC : translations.addRestaurantHint.EN }}
+      </p>
     </div>
 
     <!-- ── Main content (restaurant linked) ────────────────────────────── -->
