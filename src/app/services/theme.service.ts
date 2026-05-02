@@ -73,6 +73,24 @@ export class ThemeService {
     return this.temporaryThemeOverrideSubject.value ?? this.savedThemeSubject.value;
   }
 
+
+  // Return Google Maps style array for the active app theme so all map entry points stay consistent.
+  getGoogleMapStylesForCurrentTheme(): google.maps.MapTypeStyle[] {
+    if (!this.isDark) return [];
+
+    return [
+      { elementType: 'geometry', stylers: [{ color: '#1e2b22' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#d3e5d6' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#1b261f' }] },
+      { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#b4cab8' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#34453a' }] },
+      { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#e1f2e3' }] },
+      { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2a3a30' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#152d38' }] },
+      { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9ac9d8' }] }
+    ];
+  }
+
   // Apply simply adds or removes the .dark class.
   private apply(isDark: boolean): void {
     if (isDark) document.documentElement.classList.add('dark');

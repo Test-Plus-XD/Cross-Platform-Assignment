@@ -7,6 +7,7 @@ import { AlertController, ToastController, LoadingController, ModalController } 
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { StoreFeatureService } from '../../../services/store-feature.service';
+import { ThemeService } from '../../../services/theme.service';
 import { Districts } from '../../../constants/districts.const';
 import { Keywords } from '../../../constants/keywords.const';
 import { PaymentMethods } from '../../../constants/payments.const';
@@ -24,6 +25,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   private readonly alertController = inject(AlertController);
   private readonly toastController = inject(ToastController);
   private readonly loadingController = inject(LoadingController);
+  private readonly themeService = inject(ThemeService);
 
 
   // ── Language ──────────────────────────────────────────────────────────────────
@@ -147,7 +149,8 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
       mapTypeControl: false,
       fullscreenControl: false,
       zoomControl: true,
-      streetViewControl: false
+      streetViewControl: false,
+      styles: this.themeService.getGoogleMapStylesForCurrentTheme()
     });
 
     this.map.addListener('click', (event: google.maps.MapMouseEvent) => {

@@ -3,6 +3,7 @@
 import { Component, AfterViewInit, OnDestroy, inject } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { LocationService } from '../../services/location.service';
+import { ThemeService } from '../../services/theme.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -168,6 +169,7 @@ import { firstValueFrom } from 'rxjs';
 export class MapModalComponent implements AfterViewInit, OnDestroy {
   private readonly modalController = inject(ModalController);
   private readonly locationService = inject(LocationService);
+  private readonly themeService = inject(ThemeService);
 
   // Props passed via componentProps
   latitude!: number;
@@ -219,7 +221,8 @@ export class MapModalComponent implements AfterViewInit, OnDestroy {
         mapTypeControl: false,
         fullscreenControl: true,
         zoomControl: true,
-        streetViewControl: false
+        streetViewControl: false,
+        styles: this.themeService.getGoogleMapStylesForCurrentTheme()
       });
 
       // Add marker for the restaurant
