@@ -203,6 +203,11 @@ ion-progress-bar {
 
   .back-btn {
     --box-shadow: none;
+    --color: var(--ion-color-warning-contrast);
+  }
+
+  .confirm-btn {
+    --color: var(--ion-color-success-contrast);
   }
 
   @media (max-width: 390px) {

@@ -649,7 +649,29 @@
     color: var(--ion-color-medium);
     margin: 0;
   }
+
+
+  .add-restaurant-btn {
+    margin-top: 1rem;
+    --background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-secondary));
+    --background-hover: linear-gradient(135deg, var(--ion-color-primary-tint), var(--ion-color-secondary-tint));
+    --background-activated: linear-gradient(135deg, var(--ion-color-primary-shade), var(--ion-color-secondary-shade));
+    --color: #ffffff;
+    --border-radius: 14px;
+    --box-shadow: 0 8px 20px rgba(var(--ion-color-primary-rgb), 0.25);
+    font-weight: 700;
+    text-transform: none;
+  }
+
+  .add-restaurant-hint {
+    margin: 0.9rem auto 0;
+    max-width: 33rem;
+    font-size: 0.9rem;
+    color: var(--ion-color-medium);
+    line-height: 1.4;
+  }
 }
+
 
 // Loading state
 .loading-state {

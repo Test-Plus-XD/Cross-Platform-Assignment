@@ -103,6 +103,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   isCurrentUserOwner: boolean = false;
   // Snapshot of the current language for synchronous access in methods
   currentLanguage: 'EN' | 'TC' = 'EN';
+  private isDarkThemeActive = false;
   // Number of random menu entries loaded into the compact preview scroller
   readonly menuPreviewLimit: number = 5;
   // Number of menu rows that should be visible before the preview area scrolls
@@ -124,6 +125,16 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     this.lang$.pipe(takeUntil(this.destroy$)).subscribe(lang => {
       this.currentLanguage = lang;
       this.updatePageShareData();
+    });
+
+    this.isDark$.pipe(takeUntil(this.destroy$)).subscribe(isDark => {
+      this.isDarkThemeActive = isDark;
+      if (!this.restaurant) return;
+      if (this.map) {
+        this.map.setOptions({ styles: isDark ? this.getGoogleDarkMapStyles() : [] });
+        return;
+      }
+      this.initialiseMapIfNeeded();
     });
 
     // Try to get user's location for distance calculation
@@ -434,8 +445,15 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         mapTypeControl: false,
         fullscreenControl: false,
         zoomControl: true,
-        streetViewControl: false
+        streetViewControl: false,
+        styles: this.isDarkThemeActive ? this.getGoogleDarkMapStyles() : []
       });
+
+      setTimeout(() => {
+        if (!this.map) return;
+        google.maps.event.trigger(this.map, 'resize');
+        this.map.setCenter({ lat: latitude, lng: longitude });
+      }, 120);
 
       // Add marker for the restaurant
       this.marker = new google.maps.Marker({
@@ -449,6 +467,22 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     } catch (error) {
       console.warn('RestaurantPage.initialiseMapIfNeeded error:', error);
     }
+  }
+
+
+  // Dark map styles improve contrast and avoid dark-theme render regressions on WebView/browser.
+  private getGoogleDarkMapStyles(): google.maps.MapTypeStyle[] {
+    return [
+      { elementType: 'geometry', stylers: [{ color: '#1e2b22' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#d3e5d6' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#1b261f' }] },
+      { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#b4cab8' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#34453a' }] },
+      { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#e1f2e3' }] },
+      { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#2a3a30' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#152d38' }] },
+      { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#9ac9d8' }] }
+    ];
   }
 
   /// Booking handler invoked by Book button
