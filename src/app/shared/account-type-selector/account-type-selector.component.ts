@@ -5,7 +5,7 @@
 //
 // canDismiss is false until a type is selected and saved, ensuring every user
 // completes the step before using the app.
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, inject } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { firstValueFrom } from 'rxjs';
 import { timeout } from 'rxjs/operators';
@@ -20,7 +20,7 @@ import { LanguageService } from '../../services/language.service';
   standalone: false,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AccountTypeSelectorComponent {
+export class AccountTypeSelectorComponent implements OnInit {
   private readonly modalController = inject(ModalController);
   private readonly toastController = inject(ToastController);
   private readonly userService = inject(UserService);
@@ -38,7 +38,7 @@ export class AccountTypeSelectorComponent {
   selectedType: 'Diner' | 'Restaurant' | null = null;
 
   // Basic profile fields collected after the account type has been selected.
-  displayName = this.appState.appState.displayName || '';
+  displayName = '';
   phoneNumber = '';
   bio = '';
   preferredLanguage: 'EN' | 'TC' = this.languageService.getCurrentLanguage();
@@ -53,10 +53,17 @@ export class AccountTypeSelectorComponent {
     return this.languageService.getCurrentLanguage() === 'TC';
   }
 
+
+  ngOnInit(): void {
+    this.displayName = this.resolveInitialDisplayName();
+    this.cdr.markForCheck();
+  }
+
   // Called when the user taps a type card and advances to the setup step.
   selectType(type: 'Diner' | 'Restaurant'): void {
     this.selectedType = type;
     this.currentStep = 2;
+    if (!this.displayName.trim()) this.displayName = this.resolveInitialDisplayName();
     this.cdr.markForCheck();
   }
 
@@ -123,6 +130,17 @@ export class AccountTypeSelectorComponent {
       this.isSaving = false;
       this.cdr.markForCheck();
     }
+  }
+
+
+  // Resolves the best display name candidate, prioritising OAuth/profile values over blanks.
+  private resolveInitialDisplayName(): string {
+    return (
+      this.userService.currentProfile?.displayName?.trim()
+      || this.appState.appState.displayName?.trim()
+      || this.appState.appState.email?.split('@')[0]?.trim()
+      || ''
+    );
   }
 
   // Builds the profile payload from setup fields, preserving optional empty fields as null.

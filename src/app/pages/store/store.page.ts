@@ -184,6 +184,7 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     adDeleted:               { EN: 'Advertisement deleted',        TC: '廣告已刪除' },
     processingPayment:       { EN: 'Processing payment...',        TC: '處理付款中...' },
     addRestaurant:           { EN: 'Add New Restaurant',           TC: '新增餐廳' },
+    addRestaurantHint:       { EN: 'You can also search and claim your restaurant from Search → Restaurant page, or add it manually here.', TC: '你亦可在「搜尋」頁面找到並認領你的餐廳（進入餐廳頁面），或在此手動新增。' },
     restaurantAdded:         { EN: 'Restaurant added! Loading your dashboard...', TC: '餐廳已新增！正在載入您的主頁...' },
     menuQrCode:              { EN: 'Menu QR Code',                               TC: '菜單二維碼' },
     menuQrCodeHint:          { EN: 'Let customers scan to view your menu',        TC: '讓顧客掃描瀏覽您的菜單' },
