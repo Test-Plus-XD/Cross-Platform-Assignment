@@ -279,6 +279,16 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     return shuffledItems.slice(0, this.menuPreviewLimit);
   }
 
+  // Return a safe menu image URL for template rendering.
+  // Accepts either imageUrl or ImageUrl to remain compatible with mixed API casing.
+  // Returns null for known placeholder-like values so templates can hide the image block.
+  getMenuItemImageUrl(menuItem: MenuItem): string | null {
+    const imageUrl = (menuItem as any).imageUrl || (menuItem as any).ImageUrl || null;
+    if (!imageUrl) return null;
+    if (imageUrl === '—' || imageUrl === 'null' || imageUrl === 'undefined') return null;
+    return imageUrl;
+  }
+
   /// Load reviews for the restaurant
   private loadReviews(restaurantId: string): void {
     console.log('RestaurantPage: Starting to load reviews');

@@ -21,6 +21,9 @@ import { MenuItem } from '../../services/restaurants.service';
       <ng-container *ngIf="langStream | async as language">
         <div *ngIf="menuItems.length > 0; else emptyMenu" class="full-menu-list">
           <article *ngFor="let menuItem of menuItems; trackBy: trackByMenuItem" class="full-menu-item">
+            <div class="full-menu-image-container" *ngIf="getMenuItemImageUrl(menuItem)">
+              <img [src]="getMenuItemImageUrl(menuItem)!" alt="Menu item image" class="full-menu-image">
+            </div>
             <div class="full-menu-item-main">
               <h2>{{ getMenuItemName(menuItem, language) }}</h2>
               <p *ngIf="getMenuItemDescription(menuItem, language) as description">{{ description }}</p>
@@ -70,6 +73,21 @@ import { MenuItem } from '../../services/restaurants.service';
     .full-menu-item-main {
       min-width: 0;
       flex: 1;
+    }
+    .full-menu-image-container {
+      width: 84px;
+      min-width: 84px;
+      height: 84px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--ion-color-light) 70%, transparent);
+    }
+    .full-menu-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
     .full-menu-item-main h2 {
@@ -149,6 +167,16 @@ export class FullMenuModalComponent {
   getMenuItemPrice(menuItem: MenuItem): string {
     if (typeof menuItem.price !== 'number') return '—';
     return `$${menuItem.price}`;
+  }
+
+  // Return a safe menu image URL for modal rendering.
+  // Accepts both imageUrl and ImageUrl fields to support mixed API response casing.
+  // Returns null for placeholder-like string values so image elements are skipped.
+  getMenuItemImageUrl(menuItem: MenuItem): string | null {
+    const imageUrl = (menuItem as any).imageUrl || (menuItem as any).ImageUrl || null;
+    if (!imageUrl) return null;
+    if (imageUrl === '—' || imageUrl === 'null' || imageUrl === 'undefined') return null;
+    return imageUrl;
   }
 
   /// Keeps Angular from recreating every modal row when change detection runs.
