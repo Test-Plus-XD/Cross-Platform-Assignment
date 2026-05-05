@@ -1,12 +1,12 @@
-<!-- Add New Restaurant modal -->
-<!-- Full-screen modal for restaurant owners to create a new restaurant listing -->
+<!-- Shared Restaurant form modal -->
+<!-- Full-screen modal for creating or editing the current restaurant listing -->
 <ion-header>
   <ion-toolbar>
     <ion-title>
-      {{ (lang$ | async) === 'TC' ? translations.title.TC : translations.title.EN }}
+      {{ (lang$ | async) === 'TC' ? getModalTitle('TC') : getModalTitle('EN') }}
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="dismiss()" [disabled]="isSaving">
+      <ion-button (click)="dismiss()" [disabled]="isSaving || isUploadingImage">
         {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
       </ion-button>
     </ion-buttons>
@@ -15,176 +15,223 @@
 
 <ion-content class="ion-padding">
 
-  <!-- ── Restaurant Name ─────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionRequired.TC : translations.sectionRequired.EN }}</h3>
-    <p class="section-hint">{{ (lang$ | async) === 'TC' ? '至少填寫其中一個' : 'At least one required' }}</p>
+  <div class="loading-container" *ngIf="isPageLoading">
+    <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
   </div>
 
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Name_EN"
-      [placeholder]="(lang$ | async) === 'TC' ? translations.nameEnPlaceholder.TC : translations.nameEnPlaceholder.EN"
-      type="text"
-    ></ion-input>
-  </ion-item>
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Name_TC"
-      [placeholder]="(lang$ | async) === 'TC' ? translations.nameTcPlaceholder.TC : translations.nameTcPlaceholder.EN"
-      type="text"
-    ></ion-input>
-  </ion-item>
-
-  <!-- ── Address ────────────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionAddress.TC : translations.sectionAddress.EN }}</h3>
-  </div>
-
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Address_EN"
-      [placeholder]="(lang$ | async) === 'TC' ? translations.addrEnPlaceholder.TC : translations.addrEnPlaceholder.EN"
-      type="text"
-    ></ion-input>
-  </ion-item>
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Address_TC"
-      [placeholder]="(lang$ | async) === 'TC' ? translations.addrTcPlaceholder.TC : translations.addrTcPlaceholder.EN"
-      type="text"
-    ></ion-input>
-  </ion-item>
-
-  <!-- District picker -->
-  <ion-item button (click)="showDistrictSelector()">
-    <ion-label>
-      <p class="field-label">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</p>
-      <p class="field-value" [class.placeholder]="!form.District_EN">
-        {{ (lang$ | async) === 'TC' ? getDistrictDisplay('TC') : getDistrictDisplay('EN') }}
-      </p>
-    </ion-label>
-    <ion-icon name="chevron-forward-outline" slot="end" color="medium"></ion-icon>
-  </ion-item>
-
-  <!-- ── Details ────────────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionDetails.TC : translations.sectionDetails.EN }}</h3>
-  </div>
-
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Seats"
-      [placeholder]="(lang$ | async) === 'TC' ? '座位數量' : 'Number of seats'"
-      type="number"
-      min="0"
-    ></ion-input>
-  </ion-item>
-
-  <!-- ── Contact Info ────────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionContacts.TC : translations.sectionContacts.EN }}</h3>
-  </div>
-
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Contacts.Phone"
-      [placeholder]="(lang$ | async) === 'TC' ? '電話號碼' : 'Phone number'"
-      type="tel"
-    ></ion-input>
-  </ion-item>
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Contacts.Email"
-      [placeholder]="(lang$ | async) === 'TC' ? '電子郵件' : 'Email address'"
-      type="email"
-    ></ion-input>
-  </ion-item>
-  <ion-item>
-    <ion-input
-      [(ngModel)]="form.Contacts.Website"
-      [placeholder]="(lang$ | async) === 'TC' ? '網址' : 'Website URL'"
-      type="url"
-    ></ion-input>
-  </ion-item>
-
-  <!-- ── Location on Map ────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionLocation.TC : translations.sectionLocation.EN }}</h3>
-  </div>
-
-  <!-- Google Maps container — click to drop a pin -->
-  <div class="map-container">
-    <div id="add-restaurant-map" class="map"></div>
-    <p class="map-hint">
-      <ion-icon name="location-outline"></ion-icon>
-      {{ (lang$ | async) === 'TC' ? translations.clickMapToSet.TC : translations.clickMapToSet.EN }}
-    </p>
-    <div *ngIf="mapMarker" class="map-coords">
-      <span>{{ mapMarker.lat | number:'1.4-6' }}, {{ mapMarker.lng | number:'1.4-6' }}</span>
-      <ion-button fill="clear" size="small" color="medium" (click)="clearLocation()">
-        {{ (lang$ | async) === 'TC' ? translations.clearLocation.TC : translations.clearLocation.EN }}
-      </ion-button>
+  <ng-container *ngIf="!isPageLoading">
+    <!-- Restaurant Name -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionRequired.TC : translations.sectionRequired.EN }}</h3>
+      <p class="section-hint">{{ (lang$ | async) === 'TC' ? '至少填寫其中一個' : 'At least one required' }}</p>
     </div>
-  </div>
 
-  <!-- ── Opening Hours ──────────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionHours.TC : translations.sectionHours.EN }}</h3>
-  </div>
+    <ion-item>
+      <ion-input [(ngModel)]="form.Name_EN"
+        [placeholder]="(lang$ | async) === 'TC' ? translations.nameEnPlaceholder.TC : translations.nameEnPlaceholder.EN"
+        type="text"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input [(ngModel)]="form.Name_TC"
+        [placeholder]="(lang$ | async) === 'TC' ? translations.nameTcPlaceholder.TC : translations.nameTcPlaceholder.EN"
+        type="text"></ion-input>
+    </ion-item>
 
-  <ion-list class="hours-list">
-    <ion-item
-      *ngFor="let day of weekdays"
-      button
-      (click)="updateOpeningHours(day.en)"
-    >
+    <!-- Address -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionAddress.TC : translations.sectionAddress.EN }}</h3>
+    </div>
+
+    <ion-item>
+      <ion-input [(ngModel)]="form.Address_EN"
+        [placeholder]="(lang$ | async) === 'TC' ? translations.addrEnPlaceholder.TC : translations.addrEnPlaceholder.EN"
+        type="text"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input [(ngModel)]="form.Address_TC"
+        [placeholder]="(lang$ | async) === 'TC' ? translations.addrTcPlaceholder.TC : translations.addrTcPlaceholder.EN"
+        type="text"></ion-input>
+    </ion-item>
+
+    <ion-item button (click)="showDistrictSelector()">
       <ion-label>
-        <p class="field-label">{{ (lang$ | async) === 'TC' ? day.tc : day.en }}</p>
-        <p class="field-value" [class.placeholder]="!form.Opening_Hours[day.en]">
-          {{ getHoursDisplay(day.en) }}
+        <p class="field-label">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</p>
+        <p class="field-value" [class.placeholder]="!form.District_EN">
+          {{ (lang$ | async) === 'TC' ? getDistrictDisplay('TC') : getDistrictDisplay('EN') }}
         </p>
       </ion-label>
-      <ion-icon name="time-outline" slot="end" color="medium"></ion-icon>
+      <ion-icon name="chevron-forward-outline" slot="end" color="medium"></ion-icon>
     </ion-item>
-  </ion-list>
 
-  <!-- ── Categories (Keywords) ─────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionKeywords.TC : translations.sectionKeywords.EN }}</h3>
-  </div>
+    <!-- Details -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionDetails.TC : translations.sectionDetails.EN }}</h3>
+    </div>
 
-  <ion-item button (click)="showKeywordsSelector()">
-    <ion-label>
-      <p class="field-label">{{ (lang$ | async) === 'TC' ? '已選類別' : 'Selected categories' }}</p>
-      <p class="field-value" [class.placeholder]="!form.Keyword_EN.length">
-        {{ (lang$ | async) === 'TC' ? getKeywordDisplay('TC') : getKeywordDisplay('EN') }}
+    <ion-item>
+      <ion-input [(ngModel)]="form.Seats" [placeholder]="(lang$ | async) === 'TC' ? '座位數量' : 'Number of seats'"
+        type="number" min="0"></ion-input>
+    </ion-item>
+
+    <!-- Contact Info -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionContacts.TC : translations.sectionContacts.EN }}</h3>
+    </div>
+
+    <ion-item>
+      <ion-input [(ngModel)]="form.Contacts.Phone" [placeholder]="(lang$ | async) === 'TC' ? '電話號碼' : 'Phone number'"
+        type="tel"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input [(ngModel)]="form.Contacts.Email"
+        [placeholder]="(lang$ | async) === 'TC' ? '電子郵件' : 'Email address'" type="email"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-input [(ngModel)]="form.Contacts.Website" [placeholder]="(lang$ | async) === 'TC' ? '網址' : 'Website URL'"
+        type="url"></ion-input>
+    </ion-item>
+
+    <!-- Location on Map -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionLocation.TC : translations.sectionLocation.EN }}</h3>
+    </div>
+
+    <div class="map-container">
+      <div id="restaurant-form-map" class="map"></div>
+      <p class="map-hint">
+        <ion-icon name="location-outline"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? translations.clickMapToSet.TC : translations.clickMapToSet.EN }}
       </p>
-    </ion-label>
-    <ion-icon name="pricetags-outline" slot="end" color="medium"></ion-icon>
-  </ion-item>
+      <div *ngIf="mapMarker" class="map-coords">
+        <span>{{ mapMarker.lat | number:'1.4-6' }}, {{ mapMarker.lng | number:'1.4-6' }}</span>
+        <ion-button fill="clear" size="small" color="medium" (click)="clearLocation()">
+          {{ (lang$ | async) === 'TC' ? translations.clearLocation.TC : translations.clearLocation.EN }}
+        </ion-button>
+      </div>
+    </div>
 
-  <!-- ── Payment Methods ───────────────────────────────────────────────────── -->
-  <div class="section-header">
-    <h3>{{ (lang$ | async) === 'TC' ? translations.sectionPayments.TC : translations.sectionPayments.EN }}</h3>
-  </div>
+    <!-- Opening Hours -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionHours.TC : translations.sectionHours.EN }}</h3>
+      <p class="section-hint">{{ (lang$ | async) === 'TC' ? '使用時間選擇器設定，無需手動輸入' : 'Use the time picker, no manual typing needed' }}</p>
+    </div>
 
-  <ion-item button (click)="showPaymentMethodsSelector()">
-    <ion-label>
-      <p class="field-label">{{ (lang$ | async) === 'TC' ? '已選付款方式' : 'Selected payment methods' }}</p>
-      <p class="field-value" [class.placeholder]="!form.Payments.length">
-        {{ (lang$ | async) === 'TC' ? getPaymentDisplay('TC') : getPaymentDisplay('EN') }}
-      </p>
-    </ion-label>
-    <ion-icon name="card-outline" slot="end" color="medium"></ion-icon>
-  </ion-item>
+    <ion-list class="hours-list">
+      <div *ngFor="let day of weekdays" class="hours-editor-row">
+        <div class="hours-editor-header">
+          <ion-label>
+            <p class="field-label">{{ (lang$ | async) === 'TC' ? day.tc : day.en }}</p>
+            <p class="field-value" [class.placeholder]="!hasOpeningHours(day.en)">
+              {{ getHoursDisplay(day.en) }}
+            </p>
+          </ion-label>
+          <ion-toggle [checked]="isDayClosed(day.en)" (ionChange)="onDayClosedChange($event, day.en)">
+            {{ (lang$ | async) === 'TC' ? translations.closed.TC : translations.closed.EN }}
+          </ion-toggle>
+        </div>
 
-  <!-- Bottom padding for safe area -->
-  <div class="bottom-spacer"></div>
+        <div class="time-button-row" [class.disabled]="isDayClosed(day.en)">
+          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)" (click)="openTimePicker(day.en, 'open')">
+            <ion-icon name="time-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }} {{ getOpeningTimeLabel(day.en) }}
+          </ion-button>
+          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)" (click)="openTimePicker(day.en, 'close')">
+            <ion-icon name="time-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? translations.to.TC : translations.to.EN }} {{ getClosingTimeLabel(day.en) }}
+          </ion-button>
+          <ion-button fill="clear" size="small" color="medium" *ngIf="hasOpeningHours(day.en)" (click)="clearOpeningHours(day.en)">
+            {{ (lang$ | async) === 'TC' ? translations.clearHours.TC : translations.clearHours.EN }}
+          </ion-button>
+        </div>
+      </div>
+    </ion-list>
+
+    <!-- Categories -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionKeywords.TC : translations.sectionKeywords.EN }}</h3>
+    </div>
+
+    <ion-item button (click)="showKeywordsSelector()">
+      <ion-label>
+        <p class="field-label">{{ (lang$ | async) === 'TC' ? '已選類別' : 'Selected categories' }}</p>
+        <p class="field-value" [class.placeholder]="!form.Keyword_EN.length">
+          {{ (lang$ | async) === 'TC' ? getKeywordDisplay('TC') : getKeywordDisplay('EN') }}
+        </p>
+      </ion-label>
+      <ion-icon name="pricetags-outline" slot="end" color="medium"></ion-icon>
+    </ion-item>
+
+    <!-- Payment Methods -->
+    <div class="section-header">
+      <h3>{{ (lang$ | async) === 'TC' ? translations.sectionPayments.TC : translations.sectionPayments.EN }}</h3>
+    </div>
+
+    <ion-item button (click)="showPaymentMethodsSelector()">
+      <ion-label>
+        <p class="field-label">{{ (lang$ | async) === 'TC' ? '已選付款方式' : 'Selected payment methods' }}</p>
+        <p class="field-value" [class.placeholder]="!form.Payments.length">
+          {{ (lang$ | async) === 'TC' ? getPaymentDisplay('TC') : getPaymentDisplay('EN') }}
+        </p>
+      </ion-label>
+      <ion-icon name="card-outline" slot="end" color="medium"></ion-icon>
+    </ion-item>
+
+    <!-- Restaurant Image Upload -->
+    <ng-container *ngIf="isEditMode">
+      <div class="section-header">
+        <h3>{{ (lang$ | async) === 'TC' ? translations.sectionImage.TC : translations.sectionImage.EN }}</h3>
+      </div>
+
+      <div class="image-upload-panel">
+        <div class="current-image-preview" *ngIf="restaurant?.ImageUrl && !restaurantImagePreview">
+          <img [src]="restaurant!.ImageUrl" alt="Restaurant Image">
+          <p class="image-label">{{ (lang$ | async) === 'TC' ? translations.currentImage.TC : translations.currentImage.EN }}</p>
+        </div>
+
+        <div class="image-preview-container" *ngIf="restaurantImagePreview">
+          <img [src]="restaurantImagePreview" alt="Preview">
+          <ion-button fill="clear" size="small" color="danger" (click)="clearRestaurantImageSelection()">
+            <ion-icon name="close-circle-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+
+        <input type="file" id="restaurant-form-image-input" accept="image/*" (change)="onRestaurantImageSelected($event)" style="display: none;">
+
+        <ion-button expand="block" fill="outline" (click)="clickRestaurantImageUploadButton()">
+          <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? translations.selectImage.TC : translations.selectImage.EN }}
+        </ion-button>
+
+        <ion-button expand="block" [disabled]="!selectedRestaurantImage || isUploadingImage" (click)="uploadRestaurantImage()">
+          <ion-icon name="checkmark-outline" slot="start"></ion-icon>
+          {{ (lang$ | async) === 'TC' ? translations.uploadImage.TC : translations.uploadImage.EN }}
+        </ion-button>
+
+        <p class="image-hint">
+          {{ (lang$ | async) === 'TC' ? translations.uploadImageHint.TC : translations.uploadImageHint.EN }}
+        </p>
+      </div>
+    </ng-container>
+
+    <div class="bottom-spacer"></div>
+  </ng-container>
+
+  <ion-modal [isOpen]="isTimePickerOpen" [keepContentsMounted]="true" (didDismiss)="closeTimePicker()" class="time-picker-modal">
+    <ng-template>
+      <ion-content class="ion-padding time-picker-content">
+        <ion-datetime mode="md" presentation="time" [value]="activeTimePickerValue" locale="en-GB" hour-cycle="h23"
+          [showDefaultButtons]="true"
+          [doneText]="(lang$ | async) === 'TC' ? translations.done.TC : translations.done.EN"
+          [cancelText]="(lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN"
+          (ionChange)="onTimePickerChange($event)">
+          <span slot="title">{{ activeTimePickerTitle }}</span>
+        </ion-datetime>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
 </ion-content>
 
-<!-- Fixed footer with submit button -->
 <ion-footer>
   <ion-toolbar>
     <ion-button
@@ -195,7 +242,7 @@
       (click)="save()"
     >
       <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
-      {{ (lang$ | async) === 'TC' ? translations.submit.TC : translations.submit.EN }}
+      {{ (lang$ | async) === 'TC' ? getSubmitLabel('TC') : getSubmitLabel('EN') }}
     </ion-button>
   </ion-toolbar>
 </ion-footer>

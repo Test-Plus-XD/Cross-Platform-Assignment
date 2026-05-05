@@ -1,6 +1,6 @@
 // Store management page — entry point for Restaurant-type users.
 // Provides four tabbed sections:
-//   1. Info     — view + edit restaurant details (opens RestaurantInfoModalComponent)
+//   1. Info     — view + edit restaurant details (opens AddRestaurantModalComponent in edit mode)
 //   2. Menu     — browse menu items, add/edit via MenuItemModalComponent,
 //                 bulk-import via BulkMenuImportModalComponent
 //   3. Bookings — view and action pending/accepted/declined/cancelled bookings
@@ -15,7 +15,6 @@ import { takeUntil } from 'rxjs/operators';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
 import { AdModalComponent } from './ad-modal/ad-modal.component';
 import { AddRestaurantModalComponent } from './add-restaurant-modal/add-restaurant-modal.component';
-import { RestaurantInfoModalComponent } from './restaurant-info-modal/restaurant-info-modal.component';
 import { MenuItemModalComponent } from './menu-item-modal/menu-item-modal.component';
 import { BulkMenuImportModalComponent } from './bulk-menu-import-modal/bulk-menu-import-modal.component';
 import MenuQrModalComponent from './menu-qr-modal/menu-qr-modal.component';
@@ -390,12 +389,17 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
 
   // ── Modal openers ─────────────────────────────────────────────────────────────
 
-  // Open the restaurant info editor as a full-screen modal.
+  // Open the shared restaurant form modal in edit mode.
   // Reloads the restaurant summary after a successful save.
   async openRestaurantInfoModal(): Promise<void> {
     if (!this.restaurant || !this.restaurantId) return;
     const modal = await this.modalController.create({
-      component: RestaurantInfoModalComponent,
+      component: AddRestaurantModalComponent,
+      componentProps: {
+        mode: 'edit',
+        restaurantId: this.restaurantId,
+        restaurant: this.restaurant
+      },
       cssClass: 'restaurant-info-fullscreen-modal',
       backdropDismiss: false
     });
@@ -407,11 +411,14 @@ export class StorePage implements OnInit, OnDestroy, ViewWillEnter {
     }
   }
 
-  // Open the add-restaurant modal for owners who cannot find their restaurant in search.
+  // Open the shared restaurant form modal in create mode.
   // On success, reloads restaurant data so the dashboard renders immediately.
   async openAddRestaurantModal(): Promise<void> {
     const modal = await this.modalController.create({
-      component: AddRestaurantModalComponent
+      component: AddRestaurantModalComponent,
+      componentProps: { mode: 'create' },
+      cssClass: 'restaurant-info-fullscreen-modal',
+      backdropDismiss: false
     });
     await modal.present();
 

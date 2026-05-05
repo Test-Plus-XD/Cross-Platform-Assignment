@@ -119,11 +119,11 @@
       <!-- ═══════════════════════════════════════════════════════════════
              SECTION 1: Restaurant Information
              Read-only view of all restaurant fields.
-             Editing is handled by RestaurantInfoModalComponent.
+             Editing is handled by AddRestaurantModalComponent in edit mode.
         ════════════════════════════════════════════════════════════════ -->
       <div *ngIf="currentSection === 'info'" class="section-content">
 
-        <!-- Opens RestaurantInfoModalComponent -->
+        <!-- Opens the shared restaurant form modal in edit mode -->
         <div class="action-buttons">
           <ion-button expand="block" (click)="openRestaurantInfoModal()">
             <ion-icon name="create-outline" slot="start"></ion-icon>

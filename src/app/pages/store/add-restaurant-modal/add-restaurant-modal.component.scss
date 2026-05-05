@@ -1,7 +1,12 @@
-// Add Restaurant Modal styles
-// IMPORTANT: Never use `transition: all` — it floods zone.js with transitionend events
-// during Ionic modal animations and freezes the PWA (v1.14.0 bug).
-// Always scope transitions to specific properties only.
+// Shared Restaurant form modal styles.
+// IMPORTANT: Never use `transition: all` during Ionic modal animations.
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
 
 .section-header {
   padding: 20px 16px 8px;
@@ -46,7 +51,6 @@ ion-item {
   }
 }
 
-// Map container
 .map-container {
   margin: 8px 16px 0;
   border-radius: 12px;
@@ -77,6 +81,7 @@ ion-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 8px;
     padding: 4px 12px;
     background: var(--ion-color-light);
     border-top: 1px solid var(--ion-color-light-shade);
@@ -89,10 +94,111 @@ ion-item {
   }
 }
 
-// Opening hours list — remove the outer list background card style
 .hours-list {
   margin: 0;
+  padding: 0 16px;
   background: transparent;
+}
+
+.hours-editor-row {
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: var(--ion-card-background);
+}
+
+.hours-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  ion-label {
+    flex: 1;
+    min-width: 0;
+  }
+
+  ion-toggle {
+    flex: 0 0 auto;
+    font-size: 0.8rem;
+  }
+}
+
+.time-button-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+
+  &.disabled {
+    opacity: 0.62;
+  }
+
+  ion-button {
+    min-height: 36px;
+  }
+}
+
+.time-picker-modal {
+  --width: min(92vw, 380px);
+  --height: auto;
+  --border-radius: 18px;
+
+  &::part(content) {
+    overflow: hidden;
+  }
+}
+
+.time-picker-content {
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.image-upload-panel {
+  margin: 8px 16px 0;
+  padding: 12px;
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  background: var(--ion-card-background);
+}
+
+.current-image-preview,
+.image-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+
+  img {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .image-label {
+    font-size: 12px;
+    color: var(--ion-color-medium);
+    margin: 4px 0 0;
+  }
+}
+
+.image-preview-container ion-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+.image-hint {
+  font-size: 11px;
+  color: var(--ion-color-medium);
+  margin: 8px 0 0;
+  text-align: center;
 }
 
 ion-footer {
@@ -110,4 +216,15 @@ ion-footer {
 
 .bottom-spacer {
   height: 16px;
+}
+
+@media (max-width: 480px) {
+  .hours-editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .time-button-row ion-button {
+    width: 100%;
+  }
 }
