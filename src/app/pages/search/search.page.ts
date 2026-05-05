@@ -159,6 +159,8 @@ export class SearchPage implements OnInit, OnDestroy {
   private infoWindow: google.maps.InfoWindow | null = null;
   private nearMeCircle: google.maps.Circle | null = null;
   private userMarker: google.maps.Marker | null = null;
+  // Track the restaurant whose popup is currently open so theme changes can rebuild it live.
+  private activeInfoWindowRestaurant: Restaurant | null = null;
 
   // Rating stats for displayed restaurants (keyed by restaurant ID)
   public ratingMap: Record<string, { totalReviews: number; averageRating: number }> = {};
@@ -212,6 +214,14 @@ export class SearchPage implements OnInit, OnDestroy {
       this.loadFilterOptions();
     });
     this.subscriptions.push(langSub);
+
+    // Rebuild the open InfoWindow immediately whenever the theme changes.
+    const themeSub = this.themeService.isDark$.subscribe(() => {
+      if (this.infoWindow && this.activeInfoWindowRestaurant) {
+        this.infoWindow.setContent(this.buildInfoWindowContent(this.activeInfoWindowRestaurant));
+      }
+    });
+    this.subscriptions.push(themeSub);
 
     // Set up debounced search for input changes
     const searchSub = this.searchSubject.pipe(
@@ -677,6 +687,12 @@ export class SearchPage implements OnInit, OnDestroy {
     });
 
     this.infoWindow = new google.maps.InfoWindow();
+
+    // Clear active restaurant reference when the popup is dismissed.
+    this.infoWindow.addListener('closeclick', () => {
+      this.activeInfoWindowRestaurant = null;
+    });
+
     this.updateMapMarkers();
 
     // If Near Me was active when the map was cleaned up (e.g. search refresh),
@@ -709,116 +725,21 @@ export class SearchPage implements OnInit, OnDestroy {
       const name = this.currentLang === 'TC'
         ? (restaurant.Name_TC || restaurant.Name_EN || '—')
         : (restaurant.Name_EN || restaurant.Name_TC || '—');
-      const district = this.currentLang === 'TC'
-        ? (restaurant.District_TC || restaurant.District_EN || '')
-        : (restaurant.District_EN || restaurant.District_TC || '');
 
       const marker = new google.maps.Marker({
         position,
         map: this.map,
-        title: name
+        title: name,
+        icon: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
       });
-
-      // Pre-compute static parts (image and distance don't change after marker creation)
-      const imgSrc = restaurant.ImageUrl || this.placeholderImage;
-      // Distance badge: derive color classification from getDistanceBadge()
-      const distBadge = this.getDistanceBadge(restaurant);
-      let distanceBadgeHtml = '';
-      if (distBadge) {
-        const distBg = distBadge.color === 'success' ? 'rgba(16,185,129,0.92)'
-          : distBadge.color === 'warning' ? 'rgba(245,158,11,0.92)'
-          : 'rgba(107,114,128,0.85)';
-        distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${distBg};color:#fff;backdrop-filter:blur(4px);">${distBadge.text}</span>`;
-      }
 
       // Build InfoWindow content at click time so ratingMap and openStatus reflect current state.
       // ratingMap is populated asynchronously after loadBatchRatings returns; restaurant.rating
       // is used as an immediate fallback so the rating badge always shows if data is available.
       marker.addListener('click', () => {
         if (this.infoWindow) {
-          // Opening badge — bottom-left on image
-          const openStatus = this.getOpeningStatus(restaurant);
-          const openBadgeHtml = openStatus === 'open'
-            ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(76,175,80,0.92);color:#fff;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
-            : openStatus === 'closed'
-              ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(229,57,53,0.92);color:#fff;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
-              : '';
-
-          // Rating badge — bottom-right on image
-          const stats = this.ratingMap[restaurant.id];
-          const avgRating = stats?.averageRating ?? restaurant.rating ?? 0;
-          const ratingBadgeHtml = stats && stats.totalReviews > 0
-            ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(stats.averageRating)} (${stats.totalReviews})</span>`
-            : avgRating > 0
-              ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(avgRating)}</span>`
-              : `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
-
-          // Keyword tags row (up to 2 + overflow count) — guard against non-array fields
-          const rawKw = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
-          const keywords: string[] = Array.isArray(rawKw) ? rawKw : [];
-          const kwDisplay = keywords.slice(0, 2);
-          const kwExtra = keywords.length - 2;
-          const kwPillStyle = 'font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:rgb(232,255,234);color:#2f8f43;border:1px solid #8ac798;white-space:nowrap;';
-
-          // Build InfoWindow as DOM nodes to prevent XSS
-          const anchor = document.createElement('a');
-          anchor.href = `/restaurant/${restaurant.id}`;
-          anchor.style.cssText = 'display:block;width:256px;font-family:system-ui,sans-serif;text-decoration:none;color:inherit;cursor:pointer;border-radius:12px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.14);';
-
-          // Image section — badges contain only computed safe strings (no user data)
-          const imgSection = document.createElement('div');
-          imgSection.style.cssText = 'position:relative;width:100%;height:100px;overflow:hidden;';
-
-          const imgEl = document.createElement('img');
-          imgEl.src = imgSrc;
-          imgEl.alt = name;
-          imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
-          imgSection.appendChild(imgEl);
-
-          const overlay = document.createElement('div');
-          overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.32));';
-          imgSection.appendChild(overlay);
-
-          if (distanceBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', distanceBadgeHtml); }
-          imgSection.insertAdjacentHTML('beforeend', ratingBadgeHtml);
-          if (openBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', openBadgeHtml); }
-
-          anchor.appendChild(imgSection);
-
-          // Content section — user-supplied text set via textContent only
-          const contentDiv = document.createElement('div');
-          contentDiv.style.cssText = 'padding:0.625rem 0.75rem;background:#f6fff7;';
-
-          const h4 = document.createElement('h4');
-          h4.style.cssText = 'margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;color:#111;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
-          h4.textContent = name;
-          contentDiv.appendChild(h4);
-
-          if (kwDisplay.length > 0) {
-            const kwRow = document.createElement('div');
-            kwRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;';
-            kwDisplay.forEach((k: string) => {
-              const pill = document.createElement('span');
-              pill.style.cssText = kwPillStyle;
-              pill.textContent = k;
-              kwRow.appendChild(pill);
-            });
-            if (kwExtra > 0) {
-              const morePill = document.createElement('span');
-              morePill.style.cssText = kwPillStyle;
-              morePill.textContent = `+${kwExtra}`;
-              kwRow.appendChild(morePill);
-            }
-            contentDiv.appendChild(kwRow);
-          }
-
-          const districtRow = document.createElement('div');
-          districtRow.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:0.75rem;color:#666;';
-          districtRow.textContent = '📍 ' + district;
-          contentDiv.appendChild(districtRow);
-
-          anchor.appendChild(contentDiv);
-          this.infoWindow.setContent(anchor);
+          this.activeInfoWindowRestaurant = restaurant;
+          this.infoWindow.setContent(this.buildInfoWindowContent(restaurant));
           this.infoWindow.open(this.map!, marker);
         }
       });
@@ -955,6 +876,7 @@ export class SearchPage implements OnInit, OnDestroy {
     this.markers = [];
     this.removeNearMeCircle();
     this.removeUserMarker();
+    this.activeInfoWindowRestaurant = null;
 
     if (this.infoWindow) {
       this.infoWindow.close();
@@ -964,6 +886,216 @@ export class SearchPage implements OnInit, OnDestroy {
     if (this.map) {
       this.map = null;
     }
+  }
+
+  // Build the InfoWindow DOM content for a restaurant popup.
+  // Called both on marker click and whenever the theme changes while the popup is open,
+  // so the card always reflects the current light/dark palette immediately.
+  private buildInfoWindowContent(restaurant: Restaurant): HTMLElement {
+    const isDark = this.themeService.isDark;
+
+    // Theme-resolved palette values
+    const popupBg = isDark ? 'rgba(36,51,41,0.72)' : 'rgba(250,254,251,0.72)';
+    const popupBorder = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(19,38,30,0.10)';
+    const textColor = isDark ? '#e8f2ea' : '#1a2e1f';
+    const mutedColor = isDark ? '#9eada2' : '#5d6b60';
+    const kwBg = isDark ? 'rgb(36,66,41)' : 'rgb(232,255,234)';
+    const kwColor = isDark ? '#9fdba9' : '#2f8f43';
+    const kwBorder = isDark ? '#5d9466' : '#8ac798';
+
+    // Gradient colours matching --ion-color-primary / --ion-color-secondary per theme.
+    // These are used as linearGradient stops inside inline SVG so the icons render
+    // with the same purple→blue gradient as the filter chip icons.
+    const gradStart = isDark ? '#9f5ce8' : '#a746f0'; // primary
+    const gradEnd = isDark ? '#5ba3e0' : '#4ca5ff'; // secondary
+
+    // Unique gradient ID per call to avoid collisions when multiple popups exist in DOM.
+    const gradId = `iw-grad-${Date.now()}`;
+
+    // Helper: build an inline SVG icon with the gradient fill/stroke.
+    const makeGradientSvg = (pathData: string, size: string, useStroke: boolean): SVGSVGElement => {
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg') as SVGSVGElement;
+      svg.setAttribute('viewBox', '0 0 512 512');
+      svg.setAttribute('width', size);
+      svg.setAttribute('height', size);
+      svg.style.cssText = 'flex-shrink:0;overflow:visible;';
+
+      const defs = document.createElementNS(ns, 'defs');
+      const grad = document.createElementNS(ns, 'linearGradient');
+      grad.setAttribute('id', gradId);
+      grad.setAttribute('x1', '0%');
+      grad.setAttribute('y1', '0%');
+      grad.setAttribute('x2', '100%');
+      grad.setAttribute('y2', '100%');
+      const stop1 = document.createElementNS(ns, 'stop');
+      stop1.setAttribute('offset', '0%');
+      stop1.setAttribute('stop-color', gradStart);
+      const stop2 = document.createElementNS(ns, 'stop');
+      stop2.setAttribute('offset', '100%');
+      stop2.setAttribute('stop-color', gradEnd);
+      grad.appendChild(stop1);
+      grad.appendChild(stop2);
+      defs.appendChild(grad);
+      svg.appendChild(defs);
+
+      // Parse the multi-path data string (paths separated by '|') and append each.
+      pathData.split('|').forEach(d => {
+        const path = document.createElementNS(ns, 'path');
+        path.setAttribute('d', d);
+        if (useStroke) {
+          path.setAttribute('fill', 'none');
+          path.setAttribute('stroke', `url(#${gradId})`);
+          path.setAttribute('stroke-linecap', 'round');
+          path.setAttribute('stroke-linejoin', 'round');
+          path.setAttribute('stroke-width', '32');
+        } else {
+          path.setAttribute('fill', `url(#${gradId})`);
+        }
+        svg.appendChild(path);
+      });
+
+      return svg;
+    };
+
+    // golf-outline paths (two paths, both stroke-based)
+    const golfPaths = 'M256 400V32l176 80-176 80|M256 336c-87 0-175.3 43.2-191.64 124.74C62.39 470.57 68.57 480 80 480h352c11.44 0 17.62-9.43 15.65-19.26C431.3 379.2 343 336 256 336Z';
+    // storefront-outline paths (two paths, both stroke-based)
+    const storefrontPaths = 'M448 448V240M64 240v208M382.47 48H129.53c-21.79 0-41.47 12-49.93 30.46L36.3 173c-14.58 31.81 9.63 67.85 47.19 69h2c31.4 0 56.85-25.18 56.85-52.23 0 27 25.46 52.23 56.86 52.23s56.8-23.38 56.8-52.23c0 27 25.45 52.23 56.85 52.23s56.86-23.38 56.86-52.23c0 28.85 25.45 52.23 56.85 52.23h1.95c37.56-1.17 61.77-37.21 47.19-69l-43.3-94.54C423.94 60 404.26 48 382.47 48M32 464h448M136 288h80a24 24 0 0 1 24 24v88h0-128 0v-88a24 24 0 0 1 24-24M288 464V312a24 24 0 0 1 24-24h64a24 24 0 0 1 24 24v152';
+
+    const name = this.currentLang === 'TC'
+      ? (restaurant.Name_TC || restaurant.Name_EN || '—')
+      : (restaurant.Name_EN || restaurant.Name_TC || '—');
+    const district = this.currentLang === 'TC'
+      ? (restaurant.District_TC || restaurant.District_EN || '')
+      : (restaurant.District_EN || restaurant.District_TC || '');
+    const addressVal = this.currentLang === 'TC'
+      ? (restaurant.Address_TC || restaurant.Address_EN || '')
+      : (restaurant.Address_EN || restaurant.Address_TC || '');
+    const imgSrc = restaurant.ImageUrl || this.placeholderImage;
+
+    // Distance badge HTML
+    const distBadge = this.getDistanceBadge(restaurant);
+    let distanceBadgeHtml = '';
+    if (distBadge) {
+      const distBg = distBadge.color === 'success' ? 'rgba(16,185,129,0.92)'
+        : distBadge.color === 'warning' ? 'rgba(245,158,11,0.92)'
+          : 'rgba(107,114,128,0.85)';
+      distanceBadgeHtml = `<span style="position:absolute;top:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:${distBg};color:#fff;backdrop-filter:blur(4px);">${distBadge.text}</span>`;
+    }
+
+    // Open/close badge HTML
+    const openStatus = this.getOpeningStatus(restaurant);
+    const openBadgeHtml = openStatus === 'open'
+      ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(76,175,80,0.92);color:#fff;">${this.currentLang === 'TC' ? '營業中' : 'Open'}</span>`
+      : openStatus === 'closed'
+        ? `<span style="position:absolute;bottom:0.4rem;left:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(229,57,53,0.92);color:#fff;">${this.currentLang === 'TC' ? '已關閉' : 'Closed'}</span>`
+        : '';
+
+    // Rating badge HTML
+    const stats = this.ratingMap[restaurant.id];
+    const avgRating = stats?.averageRating ?? restaurant.rating ?? 0;
+    const ratingBadgeHtml = stats && stats.totalReviews > 0
+      ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(stats.averageRating)} (${stats.totalReviews})</span>`
+      : avgRating > 0
+        ? `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);white-space:nowrap;">${this.formatRatingStars(avgRating)}</span>`
+        : `<span style="position:absolute;bottom:0.4rem;right:0.4rem;font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(0,0,0,.55);color:#f5c518;backdrop-filter:blur(4px);">${this.currentLang === 'TC' ? '全新' : 'New'}</span>`;
+
+    // Keyword tags
+    const rawKw = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
+    const keywords: string[] = Array.isArray(rawKw) ? rawKw : [];
+    const kwDisplay = keywords.slice(0, 2);
+    const kwExtra = keywords.length - 2;
+
+    // --- Build DOM ---
+    const anchor = document.createElement('a');
+    anchor.href = `/restaurant/${restaurant.id}`;
+    anchor.style.cssText = [
+      'display:block;width:260px;font-family:system-ui,sans-serif;',
+      'text-decoration:none;color:inherit;cursor:pointer;',
+      'border-radius:16px;overflow:hidden;',
+      `background:${popupBg};`,
+      `border:1px solid ${popupBorder};`,
+      'backdrop-filter:blur(18px) saturate(1.6);',
+      '-webkit-backdrop-filter:blur(18px) saturate(1.6);',
+      'box-shadow:0 8px 32px rgba(0,0,0,0.22),0 1.5px 6px rgba(0,0,0,0.10);',
+    ].join('');
+
+    // Image section — fills the entire upper portion of the popup
+    const imgSection = document.createElement('div');
+    imgSection.style.cssText = 'position:relative;width:100%;height:140px;overflow:hidden;flex-shrink:0;';
+
+    const imgEl = document.createElement('img');
+    imgEl.src = imgSrc;
+    imgEl.alt = name;
+    imgEl.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    imgSection.appendChild(imgEl);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:absolute;inset:0;background:linear-gradient(to bottom,transparent 35%,rgba(0,0,0,.38));';
+    imgSection.appendChild(overlay);
+
+    if (distanceBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', distanceBadgeHtml); }
+    imgSection.insertAdjacentHTML('beforeend', ratingBadgeHtml);
+    if (openBadgeHtml) { imgSection.insertAdjacentHTML('beforeend', openBadgeHtml); }
+
+    anchor.appendChild(imgSection);
+
+    // Content section
+    const contentDiv = document.createElement('div');
+    contentDiv.style.cssText = 'padding:0.625rem 0.75rem;background:transparent;';
+
+    const h4 = document.createElement('h4');
+    h4.style.cssText = [
+      'margin:0 0 0.3rem;font-size:0.875rem;font-weight:700;',
+      `color:${textColor};`,
+      'line-height:1.3;display:-webkit-box;',
+      '-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;',
+    ].join('');
+    h4.textContent = name;
+    contentDiv.appendChild(h4);
+
+    if (kwDisplay.length > 0) {
+      const kwRow = document.createElement('div');
+      kwRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:3px;margin:0 0 5px;';
+      kwDisplay.forEach((k: string) => {
+        const pill = document.createElement('span');
+        pill.style.cssText = `font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:${kwBg};color:${kwColor};border:1px solid ${kwBorder};white-space:nowrap;`;
+        pill.textContent = k;
+        kwRow.appendChild(pill);
+      });
+      if (kwExtra > 0) {
+        const morePill = document.createElement('span');
+        morePill.style.cssText = `font-size:0.6rem;font-weight:600;padding:1px 6px;border-radius:8px;background:${kwBg};color:${kwColor};border:1px solid ${kwBorder};white-space:nowrap;`;
+        morePill.textContent = `+${kwExtra}`;
+        kwRow.appendChild(morePill);
+      }
+      contentDiv.appendChild(kwRow);
+    }
+
+    // District row — golf-outline SVG with purple→blue gradient
+    const districtRow = document.createElement('div');
+    districtRow.style.cssText = `display:flex;align-items:center;gap:5px;font-size:0.75rem;color:${mutedColor};margin-bottom:3px;`;
+    districtRow.appendChild(makeGradientSvg(golfPaths, '15px', true));
+    const districtText = document.createElement('span');
+    districtText.textContent = district;
+    districtRow.appendChild(districtText);
+    contentDiv.appendChild(districtRow);
+
+    // Address row — storefront-outline SVG with purple→blue gradient
+    if (addressVal) {
+      const addressRow = document.createElement('div');
+      addressRow.style.cssText = `display:flex;align-items:flex-start;gap:5px;font-size:0.7rem;color:${mutedColor};`;
+      addressRow.appendChild(makeGradientSvg(storefrontPaths, '14px', true));
+      const addressText = document.createElement('span');
+      addressText.style.cssText = 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;';
+      addressText.textContent = addressVal;
+      addressRow.appendChild(addressText);
+      contentDiv.appendChild(addressRow);
+    }
+
+    anchor.appendChild(contentDiv);
+    return anchor;
   }
 
   // Format distance for display (metres to readable string)

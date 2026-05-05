@@ -661,6 +661,7 @@
   // Map view container
   .map-view-container {
     position: relative;
+    position: relative;
     margin-bottom: 2rem;
 
     .search-map {
@@ -671,8 +672,19 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
 
-    // Floating pill button overlaid at the bottom-centre of the map
+    // Floating pill button overlaid at the bottom-centre of the map — styled to match filter chips.
+    // The sizing/shadow/colour variables are re-declared here because they are defined on .search-header
+    // and are not in scope for this element which lives outside that ancestor.
     .map-load-more-btn {
+      // Mirror the same CSS variables used by .search-header so the button scales identically
+      --search-control-height: clamp(2.2rem, 4.7vh, 2.55rem);
+      --search-control-font-size: clamp(0.72rem, 2vw, 0.8rem);
+      --search-control-icon-size: clamp(0.85rem, 2.25vw, 0.98rem);
+      --search-header-shadow: 0 12px 24px rgba(20, 38, 31, 0.12);
+      --search-header-shadow-hover: 0 16px 28px rgba(20, 38, 31, 0.18);
+      // color-mix produces the same gradient blend as the filter chip icons
+      --search-header-icon-color: color-mix(in srgb, var(--ion-color-primary) 56%, var(--ion-color-secondary) 44%);
+
       position: absolute;
       bottom: 1rem;
       left: 50%;
@@ -681,21 +693,22 @@
       display: flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.5rem 1.25rem;
-      border: none;
+      padding: 0 1.25rem;
+      min-height: var(--search-control-height);
+      border: 1px solid rgba(19, 38, 30, 0.08);
       border-radius: 999px;
-      background: var(--ion-color-primary);
-      color: #fff;
-      font-size: 0.85rem;
+      background: var(--ion-background-color);
+      color: var(--ion-text-color);
+      font-size: var(--search-control-font-size);
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      filter: drop-shadow(var(--search-header-shadow));
+      transition: transform 0.24s ease, filter 0.24s ease, border-color 0.24s ease;
 
       &:hover:not(:disabled) {
-        transform: translateX(-50%) translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        transform: translateX(-50%) translateY(-1px);
+        filter: drop-shadow(var(--search-header-shadow-hover));
       }
 
       &:disabled {
@@ -703,9 +716,10 @@
         cursor: default;
       }
 
+      // !important overrides the top-level :host ion-icon { color: var(--gradient-icon-color) } rule
       ion-icon {
-        font-size: 1.1rem;
-        color: #fff;
+        font-size: var(--search-control-icon-size);
+        color: var(--search-header-icon-color) !important;
       }
 
       .map-load-more-spinner {
@@ -891,8 +905,18 @@
     color: var(--search-header-icon-color) !important;
   }
 
-  .map-view-container .search-map {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  .map-view-container {
+    .search-map {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .map-load-more-btn {
+      --search-header-shadow: 0 0 14px rgba(255, 255, 255, 0.14);
+      --search-header-shadow-hover: 0 0 18px rgba(255, 255, 255, 0.22);
+      background: var(--ion-card-background);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: var(--ion-text-color);
+    }
   }
 
   .view-toggle ion-segment ion-segment-button:not(.segment-button-checked) ion-icon {

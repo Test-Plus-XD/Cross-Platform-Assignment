@@ -198,11 +198,78 @@ html.dark,
   padding: 0 !important;
   overflow: hidden !important;
 }
+
 .gm-style-iw-c {
   padding: 0 !important;
-  border-radius: 12px !important;
+  border-radius: 16px !important;
   overflow: hidden !important;
   box-shadow: none !important;
+  background: transparent !important;
+}
+
+// Hide the default close button background so it blends with the glass card
+.gm-style-iw-chr {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 10 !important;
+}
+
+.gm-style-iw-chr button {
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-radius: 50% !important;
+  margin: 4px !important;
+  width: 24px !important;
+  height: 24px !important;
+}
+
+.gm-style-iw-chr button span {
+  filter: invert(1) !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 5px !important;
+}
+
+/* === GOOGLE MAPS PLACES AUTOCOMPLETE DROPDOWN === */
+// .pac-container is appended to <body> by the Places SDK with z-index ~1000.
+// Ionic modals use z-index 20000+, so this override is required for the dropdown
+// to render above the restaurant add/edit modal backdrop.
+.pac-container {
+  z-index: 99999 !important;
+  border-radius: 0 0 8px 8px;
+  border: 1px solid var(--ion-color-light-shade);
+  border-top: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-family: var(--ion-font-family);
+}
+
+.pac-item {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  cursor: pointer;
+
+  &:hover,
+  &.pac-item-selected {
+    background: var(--ion-color-light);
+  }
+}
+
+.pac-item-query {
+  font-size: 0.875rem;
+}
+
+.pac-matched {
+  font-weight: 700;
+}
+
+html.dark .pac-container {
+  background: var(--ion-card-background);
+  border-color: rgba(255, 255, 255, 0.1);
+
+  .pac-item:hover,
+  .pac-item.pac-item-selected {
+    background: rgba(255, 255, 255, 0.07);
+  }
 }
 
 /* === GOOGLE MAPS PLACES AUTOCOMPLETE DROPDOWN === */
