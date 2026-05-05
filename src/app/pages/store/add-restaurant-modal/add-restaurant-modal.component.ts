@@ -41,6 +41,10 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   private map: google.maps.Map | null = null;
   private marker: google.maps.Marker | null = null;
   private mapInitialized = false;
+  private autocomplete: google.maps.places.Autocomplete | null = null;
+  private geocoder: google.maps.Geocoder | null = null;
+  isGeocoding = false;
+  locationSearchQuery = '';
   @Input() mode: RestaurantFormMode = 'create';
   @Input() restaurantId: string | null = null;
   @Input() restaurant: Restaurant | null = null;
@@ -57,6 +61,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   isSaving = false;
   isPageLoading = false;
   isUploadingImage = false;
+  bulkHours = { open: '09:00', close: '22:00' };
   selectedRestaurantImage: File | null = null;
   restaurantImagePreview: string | null = null;
   mapMarker: { lat: number; lng: number } | null = null;
@@ -129,7 +134,22 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     imageUploadFailed: { EN: 'Image upload failed', TC: '圖片上傳失敗' },
     invalidImage: { EN: 'Please select a valid image file', TC: '請選擇有效的圖片檔案' },
     imageTooLarge: { EN: 'Image size must be less than 10MB', TC: '圖片大小必須少於 10MB' },
-    loginRequired: { EN: 'Please log in first', TC: '請先登入' }
+    loginRequired: { EN: 'Please log in first', TC: '請先登入' },
+    locationSearch: { EN: 'Search location…', TC: '搜尋地點…' },
+    geocodingFailed: { EN: 'Could not auto-fill address', TC: '無法自動填寫地址' },
+    noDistrictMatch: { EN: 'District not auto-detected', TC: '未能自動偵測地區' },
+    quickSet: { EN: 'Quick set', TC: '快速設定' },
+    quickSetHint: { EN: 'Set the same hours for multiple days at once', TC: '一次為多天設定相同時間' },
+    applyToAll: { EN: 'All days', TC: '所有日子' },
+    applyToWeekdays: { EN: 'Mon – Fri', TC: '一至五' },
+    applyToWeekend: { EN: 'Sat – Sun', TC: '週末' },
+    markAllClosed: { EN: 'Close all', TC: '全部休息' },
+    clearAll: { EN: 'Clear all', TC: '清除全部' },
+    copyHoursTitle: { EN: 'Copy schedule', TC: '複製時段' },
+    copyHoursMsg: { EN: 'Apply this day\'s schedule to:', TC: '將此日時段套用至：' },
+    copyToAll: { EN: 'All 7 days', TC: '所有 7 天' },
+    copyToWeekdays: { EN: 'Mon – Fri', TC: '星期一至五' },
+    copyToWeekend: { EN: 'Weekends', TC: '週末' }
   };
 
   /** Inserted by Angular inject() migration for backwards compatibility */
@@ -175,11 +195,14 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     return this.isEditMode ? this.translations.saveChanges[lang] : this.translations.submit[lang];
   }
 
-  // Returns the active time picker title using the selected weekday and boundary.
+  // Returns the active time picker title using the selected weekday/bulk context and boundary.
   get activeTimePickerTitle(): string {
     const lang = this.currentLanguage;
-    const dayLabel = this.activeTimePickerDay ? this.getDayLabel(this.activeTimePickerDay, lang) : '';
     const boundaryLabel = this.activeTimePickerBoundary === 'close' ? this.translations.to[lang] : this.translations.from[lang];
+    if (this.activeTimePickerDay === null) {
+      return `${this.translations.quickSet[lang]} – ${boundaryLabel}`;
+    }
+    const dayLabel = this.getDayLabel(this.activeTimePickerDay, lang);
     return `${dayLabel} ${boundaryLabel}`.trim() || this.translations.chooseTime[lang];
   }
 
@@ -276,6 +299,10 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   // Initialises the Google Map and restores an existing marker when coordinates are available.
   private initializeMap(): void {
     if (this.mapInitialized || this.map) return;
+    if (typeof google === 'undefined' || !google.maps?.places?.Autocomplete) {
+      setTimeout(() => this.initializeMap(), 500);
+      return;
+    }
     const mapContainer = document.getElementById('restaurant-form-map');
     if (!mapContainer) {
       console.warn('RestaurantFormModal: map container not found');
@@ -302,18 +329,74 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
       if (event.latLng) this.onMapClick(event.latLng.lat(), event.latLng.lng());
     });
     this.mapInitialized = true;
+    this.geocoder = new google.maps.Geocoder();
+    const searchInput = document.getElementById('restaurant-location-search') as HTMLInputElement | null;
+    if (searchInput) {
+      this.autocomplete = new google.maps.places.Autocomplete(searchInput, {
+        componentRestrictions: { country: 'hk' },
+        fields: ['geometry']
+      });
+      this.autocomplete.addListener('place_changed', () => {
+        const place = this.autocomplete!.getPlace();
+        if (!place.geometry?.location) return;
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        this.placePin(lat, lng);
+        this.reverseGeocode(lat, lng);
+        this.map?.panTo({ lat, lng });
+        this.map?.setZoom(15);
+        this.locationSearchQuery = '';
+      });
+    }
   }
 
-  // Updates the form coordinates and moves the map marker to the clicked position.
+  // Updates the form coordinates, moves the marker, and triggers reverse geocoding.
   private onMapClick(lat: number, lng: number): void {
+    this.placePin(lat, lng);
+    this.reverseGeocode(lat, lng);
+  }
+
+  // Shared marker-placement logic used by both map click and Autocomplete selection.
+  private placePin(lat: number, lng: number): void {
     this.form.Latitude = lat;
     this.form.Longitude = lng;
     this.mapMarker = { lat, lng };
-    if (this.marker) {
-      this.marker.setMap(null);
-      this.marker = null;
-    }
+    if (this.marker) { this.marker.setMap(null); this.marker = null; }
     if (this.map) this.marker = new google.maps.Marker({ position: { lat, lng }, map: this.map });
+  }
+
+  // Reverse-geocodes the given coordinates and auto-fills the address and district fields.
+  private async reverseGeocode(lat: number, lng: number): Promise<void> {
+    if (!this.geocoder) return;
+    this.isGeocoding = true;
+    const location: google.maps.LatLngLiteral = { lat, lng };
+    try {
+      const [enResp, tcResp] = await Promise.all([
+        this.geocoder.geocode({ location, language: 'en' } as google.maps.GeocoderRequest),
+        this.geocoder.geocode({ location, language: 'zh-TW' } as google.maps.GeocoderRequest)
+      ]);
+      const enFormatted = enResp.results?.[0]?.formatted_address ?? '';
+      this.form.Address_EN = enFormatted.replace(/,\s*Hong Kong(\s*SAR)?\s*$/i, '').trim();
+      const tcFormatted = tcResp.results?.[0]?.formatted_address ?? '';
+      this.form.Address_TC = tcFormatted.replace(/,\s*香港\s*$/i, '').trim();
+      const enComponents = enResp.results?.[0]?.address_components ?? [];
+      const adminL2 = enComponents.find(c => c.types.includes('administrative_area_level_2'));
+      if (adminL2) {
+        let name = adminL2.long_name.replace(/\s+District$/i, '').trim();
+        if (/^central\s+and\s+western$/i.test(name)) name = 'Central/Western';
+        const matched = this.districts.find(d => d.en.toLowerCase() === name.toLowerCase());
+        if (matched) {
+          this.form.District_EN = matched.en;
+          this.form.District_TC = matched.tc;
+        } else {
+          void this.showToast(this.translations.noDistrictMatch[this.currentLanguage], 'warning');
+        }
+      }
+    } catch {
+      void this.showToast(this.translations.geocodingFailed[this.currentLanguage], 'warning');
+    } finally {
+      this.isGeocoding = false;
+    }
   }
 
   // Clears the selected map location from both the form and visible marker.
@@ -329,6 +412,11 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
 
   // Releases Google Maps objects so modal teardown does not leave stale DOM references.
   private destroyMap(): void {
+    if (this.autocomplete) {
+      google.maps.event.clearInstanceListeners(this.autocomplete);
+      this.autocomplete = null;
+    }
+    this.geocoder = null;
     if (this.marker) {
       this.marker.setMap(null);
       this.marker = null;
@@ -419,12 +507,16 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     await alert.present();
   }
 
-  // Opens the Ionic time picker for a specific weekday boundary.
-  openTimePicker(day: string, boundary: TimeBoundary): void {
-    const parsedHours = this.parseOpeningHoursValue(this.form.Opening_Hours[day]);
+  // Opens the Ionic time picker for a specific weekday boundary, or for the bulk quick-set (day === null).
+  openTimePicker(day: string | null, boundary: TimeBoundary): void {
     this.activeTimePickerDay = day;
     this.activeTimePickerBoundary = boundary;
-    this.activeTimePickerValue = boundary === 'open' ? parsedHours.open : parsedHours.close;
+    if (day === null) {
+      this.activeTimePickerValue = boundary === 'open' ? this.bulkHours.open : this.bulkHours.close;
+    } else {
+      const parsedHours = this.parseOpeningHoursValue(this.form.Opening_Hours[day]);
+      this.activeTimePickerValue = boundary === 'open' ? parsedHours.open : parsedHours.close;
+    }
     this.isTimePickerOpen = true;
   }
 
@@ -435,11 +527,16 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     this.activeTimePickerBoundary = null;
   }
 
-  // Receives the Ionic datetime value and writes a normalised "HH:MM-HH:MM" range into the form.
+  // Receives the Ionic datetime value and writes it to the bulk hours or to a specific day's range.
   onTimePickerChange(event: Event): void {
-    if (!this.activeTimePickerDay || !this.activeTimePickerBoundary) return;
+    if (!this.activeTimePickerBoundary) return;
     const value = this.extractTimeValue((event as CustomEvent).detail?.value);
     if (!value) return;
+    if (this.activeTimePickerDay === null) {
+      if (this.activeTimePickerBoundary === 'open') this.bulkHours.open = value;
+      else this.bulkHours.close = value;
+      return;
+    }
     const parsedHours = this.parseOpeningHoursValue(this.form.Opening_Hours[this.activeTimePickerDay]);
     const openingTime = this.activeTimePickerBoundary === 'open' ? value : parsedHours.open;
     const closingTime = this.activeTimePickerBoundary === 'close' ? value : parsedHours.close;
@@ -460,6 +557,57 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   // Removes the weekday entry so the store page displays it as not set.
   clearOpeningHours(day: string): void {
     delete this.form.Opening_Hours[day];
+  }
+
+  // Applies the bulk quick-set time range to all, weekday, or weekend days.
+  applyBulkHours(target: 'all' | 'weekdays' | 'weekend'): void {
+    const range = `${this.bulkHours.open}-${this.bulkHours.close}`;
+    for (const day of this.getTargetDays(target)) {
+      this.form.Opening_Hours[day] = range;
+    }
+  }
+
+  // Marks all, weekday, or weekend days as Closed.
+  applyBulkClosed(target: 'all' | 'weekdays' | 'weekend'): void {
+    for (const day of this.getTargetDays(target)) {
+      this.form.Opening_Hours[day] = 'Closed';
+    }
+  }
+
+  // Resets all seven days to "not set".
+  clearAllHours(): void {
+    this.form.Opening_Hours = {};
+  }
+
+  // Shows an action sheet letting the owner copy a day's schedule to other days.
+  async copyDayHours(sourceDay: string): Promise<void> {
+    const lang = this.currentLanguage;
+    const value = this.form.Opening_Hours[sourceDay];
+    const applyTo = (days: string[]) => {
+      for (const day of days) {
+        if (day === sourceDay) continue;
+        if (value !== undefined) this.form.Opening_Hours[day] = value;
+        else delete this.form.Opening_Hours[day];
+      }
+    };
+    const alert = await this.alertController.create({
+      header: this.translations.copyHoursTitle[lang],
+      message: this.translations.copyHoursMsg[lang],
+      buttons: [
+        { text: this.translations.copyToAll[lang], handler: () => applyTo(this.weekdays.map(d => d.en)) },
+        { text: this.translations.copyToWeekdays[lang], handler: () => applyTo(this.getTargetDays('weekdays')) },
+        { text: this.translations.copyToWeekend[lang], handler: () => applyTo(this.getTargetDays('weekend')) },
+        { text: this.translations.cancel[lang], role: 'cancel' }
+      ]
+    });
+    await alert.present();
+  }
+
+  // Returns the day-name strings for a bulk target group.
+  private getTargetDays(target: 'all' | 'weekdays' | 'weekend'): string[] {
+    if (target === 'weekdays') return ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    if (target === 'weekend') return ['Saturday', 'Sunday'];
+    return this.weekdays.map(d => d.en);
   }
 
   // Returns true when the weekday is explicitly marked as closed.

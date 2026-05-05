@@ -45,15 +45,17 @@
     <ion-item>
       <ion-input [(ngModel)]="form.Address_EN"
         [placeholder]="(lang$ | async) === 'TC' ? translations.addrEnPlaceholder.TC : translations.addrEnPlaceholder.EN"
+        [disabled]="isGeocoding"
         type="text"></ion-input>
     </ion-item>
     <ion-item>
       <ion-input [(ngModel)]="form.Address_TC"
         [placeholder]="(lang$ | async) === 'TC' ? translations.addrTcPlaceholder.TC : translations.addrTcPlaceholder.EN"
+        [disabled]="isGeocoding"
         type="text"></ion-input>
     </ion-item>
 
-    <ion-item button (click)="showDistrictSelector()">
+    <ion-item button [disabled]="isGeocoding" (click)="showDistrictSelector()">
       <ion-label>
         <p class="field-label">{{ (lang$ | async) === 'TC' ? '地區' : 'District' }}</p>
         <p class="field-value" [class.placeholder]="!form.District_EN">
@@ -97,7 +99,25 @@
     </div>
 
     <div class="map-container">
+      <!-- Places Autocomplete search bar -->
+      <div class="location-search-bar" [class.is-geocoding]="isGeocoding">
+        <ion-icon name="search-outline" class="search-icon"></ion-icon>
+        <input
+          id="restaurant-location-search"
+          type="text"
+          autocomplete="off"
+          [(ngModel)]="locationSearchQuery"
+          [placeholder]="(lang$ | async) === 'TC' ? translations.locationSearch.TC : translations.locationSearch.EN"
+          [disabled]="isGeocoding"
+          class="location-search-input"
+        />
+        <div *ngIf="isGeocoding" class="geocoding-indicator">
+          <ion-spinner name="crescent" color="primary"></ion-spinner>
+        </div>
+      </div>
+
       <div id="restaurant-form-map" class="map"></div>
+
       <p class="map-hint">
         <ion-icon name="location-outline"></ion-icon>
         {{ (lang$ | async) === 'TC' ? translations.clickMapToSet.TC : translations.clickMapToSet.EN }}
@@ -113,7 +133,49 @@
     <!-- Opening Hours -->
     <div class="section-header">
       <h3>{{ (lang$ | async) === 'TC' ? translations.sectionHours.TC : translations.sectionHours.EN }}</h3>
-      <p class="section-hint">{{ (lang$ | async) === 'TC' ? '使用時間選擇器設定，無需手動輸入' : 'Use the time picker, no manual typing needed' }}</p>
+      <p class="section-hint">{{ (lang$ | async) === 'TC' ? translations.quickSetHint.TC : translations.quickSetHint.EN }}</p>
+    </div>
+
+    <!-- Bulk Quick-Set Panel -->
+    <div class="quick-hours-panel">
+      <p class="quick-hours-title">
+        <ion-icon name="flash-outline"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? translations.quickSet.TC : translations.quickSet.EN }}
+      </p>
+      <div class="quick-hours-times">
+        <div class="quick-time-field">
+          <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }}</span>
+          <ion-button fill="outline" size="small" (click)="openTimePicker(null, 'open')">
+            <ion-icon name="time-outline" slot="start"></ion-icon>
+            {{ bulkHours.open }}
+          </ion-button>
+        </div>
+        <ion-icon name="arrow-forward-outline" color="medium" class="arrow-icon"></ion-icon>
+        <div class="quick-time-field">
+          <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.to.TC : translations.to.EN }}</span>
+          <ion-button fill="outline" size="small" (click)="openTimePicker(null, 'close')">
+            <ion-icon name="time-outline" slot="start"></ion-icon>
+            {{ bulkHours.close }}
+          </ion-button>
+        </div>
+      </div>
+      <div class="quick-hours-actions">
+        <ion-button fill="solid" size="small" (click)="applyBulkHours('all')">
+          {{ (lang$ | async) === 'TC' ? translations.applyToAll.TC : translations.applyToAll.EN }}
+        </ion-button>
+        <ion-button fill="solid" size="small" (click)="applyBulkHours('weekdays')">
+          {{ (lang$ | async) === 'TC' ? translations.applyToWeekdays.TC : translations.applyToWeekdays.EN }}
+        </ion-button>
+        <ion-button fill="solid" size="small" (click)="applyBulkHours('weekend')">
+          {{ (lang$ | async) === 'TC' ? translations.applyToWeekend.TC : translations.applyToWeekend.EN }}
+        </ion-button>
+        <ion-button fill="outline" size="small" color="medium" (click)="applyBulkClosed('all')">
+          {{ (lang$ | async) === 'TC' ? translations.markAllClosed.TC : translations.markAllClosed.EN }}
+        </ion-button>
+        <ion-button fill="clear" size="small" color="danger" (click)="clearAllHours()">
+          {{ (lang$ | async) === 'TC' ? translations.clearAll.TC : translations.clearAll.EN }}
+        </ion-button>
+      </div>
     </div>
 
     <ion-list class="hours-list">
@@ -125,6 +187,12 @@
               {{ getHoursDisplay(day.en) }}
             </p>
           </ion-label>
+          <ion-button fill="clear" size="small" color="medium" class="copy-btn"
+            [disabled]="!hasOpeningHours(day.en)"
+            (click)="copyDayHours(day.en)"
+            [title]="(lang$ | async) === 'TC' ? translations.copyHoursTitle.TC : translations.copyHoursTitle.EN">
+            <ion-icon name="copy-outline" slot="icon-only"></ion-icon>
+          </ion-button>
           <ion-toggle [checked]="isDayClosed(day.en)" (ionChange)="onDayClosedChange($event, day.en)">
             {{ (lang$ | async) === 'TC' ? translations.closed.TC : translations.closed.EN }}
           </ion-toggle>

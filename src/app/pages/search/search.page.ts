@@ -151,6 +151,7 @@ export class SearchPage implements OnInit, OnDestroy {
   public viewMode: 'list' | 'map' = 'list';
   public isNearMeActive: boolean = false;
   public isNearMeLoading: boolean = false;
+  public isMapLoadingMore: boolean = false;
   public nearbyRestaurants: (Restaurant & { distance: number })[] = [];
   public userLocation: Coordinates | null = null;
   private map: google.maps.Map | null = null;
@@ -611,6 +612,20 @@ export class SearchPage implements OnInit, OnDestroy {
   public getKeywordCount(restaurant: Restaurant): number {
     const keywords = this.currentLang === 'TC' ? restaurant.Keyword_TC : restaurant.Keyword_EN;
     return keywords ? keywords.length : 0;
+  }
+
+  // Number of results not yet loaded (used by the map view Load More button label)
+  public get mapRemainingCount(): number {
+    return Math.max(0, this.totalResults - this.restaurants.length);
+  }
+
+  // Load the next Algolia page and append new markers to the map without re-initialising it
+  public async loadMoreMapResults(): Promise<void> {
+    if (this.isMapLoadingMore || this.currentPage >= this.totalPages - 1) return;
+    this.isMapLoadingMore = true;
+    this.currentPage++;
+    await this.performSearch(true);
+    this.isMapLoadingMore = false;
   }
 
   // Infinite scroll handler

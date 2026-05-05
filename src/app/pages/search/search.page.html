@@ -145,6 +145,20 @@
     <!-- Map View -->
     <div class="map-view-container" *ngIf="viewMode === 'map' && !isLoading && !isNearMeLoading">
       <div id="search-map" class="search-map"></div>
+      <!-- Floating Load More button — only shown when Algolia has more pages and Near Me is inactive -->
+      <button
+        *ngIf="!isNearMeActive && currentPage < totalPages - 1"
+        class="map-load-more-btn"
+        [disabled]="isMapLoadingMore"
+        (click)="loadMoreMapResults()">
+        <img *ngIf="isMapLoadingMore" src="assets/icon/Eclipse.gif" alt="Loading" class="map-load-more-spinner">
+        <ion-icon *ngIf="!isMapLoadingMore" name="layers-outline"></ion-icon>
+        <span>{{
+          (lang$ | async) === 'TC'
+            ? '載入更多 (' + mapRemainingCount + ' 間)'
+            : 'Load More (' + mapRemainingCount + ' more)'
+        }}</span>
+      </button>
     </div>
 
     <!-- Restaurant Results Grid -->
