@@ -4,7 +4,7 @@ import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, C
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
-import { take, takeUntil, tap, finalize } from 'rxjs/operators';
+import { take, takeUntil, finalize } from 'rxjs/operators';
 import { Restaurant, MenuItem, OpeningHours } from '../../services/restaurants.service';
 import { Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
 import { UserProfile } from '../../services/user.service';
@@ -129,6 +129,12 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   private pendingMenuDeepLink: boolean = false;
   // Modal guard that prevents repeated deep-link query emissions from opening duplicate menu modals
   private isMenuModalOpen: boolean = false;
+  // Stores the active route restaurant ID so Ionic route-cache re-entry can avoid stale loading state.
+  private activeRestaurantId: string = '';
+  // Tracks whether the view has rendered at least once before map DOM-dependent work runs.
+  private hasViewInitialised: boolean = false;
+  // Records when the current primary restaurant request started so stale loading can be retried.
+  private activeLoadStartedAt: number = 0;
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -168,6 +174,11 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     // Try to get user's location for distance calculation
     this.feature.location.getCurrentLocation().pipe(takeUntil(this.destroy$)).subscribe();
 
+    // Watch route parameters because Ionic keeps pages alive and ngAfterViewInit will not rerun on cached re-entry.
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(routeParameters => {
+      this.loadRestaurantForRoute(routeParameters.get('id') || '');
+    });
+
     // Watch route query parameters so deep links can open the full menu after this cached page re-enters.
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(queryParameters => {
       const tab = queryParameters.get('tab');
@@ -182,26 +193,96 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /// When view initialises, fetch restaurant ID and load all data
+  /// When view initialises, allow DOM-dependent map work that may have been queued by the route subscription.
   ngAfterViewInit(): void {
-    try {
-      const restaurantId = this.route.snapshot.paramMap.get('id') || '';
-      if (!restaurantId) {
-        this.errorMessage = 'Missing restaurant ID';
-        this.isLoading = false;
-        this.changeDetectionReference.markForCheck();
-        console.error('RestaurantPage: No restaurant ID provided');
-        return;
-      }
+    this.hasViewInitialised = true;
+    if (this.restaurant) setTimeout(() => this.initialiseMapIfNeeded(), 20);
+  }
 
-      console.log('RestaurantPage: ngAfterViewInit called with ID:', restaurantId);
-      this.loadRestaurantData(restaurantId);
-    } catch (error) {
-      console.error('RestaurantPage: Error in ngAfterViewInit:', error);
-      this.errorMessage = 'An unexpected error occurred';
+  /// Revalidates state whenever Ionic brings this cached page back to the foreground.
+  ionViewWillEnter(): void {
+    const restaurantId = this.route.snapshot.paramMap.get('id') || '';
+    if (!restaurantId) {
+      this.errorMessage = 'Missing restaurant ID';
       this.isLoading = false;
       this.changeDetectionReference.markForCheck();
+      return;
     }
+
+    if (this.activeRestaurantId !== restaurantId || !this.restaurant) {
+      this.loadRestaurantForRoute(restaurantId);
+      return;
+    }
+
+    this.isLoading = false;
+    this.errorMessage = null;
+    this.emitRestaurantPageTitle(this.restaurant);
+    this.updatePageShareData();
+    this.changeDetectionReference.markForCheck();
+    setTimeout(() => this.initialiseMapIfNeeded(), 20);
+  }
+
+  /// Loads the route restaurant once per ID and restores cached-page state when the same ID re-enters.
+  private loadRestaurantForRoute(restaurantId: string): void {
+    if (!restaurantId) {
+      this.activeRestaurantId = '';
+      this.restaurant = null;
+      this.errorMessage = 'Missing restaurant ID';
+      this.isLoading = false;
+      this.changeDetectionReference.markForCheck();
+      console.error('RestaurantPage: No restaurant ID provided');
+      return;
+    }
+
+    if (this.activeRestaurantId === restaurantId && !this.restaurant && this.isLoading && Date.now() - this.activeLoadStartedAt < 15000) return;
+
+    if (this.activeRestaurantId === restaurantId && this.restaurant) {
+      this.isLoading = false;
+      this.errorMessage = null;
+      this.emitRestaurantPageTitle(this.restaurant);
+      this.updatePageShareData();
+      this.changeDetectionReference.markForCheck();
+      if (this.hasViewInitialised) setTimeout(() => this.initialiseMapIfNeeded(), 20);
+      return;
+    }
+
+    this.activeRestaurantId = restaurantId;
+    this.activeLoadStartedAt = Date.now();
+    this.resetRestaurantViewState();
+    console.log('RestaurantPage: Loading route restaurant ID:', restaurantId);
+    this.loadRestaurantData(restaurantId);
+  }
+
+  /// Clears restaurant-specific state before loading a different route ID.
+  private resetRestaurantViewState(): void {
+    this.restaurant = null;
+    this.menuItems = [];
+    this.menuPreviewItems = [];
+    this.reviews = [];
+    this.reviewStats = null;
+    this.distanceResult = null;
+    this.errorMessage = null;
+    this.isLoading = true;
+    this.isMenuLoading = false;
+    this.isReviewsLoading = false;
+    this.menuSearchQuery = '';
+    this.pendingMenuDeepLink = false;
+    this.canClaimRestaurant = false;
+    this.isCurrentUserOwner = false;
+    if (this.marker) {
+      this.marker.setMap(null);
+      this.marker = null;
+    }
+    if (this.map) this.map = null;
+    this.changeDetectionReference.markForCheck();
+  }
+
+  /// Reloads the current route restaurant after a visible loading error.
+  reloadCurrentRestaurant(): void {
+    const restaurantId = this.route.snapshot.paramMap.get('id') || this.activeRestaurantId;
+    this.activeRestaurantId = '';
+    this.activeLoadStartedAt = 0;
+    this.loadRestaurantForRoute(restaurantId);
   }
 
   /// Load all restaurant data including basic info, menu, and reviews
@@ -223,12 +304,14 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
 
         if (!restaurant) {
           console.error('RestaurantPage: Restaurant not found with ID:', restaurantId);
+          this.activeLoadStartedAt = 0;
           this.errorMessage = 'Restaurant not found';
           this.isLoading = false;
           this.changeDetectionReference.markForCheck();
           return;
         }
 
+        this.activeLoadStartedAt = 0;
         this.restaurant = restaurant;
         this.isRestaurantSaved = this.savedRestaurantsService.isRestaurantSaved(restaurant.id);
         console.log('RestaurantPage: Restaurant loaded successfully:', restaurant.Name_EN);
@@ -257,6 +340,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (error: any) => {
         console.error('RestaurantPage: Error loading restaurant:', error);
+        this.activeLoadStartedAt = 0;
         this.errorMessage = error?.message || 'Failed to load restaurant';
         this.isLoading = false;
         this.changeDetectionReference.markForCheck();

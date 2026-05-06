@@ -17,7 +17,9 @@ import { firstValueFrom } from 'rxjs';
           </ion-button>
         </ion-buttons>
         <ion-buttons slot="end">
-          <ion-button (click)="close()">{{ lang === 'TC' ? '關閉' : 'Close' }}</ion-button>
+          <ion-button (click)="close()" fill="clear" [attr.aria-label]="lang === 'TC' ? '關閉地圖' : 'Close map'">
+            <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+          </ion-button>
         </ion-buttons>
       </ion-toolbar>
 

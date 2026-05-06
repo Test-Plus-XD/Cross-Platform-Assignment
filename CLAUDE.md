@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-05-06 | **Version:** 1.17.52 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-05-06 | **Version:** 1.17.53 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -2003,5 +2003,8 @@ Follow-up APK validation confirmed the durable root cause was the shared `Restau
   Opening-hours ordering on the restaurant detail page is also consolidated into v1.17.51: `restaurant.page.html/ts` now uses the shared `Weekdays` constant with full/abbreviated EN and TC key normalisation so partial schedules display Monday-to-Sunday instead of alphabetically.
 
 - **v1.17.52** (2026-05-06): **Restaurant booking modal dark-mode datetime styling.** `src/app/pages/restaurant/booking-modal.component.scss` now themes the inline Ionic `ion-datetime` used by the Restaurant page booking modal with app card/background tokens, themed wheel fade/highlight variables, and shadow-part overrides for calendar days, month/year controls, time controls, wheel items, active/today states, and disabled dates. This prevents the booking picker from falling back to Ionic's bright white surface while the surrounding reservation modal is in dark mode. Verified with `npx ng build --configuration development`; only the existing CommonJS optimisation warnings remain.
+
+
+- **v1.17.53** (2026-05-06): **Restaurant booking modal contrast, map close icon, and cached re-entry guard.** `src/app/pages/restaurant/booking-modal.component.html/scss` now uses the Ionic success colour for Confirm Booking, keeps the guest count on `--ion-text-color`, and adds datetime host variables for Ionic's internal time button surface so the inline date-time picker no longer falls back to a bright white time button in dark mode. `src/app/pages/restaurant/map-modal.component.ts` replaces the navigation modal's top-right text close action with an icon-only cross and accessible label. `src/app/pages/restaurant/restaurant.page.ts/html` now loads restaurant data from route parameter subscriptions rather than relying on `ngAfterViewInit`, restores title/share/map state in `ionViewWillEnter`, and provides a retry method for visible errors. This addresses the suspected Ionic in-app route-cache problem where navigating from Search back to the same Restaurant page could reuse the cached component without rerunning the original view initialisation path, leaving stale `isLoading` state visible.
 
 - **Consolidation note (<= v1.17.29):** Historical entries before **v1.17.30** are now treated as the consolidated legacy log block; keep new session updates at v1.17.30+ in chronological order.
