@@ -13,7 +13,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="form-content">
 
   <div class="loading-container" *ngIf="isPageLoading">
     <img src="assets/icon/Eclipse.gif" alt="Loading" class="loading-spinner">
@@ -45,14 +45,12 @@
     <ion-item>
       <ion-input [(ngModel)]="form.Address_EN"
         [placeholder]="(lang$ | async) === 'TC' ? translations.addrEnPlaceholder.TC : translations.addrEnPlaceholder.EN"
-        [disabled]="isGeocoding"
-        type="text"></ion-input>
+        [disabled]="isGeocoding" type="text"></ion-input>
     </ion-item>
     <ion-item>
       <ion-input [(ngModel)]="form.Address_TC"
         [placeholder]="(lang$ | async) === 'TC' ? translations.addrTcPlaceholder.TC : translations.addrTcPlaceholder.EN"
-        [disabled]="isGeocoding"
-        type="text"></ion-input>
+        [disabled]="isGeocoding" type="text"></ion-input>
     </ion-item>
 
     <ion-item button [disabled]="isGeocoding" (click)="showDistrictSelector()">
@@ -85,8 +83,8 @@
         type="tel"></ion-input>
     </ion-item>
     <ion-item>
-      <ion-input [(ngModel)]="form.Contacts.Email"
-        [placeholder]="(lang$ | async) === 'TC' ? '電子郵件' : 'Email address'" type="email"></ion-input>
+      <ion-input [(ngModel)]="form.Contacts.Email" [placeholder]="(lang$ | async) === 'TC' ? '電子郵件' : 'Email address'"
+        type="email"></ion-input>
     </ion-item>
     <ion-item>
       <ion-input [(ngModel)]="form.Contacts.Website" [placeholder]="(lang$ | async) === 'TC' ? '網址' : 'Website URL'"
@@ -102,15 +100,9 @@
       <!-- Places Autocomplete search bar -->
       <div class="location-search-bar" [class.is-geocoding]="isGeocoding">
         <ion-icon name="search-outline" class="search-icon"></ion-icon>
-        <input
-          id="restaurant-location-search"
-          type="text"
-          autocomplete="off"
-          [(ngModel)]="locationSearchQuery"
+        <input id="restaurant-location-search" type="text" autocomplete="off" [(ngModel)]="locationSearchQuery"
           [placeholder]="(lang$ | async) === 'TC' ? translations.locationSearch.TC : translations.locationSearch.EN"
-          [disabled]="isGeocoding"
-          class="location-search-input"
-        />
+          [disabled]="isGeocoding" class="location-search-input" />
         <div *ngIf="isGeocoding" class="geocoding-indicator">
           <ion-spinner name="crescent" color="primary"></ion-spinner>
         </div>
@@ -133,18 +125,20 @@
     <!-- Opening Hours -->
     <div class="section-header">
       <h3>{{ (lang$ | async) === 'TC' ? translations.sectionHours.TC : translations.sectionHours.EN }}</h3>
-      <p class="section-hint">{{ (lang$ | async) === 'TC' ? translations.quickSetHint.TC : translations.quickSetHint.EN }}</p>
+      <p class="section-hint">{{ (lang$ | async) === 'TC' ? translations.quickSetHint.TC : translations.quickSetHint.EN
+        }}</p>
     </div>
 
     <!-- Bulk Quick-Set Panel -->
     <div class="quick-hours-panel">
       <p class="quick-hours-title">
-        <ion-icon name="flash-outline"></ion-icon>
+        <ion-icon name="timer-outline"></ion-icon>
         {{ (lang$ | async) === 'TC' ? translations.quickSet.TC : translations.quickSet.EN }}
       </p>
       <div class="quick-hours-times">
         <div class="quick-time-field">
-          <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }}</span>
+          <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN
+            }}</span>
           <ion-button fill="outline" size="small" (click)="openTimePicker(null, 'open')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ bulkHours.open }}
@@ -187,8 +181,7 @@
               {{ getHoursDisplay(day.en) }}
             </p>
           </ion-label>
-          <ion-button fill="clear" size="small" color="medium" class="copy-btn"
-            [disabled]="!hasOpeningHours(day.en)"
+          <ion-button fill="clear" size="small" color="medium" class="copy-btn" [disabled]="!hasOpeningHours(day.en)"
             (click)="copyDayHours(day.en)"
             [title]="(lang$ | async) === 'TC' ? translations.copyHoursTitle.TC : translations.copyHoursTitle.EN">
             <ion-icon name="copy-outline" slot="icon-only"></ion-icon>
@@ -199,15 +192,19 @@
         </div>
 
         <div class="time-button-row" [class.disabled]="isDayClosed(day.en)">
-          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)" (click)="openTimePicker(day.en, 'open')">
+          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)"
+            (click)="openTimePicker(day.en, 'open')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
-            {{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }} {{ getOpeningTimeLabel(day.en) }}
+            {{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }} {{ getOpeningTimeLabel(day.en)
+            }}
           </ion-button>
-          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)" (click)="openTimePicker(day.en, 'close')">
+          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)"
+            (click)="openTimePicker(day.en, 'close')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ (lang$ | async) === 'TC' ? translations.to.TC : translations.to.EN }} {{ getClosingTimeLabel(day.en) }}
           </ion-button>
-          <ion-button fill="clear" size="small" color="medium" *ngIf="hasOpeningHours(day.en)" (click)="clearOpeningHours(day.en)">
+          <ion-button fill="clear" size="small" color="medium" *ngIf="hasOpeningHours(day.en)"
+            (click)="clearOpeningHours(day.en)">
             {{ (lang$ | async) === 'TC' ? translations.clearHours.TC : translations.clearHours.EN }}
           </ion-button>
         </div>
@@ -253,7 +250,8 @@
       <div class="image-upload-panel">
         <div class="current-image-preview" *ngIf="restaurant?.ImageUrl && !restaurantImagePreview">
           <img [src]="restaurant!.ImageUrl" alt="Restaurant Image">
-          <p class="image-label">{{ (lang$ | async) === 'TC' ? translations.currentImage.TC : translations.currentImage.EN }}</p>
+          <p class="image-label">{{ (lang$ | async) === 'TC' ? translations.currentImage.TC :
+            translations.currentImage.EN }}</p>
         </div>
 
         <div class="image-preview-container" *ngIf="restaurantImagePreview">
@@ -263,14 +261,16 @@
           </ion-button>
         </div>
 
-        <input type="file" id="restaurant-form-image-input" accept="image/*" (change)="onRestaurantImageSelected($event)" style="display: none;">
+        <input type="file" id="restaurant-form-image-input" accept="image/*"
+          (change)="onRestaurantImageSelected($event)" style="display: none;">
 
         <ion-button expand="block" fill="outline" (click)="clickRestaurantImageUploadButton()">
           <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
           {{ (lang$ | async) === 'TC' ? translations.selectImage.TC : translations.selectImage.EN }}
         </ion-button>
 
-        <ion-button expand="block" [disabled]="!selectedRestaurantImage || isUploadingImage" (click)="uploadRestaurantImage()">
+        <ion-button expand="block" [disabled]="!selectedRestaurantImage || isUploadingImage"
+          (click)="uploadRestaurantImage()">
           <ion-icon name="checkmark-outline" slot="start"></ion-icon>
           {{ (lang$ | async) === 'TC' ? translations.uploadImage.TC : translations.uploadImage.EN }}
         </ion-button>
@@ -284,31 +284,25 @@
     <div class="bottom-spacer"></div>
   </ng-container>
 
-  <ion-modal [isOpen]="isTimePickerOpen" [keepContentsMounted]="true" (didDismiss)="closeTimePicker()" class="time-picker-modal">
-    <ng-template>
-      <ion-content class="ion-padding time-picker-content">
-        <ion-datetime mode="md" presentation="time" [value]="activeTimePickerValue" locale="en-GB" hour-cycle="h23"
-          [showDefaultButtons]="true"
-          [doneText]="(lang$ | async) === 'TC' ? translations.done.TC : translations.done.EN"
-          [cancelText]="(lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN"
-          (ionChange)="onTimePickerChange($event)">
-          <span slot="title">{{ activeTimePickerTitle }}</span>
-        </ion-datetime>
-      </ion-content>
-    </ng-template>
-  </ion-modal>
-
 </ion-content>
+
+<!-- Inline time picker overlay — avoids nested ion-modal backdrop issues inside
+     a fullscreen parent modal. A position:fixed scrim + centred card replaces
+     the ion-modal so the backdrop renders correctly at all times. -->
+<div class="time-picker-overlay" *ngIf="isTimePickerOpen" (click)="closeTimePicker()">
+  <div class="time-picker-card" (click)="$event.stopPropagation()">
+    <p class="time-picker-title">{{ activeTimePickerTitle }}</p>
+    <ion-datetime mode="md" presentation="time" [value]="activeTimePickerValue" locale="en-GB" hour-cycle="h23"
+      [showDefaultButtons]="true" [doneText]="(lang$ | async) === 'TC' ? translations.done.TC : translations.done.EN"
+      [cancelText]="(lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN"
+      (ionChange)="onTimePickerChange($event)" (ionCancel)="closeTimePicker()">
+    </ion-datetime>
+  </div>
+</div>
 
 <ion-footer>
   <ion-toolbar>
-    <ion-button
-      expand="block"
-      color="success"
-      class="submit-btn"
-      [disabled]="isSaving"
-      (click)="save()"
-    >
+    <ion-button expand="block" color="success" class="submit-btn" [disabled]="isSaving" (click)="save()">
       <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
       {{ (lang$ | async) === 'TC' ? getSubmitLabel('TC') : getSubmitLabel('EN') }}
     </ion-button>

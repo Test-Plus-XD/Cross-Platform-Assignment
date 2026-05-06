@@ -130,8 +130,15 @@ export class DataService {
    * @param file - File to upload
    * @param fieldName - Form field name (default: 'image')
    * @param authToken - Optional authentication token to include in headers
+   * @param method - HTTP method to use for the upload endpoint
    */
-  uploadFile<T>(endpoint: string, file: File, fieldName: string = 'image', authToken?: string | null): Observable<T> {
+  uploadFile<T>(
+    endpoint: string,
+    file: File,
+    fieldName: string = 'image',
+    authToken?: string | null,
+    method: 'POST' | 'PUT' = 'POST'
+  ): Observable<T> {
     const url = `${this.apiUrl}${endpoint}`;
     const formData = new FormData();
     formData.append(fieldName, file);
@@ -145,9 +152,9 @@ export class DataService {
       headers['Authorization'] = `Bearer ${authToken}`;
     }
 
-    console.log('DataService: POST (file upload)', url);
+    console.log(`DataService: ${method} (file upload)`, url);
 
-    return this.http.post<T>(url, formData, { headers: new HttpHeaders(headers) }).pipe(
+    return this.http.request<T>(method, url, { body: formData, headers: new HttpHeaders(headers) }).pipe(
       catchError(this.handleError)
     );
   }

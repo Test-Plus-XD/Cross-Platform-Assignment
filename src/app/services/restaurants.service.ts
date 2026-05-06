@@ -2,7 +2,7 @@
 // This service handles CRUD operations and integrates with the Vercel API
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, BehaviorSubject } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { DataService } from './data.service';
 
@@ -479,20 +479,15 @@ export class RestaurantsService {
   }
 
   /// Upload menu item image.
-  /// Uploads the image and updates the menu item with the returned URL.
+  /// Uses the dedicated menu image endpoint so storage and Firestore updates stay server-side.
   uploadMenuItemImage(restaurantId: string, menuItemId: string, file: File, authToken: string): Observable<{ imageUrl: string }> {
     console.log('RestaurantsService: Uploading menu item image for:', menuItemId);
-    // Use the restaurant image endpoint to upload, then update the menu item
-    const uploadEndpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/image`;
+    const endpoint = `${this.restaurantsEndpoint}/${encodeURIComponent(restaurantId)}/menu/${encodeURIComponent(menuItemId)}/image`;
 
-    return this.dataService.uploadFile<{ imageUrl: string }>(uploadEndpoint, file, 'image', authToken).pipe(
-      switchMap(response => {
+    return this.dataService.uploadFile<{ imageUrl: string }>(endpoint, file, 'image', authToken, 'PUT').pipe(
+      tap(response => {
         console.log('RestaurantsService: Menu item image uploaded successfully:', response.imageUrl);
-        // Wait for the menu item update so parent refreshes see the final image URL.
-        return this.updateMenuItem(restaurantId, menuItemId, { imageUrl: response.imageUrl }).pipe(
-          tap(() => console.log('RestaurantsService: Menu item updated with new image URL')),
-          map(() => response)
-        );
+        this.menuCache.delete(restaurantId);
       }),
       catchError((err: any) => {
         console.error('RestaurantsService: uploadMenuItemImage error', err);

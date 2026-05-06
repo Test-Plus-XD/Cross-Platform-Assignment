@@ -210,7 +210,7 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
           Description_EN: item.Description_EN || null,
           Description_TC: item.Description_TC || null,
           price:          this.parsePrice(item.price),
-          imageUrl:       item.image          || null
+          imageUrl:       item.imageUrl || item.image || null
         });
       }
       return items;
@@ -226,7 +226,7 @@ export class BulkMenuImportModalComponent implements OnInit, OnDestroy {
           Description_EN: item.description_en || item.description || item.Description_EN || null,
           Description_TC: item.description_tc || item.Description_TC || null,
           price:          this.parsePrice(item.price),
-          imageUrl:       item.image || item.imageUrl               || null
+          imageUrl:       item.imageUrl || item.image               || null
         });
       }
       return items;

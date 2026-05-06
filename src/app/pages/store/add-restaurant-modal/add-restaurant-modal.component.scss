@@ -8,14 +8,23 @@
   min-height: 0;
 }
 
+// Matches the Store page's 1rem horizontal padding rhythm.
+// Vertical padding kept at 16px top/bottom for breathing room.
+ion-content.form-content {
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
 .section-header {
   padding: 20px 16px 8px;
 
   h3 {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    text-transform: none;
+    letter-spacing: 0;
     color: var(--ion-color-medium);
     margin: 0 0 2px;
   }
@@ -66,7 +75,9 @@ ion-item {
     border-bottom: 1px solid var(--ion-color-light-shade);
     transition: opacity 0.2s ease;
 
-    &.is-geocoding { opacity: 0.7; }
+    &.is-geocoding {
+      opacity: 0.7;
+    }
 
     .search-icon {
       flex-shrink: 0;
@@ -85,13 +96,22 @@ ion-item {
       color: var(--ion-text-color);
       caret-color: var(--ion-color-primary);
 
-      &::placeholder { color: var(--ion-color-medium); }
-      &:disabled { cursor: not-allowed; }
+      &::placeholder {
+        color: var(--ion-color-medium);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+      }
     }
 
     .geocoding-indicator {
       flex-shrink: 0;
-      ion-spinner { width: 18px; height: 18px; }
+
+      ion-spinner {
+        width: 18px;
+        height: 18px;
+      }
     }
   }
 
@@ -144,14 +164,16 @@ ion-item {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--ion-color-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: none;
+  letter-spacing: 0;
   margin: 0 0 12px;
 
-  ion-icon { font-size: 1rem; }
+  ion-icon {
+    font-size: 1.05rem;
+  }
 }
 
 .quick-hours-times {
@@ -169,10 +191,10 @@ ion-item {
   }
 
   .quick-time-label {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: var(--ion-color-medium);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    text-transform: none;
+    letter-spacing: 0;
   }
 
   .arrow-icon {
@@ -219,7 +241,9 @@ ion-item {
     height: 32px;
     opacity: 0.7;
 
-    &:not([disabled]):hover { opacity: 1; }
+    &:not([disabled]):hover {
+      opacity: 1;
+    }
   }
 
   ion-toggle {
@@ -244,21 +268,57 @@ ion-item {
   }
 }
 
-.time-picker-modal {
-  --width: min(92vw, 380px);
-  --height: auto;
-  --border-radius: 18px;
+.time-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  // Animate in
+  animation: overlay-fade-in 0.18s ease;
+}
 
-  &::part(content) {
-    overflow: hidden;
+@keyframes overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }
 
-.time-picker-content {
-  --padding-top: 16px;
-  --padding-bottom: 16px;
-  --padding-start: 16px;
-  --padding-end: 16px;
+.time-picker-card {
+  background: var(--ion-card-background);
+  border-radius: 18px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  width: min(92vw, 380px);
+  overflow: hidden;
+  animation: card-slide-up 0.2s ease;
+}
+
+@keyframes card-slide-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.time-picker-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+  margin: 14px 16px 0;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .image-upload-panel {

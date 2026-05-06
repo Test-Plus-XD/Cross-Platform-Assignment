@@ -284,19 +284,34 @@ html.dark .pac-container {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   font-family: var(--ion-font-family);
 }
+
 .pac-item {
   padding: 8px 12px;
   font-size: 0.875rem;
   cursor: pointer;
-  &:hover, &.pac-item-selected { background: var(--ion-color-light); }
+
+  &:hover,
+  &.pac-item-selected {
+    background: var(--ion-color-light);
+  }
 }
-.pac-item-query { font-size: 0.875rem; }
-.pac-matched { font-weight: 700; }
+
+.pac-item-query {
+  font-size: 0.875rem;
+}
+
+.pac-matched {
+  font-weight: 700;
+}
+
 html.dark .pac-container {
   background: var(--ion-card-background);
   border-color: rgba(255, 255, 255, 0.1);
+
   .pac-item:hover,
-  .pac-item.pac-item-selected { background: rgba(255, 255, 255, 0.07); }
+  .pac-item.pac-item-selected {
+    background: rgba(255, 255, 255, 0.07);
+  }
 }
 
 /* === COMPONENT-LEVEL THEMING === */

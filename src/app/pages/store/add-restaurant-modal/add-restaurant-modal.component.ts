@@ -155,7 +155,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
 
-  constructor() {}
+  constructor() { }
 
   // Initialises language state and prepares edit data when the modal opens in edit mode.
   ngOnInit(): void {
@@ -528,6 +528,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   }
 
   // Receives the Ionic datetime value and writes it to the bulk hours or to a specific day's range.
+  // Closes the overlay after committing — with showDefaultButtons=true, ionChange fires on Done tap.
   onTimePickerChange(event: Event): void {
     if (!this.activeTimePickerBoundary) return;
     const value = this.extractTimeValue((event as CustomEvent).detail?.value);
@@ -535,12 +536,13 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     if (this.activeTimePickerDay === null) {
       if (this.activeTimePickerBoundary === 'open') this.bulkHours.open = value;
       else this.bulkHours.close = value;
-      return;
+    } else {
+      const parsedHours = this.parseOpeningHoursValue(this.form.Opening_Hours[this.activeTimePickerDay]);
+      const openingTime = this.activeTimePickerBoundary === 'open' ? value : parsedHours.open;
+      const closingTime = this.activeTimePickerBoundary === 'close' ? value : parsedHours.close;
+      this.form.Opening_Hours[this.activeTimePickerDay] = `${openingTime}-${closingTime}`;
     }
-    const parsedHours = this.parseOpeningHoursValue(this.form.Opening_Hours[this.activeTimePickerDay]);
-    const openingTime = this.activeTimePickerBoundary === 'open' ? value : parsedHours.open;
-    const closingTime = this.activeTimePickerBoundary === 'close' ? value : parsedHours.close;
-    this.form.Opening_Hours[this.activeTimePickerDay] = `${openingTime}-${closingTime}`;
+    this.closeTimePicker();
   }
 
   // Marks a weekday as closed or restores a default editable time range.
