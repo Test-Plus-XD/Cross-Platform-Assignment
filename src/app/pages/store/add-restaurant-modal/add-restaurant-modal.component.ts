@@ -276,7 +276,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
         Email: restaurant.Contacts?.Email || '',
         Website: restaurant.Contacts?.Website || ''
       },
-      Payments: restaurant.Payments || [],
+      Payments: this.normalisePaymentMethodsToEnglish(restaurant.Payments || []),
       Opening_Hours: this.convertOpeningHoursToStringMap(restaurant.Opening_Hours)
     };
     if (restaurant.Latitude != null && restaurant.Longitude != null) this.mapMarker = { lat: restaurant.Latitude, lng: restaurant.Longitude };
@@ -499,7 +499,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
         {
           text: 'OK',
           handler: (values: string[]) => {
-            this.form.Payments = values;
+            this.form.Payments = this.normalisePaymentMethodsToEnglish(values);
           }
         }
       ]
@@ -693,9 +693,28 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
   getPaymentDisplay(lang: 'EN' | 'TC'): string {
     if (!this.form.Payments.length) return this.translations.notSelected[lang];
     return this.form.Payments.map(code => {
-      const paymentMethod = this.paymentMethods.find(method => method.en === code);
+      const paymentCode = this.normalisePaymentMethodToEnglish(code);
+      const paymentMethod = this.paymentMethods.find(method => method.en === paymentCode);
       return paymentMethod ? (lang === 'TC' ? paymentMethod.tc : paymentMethod.en) : code;
     }).join(', ');
+  }
+
+  // Converts selected payment labels back to the English API value so storage remains language-neutral.
+  private normalisePaymentMethodsToEnglish(values: string[] | null | undefined): string[] {
+    if (!values?.length) return [];
+    const normalisedValues = values
+      .map(value => this.normalisePaymentMethodToEnglish(value))
+      .filter(value => value.trim().length > 0);
+    return Array.from(new Set(normalisedValues));
+  }
+
+  // Resolves either an English or Traditional Chinese payment label to the English constant value.
+  private normalisePaymentMethodToEnglish(value: string): string {
+    const trimmedValue = value.trim();
+    const matchedPaymentMethod = this.paymentMethods.find(paymentMethod =>
+      paymentMethod.en.toLowerCase() === trimmedValue.toLowerCase() || paymentMethod.tc === trimmedValue
+    );
+    return matchedPaymentMethod?.en ?? trimmedValue;
   }
 
   // Returns the weekday display label in the active language.
@@ -845,13 +864,15 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
     if (this.form.Contacts.Email.trim()) contacts['Email'] = this.form.Contacts.Email.trim();
     if (this.form.Contacts.Website.trim()) contacts['Website'] = this.form.Contacts.Website.trim();
     if (Object.keys(contacts).length) payload.Contacts = contacts;
-    if (this.form.Payments.length) payload.Payments = this.form.Payments;
+    const paymentMethods = this.normalisePaymentMethodsToEnglish(this.form.Payments);
+    if (paymentMethods.length) payload.Payments = paymentMethods;
     if (Object.keys(this.form.Opening_Hours).length) payload.Opening_Hours = this.form.Opening_Hours;
     return payload;
   }
 
   // Builds the edit payload by sending nulls for cleared values so the API can persist removals.
   private buildUpdatePayload(): Partial<Restaurant> {
+    const paymentMethods = this.normalisePaymentMethodsToEnglish(this.form.Payments);
     return {
       Name_EN: this.form.Name_EN.trim() || null,
       Name_TC: this.form.Name_TC.trim() || null,
@@ -869,7 +890,7 @@ export class AddRestaurantModalComponent implements OnInit, AfterViewInit, OnDes
         Email: this.form.Contacts.Email.trim() || null,
         Website: this.form.Contacts.Website.trim() || null
       },
-      Payments: this.form.Payments.length ? this.form.Payments : null,
+      Payments: paymentMethods.length ? paymentMethods : null,
       Opening_Hours: Object.keys(this.form.Opening_Hours).length ? this.form.Opening_Hours : null
     };
   }

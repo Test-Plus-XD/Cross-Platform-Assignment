@@ -70,14 +70,17 @@
   /* Base semantic palette for custom theming */
   // Background: Very light green with subtle warmth
   --bg: #f9fef9;
+  --bg-rgb: 249, 254, 249;
   // Text: Dark green-tinted grey for comfortable reading
   --text: #1a2e1f;
   // Muted text: Medium green-grey for secondary content
   --muted: #5d6b60;
   // Card background: Soft mint green
   --card-bg: #e8f5ea;
+  --card-bg-rgb: 232, 245, 234;
   // Surface: Clean white with hint of green
   --surface: #fafefb;
+  --surface-rgb: 250, 254, 251;
   // Accent: Primary purple for highlights
   --accent: #a746f0;
   // Border: Light green-tinted border
@@ -89,8 +92,10 @@
   --app-selection-green-surface: #f6fff7;
   /* Apply semantic palette to Ionic core variables */
   --ion-background-color: var(--bg);
+  --ion-background-color-rgb: var(--bg-rgb);
   --ion-text-color: var(--text);
   --ion-card-background: var(--card-bg);
+  --ion-card-background-rgb: var(--card-bg-rgb);
   --ion-toolbar-background: var(--surface);
   /* Typography and spacing remain consistent */
   --ion-font-family: 'LXGW WenKai TC', sans-serif;
@@ -167,14 +172,17 @@ html.dark,
   /* Dark mode semantic palette */
   // Background: Deep greyish-green
   --bg: #1a2820;
+  --bg-rgb: 26, 40, 32;
   // Text: Light green-tinted white for readability
   --text: #e8f2ea;
   // Muted text: Medium grey-green
   --muted: #9eada2;
   // Card background: Slightly lighter greyish-green
   --card-bg: #243329;
+  --card-bg-rgb: 36, 51, 41;
   // Surface: Mid-tone greyish-green
   --surface: #1f2e25;
+  --surface-rgb: 31, 46, 37;
   // Accent: Bright purple for visibility
   --accent: #9f5ce8;
   // Border: Subtle green-tinted border
@@ -186,8 +194,10 @@ html.dark,
   --app-selection-green-surface: #2b3c2f;
   /* Apply dark semantic palette to Ionic core variables */
   --ion-background-color: var(--bg);
+  --ion-background-color-rgb: var(--bg-rgb);
   --ion-text-color: var(--text);
   --ion-card-background: var(--card-bg);
+  --ion-card-background-rgb: var(--card-bg-rgb);
   --ion-toolbar-background: var(--surface);
 }
 
@@ -469,6 +479,51 @@ ion-modal.search-filter-sheet {
 
   &::part(content) {
     overflow: hidden;
+  }
+}
+
+/* Restaurant opening-hours time picker with Ionic popover and fully theme-driven surfaces. */
+ion-popover.restaurant-time-picker-popover {
+  --backdrop-opacity: 0.52;
+  --background: var(--ion-card-background);
+  --box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+  --width: min(92vw, 350px);
+
+  &::part(backdrop) {
+    background: rgb(7, 13, 9);
+  }
+
+  &::part(content) {
+    background: var(--ion-card-background);
+    border: 1px solid var(--ion-color-light-shade);
+    border-radius: 20px;
+    color: var(--ion-text-color);
+    overflow: hidden;
+  }
+
+  ion-datetime.restaurant-time-picker-datetime {
+    --background: var(--ion-card-background);
+    --background-rgb: var(--ion-card-background-rgb);
+    --title-color: var(--ion-text-color);
+    --wheel-fade-background-rgb: var(--ion-card-background-rgb);
+    --wheel-highlight-background: rgba(var(--ion-color-primary-rgb), 0.14);
+    --wheel-highlight-border-radius: 12px;
+    color: var(--ion-text-color);
+    max-width: 100%;
+    width: 100%;
+  }
+
+  ion-datetime.restaurant-time-picker-datetime::part(wheel-item) {
+    color: var(--ion-color-medium);
+  }
+
+  ion-datetime.restaurant-time-picker-datetime::part(wheel-item active) {
+    color: var(--ion-color-primary);
+    font-weight: 700;
+  }
+
+  ion-datetime.restaurant-time-picker-datetime::part(time-button) {
+    color: var(--ion-text-color);
   }
 }
 

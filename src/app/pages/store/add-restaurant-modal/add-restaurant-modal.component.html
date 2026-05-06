@@ -7,7 +7,7 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="dismiss()" [disabled]="isSaving || isUploadingImage">
-        {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -139,7 +139,7 @@
         <div class="quick-time-field">
           <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN
             }}</span>
-          <ion-button fill="outline" size="small" (click)="openTimePicker(null, 'open')">
+          <ion-button fill="outline" size="small" class="time-chip-button" (click)="openTimePicker(null, 'open')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ bulkHours.open }}
           </ion-button>
@@ -147,7 +147,7 @@
         <ion-icon name="arrow-forward-outline" color="medium" class="arrow-icon"></ion-icon>
         <div class="quick-time-field">
           <span class="quick-time-label">{{ (lang$ | async) === 'TC' ? translations.to.TC : translations.to.EN }}</span>
-          <ion-button fill="outline" size="small" (click)="openTimePicker(null, 'close')">
+          <ion-button fill="outline" size="small" class="time-chip-button" (click)="openTimePicker(null, 'close')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ bulkHours.close }}
           </ion-button>
@@ -192,13 +192,13 @@
         </div>
 
         <div class="time-button-row" [class.disabled]="isDayClosed(day.en)">
-          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)"
+          <ion-button fill="outline" size="small" class="time-range-button" [disabled]="isDayClosed(day.en)"
             (click)="openTimePicker(day.en, 'open')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ (lang$ | async) === 'TC' ? translations.from.TC : translations.from.EN }} {{ getOpeningTimeLabel(day.en)
             }}
           </ion-button>
-          <ion-button fill="outline" size="small" [disabled]="isDayClosed(day.en)"
+          <ion-button fill="outline" size="small" class="time-range-button" [disabled]="isDayClosed(day.en)"
             (click)="openTimePicker(day.en, 'close')">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             {{ (lang$ | async) === 'TC' ? translations.to.TC : translations.to.EN }} {{ getClosingTimeLabel(day.en) }}
@@ -280,31 +280,40 @@
         </p>
       </div>
     </ng-container>
-
-    <div class="bottom-spacer"></div>
   </ng-container>
 
 </ion-content>
 
-<!-- Inline time picker overlay — avoids nested ion-modal backdrop issues inside
-     a fullscreen parent modal. A position:fixed scrim + centred card replaces
-     the ion-modal so the backdrop renders correctly at all times. -->
-<div class="time-picker-overlay" *ngIf="isTimePickerOpen" (click)="closeTimePicker()">
-  <div class="time-picker-card" (click)="$event.stopPropagation()">
-    <p class="time-picker-title">{{ activeTimePickerTitle }}</p>
-    <ion-datetime mode="md" presentation="time" [value]="activeTimePickerValue" locale="en-GB" hour-cycle="h23"
-      [showDefaultButtons]="true" [doneText]="(lang$ | async) === 'TC' ? translations.done.TC : translations.done.EN"
-      [cancelText]="(lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN"
-      (ionChange)="onTimePickerChange($event)" (ionCancel)="closeTimePicker()">
-    </ion-datetime>
-  </div>
-</div>
+<!-- Ionic popover keeps the time picker backdrop and dismissal behaviour native. -->
+<ion-popover class="restaurant-time-picker-popover" [isOpen]="isTimePickerOpen" [showBackdrop]="true"
+  [backdropDismiss]="true" cssClass="restaurant-time-picker-popover" (didDismiss)="closeTimePicker()">
+  <ng-template>
+    <div class="time-picker-panel">
+      <p class="time-picker-title">{{ activeTimePickerTitle }}</p>
+      <ion-datetime class="restaurant-time-picker-datetime" mode="md" presentation="time"
+        [value]="activeTimePickerValue" locale="en-GB" hour-cycle="h23" [showDefaultButtons]="true"
+        [doneText]="(lang$ | async) === 'TC' ? translations.done.TC : translations.done.EN"
+        [cancelText]="(lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN"
+        (ionChange)="onTimePickerChange($event)" (ionCancel)="closeTimePicker()">
+      </ion-datetime>
+    </div>
+  </ng-template>
+</ion-popover>
 
 <ion-footer>
-  <ion-toolbar>
-    <ion-button expand="block" color="success" class="submit-btn" [disabled]="isSaving" (click)="save()">
-      <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
-      {{ (lang$ | async) === 'TC' ? getSubmitLabel('TC') : getSubmitLabel('EN') }}
-    </ion-button>
+  <ion-toolbar class="submit-toolbar">
+    <div class="footer-actions">
+      <ion-button expand="block" color="success" class="submit-btn" [disabled]="isSaving || isUploadingImage"
+        (click)="save()">
+        <ion-spinner *ngIf="isSaving" name="crescent" slot="start"></ion-spinner>
+        <ion-icon *ngIf="!isSaving" name="save-outline" slot="start"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? getSubmitLabel('TC') : getSubmitLabel('EN') }}
+      </ion-button>
+      <ion-button expand="block" color="warning" fill="outline" class="cancel-btn"
+        [disabled]="isSaving || isUploadingImage" (click)="dismiss()">
+        <ion-icon name="close-outline" slot="start"></ion-icon>
+        {{ (lang$ | async) === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
+      </ion-button>
+    </div>
   </ion-toolbar>
 </ion-footer>

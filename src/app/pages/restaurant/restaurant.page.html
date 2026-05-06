@@ -97,18 +97,6 @@
       <!-- Key Information Grid -->
       <div class="info-grid">
 
-        <!-- Payment Methods -->
-        <div class="info-card" *ngIf="restaurant.Payments && restaurant.Payments.length > 0">
-          <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '付款方式' : 'Payment Methods' }}</h3>
-          <div class="info-content">
-            <div class="payment-methods">
-              <ion-chip *ngFor="let payment of restaurant.Payments" class="payment-chip green-badge">
-                {{ payment }}
-              </ion-chip>
-            </div>
-          </div>
-        </div>
-
         <!-- Contact Info -->
         <div class="info-card">
           <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '聯絡方式' : 'Contact' }}</h3>
@@ -136,6 +124,20 @@
             <p class="seats-number">{{ restaurant.Seats || '—' }}</p>
           </div>
         </div>
+
+        <!-- Payment Methods -->
+        <div class="info-card" *ngIf="restaurant.Payments && restaurant.Payments.length > 0">
+          <h3 class="info-title">{{ (lang$ | async) === 'TC' ? '付款方式' : 'Payment Methods' }}</h3>
+          <div class="info-content">
+            <ng-container *ngIf="lang$ | async as lang">
+              <div class="payment-methods">
+                <ion-chip *ngFor="let payment of restaurant.Payments" class="payment-chip green-badge">
+                  {{ getPaymentMethodLabel(payment, lang) }}
+                </ion-chip>
+              </div>
+            </ng-container>
+          </div>
+        </div>
       </div>
 
       <!-- Opening Hours Section -->
@@ -146,12 +148,14 @@
         </div>
         <div class="hours-content">
           <ng-container *ngIf="lang$ | async as lang">
-            <div *ngIf="restaurant.Opening_Hours; else noHours" class="hours-list">
-              <div *ngFor="let pair of (restaurant.Opening_Hours | keyvalue)" class="hours-item">
-                <span class="day">{{ getDayName(pair.key, lang) }}</span>
-                <span class="time">{{ pair.value || '—' }}</span>
+            <ng-container *ngIf="getOrderedOpeningHours(restaurant.Opening_Hours) as orderedOpeningHours">
+              <div *ngIf="orderedOpeningHours.length > 0; else noHours" class="hours-list">
+                <div *ngFor="let pair of orderedOpeningHours" class="hours-item">
+                  <span class="day">{{ getDayName(pair.day, lang) }}</span>
+                  <span class="time">{{ pair.value }}</span>
+                </div>
               </div>
-            </div>
+            </ng-container>
             <ng-template #noHours>
               <p class="no-data">{{ lang === 'TC' ? '未提供營業時間' : 'Hours not available' }}</p>
             </ng-template>

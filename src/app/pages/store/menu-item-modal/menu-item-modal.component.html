@@ -14,7 +14,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="menu-modal-content">
 
   <!-- Name (English) -->
   <div class="field-group">
@@ -98,11 +98,11 @@
 <ion-footer>
   <ion-toolbar>
     <div class="footer-actions">
-      <ion-button expand="block" color="success" (click)="save()">
+      <ion-button expand="block" color="success" class="submit-btn" (click)="save()">
         <ion-icon name="save-outline" slot="start"></ion-icon>
         {{ currentLanguage === 'TC' ? translations.saveChanges.TC : translations.saveChanges.EN }}
       </ion-button>
-      <ion-button expand="block" color="warning" fill="outline" (click)="dismiss()">
+      <ion-button expand="block" color="warning" fill="outline" class="cancel-btn" (click)="dismiss()">
         <ion-icon name="close-outline" slot="start"></ion-icon>
         {{ currentLanguage === 'TC' ? translations.cancel.TC : translations.cancel.EN }}
       </ion-button>

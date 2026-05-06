@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
 import { take, takeUntil, tap, finalize } from 'rxjs/operators';
-import { Restaurant, MenuItem } from '../../services/restaurants.service';
+import { Restaurant, MenuItem, OpeningHours } from '../../services/restaurants.service';
 import { Review, ReviewStats, CreateReviewRequest } from '../../services/reviews.service';
 import { UserProfile } from '../../services/user.service';
 import { CreateBookingRequest } from '../../services/booking.service';
@@ -17,7 +17,16 @@ import { MapModalComponent } from './map-modal.component';
 import { FullMenuModalComponent } from './full-menu-modal.component';
 import { BookingModalComponent } from './booking-modal.component';
 import { ChatButtonComponent } from '../../shared/chat-button/chat-button.component';
+import { PaymentMethods } from '../../constants/payments.const';
+import { Weekdays } from '../../constants/weekdays.const';
 import { environment } from '../../../environments/environment';
+
+interface OrderedOpeningHoursEntry {
+  day: string;
+  value: string;
+}
+
+type OpeningHoursValue = string | { open?: string | null; close?: string | null } | null;
 
 @Component({
   selector: 'app-restaurant',
@@ -1122,6 +1131,84 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   /// Get day name based on current language
   getDayName(dayName: string, lang: 'EN' | 'TC'): string {
     return lang === 'TC' ? this.translateDayName(dayName) : dayName;
+  }
+
+  /// Return opening-hours entries in Monday-to-Sunday order while keeping unknown day keys at the end.
+  getOrderedOpeningHours(openingHours: OpeningHours | null | undefined): OrderedOpeningHoursEntry[] {
+    if (!openingHours) return [];
+    const openingHourEntries = Object.entries(openingHours);
+    const openingHourEntriesByDay = new Map<string, [string, OpeningHoursValue]>();
+    const orderedOpeningHours: OrderedOpeningHoursEntry[] = [];
+
+    openingHourEntries.forEach(openingHourEntry => {
+      const normalisedDayName = this.normaliseWeekdayName(openingHourEntry[0]);
+      if (!normalisedDayName || openingHourEntriesByDay.has(normalisedDayName)) return;
+      openingHourEntriesByDay.set(normalisedDayName, openingHourEntry);
+    });
+
+    Weekdays.forEach(weekday => {
+      const matchingEntry = openingHourEntriesByDay.get(weekday.en);
+      if (!matchingEntry) return;
+      orderedOpeningHours.push({
+        day: weekday.en,
+        value: this.formatOpeningHoursValue(matchingEntry[1])
+      });
+    });
+
+    openingHourEntries.forEach(([dayName, openingHourValue]) => {
+      if (this.normaliseWeekdayName(dayName)) return;
+      orderedOpeningHours.push({
+        day: dayName,
+        value: this.formatOpeningHoursValue(openingHourValue)
+      });
+    });
+
+    return orderedOpeningHours;
+  }
+
+  // Resolve full English, abbreviated English, or Traditional Chinese weekday keys to the canonical English day name.
+  private normaliseWeekdayName(dayName: string): string | null {
+    const trimmedDayName = dayName.trim();
+    const normalisedDayName = trimmedDayName.toLowerCase();
+    const weekday = Weekdays.find(weekday =>
+      weekday.en.toLowerCase() === normalisedDayName || weekday.tc === trimmedDayName
+    );
+    if (weekday) return weekday.en;
+    const weekdayAliases: { [key: string]: string } = {
+      mon: 'Monday',
+      tue: 'Tuesday',
+      wed: 'Wednesday',
+      thu: 'Thursday',
+      fri: 'Friday',
+      sat: 'Saturday',
+      sun: 'Sunday'
+    };
+    return weekdayAliases[normalisedDayName] ?? null;
+  }
+
+  // Format legacy string hours and object-shaped hours into one template-safe display value.
+  private formatOpeningHoursValue(openingHourValue: OpeningHoursValue | undefined): string {
+    if (!openingHourValue) return '—';
+    if (typeof openingHourValue === 'string') return openingHourValue || '—';
+    if (openingHourValue.open && openingHourValue.close) return `${openingHourValue.open}-${openingHourValue.close}`;
+    return '—';
+  }
+
+  /// Return the payment-method label in the selected language while tolerating legacy Chinese-stored values.
+  getPaymentMethodLabel(paymentMethodValue: string, lang: 'EN' | 'TC'): string {
+    const englishValue = this.normalisePaymentMethodToEnglish(paymentMethodValue);
+    const paymentMethod = PaymentMethods.find(method => method.en === englishValue);
+    if (!paymentMethod) return englishValue;
+    return lang === 'TC' ? paymentMethod.tc : paymentMethod.en;
+  }
+
+  // Resolve English or Traditional Chinese payment labels to the canonical English value.
+  private normalisePaymentMethodToEnglish(paymentMethodValue: string): string {
+    const trimmedValue = paymentMethodValue.trim();
+    const paymentMethod = PaymentMethods.find(method =>
+      method.en.toLowerCase() === trimmedValue.toLowerCase() || method.tc === trimmedValue
+    );
+    return paymentMethod?.en ?? trimmedValue;
   }
 
   /// Increment guest count (max 10)
