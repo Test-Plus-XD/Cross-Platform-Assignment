@@ -35,6 +35,9 @@
   --wheel-fade-background-rgb: var(--ion-card-background-rgb);
   --wheel-highlight-background: rgba(var(--ion-color-primary-rgb), 0.14);
   --wheel-highlight-border-radius: 12px;
+  --ion-color-step-300: rgba(var(--ion-color-medium-rgb), 0.16);
+  --ion-color-base: var(--ion-color-primary);
+  --ion-color-contrast: var(--ion-color-primary-contrast);
   color: var(--ion-text-color);
   background: var(--ion-card-background);
   border: 1px solid var(--ion-color-light-shade);
@@ -54,6 +57,13 @@
 .booking-datetime::part(calendar-day today) {
   border-color: var(--ion-color-primary);
   color: var(--ion-color-primary);
+}
+
+/* Keep a selected date readable when Ionic marks the same cell as both active and today. */
+.booking-datetime::part(calendar-day active today) {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
 }
 
 .booking-datetime::part(calendar-day disabled) {
@@ -147,7 +157,7 @@
   font-weight: 700;
   min-width: 36px;
   text-align: center;
-  color: var(--ion-color-dark);
+  color: var(--ion-text-color);
 }
 
 .booking-textarea {
@@ -163,6 +173,10 @@
 
 .confirm-btn {
   --border-radius: 10px;
+  --background: var(--ion-color-success);
+  --background-activated: var(--ion-color-success-shade);
+  --background-hover: var(--ion-color-success-tint);
+  --color: var(--ion-color-success-contrast);
   margin: 0;
   font-weight: 600;
 }

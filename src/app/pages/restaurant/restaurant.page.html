@@ -10,7 +10,7 @@
   <div class="error-container" *ngIf="!isLoading && errorMessage">
     <ion-icon name="alert-circle-outline" class="error-icon"></ion-icon>
     <h2>{{ errorMessage }}</h2>
-    <ion-button fill="outline" (click)="ngAfterViewInit()">
+    <ion-button fill="outline" (click)="reloadCurrentRestaurant()">
       <ion-icon slot="start" name="refresh-outline"></ion-icon>
       {{ (lang$ | async) === 'TC' ? '重試' : 'Retry' }}
     </ion-button>

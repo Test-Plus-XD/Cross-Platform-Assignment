@@ -67,7 +67,7 @@
 
 <ion-footer>
   <ion-toolbar class="footer-toolbar">
-    <ion-button expand="block" class="confirm-btn" [disabled]="hoursStatus === 'outside'" (click)="confirm()">
+    <ion-button expand="block" color="success" class="confirm-btn" [disabled]="hoursStatus === 'outside'" (click)="confirm()">
       <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
       {{ lang === 'TC' ? '確認預約' : 'Confirm Booking' }}
     </ion-button>
