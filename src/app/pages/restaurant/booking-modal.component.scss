@@ -26,9 +26,50 @@
   }
 }
 
+/* Keep the inline Ionic booking picker aligned with the app theme instead of falling back to Ionic's white datetime surface in dark mode. */
 .booking-datetime {
   width: 100%;
-  --wheel-fade-background-rgb: var(--ion-background-color-rgb, 255, 255, 255);
+  --background: var(--ion-card-background);
+  --background-rgb: var(--ion-card-background-rgb);
+  --title-color: var(--ion-text-color);
+  --wheel-fade-background-rgb: var(--ion-card-background-rgb);
+  --wheel-highlight-background: rgba(var(--ion-color-primary-rgb), 0.14);
+  --wheel-highlight-border-radius: 12px;
+  color: var(--ion-text-color);
+  background: var(--ion-card-background);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.booking-datetime::part(calendar-day) {
+  color: var(--ion-text-color);
+}
+
+.booking-datetime::part(calendar-day active) {
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.booking-datetime::part(calendar-day today) {
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary);
+}
+
+.booking-datetime::part(calendar-day disabled) {
+  color: rgba(var(--ion-color-medium-rgb), 0.35);
+}
+
+.booking-datetime::part(month-year-button),
+.booking-datetime::part(month-year),
+.booking-datetime::part(time-button),
+.booking-datetime::part(wheel-item) {
+  color: var(--ion-text-color);
+}
+
+.booking-datetime::part(wheel-item active) {
+  color: var(--ion-color-primary);
+  font-weight: 700;
 }
 
 /* Opening hours status badge */
