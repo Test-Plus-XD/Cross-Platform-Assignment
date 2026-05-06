@@ -1,0 +1,207 @@
+:host {
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+}
+
+.offers-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+
+.offers-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(var(--ion-color-secondary-rgb), 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(var(--ion-color-primary-rgb), 0.1), rgba(var(--ion-color-secondary-rgb), 0.08)),
+    var(--surface);
+}
+
+.hero-kicker,
+.section-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ion-color-medium);
+  font-weight: 800;
+}
+
+.hero-copy {
+  h1 {
+    margin: 0.75rem 0;
+    color: var(--ion-text-color);
+    font-size: clamp(1.85rem, 6vw, 3rem);
+    line-height: 1.08;
+  }
+
+  p {
+    max-width: 48rem;
+    margin: 0;
+    color: var(--ion-color-medium);
+    font-size: 1rem;
+  }
+}
+
+.hero-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 8rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(var(--ion-color-primary-rgb), 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+
+  ion-icon {
+    font-size: 3rem;
+  }
+
+  span {
+    color: var(--ion-text-color);
+    font-size: 2.2rem;
+    font-weight: 900;
+  }
+}
+
+.offer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.offer-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 20rem;
+  padding: 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--ion-card-background);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.offer-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: rgba(var(--ion-color-primary-rgb), 0.1);
+
+  ion-icon {
+    font-size: 1.45rem;
+  }
+}
+
+.offer-eyebrow {
+  margin: 1rem 0 0.35rem;
+  color: var(--ion-color-medium);
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.offer-card h2,
+.tips-section h2,
+.browse-band h2 {
+  margin: 0;
+  color: var(--ion-text-color);
+  font-size: 1.18rem;
+}
+
+.offer-description {
+  flex: 1;
+  margin: 0.7rem 0;
+  color: var(--ion-text-color);
+  line-height: 1.55;
+}
+
+.offer-terms {
+  margin: 0 0 0.8rem;
+  color: var(--ion-color-medium);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.offer-action,
+.browse-button {
+  align-self: flex-start;
+  --color: var(--ion-color-primary);
+  margin: 0;
+  font-weight: 800;
+
+  ion-icon {
+    color: var(--gradient-icon-color);
+  }
+}
+
+.tips-section,
+.browse-band {
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.section-heading {
+  margin-bottom: 0.85rem;
+}
+
+.tips-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  color: var(--ion-text-color);
+  line-height: 1.5;
+
+  ion-icon {
+    flex: 0 0 auto;
+    margin-top: 0.15rem;
+    font-size: 1.15rem;
+  }
+}
+
+.browse-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  p {
+    margin: 0.35rem 0 0;
+    color: var(--ion-color-medium);
+  }
+}
+
+:host-context(.dark) {
+  .hero-panel {
+    background: rgba(28, 40, 32, 0.82);
+  }
+}
+
+@media (min-width: 768px) {
+  .offers-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 640px) {
+  .browse-band {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

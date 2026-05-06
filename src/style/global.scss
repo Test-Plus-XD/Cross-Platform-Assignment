@@ -443,6 +443,20 @@ ion-modal.account-type-modal {
   }
 }
 
+/* Search filter sheet — keeps the new restaurant filters readable on desktop and mobile. */
+ion-modal.search-filter-sheet {
+  --width: min(100vw, 48rem);
+  --max-width: 48rem;
+  --height: 90vh;
+  --border-radius: 24px 24px 0 0;
+  align-items: flex-end;
+  justify-content: center;
+
+  &::part(content) {
+    overflow: hidden;
+  }
+}
+
 @media (max-width: 576px) {
   ion-modal.account-type-modal {
     --width: calc(100% - 1.5rem);

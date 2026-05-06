@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { SearchPageRoutingModule } from './search-routing.module';
 import { SearchPage } from './search.page';
+import { SearchFilterModalComponent } from './search-filter-modal.component';
 import { SharedModule } from '../../shared/shared.module';
 
 @NgModule({
@@ -15,7 +16,7 @@ import { SharedModule } from '../../shared/shared.module';
     SearchPageRoutingModule,
     SharedModule,
   ],
-  declarations: [SearchPage],
+  declarations: [SearchPage, SearchFilterModalComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class SearchPageModule {}

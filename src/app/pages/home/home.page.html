@@ -63,6 +63,14 @@
                 <img [src]="restaurant.ImageUrl || placeholderImage"
                   [alt]="curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="card-image">
                 <div class="card-overlay"></div>
+                <button *ngIf="canUseSavedRestaurants" type="button" class="saved-restaurant-button"
+                  [class.saved-restaurant-button--active]="isRestaurantSaved(restaurant.id)"
+                  [attr.aria-label]="isRestaurantSaved(restaurant.id)
+                    ? (curLang === 'TC' ? '取消儲存餐廳' : 'Unsave restaurant')
+                    : (curLang === 'TC' ? '儲存餐廳' : 'Save restaurant')"
+                  (click)="toggleSavedRestaurant(restaurant, $event)">
+                  <ion-icon [name]="isRestaurantSaved(restaurant.id) ? 'heart' : 'heart-outline'"></ion-icon>
+                </button>
                 <!-- Distance Badge: top-right -->
                 <div class="distance-badge" *ngIf="getDistanceBadge(restaurant) as badge"
                   [class]="'badge-' + badge.color">
@@ -236,6 +244,14 @@
                 <img [src]="restaurant.image || restaurant.ImageUrl || placeholderImage"
                   [alt]="curLang === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="card-image">
                 <div class="card-overlay"></div>
+                <button *ngIf="canUseSavedRestaurants" type="button" class="saved-restaurant-button"
+                  [class.saved-restaurant-button--active]="isRestaurantSaved(restaurant.id)"
+                  [attr.aria-label]="isRestaurantSaved(restaurant.id)
+                    ? (curLang === 'TC' ? '取消儲存餐廳' : 'Unsave restaurant')
+                    : (curLang === 'TC' ? '儲存餐廳' : 'Save restaurant')"
+                  (click)="toggleSavedRestaurant(restaurant, $event)">
+                  <ion-icon [name]="isRestaurantSaved(restaurant.id) ? 'heart' : 'heart-outline'"></ion-icon>
+                </button>
                 <!-- Rating badge: bottom-right. Always shown — stars when rated, "New" when unrated -->
                 <span class="rating-badge">
                   <ng-container

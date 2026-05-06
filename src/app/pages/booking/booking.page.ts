@@ -9,6 +9,8 @@ import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
 import { ThemeService } from '../../services/theme.service';
 import { PlatformService } from '../../services/platform.service';
+import { SavedRestaurantsService, SavedRestaurant } from '../../services/saved-restaurants.service';
+import { environment } from '../../../environments/environment';
 
 type BookingFilter = 'upcoming' | 'past' | 'declined' | 'cancelled' | 'all';
 
@@ -24,6 +26,7 @@ export class BookingPage implements OnInit, OnDestroy {
   private readonly languageService = inject(LanguageService);
   private readonly themeService = inject(ThemeService);
   private readonly platformService = inject(PlatformService);
+  private readonly savedRestaurantsService = inject(SavedRestaurantsService);
   private readonly router = inject(Router);
   private readonly alertController = inject(AlertController);
   private readonly loadingController = inject(LoadingController);
@@ -35,10 +38,13 @@ export class BookingPage implements OnInit, OnDestroy {
 
   booking: Booking[] = [];
   filteredBooking: Booking[] = [];
+  savedRestaurants: SavedRestaurant[] = [];
+  canUseSavedRestaurants = false;
   currentFilter: BookingFilter = 'upcoming';
 
   isLoading = true;
   errorMessage: string | null = null;
+  readonly placeholderImage = environment.placeholderImageUrl || 'assets/icon/Placeholder.png';
 
   private destroy$ = new Subject<void>();
 
@@ -96,6 +102,12 @@ export class BookingPage implements OnInit, OnDestroy {
       this.router.navigate(['/login']);
       return;
     }
+    this.savedRestaurantsService.savedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(savedRestaurants => {
+      this.savedRestaurants = savedRestaurants;
+    });
+    this.savedRestaurantsService.canUseSavedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(canUseSavedRestaurants => {
+      this.canUseSavedRestaurants = canUseSavedRestaurants;
+    });
     this.loadBooking();
   }
 
@@ -339,6 +351,43 @@ export class BookingPage implements OnInit, OnDestroy {
 
   viewRestaurant(restaurantId: string): void {
     this.router.navigate(['/restaurant', restaurantId]);
+  }
+
+  // Navigates from a local saved restaurant card to its detail page.
+  viewSavedRestaurant(restaurant: SavedRestaurant): void {
+    this.router.navigate(['/restaurant', restaurant.id]);
+  }
+
+  // Removes one saved restaurant from the local saved list.
+  removeSavedRestaurant(restaurantId: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.savedRestaurantsService.removeRestaurant(restaurantId);
+  }
+
+  // Clears every locally saved restaurant from the Booking page section.
+  clearSavedRestaurants(): void {
+    this.savedRestaurantsService.clearSavedRestaurants();
+  }
+
+  // Returns the saved restaurant name in the active language.
+  getSavedRestaurantName(restaurant: SavedRestaurant, isTC: boolean): string {
+    return isTC
+      ? (restaurant.Name_TC || restaurant.Name_EN || '—')
+      : (restaurant.Name_EN || restaurant.Name_TC || '—');
+  }
+
+  // Returns the saved restaurant district in the active language.
+  getSavedRestaurantDistrict(restaurant: SavedRestaurant, isTC: boolean): string {
+    return isTC
+      ? (restaurant.District_TC || restaurant.District_EN || '')
+      : (restaurant.District_EN || restaurant.District_TC || '');
+  }
+
+  // Returns the saved restaurant address in the active language.
+  getSavedRestaurantAddress(restaurant: SavedRestaurant, isTC: boolean): string {
+    return isTC
+      ? (restaurant.Address_TC || restaurant.Address_EN || '')
+      : (restaurant.Address_EN || restaurant.Address_TC || '');
   }
 
   formatDate(dateString: string, isTC: boolean): string {

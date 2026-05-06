@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-05-05 | **Version:** 1.17.47 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-05-06 | **Version:** 1.17.48 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -50,6 +50,8 @@ src/app/
 ├── pages/                     # Lazy-loaded feature modules
 │   ├── home/                  # Featured content + latest reviews
 │   ├── search/                # Algolia search with filters
+│   ├── offers/                # Make-up offers page linked from Home
+│   ├── articles/              # Make-up articles page linked from Home
 │   ├── restaurant/            # Detail view + map + chat
 │   ├── user/                  # User profile (auth-protected)
 │   ├── bookings/              # Reservation management
@@ -63,10 +65,11 @@ src/app/
 │   │   └── menu-qr-modal/                    # QR code generator modal (v1.17.0)
 │   ├── login/                 # Authentication
 │   ├── chat/                  # Chat overview page
-├── services/                  # 24 core services
+├── services/                  # 25 core services
 │   ├── auth.service.ts                # Firebase authentication
-│   ├── app-state.service.ts           # Centralized state (v1.7.0)
+│   ├── app-state.service.ts           # Centralised state (v1.7.0)
 │   ├── restaurants.service.ts         # Restaurant CRUD
+│   ├── saved-restaurants.service.ts   # Local-only saved restaurant storage (localStorage)
 │   ├── user.service.ts                # User profile management
 │   ├── booking.service.ts             # Booking CRUD
 │   ├── reviews.service.ts             # Review CRUD + stats
@@ -101,7 +104,7 @@ src/app/
 │   ├── menu/                  # Side navigation menu
 │   ├── tab/                   # Bottom tab bar
 │   ├── chat-button/           # Restaurant chat (login required)
-│   ├── gemini-button/         # AI assistant (global, no login)
+│   ├── gemini-button/         # AI assistant entry point (visible to guests; login required to use)
 │   └── qr-scanner/            # QR scanner modal (global, no login) (v1.17.0)
 └── environments/              # Environment configs
     ├── environment.ts         # Development
@@ -1988,5 +1991,9 @@ Follow-up APK validation confirmed the durable root cause was the shared `Restau
 - **v1.17.44** (2026-05-02): **Post-change verification for global map dark mode update.** Ran `npx ng build` to validate type safety and production build output after global Google Maps dark-mode parity changes. Build succeeds; only existing CommonJS optimisation warnings remain for `qrcode` and `jsqr`.
 
 - **v1.17.47** (2026-05-05): **Map popup card redesign — glass effect, gradient icons, live theme reactivity + green markers.** `src/app/pages/search/search.page.ts`: (1) Extracted all InfoWindow DOM construction into a `buildInfoWindowContent(restaurant)` private method. (2) Added `activeInfoWindowRestaurant` field to track the currently open popup. (3) Subscribed to `themeService.isDark$` in `ngOnInit` — when the theme changes while a popup is open, `buildInfoWindowContent` is called immediately and `infoWindow.setContent()` is updated, giving instant theme reactivity without closing/reopening the popup. (4) Popup card uses a liquid glass effect: semi-transparent background (`rgba(250,254,251,0.72)` light / `rgba(36,51,41,0.72)` dark), `backdrop-filter: blur(18px) saturate(1.6)`, subtle border, and stronger box-shadow. (5) Thumbnail image section height increased to `140px` so it fills the entire upper portion. (6) Replaced `📍` emoji with inline SVG icons built via `createElementNS` — `golf-outline` for district and `storefront-outline` for address — each containing a `<linearGradient>` with stops at the app's primary purple and secondary blue per theme, producing the same purple→blue gradient as the filter chip icons. (7) Address row added below district row (bilingual, clamped to 2 lines). (8) Rating badge and open/close pill remain in their original positions on the image. (9) Restaurant map markers now use the Google Maps green-dot icon (`https://maps.google.com/mapfiles/ms/icons/green-dot.png`). `cleanupMap()` clears `activeInfoWindowRestaurant`; the InfoWindow `closeclick` listener also clears it. `src/style/global.scss` updates `.gm-style-iw-c` to `border-radius: 16px`, `background: transparent`, `box-shadow: none`, and adds close-button styling to blend with the glass card.
+
+- **v1.17.48** (2026-05-05; amended 2026-05-06): **Diner saved restaurants, richer filters, booking validation, make-up pages, and guest AI prompt.** Added `SavedRestaurantsService` as the local-only saved restaurant pattern (`localStorage`, no backend/API sync) and surfaced save/unsave actions on Home, Search, and Restaurant detail, with saved restaurants shown on the Bookings page instead of changing Account. The saved-restaurant store is now scoped by `guest` or logged-in Diner UID inside `pourRiceSavedRestaurantsByUser`; legacy single-list saves migrate into the guest list, and Restaurant-owner/non-Diner logged-in profiles receive an empty saved list plus hidden save UI. Search now uses an Ionic filter sheet with district/category search, open-now, minimum rating, payment, distance, and sorting refinements; `/restaurants` redirects to the existing Search page. Restaurant detail now has a dedicated Menu tab with menu search, stronger booking-hour validation that blocks only known outside-hours selections while allowing null/missing hours, and post-booking actions for Bookings, restaurant chat, and directions. Added realistic bilingual make-up pages for `/offers` and `/articles` only; footer links remain intentionally unresolved. Gemini FAB is visible to guests and now prompts login on attempted use. Verified with `npx ng build --configuration development`; only pre-existing CommonJS warnings remain.
+
+**Rules introduced in v1.17.48:** Saved restaurants are device-local and must remain outside the REST API contract unless a future task explicitly asks for synced favourites. Scope saved lists to `guest` or the logged-in Diner UID, and hide saved-restaurant UI for Restaurant-owner accounts. Keep Account unchanged for saved-restaurant UX unless requested. Treat `/restaurants` as an alias to Search, not a separate restaurant directory.
 
 - **Consolidation note (<= v1.17.29):** Historical entries before **v1.17.30** are now treated as the consolidated legacy log block; keep new session updates at v1.17.30+ in chronological order.

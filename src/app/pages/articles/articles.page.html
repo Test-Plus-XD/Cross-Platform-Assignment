@@ -1,0 +1,67 @@
+<ion-content>
+  <ng-container *ngIf="lang$ | async as lang">
+    <div class="articles-page page-container">
+      <section class="articles-hero">
+        <div class="hero-copy">
+          <div class="hero-kicker">
+            <ion-icon name="newspaper-outline"></ion-icon>
+            <span>{{ lang === 'TC' ? '飲食札記' : "Gourmet's Note" }}</span>
+          </div>
+          <h1>{{ lang === 'TC' ? '素食生活與餐廳靈感' : 'Vegetarian dining notes for real outings' }}</h1>
+          <p>
+            {{ lang === 'TC'
+              ? '以食客角度整理地區、餐單、訂座與付款資訊，幫助您更快找到合適餐廳。'
+              : 'Practical stories about neighbourhoods, menus, bookings, and payment habits that help diners choose faster.' }}
+          </p>
+        </div>
+      </section>
+
+      <article class="lead-article">
+        <div class="lead-icon">
+          <ion-icon [name]="leadArticle.icon"></ion-icon>
+        </div>
+        <div class="lead-copy">
+          <p class="article-meta">
+            {{ lang === 'TC' ? leadArticle.category_TC : leadArticle.category_EN }}
+            <span>{{ lang === 'TC' ? leadArticle.readTime_TC : leadArticle.readTime_EN }}</span>
+          </p>
+          <h2>{{ lang === 'TC' ? leadArticle.title_TC : leadArticle.title_EN }}</h2>
+          <p>{{ lang === 'TC' ? leadArticle.excerpt_TC : leadArticle.excerpt_EN }}</p>
+          <ion-button routerLink="/restaurants" fill="clear" class="article-action">
+            <ion-icon slot="start" name="map-outline"></ion-icon>
+            {{ lang === 'TC' ? '按地區搜尋餐廳' : 'Search by district' }}
+          </ion-button>
+        </div>
+      </article>
+
+      <section class="article-grid" aria-label="Article list">
+        <article class="article-card" *ngFor="let article of articles">
+          <div class="article-card-icon">
+            <ion-icon [name]="article.icon"></ion-icon>
+          </div>
+          <p class="article-meta">
+            {{ lang === 'TC' ? article.category_TC : article.category_EN }}
+            <span>{{ lang === 'TC' ? article.readTime_TC : article.readTime_EN }}</span>
+          </p>
+          <h2>{{ lang === 'TC' ? article.title_TC : article.title_EN }}</h2>
+          <p>{{ lang === 'TC' ? article.excerpt_TC : article.excerpt_EN }}</p>
+        </article>
+      </section>
+
+      <section class="reading-cta">
+        <div>
+          <h2>{{ lang === 'TC' ? '把靈感變成訂座' : 'Turn notes into a booking' }}</h2>
+          <p>
+            {{ lang === 'TC'
+              ? '返回搜尋頁，按分類、評分及營業狀態揀選下一餐。'
+              : 'Return to search and filter by category, rating, and opening status for your next meal.' }}
+          </p>
+        </div>
+        <ion-button routerLink="/restaurants" fill="clear" class="article-action">
+          <ion-icon slot="start" name="search-outline"></ion-icon>
+          {{ lang === 'TC' ? '搜尋餐廳' : 'Search restaurants' }}
+        </ion-button>
+      </section>
+    </div>
+  </ng-container>
+</ion-content>

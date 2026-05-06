@@ -19,6 +19,21 @@ const routes: Routes = [
     loadChildren: () => import('./pages/search/search.module').then(m => m.SearchPageModule)
   },
   {
+    path: 'restaurants',
+    redirectTo: 'search',
+    pathMatch: 'full'
+  },
+  {
+    path: 'offers',
+    data: { title: { Header_EN: 'Offers', Header_TC: '優惠' } },
+    loadChildren: () => import('./pages/offers/offers.module').then(m => m.OffersPageModule)
+  },
+  {
+    path: 'articles',
+    data: { title: { Header_EN: 'Articles', Header_TC: '文章' } },
+    loadChildren: () => import('./pages/articles/articles.module').then(m => m.ArticlesPageModule)
+  },
+  {
     path: 'restaurant/:id',
     data: { title: { Header_EN: 'Restaurant', Header_TC: '餐廳' } },
     loadChildren: () => import('./pages/restaurant/restaurant.module').then(m => m.RestaurantPageModule)

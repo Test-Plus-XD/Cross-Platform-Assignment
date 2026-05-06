@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener, Input, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { AlertController } from '@ionic/angular';
 import { Subject, Observable } from 'rxjs';
 import { filter, takeUntil } from 'rxjs/operators';
 import { GeminiService } from '../../services/gemini.service';
@@ -27,6 +28,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   private readonly chatVisibilityService = inject(ChatVisibilityService);
   private readonly router = inject(Router);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly alertController = inject(AlertController);
 
   // Chat state
   isOpen = false;
@@ -56,6 +58,7 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   // Current route tracking
   private currentRoute = '';
   private currentRestaurantId: string | null = null;
+  private isLoginPromptOpen = false;
 
   // Quick suggestions - base suggestions that always appear
   private baseSuggestions = [
@@ -123,6 +126,10 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe(() => {
+        if (this.isOpen) {
+          this.isOpen = false;
+          this.chatVisibilityService.setGeminiButtonOpen(false);
+        }
         this.updateVisibility();
         this.updateSuggestions();
         this.loadRestaurantContext();
@@ -205,7 +212,12 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
   }
 
   /// Toggle chat window
-  toggleChat(): void {
+  async toggleChat(): Promise<void> {
+    if (!this.isLoggedIn) {
+      await this.presentLoginPrompt();
+      return;
+    }
+
     this.isOpen = !this.isOpen;
     this.isDimmed = false;
 
@@ -224,6 +236,11 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     const messageToSend = message || this.newMessage.trim();
 
     if (!messageToSend || this.isLoading) return;
+
+    if (!this.isLoggedIn) {
+      await this.presentLoginPrompt();
+      return;
+    }
 
     // Add user message
     this.messages.push({
@@ -265,6 +282,38 @@ export class GeminiButtonComponent implements OnInit, OnDestroy {
     const lang = (this.languageService as any)._lang.value || 'EN';
     const message = lang === 'TC' ? suggestion.tc : suggestion.en;
     this.sendMessage(message);
+  }
+
+  /// Shows a login prompt for guests who attempt to use Gemini.
+  private async presentLoginPrompt(): Promise<void> {
+    if (this.isLoginPromptOpen) return;
+
+    this.isLoginPromptOpen = true;
+    const alert = await this.alertController.create({
+      header: this.currentLang === 'TC' ? '需要登入' : 'Login Required',
+      message: this.currentLang === 'TC'
+        ? '登入後即可使用 PourRice AI 助理查詢餐廳、訂座及搜尋建議。'
+        : 'Log in to use the PourRice AI assistant for restaurant, booking, and search help.',
+      buttons: [
+        {
+          text: this.currentLang === 'TC' ? '稍後' : 'Not now',
+          role: 'cancel'
+        },
+        {
+          text: this.currentLang === 'TC' ? '登入' : 'Log in',
+          handler: () => {
+            void this.router.navigate(['/login'], {
+              queryParams: { returnUrl: this.router.url }
+            });
+          }
+        }
+      ]
+    });
+
+    alert.onDidDismiss().then(() => {
+      this.isLoginPromptOpen = false;
+    });
+    await alert.present();
   }
 
   /// Clear chat history

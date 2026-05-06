@@ -37,6 +37,33 @@
       background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.6) 100%);
     }
 
+    .hero-save-button {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      z-index: 12;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.36);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(10px);
+
+      ion-icon {
+        font-size: 1.45rem;
+        color: var(--gradient-icon-color);
+      }
+
+      &.hero-save-button--active {
+        background: rgba(255, 255, 255, 0.96);
+        border-color: rgba(var(--ion-color-primary-rgb), 0.42);
+      }
+    }
+
     .hero-content {
       position: absolute;
       bottom: 0;
@@ -469,12 +496,29 @@
       }
     }
 
+    .menu-searchbar {
+      padding: 0 0 1rem;
+
+      &::part(container) {
+        min-height: 2.75rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 8px 20px rgba(20, 38, 31, 0.08);
+      }
+    }
+
     .menu-scroller {
       overflow-y: auto;
       overscroll-behavior: contain;
       padding-right: 0.25rem;
       margin-bottom: 1rem;
       scrollbar-width: thin;
+    }
+
+    .menu-scroller--full {
+      max-height: none;
+      overflow-y: visible;
+      padding-right: 0;
     }
 
     .menu-list {
@@ -853,10 +897,11 @@
     }
 
     .menu-section .menu-list .menu-item {
-      flex-direction: column;
-      gap: 0.5rem;
+      align-items: flex-start;
+      max-height: none;
 
       .menu-item-price {
+        min-width: 4rem;
         text-align: left;
       }
     }

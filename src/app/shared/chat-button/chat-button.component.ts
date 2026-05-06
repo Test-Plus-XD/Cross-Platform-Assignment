@@ -1,8 +1,8 @@
 import { DOCUMENT } from '@angular/common';
 import { Component, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, NgZone, ChangeDetectorRef, Renderer2, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { Subject, Observable, firstValueFrom } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { filter, takeUntil } from 'rxjs/operators';
 import { ChatService, ChatMessage } from '../../services/chat.service';
 import { AuthService } from '../../services/auth.service';
 import { LanguageService } from '../../services/language.service';
@@ -161,6 +161,16 @@ export class ChatButtonComponent implements OnInit, AfterViewInit, OnDestroy {
           this.changeDetectorRef.markForCheck();
         }
       });
+    });
+
+    // Chat window is closed automatically when the user navigates to a different page
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntil(this.Destroy$)
+    ).subscribe(() => {
+      if (this.isOpen) {
+        void this.closeChatWindow();
+      }
     });
 
     // PhotoSwipe is initialised for image lightbox functionality

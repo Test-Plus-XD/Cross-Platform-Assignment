@@ -1,9 +1,9 @@
 // Import Observable utilities, Angular and Ionic lifecycle APIs and Rx utilities
-import { Component, OnInit, AfterViewInit, AfterViewChecked, ViewChild, ElementRef, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
-import { Observable, of, forkJoin, BehaviorSubject, combineLatest } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { Observable, of, forkJoin, BehaviorSubject, combineLatest, Subject } from 'rxjs';
+import { map, catchError, takeUntil } from 'rxjs/operators';
 import { MockDataService } from '../../services/mock-data.service';
 import { LanguageService } from '../../services/language.service';
 import { PlatformService } from '../../services/platform.service';
@@ -11,6 +11,7 @@ import { ReviewsService, Review } from '../../services/reviews.service';
 import { LocationService, Coordinates } from '../../services/location.service';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
 import { AdvertisementsService, Advertisement } from '../../services/advertisements.service';
+import { SavedRestaurantsService } from '../../services/saved-restaurants.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -19,7 +20,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['home.page.scss'],
   standalone: false,
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   private readonly mockDataService = inject(MockDataService);
   private readonly languageService = inject(LanguageService);
   private readonly platformService = inject(PlatformService);
@@ -28,6 +29,7 @@ export class HomePage implements OnInit {
   private readonly locationService = inject(LocationService);
   private readonly restaurantsService = inject(RestaurantsService);
   private readonly advertisementsService = inject(AdvertisementsService);
+  private readonly savedRestaurantsService = inject(SavedRestaurantsService);
 
   // Observables for async data from services
   public offers$: Observable<any[]> = of([]);
@@ -52,6 +54,9 @@ export class HomePage implements OnInit {
   // Internal ID lists used to merge into a single getBatchStats call
   private trendingIds$ = new BehaviorSubject<string[]>([]);
   private nearbyIds$ = new BehaviorSubject<string[]>([]);
+  public savedRestaurantIds = new Set<string>();
+  public canUseSavedRestaurants = false;
+  private readonly destroy$ = new Subject<void>();
 
   /** Inserted by Angular inject() migration for backwards compatibility */
   constructor(...args: unknown[]);
@@ -63,6 +68,18 @@ export class HomePage implements OnInit {
     // The observables will emit data when available, triggering Angular's change detection
     // which will then render the swiper elements with their slides
     this.loadData();
+    this.savedRestaurantsService.savedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(savedRestaurants => {
+      this.savedRestaurantIds = new Set(savedRestaurants.map(restaurant => restaurant.id));
+    });
+    this.savedRestaurantsService.canUseSavedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(canUseSavedRestaurants => {
+      this.canUseSavedRestaurants = canUseSavedRestaurants;
+    });
+  }
+
+  // Releases local subscriptions created for home page reactive state.
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   // Load all data from the mock data service and genuine reviews from Firestore
@@ -243,6 +260,20 @@ export class HomePage implements OnInit {
     if (restaurantId) {
       this.router.navigate(['/restaurant', restaurantId]);
     }
+  }
+
+  // Returns true when a restaurant is saved locally.
+  public isRestaurantSaved(restaurantId: string | null | undefined): boolean {
+    if (!restaurantId || !this.canUseSavedRestaurants) return false;
+    return this.savedRestaurantIds.has(restaurantId);
+  }
+
+  // Toggles local saved state without triggering the card navigation.
+  public toggleSavedRestaurant(restaurant: Restaurant, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.canUseSavedRestaurants) return;
+    this.savedRestaurantsService.toggleRestaurant(restaurant);
   }
 
   // Load nearby restaurants from API and sort by GPS distance

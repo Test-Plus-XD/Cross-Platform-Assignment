@@ -1,0 +1,162 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>{{ lang === 'TC' ? '搜尋篩選' : 'Search Filters' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="dismiss()" [attr.aria-label]="lang === 'TC' ? '關閉' : 'Close'">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="filter-modal-content">
+  <div class="filter-summary">
+    <div>
+      <h2>{{ lang === 'TC' ? '調整搜尋條件' : 'Refine your search' }}</h2>
+      <p>
+        {{ lang === 'TC' ? '已選擇 ' + selectedCount + ' 個條件' : selectedCount + ' filters selected' }}
+      </p>
+    </div>
+    <button type="button" class="clear-button" (click)="clearAll()">
+      <ion-icon name="refresh-outline"></ion-icon>
+      <span>{{ lang === 'TC' ? '重設' : 'Reset' }}</span>
+    </button>
+  </div>
+
+  <ion-segment [(ngModel)]="selectedTab" class="filter-tabs">
+    <ion-segment-button value="districts">
+      <ion-icon name="location-outline"></ion-icon>
+      <ion-label>{{ lang === 'TC' ? '地區' : 'Districts' }}</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="categories">
+      <ion-icon name="pricetag-outline"></ion-icon>
+      <ion-label>{{ lang === 'TC' ? '分類' : 'Categories' }}</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="refine">
+      <ion-icon name="options-outline"></ion-icon>
+      <ion-label>{{ lang === 'TC' ? '更多' : 'More' }}</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <section *ngIf="selectedTab === 'districts'" class="filter-panel">
+    <ion-searchbar [(ngModel)]="districtSearchQuery"
+      [placeholder]="lang === 'TC' ? '搜尋地區' : 'Search districts'"
+      debounce="120" class="filter-searchbar">
+    </ion-searchbar>
+    <div class="option-grid">
+      <button *ngFor="let district of filteredDistricts" type="button" class="option-chip"
+        [class.option-chip--selected]="isDistrictSelected(district.district_en)"
+        (click)="toggleDistrict(district.district_en)">
+        <ion-icon [name]="isDistrictSelected(district.district_en) ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+        <span>{{ lang === 'TC' ? district.district_tc : district.district_en }}</span>
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="selectedTab === 'categories'" class="filter-panel">
+    <ion-searchbar [(ngModel)]="keywordSearchQuery"
+      [placeholder]="lang === 'TC' ? '搜尋分類、菜式或飲食需求' : 'Search categories, cuisines, or diets'"
+      debounce="120" class="filter-searchbar">
+    </ion-searchbar>
+    <div class="option-grid option-grid--dense">
+      <button *ngFor="let keyword of filteredKeywords" type="button" class="option-chip"
+        [class.option-chip--selected]="isKeywordSelected(keyword.value_en)"
+        (click)="toggleKeyword(keyword.value_en)">
+        <ion-icon [name]="isKeywordSelected(keyword.value_en) ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+        <span>{{ lang === 'TC' ? keyword.label_tc : keyword.label_en }}</span>
+      </button>
+    </div>
+  </section>
+
+  <section *ngIf="selectedTab === 'refine'" class="filter-panel refine-panel">
+    <div class="refine-block">
+      <div class="refine-heading">
+        <ion-icon name="time-outline"></ion-icon>
+        <h3>{{ lang === 'TC' ? '營業狀態' : 'Opening status' }}</h3>
+      </div>
+      <ion-toggle [(ngModel)]="openNowOnly" justify="space-between">
+        {{ lang === 'TC' ? '只顯示營業中' : 'Open now only' }}
+      </ion-toggle>
+    </div>
+
+    <div class="refine-block">
+      <div class="refine-heading">
+        <ion-icon name="star-outline"></ion-icon>
+        <h3>{{ lang === 'TC' ? '最低評分' : 'Minimum rating' }}</h3>
+      </div>
+      <div class="segmented-buttons">
+        <button *ngFor="let rating of ratingOptions" type="button"
+          [class.segmented-button--selected]="minimumRating === rating"
+          (click)="setMinimumRating(rating)">
+          {{ rating === 0 ? (lang === 'TC' ? '不限' : 'Any') : rating + '+' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="refine-block">
+      <div class="refine-heading">
+        <ion-icon name="card-outline"></ion-icon>
+        <h3>{{ lang === 'TC' ? '付款方式' : 'Payment methods' }}</h3>
+      </div>
+      <div class="option-grid option-grid--dense">
+        <button *ngFor="let payment of paymentMethods" type="button" class="option-chip"
+          [class.option-chip--selected]="isPaymentSelected(payment.en)"
+          (click)="togglePayment(payment.en)">
+          <ion-icon [name]="isPaymentSelected(payment.en) ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+          <span>{{ lang === 'TC' ? payment.tc : payment.en }}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="refine-block">
+      <div class="refine-heading">
+        <ion-icon name="navigate-outline"></ion-icon>
+        <h3>{{ lang === 'TC' ? '距離' : 'Distance' }}</h3>
+      </div>
+      <p class="context-note" *ngIf="!hasLocationContext">
+        {{ lang === 'TC' ? '啟用「附近」後，距離篩選會更準確。' : 'Enable Near Me for more accurate distance filtering.' }}
+      </p>
+      <div class="segmented-buttons">
+        <button type="button" [class.segmented-button--selected]="maximumDistanceKilometres === null"
+          (click)="setMaximumDistance(null)">
+          {{ lang === 'TC' ? '不限' : 'Any' }}
+        </button>
+        <button *ngFor="let distance of distanceOptions" type="button"
+          [class.segmented-button--selected]="maximumDistanceKilometres === distance"
+          (click)="setMaximumDistance(distance)">
+          {{ distance }} km
+        </button>
+      </div>
+    </div>
+
+    <div class="refine-block">
+      <div class="refine-heading">
+        <ion-icon name="swap-vertical-outline"></ion-icon>
+        <h3>{{ lang === 'TC' ? '排序' : 'Sort' }}</h3>
+      </div>
+      <ion-radio-group [(ngModel)]="sortMode" class="sort-list">
+        <ion-item lines="none">
+          <ion-radio value="relevance" labelPlacement="end">{{ lang === 'TC' ? '相關度' : 'Relevance' }}</ion-radio>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-radio value="rating" labelPlacement="end">{{ lang === 'TC' ? '評分最高' : 'Highest rated' }}</ion-radio>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-radio value="distance" labelPlacement="end">{{ lang === 'TC' ? '距離最近' : 'Nearest' }}</ion-radio>
+        </ion-item>
+        <ion-item lines="none">
+          <ion-radio value="open" labelPlacement="end">{{ lang === 'TC' ? '營業中優先' : 'Open first' }}</ion-radio>
+        </ion-item>
+      </ion-radio-group>
+    </div>
+  </section>
+</ion-content>
+
+<ion-footer>
+  <ion-toolbar class="filter-footer">
+    <ion-button expand="block" class="apply-button" (click)="apply()">
+      <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+      {{ lang === 'TC' ? '套用篩選' : 'Apply Filters' }}
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

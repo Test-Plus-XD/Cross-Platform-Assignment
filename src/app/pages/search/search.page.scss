@@ -145,7 +145,7 @@
 
   .filter-chips-primary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: clamp(0.35rem, 1.7vw, 0.7rem);
     align-items: stretch;
   }
@@ -403,6 +403,33 @@
         background: linear-gradient(to bottom, transparent 40%, rgba(0, 0, 0, 0.35) 100%);
         opacity: 0.7;
         transition: opacity 0.3s ease;
+      }
+
+      .saved-restaurant-button {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        backdrop-filter: blur(8px);
+
+        ion-icon {
+          font-size: 1.25rem;
+          color: color-mix(in srgb, var(--ion-color-primary) 56%, var(--ion-color-secondary) 44%);
+        }
+
+        &.saved-restaurant-button--active {
+          background: rgba(255, 255, 255, 0.96);
+          border-color: rgba(var(--ion-color-primary-rgb), 0.42);
+        }
       }
 
       // Opening status badge: bottom-left
@@ -757,7 +784,7 @@
     }
 
     .filter-chips-primary {
-      grid-template-columns: repeat(3, minmax(0, 11.25rem));
+      grid-template-columns: repeat(4, minmax(0, 10rem));
       justify-content: center;
     }
 
@@ -837,6 +864,11 @@
 
     .card-content {
       background: var(--ion-card-background);
+    }
+
+    .saved-restaurant-button {
+      background: rgba(28, 34, 30, 0.86);
+      border-color: rgba(255, 255, 255, 0.18);
     }
 
     .keyword-chip {

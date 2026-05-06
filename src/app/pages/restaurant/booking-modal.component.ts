@@ -63,7 +63,10 @@ export class BookingModalComponent {
   private evaluateOpeningHours(isoString: string): void {
     if (!this.restaurant?.Opening_Hours) {
       this.hoursStatus = 'unknown';
-      this.hoursMessage = '';
+      this.hoursInfo = null;
+      this.hoursMessage = this.lang === 'TC'
+        ? '未提供營業時間，仍可提交預約要求。'
+        : 'Opening hours are not provided, so you can still request this booking.';
       this.cdr.markForCheck();
       return;
     }
@@ -175,17 +178,17 @@ export class BookingModalComponent {
       return;
     }
 
-    // Warn but do not block if outside hours
     if (this.hoursStatus === 'outside') {
       const toast = await this.toastController.create({
         message: this.lang === 'TC'
-          ? `注意：所選時間不在餐廳營業時間內（${this.hoursInfo?.open} – ${this.hoursInfo?.close}）`
-          : `Note: Selected time is outside opening hours (${this.hoursInfo?.open} – ${this.hoursInfo?.close})`,
+          ? `所選時間不在餐廳營業時間內（${this.hoursInfo?.open} – ${this.hoursInfo?.close}），請選擇其他時間。`
+          : `Selected time is outside opening hours (${this.hoursInfo?.open} – ${this.hoursInfo?.close}). Please choose another time.`,
         duration: 3500,
         position: 'bottom',
-        color: 'warning'
+        color: 'danger'
       });
       await toast.present();
+      return;
     }
 
     await this.modalController.dismiss({

@@ -1,0 +1,68 @@
+<ion-content>
+  <ng-container *ngIf="lang$ | async as lang">
+    <div class="offers-page page-container">
+      <section class="offers-hero">
+        <div class="hero-copy">
+          <div class="hero-kicker">
+            <ion-icon name="ticket-outline"></ion-icon>
+            <span>{{ lang === 'TC' ? '餐廳優惠' : 'Diner Offers' }}</span>
+          </div>
+          <h1>{{ lang === 'TC' ? '香港素食用餐優惠' : 'Vegetarian dining offers in Hong Kong' }}</h1>
+          <p>
+            {{ lang === 'TC'
+              ? '精選午市、週末及晚市優惠，讓您更容易由搜尋餐廳走到完成訂座。'
+              : 'A curated set of lunch, weekend, and dinner ideas that point straight back into real restaurant search and booking flows.' }}
+          </p>
+        </div>
+        <div class="hero-panel" aria-hidden="true">
+          <ion-icon name="pricetags-outline"></ion-icon>
+          <span>HK$88</span>
+        </div>
+      </section>
+
+      <section class="offer-grid" aria-label="Featured offers">
+        <article class="offer-card" *ngFor="let offer of featuredOffers">
+          <div class="offer-icon">
+            <ion-icon [name]="offer.icon"></ion-icon>
+          </div>
+          <p class="offer-eyebrow">{{ lang === 'TC' ? offer.eyebrow_TC : offer.eyebrow_EN }}</p>
+          <h2>{{ lang === 'TC' ? offer.title_TC : offer.title_EN }}</h2>
+          <p class="offer-description">{{ lang === 'TC' ? offer.description_TC : offer.description_EN }}</p>
+          <p class="offer-terms">{{ lang === 'TC' ? offer.terms_TC : offer.terms_EN }}</p>
+          <ion-button [routerLink]="offer.route" fill="clear" class="offer-action">
+            <ion-icon slot="start" name="arrow-forward-circle-outline"></ion-icon>
+            {{ lang === 'TC' ? offer.action_TC : offer.action_EN }}
+          </ion-button>
+        </article>
+      </section>
+
+      <section class="tips-section">
+        <div class="section-heading">
+          <ion-icon name="bulb-outline"></ion-icon>
+          <h2>{{ lang === 'TC' ? '使用優惠小貼士' : 'Offer planning notes' }}</h2>
+        </div>
+        <div class="tips-list">
+          <div class="tip-item" *ngFor="let tip of tips">
+            <ion-icon [name]="tip.icon"></ion-icon>
+            <span>{{ lang === 'TC' ? tip.text_TC : tip.text_EN }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="browse-band">
+        <div>
+          <h2>{{ lang === 'TC' ? '想即刻搵餐廳？' : 'Ready to choose a table?' }}</h2>
+          <p>
+            {{ lang === 'TC'
+              ? '直接前往餐廳搜尋，按地區、分類、營業狀態及評分篩選。'
+              : 'Jump into restaurant search and filter by district, category, opening status, and rating.' }}
+          </p>
+        </div>
+        <ion-button routerLink="/restaurants" fill="clear" class="browse-button">
+          <ion-icon slot="start" name="search-outline"></ion-icon>
+          {{ lang === 'TC' ? '搜尋餐廳' : 'Search restaurants' }}
+        </ion-button>
+      </section>
+    </div>
+  </ng-container>
+</ion-content>

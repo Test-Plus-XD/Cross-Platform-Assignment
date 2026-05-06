@@ -57,6 +57,17 @@
               (click)="clearKeyword($event)"></ion-icon>
           </ion-chip>
 
+          <!-- Refinement Filter Button -->
+          <ion-chip [outline]="!hasAdvancedFilters" [color]="hasAdvancedFilters ? 'primary' : 'medium'"
+            (click)="openRefinementFilter()" class="filter-chip filter-button"
+            [class.filter-chip--selected]="hasAdvancedFilters">
+            <ion-icon name="options-outline"></ion-icon>
+            <ion-label>
+              {{ (lang$ | async) === 'TC' ? '更多' : 'More' }}
+            </ion-label>
+            <ion-icon name="close-circle" *ngIf="hasAdvancedFilters" (click)="clearAdvancedFilters($event)"></ion-icon>
+          </ion-chip>
+
           <!-- Near Me Chip -->
           <ion-chip [class.near-me-active]="isNearMeActive" [color]="isNearMeActive ? 'success' : 'medium'"
             (click)="isNearMeActive ? deactivateNearMe() : activateNearMe()" class="filter-chip near-me-chip">
@@ -78,7 +89,8 @@
           </ion-chip>
         </div>
 
-        <div class="filter-chips-tags" *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0">
+        <div class="filter-chips-tags"
+          *ngIf="selectedDistrictTokens.length > 0 || selectedKeywordTokens.length > 0 || hasAdvancedFilters">
           <!-- District Tags -->
           <ion-chip *ngFor="let district of selectedDistrictTokens" class="filter-tag green-badge">
             <ion-label>{{ getDistrictLabel(district) }}</ion-label>
@@ -89,6 +101,31 @@
           <ion-chip *ngFor="let keyword of selectedKeywordTokens" class="filter-tag green-badge">
             <ion-label>{{ getKeywordLabel(keyword) }}</ion-label>
             <ion-icon name="close-circle" (click)="removeKeywordTag(keyword, $event)"></ion-icon>
+          </ion-chip>
+
+          <ion-chip *ngIf="openNowOnly" class="filter-tag green-badge">
+            <ion-label>{{ (lang$ | async) === 'TC' ? '營業中' : 'Open now' }}</ion-label>
+            <ion-icon name="close-circle" (click)="clearOpenNow($event)"></ion-icon>
+          </ion-chip>
+
+          <ion-chip *ngIf="minimumRating > 0" class="filter-tag green-badge">
+            <ion-label>{{ minimumRating }}★+</ion-label>
+            <ion-icon name="close-circle" (click)="clearMinimumRating($event)"></ion-icon>
+          </ion-chip>
+
+          <ion-chip *ngFor="let payment of selectedPaymentTokens" class="filter-tag green-badge">
+            <ion-label>{{ getPaymentLabel(payment) }}</ion-label>
+            <ion-icon name="close-circle" (click)="removePaymentTag(payment, $event)"></ion-icon>
+          </ion-chip>
+
+          <ion-chip *ngIf="maximumDistanceKilometres" class="filter-tag green-badge">
+            <ion-label>{{ maximumDistanceKilometres }} km</ion-label>
+            <ion-icon name="close-circle" (click)="clearMaximumDistance($event)"></ion-icon>
+          </ion-chip>
+
+          <ion-chip *ngIf="sortMode !== 'relevance'" class="filter-tag green-badge">
+            <ion-label>{{ getSortLabel() }}</ion-label>
+            <ion-icon name="close-circle" (click)="clearSortMode($event)"></ion-icon>
           </ion-chip>
 
           <!-- Clear All Filters Button -->
@@ -137,7 +174,7 @@
       <h2>{{ (lang$ | async) === 'TC' ? translations.noResults.TC : translations.noResults.EN }}</h2>
       <p>{{ (lang$ | async) === 'TC' ? translations.tryDifferent.TC : translations.tryDifferent.EN }}</p>
       <ion-button fill="outline" (click)="clearAllFilters(); deactivateNearMe()"
-        *ngIf="selectedDistrict || selectedKeyword || searchQuery || isNearMeActive">
+        *ngIf="selectedDistrict || selectedKeyword || searchQuery || isNearMeActive || hasAdvancedFilters">
         {{ (lang$ | async) === 'TC' ? translations.clearFilters.TC : translations.clearFilters.EN }}
       </ion-button>
     </div>
@@ -172,6 +209,14 @@
           <img [src]="restaurant.ImageUrl || placeholderImage"
             [alt]="(lang$ | async) === 'TC' ? restaurant.Name_TC : restaurant.Name_EN" class="restaurant-image">
           <div class="image-overlay"></div>
+          <button *ngIf="canUseSavedRestaurants" type="button" class="saved-restaurant-button"
+            [class.saved-restaurant-button--active]="isRestaurantSaved(restaurant.id)"
+            [attr.aria-label]="isRestaurantSaved(restaurant.id)
+              ? ((lang$ | async) === 'TC' ? '取消儲存餐廳' : 'Unsave restaurant')
+              : ((lang$ | async) === 'TC' ? '儲存餐廳' : 'Save restaurant')"
+            (click)="toggleSavedRestaurant(restaurant, $event)">
+            <ion-icon [name]="isRestaurantSaved(restaurant.id) ? 'heart' : 'heart-outline'"></ion-icon>
+          </button>
           <!-- Opening status badge: bottom-left -->
           <span class="opening-badge open" *ngIf="getOpeningStatus(restaurant) === 'open'">
             {{ (lang$ | async) === 'TC' ? '營業中' : 'Open' }}

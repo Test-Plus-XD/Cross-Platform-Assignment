@@ -1,6 +1,6 @@
 // Restaurant detail page component with modern responsive design
 // Displays comprehensive restaurant information including menu, reviews, and booking functionality
-import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ModalController, ToastController, AlertController } from '@ionic/angular';
 import { Observable, Subject, combineLatest } from 'rxjs';
@@ -12,9 +12,11 @@ import { CreateBookingRequest } from '../../services/booking.service';
 import { DistanceResult } from '../../services/location.service';
 import { RestaurantFeatureService } from '../../services/restaurant-feature.service';
 import { DataService } from '../../services/data.service';
+import { SavedRestaurantsService } from '../../services/saved-restaurants.service';
 import { MapModalComponent } from './map-modal.component';
 import { FullMenuModalComponent } from './full-menu-modal.component';
 import { BookingModalComponent } from './booking-modal.component';
+import { ChatButtonComponent } from '../../shared/chat-button/chat-button.component';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -25,8 +27,11 @@ import { environment } from '../../../environments/environment';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild(ChatButtonComponent) private chatButton?: ChatButtonComponent;
+
   private readonly feature = inject(RestaurantFeatureService);
   private readonly dataService = inject(DataService);
+  private readonly savedRestaurantsService = inject(SavedRestaurantsService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly modalController = inject(ModalController);
@@ -104,6 +109,9 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
   // Snapshot of the current language for synchronous access in methods
   currentLanguage: 'EN' | 'TC' = 'EN';
   private isDarkThemeActive = false;
+  public isRestaurantSaved = false;
+  public canUseSavedRestaurants = false;
+  public menuSearchQuery = '';
   // Number of random menu entries loaded into the compact preview scroller
   readonly menuPreviewLimit: number = 5;
   // Number of menu rows that should be visible before the preview area scrolls
@@ -135,6 +143,17 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
       this.initialiseMapIfNeeded();
+    });
+
+    this.savedRestaurantsService.savedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+      this.isRestaurantSaved = this.savedRestaurantsService.isRestaurantSaved(this.restaurant?.id);
+      this.changeDetectionReference.markForCheck();
+    });
+
+    this.savedRestaurantsService.canUseSavedRestaurants$.pipe(takeUntil(this.destroy$)).subscribe(canUseSavedRestaurants => {
+      this.canUseSavedRestaurants = canUseSavedRestaurants;
+      if (!canUseSavedRestaurants) this.isRestaurantSaved = false;
+      this.changeDetectionReference.markForCheck();
     });
 
     // Try to get user's location for distance calculation
@@ -202,6 +221,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         }
 
         this.restaurant = restaurant;
+        this.isRestaurantSaved = this.savedRestaurantsService.isRestaurantSaved(restaurant.id);
         console.log('RestaurantPage: Restaurant loaded successfully:', restaurant.Name_EN);
 
         // Emit dynamic restaurant name and share payload to the shared header.
@@ -287,6 +307,42 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
     if (!imageUrl) return null;
     if (imageUrl === '—' || imageUrl === 'null' || imageUrl === 'undefined') return null;
     return imageUrl;
+  }
+
+  // Returns the menu item name in the current language with a stable fallback.
+  getMenuItemName(menuItem: MenuItem): string {
+    return this.currentLanguage === 'TC'
+      ? (menuItem.Name_TC || menuItem.Name_EN || '—')
+      : (menuItem.Name_EN || menuItem.Name_TC || '—');
+  }
+
+  // Returns the menu item description in the current language with a stable fallback.
+  getMenuItemDescription(menuItem: MenuItem): string {
+    return this.currentLanguage === 'TC'
+      ? (menuItem.Description_TC || menuItem.Description_EN || '')
+      : (menuItem.Description_EN || menuItem.Description_TC || '');
+  }
+
+  // Returns the visible menu list after the menu tab search is applied.
+  getFilteredMenuItems(): MenuItem[] {
+    const query = this.menuSearchQuery.trim().toLowerCase();
+    if (!query) return this.menuItems;
+    return this.menuItems.filter(menuItem => {
+      const name = `${menuItem.Name_EN || ''} ${menuItem.Name_TC || ''}`.toLowerCase();
+      const description = `${menuItem.Description_EN || ''} ${menuItem.Description_TC || ''}`.toLowerCase();
+      return name.includes(query) || description.includes(query);
+    });
+  }
+
+  // Toggles local saved state for the currently loaded restaurant.
+  toggleSavedRestaurant(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (!this.restaurant || !this.canUseSavedRestaurants) return;
+    this.isRestaurantSaved = this.savedRestaurantsService.toggleRestaurant(this.restaurant);
+    this.changeDetectionReference.markForCheck();
   }
 
   /// Load reviews for the restaurant
@@ -1130,10 +1186,7 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         console.info('Booking created:', response.id);
         this.isBookingLoading = false;
         this.changeDetectionReference.markForCheck();
-        const msg = isTC
-          ? `已成功預約！預約編號: ${response.id.substring(0, 8)}`
-          : `Booking confirmed! Booking ID: ${response.id.substring(0, 8)}`;
-        await this.showToast(msg, 'success');
+        await this.presentBookingSuccessActions(response.id, isTC);
       },
       error: async (error: any) => {
         console.error('Booking failed:', error);
@@ -1145,6 +1198,48 @@ export class RestaurantPage implements OnInit, AfterViewInit, OnDestroy {
         );
       }
     });
+  }
+
+  /// Presents useful next actions after a booking is successfully created.
+  private async presentBookingSuccessActions(bookingId: string, isTC: boolean): Promise<void> {
+    const bookingReference = bookingId.substring(0, 8);
+    const buttons: any[] = [
+      {
+        text: isTC ? '查看預約' : 'View Bookings',
+        handler: () => {
+          void this.router.navigate(['/booking']);
+        }
+      },
+      {
+        text: isTC ? '訊息餐廳' : 'Message Restaurant',
+        handler: () => {
+          void this.chatButton?.openChatWindow();
+        }
+      }
+    ];
+
+    if (this.hasCoordinates()) {
+      buttons.push({
+        text: isTC ? '路線導航' : 'Directions',
+        handler: () => {
+          void this.openDirectionsModal();
+        }
+      });
+    }
+
+    buttons.push({
+      text: isTC ? '留在此頁' : 'Stay Here',
+      role: 'cancel'
+    });
+
+    const alert = await this.alertController.create({
+      header: isTC ? '預約已確認' : 'Booking Confirmed',
+      message: isTC
+        ? `預約編號：${bookingReference}。您可查看預約、訊息餐廳或取得路線。`
+        : `Booking ID: ${bookingReference}. You can view your booking, message the restaurant, or get directions.`,
+      buttons
+    });
+    await alert.present();
   }
 
   /// Scroll to booking section (switches to overview tab if needed)

@@ -16,6 +16,60 @@
     <!-- Booking Content -->
     <div class="booking-container" *ngIf="!isLoading">
 
+      <!-- Saved Restaurants -->
+      <section class="saved-restaurants-section" *ngIf="canUseSavedRestaurants">
+        <div class="saved-section-header">
+          <div>
+            <h2>{{ (lang$ | async) === 'TC' ? '已儲存餐廳' : 'Saved Restaurants' }}</h2>
+            <p>
+              {{ (lang$ | async) === 'TC'
+              ? '本機儲存，方便下次快速預約。'
+              : 'Stored locally for quick return bookings.' }}
+            </p>
+          </div>
+          <ion-button *ngIf="savedRestaurants.length > 0" fill="clear" color="danger" size="small"
+            (click)="clearSavedRestaurants()">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            {{ (lang$ | async) === 'TC' ? '清除' : 'Clear' }}
+          </ion-button>
+        </div>
+
+        <div class="saved-restaurants-grid" *ngIf="savedRestaurants.length > 0; else noSavedRestaurants">
+          <ion-card class="saved-restaurant-card" *ngFor="let restaurant of savedRestaurants"
+            (click)="viewSavedRestaurant(restaurant)" button>
+            <div class="saved-image-shell">
+              <img [src]="restaurant.ImageUrl || placeholderImage"
+                [alt]="getSavedRestaurantName(restaurant, (lang$ | async) === 'TC')">
+              <button type="button" class="saved-remove-button"
+                [attr.aria-label]="(lang$ | async) === 'TC' ? '移除已儲存餐廳' : 'Remove saved restaurant'"
+                (click)="removeSavedRestaurant(restaurant.id, $event)">
+                <ion-icon name="heart-dislike-outline"></ion-icon>
+              </button>
+            </div>
+            <ion-card-content>
+              <h3>{{ getSavedRestaurantName(restaurant, (lang$ | async) === 'TC') }}</h3>
+              <p *ngIf="getSavedRestaurantDistrict(restaurant, (lang$ | async) === 'TC')" class="saved-meta">
+                <ion-icon name="location-outline"></ion-icon>
+                <span>{{ getSavedRestaurantDistrict(restaurant, (lang$ | async) === 'TC') }}</span>
+              </p>
+              <p *ngIf="getSavedRestaurantAddress(restaurant, (lang$ | async) === 'TC')" class="saved-address">
+                {{ getSavedRestaurantAddress(restaurant, (lang$ | async) === 'TC') }}
+              </p>
+            </ion-card-content>
+          </ion-card>
+        </div>
+
+        <ng-template #noSavedRestaurants>
+          <div class="saved-empty-state">
+            <ion-icon name="heart-outline"></ion-icon>
+            <span>{{ (lang$ | async) === 'TC' ? '尚未儲存餐廳。' : 'No saved restaurants yet.' }}</span>
+            <ion-button fill="clear" size="small" routerLink="/search">
+              {{ (lang$ | async) === 'TC' ? '去搜尋' : 'Browse' }}
+            </ion-button>
+          </div>
+        </ng-template>
+      </section>
+
       <!-- Statistics Cards -->
       <div class="stats-grid">
         <ion-card class="stat-card">

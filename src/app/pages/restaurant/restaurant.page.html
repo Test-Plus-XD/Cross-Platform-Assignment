@@ -25,6 +25,14 @@
         [alt]="(lang$ | async) === 'TC' ? (restaurant.Name_TC || restaurant.Name_EN || '') : (restaurant.Name_EN || restaurant.Name_TC || '')"
         class="hero-background" />
       <div class="hero-overlay"></div>
+      <button *ngIf="canUseSavedRestaurants" type="button" class="hero-save-button"
+        [class.hero-save-button--active]="isRestaurantSaved"
+        [attr.aria-label]="isRestaurantSaved
+          ? ((lang$ | async) === 'TC' ? '取消儲存餐廳' : 'Unsave restaurant')
+          : ((lang$ | async) === 'TC' ? '儲存餐廳' : 'Save restaurant')"
+        (click)="toggleSavedRestaurant($event)">
+        <ion-icon [name]="isRestaurantSaved ? 'heart' : 'heart-outline'"></ion-icon>
+      </button>
       <div class="hero-content">
         <!-- Restaurant Name - English -->
         <h1 class="restaurant-name-en">
@@ -59,6 +67,9 @@
       <ion-segment [(ngModel)]="selectedTab" mode="md">
         <ion-segment-button value="overview">
           <ion-label>{{ (lang$ | async) === 'TC' ? '概覽' : 'Overview' }}</ion-label>
+        </ion-segment-button>
+        <ion-segment-button value="menu">
+          <ion-label>{{ (lang$ | async) === 'TC' ? '菜單' : 'Menu' }}</ion-label>
         </ion-segment-button>
         <ion-segment-button value="review">
           <ion-label>{{ (lang$ | async) === 'TC' ? '評論' : 'Review' }}</ion-label>
@@ -189,6 +200,11 @@
         </ion-button>
       </div>
 
+    </div>
+
+    <!-- Menu Tab Content -->
+    <div class="tab-content menu-tab" *ngIf="selectedTab === 'menu'">
+
       <!-- Menu Section -->
       <div class="menu-section">
         <h3 class="section-title">{{ (lang$ | async) === 'TC' ? '菜單' : 'Menu' }}</h3>
@@ -197,11 +213,14 @@
           <img src="assets/icon/Eclipse.gif" alt="Loading" class="small-spinner">
         </div>
 
-        <!-- The preview scroller contains up to five random dishes while only three rows are visible. -->
-        <div *ngIf="!isMenuLoading && menuItems.length > 0" class="menu-scroller"
-          [style.max-height.px]="(visibleMenuPreviewCount * 128) + ((visibleMenuPreviewCount - 1) * 12)">
+        <ion-searchbar *ngIf="!isMenuLoading && menuItems.length > 0" [(ngModel)]="menuSearchQuery"
+          [placeholder]="(lang$ | async) === 'TC' ? '搜尋菜式' : 'Search dishes'" debounce="150"
+          class="menu-searchbar">
+        </ion-searchbar>
+
+        <div *ngIf="!isMenuLoading && getFilteredMenuItems().length > 0" class="menu-scroller menu-scroller--full">
           <div class="menu-list">
-            <div *ngFor="let item of menuPreviewItems" class="menu-item">
+            <div *ngFor="let item of getFilteredMenuItems()" class="menu-item">
               <div class="menu-item-image-container" *ngIf="getMenuItemImageUrl(item)">
                 <img [src]="getMenuItemImageUrl(item)!" alt="Menu item image" class="menu-item-image">
               </div>
@@ -210,13 +229,9 @@
                 <span *ngIf="!item.price">—</span>
               </div>
               <div class="menu-item-info">
-                <h4 class="menu-item-name">
-                  {{ (lang$ | async) === 'TC' ? (item.Name_TC || item.Name_EN || '—') : (item.Name_EN || item.Name_TC ||
-                  '—') }}
-                </h4>
-                <p class="menu-item-description" *ngIf="item.Description_EN || item.Description_TC">
-                  {{ (lang$ | async) === 'TC' ? (item.Description_TC || item.Description_EN || '') :
-                  (item.Description_EN || item.Description_TC || '') }}
+                <h4 class="menu-item-name">{{ getMenuItemName(item) }}</h4>
+                <p class="menu-item-description" *ngIf="getMenuItemDescription(item)">
+                  {{ getMenuItemDescription(item) }}
                 </p>
               </div>
             </div>
@@ -231,6 +246,10 @@
 
         <p *ngIf="!isMenuLoading && menuItems.length === 0" class="no-data">
           {{ (lang$ | async) === 'TC' ? '未提供菜單' : 'Menu not available' }}
+        </p>
+
+        <p *ngIf="!isMenuLoading && menuItems.length > 0 && getFilteredMenuItems().length === 0" class="no-data">
+          {{ (lang$ | async) === 'TC' ? '沒有符合搜尋的菜式' : 'No dishes match your search' }}
         </p>
       </div>
 

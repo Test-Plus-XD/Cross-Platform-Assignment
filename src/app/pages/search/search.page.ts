@@ -1,7 +1,7 @@
 // Search page component with multi-district and multi-keyword filtering (EN-primary).
 // Supports list/map view toggle and Near Me proximity search.
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
-import { AlertController } from '@ionic/angular';
+import { ModalController } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { Subscription, firstValueFrom, debounceTime, Subject, Observable } from 'rxjs';
 import { RestaurantsService, Restaurant } from '../../services/restaurants.service';
@@ -10,8 +10,11 @@ import { PlatformService } from '../../services/platform.service';
 import { LocationService, Coordinates } from '../../services/location.service';
 import { ReviewsService } from '../../services/reviews.service';
 import { ThemeService } from '../../services/theme.service';
+import { SavedRestaurantsService } from '../../services/saved-restaurants.service';
 import { Districts } from '../../constants/districts.const';
 import { Keywords } from '../../constants/keywords.const';
+import { PaymentMethods } from '../../constants/payments.const';
+import { SearchFilterModalComponent, SearchFilterState, SearchSortMode } from './search-filter-modal.component';
 import { environment } from '../../../environments/environment';
 
 interface DistrictOption {
@@ -52,11 +55,12 @@ interface Translations {
 export class SearchPage implements OnInit, OnDestroy {
   private readonly restaurantsService = inject(RestaurantsService);
   private readonly languageService = inject(LanguageService);
-  private readonly alertController = inject(AlertController);
+  private readonly modalController = inject(ModalController);
   private readonly platformService = inject(PlatformService);
   private readonly locationService = inject(LocationService);
   private readonly reviewsService = inject(ReviewsService);
   private readonly themeService = inject(ThemeService);
+  private readonly savedRestaurantsService = inject(SavedRestaurantsService);
   private readonly router = inject(Router);
   private readonly searchHeaderCollapseThreshold: number = 72;
   private readonly searchHeaderExpandThreshold: number = 24;
@@ -137,6 +141,13 @@ export class SearchPage implements OnInit, OnDestroy {
   public searchQuery: string = ''; // Free-text query (user input)
   public selectedDistrictTokens: string[] = []; // EN tokens for districts (canonical)
   public selectedKeywordTokens: string[] = []; // EN tokens for keywords (canonical)
+  public openNowOnly: boolean = false;
+  public minimumRating: number = 0;
+  public selectedPaymentTokens: string[] = [];
+  public maximumDistanceKilometres: number | null = null;
+  public sortMode: SearchSortMode = 'relevance';
+  public savedRestaurantIds = new Set<string>();
+  public canUseSavedRestaurants = false;
 
   // Results
   public restaurants: Restaurant[] = [];
@@ -168,6 +179,7 @@ export class SearchPage implements OnInit, OnDestroy {
   // Available options (store bilingual objects)
   public availableDistricts: DistrictOption[] = [];
   public availableKeywords: KeywordOption[] = [];
+  public readonly paymentMethods = PaymentMethods;
 
   // Language and platform observables
   public lang$ = this.languageService.lang$;
@@ -222,6 +234,17 @@ export class SearchPage implements OnInit, OnDestroy {
       }
     });
     this.subscriptions.push(themeSub);
+
+    // Keep local saved-state icons current across Search, Restaurant, Home, and Bookings.
+    const savedSub = this.savedRestaurantsService.savedRestaurants$.subscribe(savedRestaurants => {
+      this.savedRestaurantIds = new Set(savedRestaurants.map(restaurant => restaurant.id));
+    });
+    this.subscriptions.push(savedSub);
+
+    const canUseSavedSub = this.savedRestaurantsService.canUseSavedRestaurants$.subscribe(canUseSavedRestaurants => {
+      this.canUseSavedRestaurants = canUseSavedRestaurants;
+    });
+    this.subscriptions.push(canUseSavedSub);
 
     // Set up debounced search for input changes
     const searchSub = this.searchSubject.pipe(
@@ -454,108 +477,70 @@ export class SearchPage implements OnInit, OnDestroy {
     return this.currentLang === 'TC' ? (keyword?.label_tc || token) : (keyword?.label_en || token);
   }
 
-  // Open the district selector using checkboxes (multiple selection supported).
-  public async openDistrictFilter(): Promise<void> {
-    const currentLang = this.currentLang;
-    // Build inputs with label in UI language but value as EN token
-    const inputs = [
-      {
-        type: 'checkbox' as const,
-        label: currentLang === 'TC' ? '所有地區' : 'All Districts',
-        value: '',
-        checked: this.selectedDistrictTokens.length === 0
+  // Opens the full-screen filter sheet with the requested tab selected.
+  private async openFilterSheet(startTab: 'districts' | 'categories' | 'refine'): Promise<void> {
+    const modal = await this.modalController.create({
+      component: SearchFilterModalComponent,
+      componentProps: {
+        lang: this.currentLang,
+        availableDistricts: this.availableDistricts,
+        availableKeywords: this.availableKeywords,
+        paymentMethods: this.paymentMethods,
+        hasLocationContext: !!this.userLocation || this.isNearMeActive,
+        startTab,
+        initialState: this.buildFilterState()
       },
-      ...this.availableDistricts.map(d => ({
-        type: 'checkbox' as const,
-        label: currentLang === 'TC' ? d.district_tc : d.district_en,
-        value: d.district_en,
-        checked: this.selectedDistrictTokens.includes(d.district_en)
-      }))
-    ];
-
-    const alert = await this.alertController.create({
-      header: currentLang === 'TC' ? '選擇地區' : 'Select District(s)',
-      subHeader: currentLang === 'TC'
-        ? '選擇特定地區會自動取消「所有地區」'
-        : 'Selecting specific districts will automatically deselect "All Districts"',
-      inputs,
-      buttons: [
-        { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
-        {
-          text: 'OK',
-          handler: (values: string[]) => {
-            // Filter out falsy values first
-            const selectedValues = Array.isArray(values) ? values.filter(Boolean) : [];
-
-            // If the All option was checked along with specific districts, prioritise specific districts
-            if (values && values.includes('') && selectedValues.length > 0) {
-              this.selectedDistrictTokens = selectedValues;
-            } else if (values && values.includes('')) {
-              // Only All option was checked, clear selection
-              this.selectedDistrictTokens = [];
-            } else {
-              // Only specific districts were checked
-              this.selectedDistrictTokens = selectedValues;
-            }
-            this.currentPage = 0;
-            this.performSearch();
-          }
-        }
-      ]
+      cssClass: 'search-filter-sheet',
+      breakpoints: [0, 0.75, 1],
+      initialBreakpoint: 0.75
     });
-    await alert.present();
+
+    await modal.present();
+    const { data, role } = await modal.onDidDismiss<SearchFilterState>();
+    if (role !== 'apply' || !data) return;
+    this.applyFilterState(data);
   }
 
-  // Open the keyword selector using checkboxes (multiple selection supported).
+  // Opens the district tab in the shared filter sheet.
+  public async openDistrictFilter(): Promise<void> {
+    await this.openFilterSheet('districts');
+  }
+
+  // Opens the category tab in the shared filter sheet.
   public async openKeywordFilter(): Promise<void> {
-    const currentLang = this.currentLang;
-    // Build inputs with label in UI language but value as EN token
-    const inputs = [
-      {
-        type: 'checkbox' as const,
-        label: currentLang === 'TC' ? '所有分類' : 'All Categories',
-        value: '',
-        checked: this.selectedKeywordTokens.length === 0
-      },
-      ...this.availableKeywords.map(k => ({
-        type: 'checkbox' as const,
-        label: currentLang === 'TC' ? k.label_tc : k.label_en,
-        value: k.value_en,
-        checked: this.selectedKeywordTokens.includes(k.value_en)
-      }))
-    ];
+    await this.openFilterSheet('categories');
+  }
 
-    const alert = await this.alertController.create({
-      header: currentLang === 'TC' ? '選擇分類' : 'Select Category(ies)',
-      subHeader: currentLang === 'TC'
-        ? '選擇特定分類會自動取消「所有分類」'
-        : 'Selecting specific categories will automatically deselect "All Categories"',
-      inputs,
-      buttons: [
-        { text: currentLang === 'TC' ? '取消' : 'Cancel', role: 'cancel' },
-        {
-          text: 'OK',
-          handler: (values: string[]) => {
-            // Filter out falsy values first
-            const selectedValues = Array.isArray(values) ? values.filter(Boolean) : [];
+  // Opens the refinement and sorting tab in the shared filter sheet.
+  public async openRefinementFilter(): Promise<void> {
+    await this.openFilterSheet('refine');
+  }
 
-            // If the All option was checked along with specific keywords, prioritise specific keywords
-            if (values && values.includes('') && selectedValues.length > 0) {
-              this.selectedKeywordTokens = selectedValues;
-            } else if (values && values.includes('')) {
-              // Only All option was checked, clear selection
-              this.selectedKeywordTokens = [];
-            } else {
-              // Only specific keywords were checked
-              this.selectedKeywordTokens = selectedValues;
-            }
-            this.currentPage = 0;
-            this.performSearch();
-          }
-        }
-      ]
-    });
-    await alert.present();
+  // Builds the modal state object from SearchPage's current filters.
+  private buildFilterState(): SearchFilterState {
+    return {
+      selectedDistrictTokens: [...this.selectedDistrictTokens],
+      selectedKeywordTokens: [...this.selectedKeywordTokens],
+      openNowOnly: this.openNowOnly,
+      minimumRating: this.minimumRating,
+      selectedPaymentTokens: [...this.selectedPaymentTokens],
+      maximumDistanceKilometres: this.maximumDistanceKilometres,
+      sortMode: this.sortMode
+    };
+  }
+
+  // Applies modal state, resets pagination, and refreshes map/list output.
+  private applyFilterState(state: SearchFilterState): void {
+    this.selectedDistrictTokens = state.selectedDistrictTokens;
+    this.selectedKeywordTokens = state.selectedKeywordTokens;
+    this.openNowOnly = state.openNowOnly;
+    this.minimumRating = state.minimumRating;
+    this.selectedPaymentTokens = state.selectedPaymentTokens;
+    this.maximumDistanceKilometres = state.maximumDistanceKilometres;
+    this.sortMode = state.sortMode;
+    this.currentPage = 0;
+    this.performSearch();
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
   }
 
   // Clear all districts (from chip close button)
@@ -602,10 +587,101 @@ export class SearchPage implements OnInit, OnDestroy {
     return this.currentLang === 'TC' ? (keyword?.label_tc || token) : (keyword?.label_en || token);
   }
 
+  // Get display label for a payment token.
+  public getPaymentLabel(token: string): string {
+    const payment = this.paymentMethods.find(method => method.en === token);
+    return this.currentLang === 'TC' ? (payment?.tc || token) : (payment?.en || token);
+  }
+
+  // Removes a specific payment tag from the client-side refinement set.
+  public removePaymentTag(paymentToken: string, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedPaymentTokens = this.selectedPaymentTokens.filter(payment => payment !== paymentToken);
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Clears the open-now refinement.
+  public clearOpenNow(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.openNowOnly = false;
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Clears the minimum-rating refinement.
+  public clearMinimumRating(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.minimumRating = 0;
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Clears the maximum-distance refinement.
+  public clearMaximumDistance(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.maximumDistanceKilometres = null;
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Clears the sort refinement.
+  public clearSortMode(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.sortMode = 'relevance';
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Clears every advanced refinement from the compact More chip.
+  public clearAdvancedFilters(event?: Event): void {
+    if (event) event.stopPropagation();
+    this.openNowOnly = false;
+    this.minimumRating = 0;
+    this.selectedPaymentTokens = [];
+    this.maximumDistanceKilometres = null;
+    this.sortMode = 'relevance';
+    if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
+  }
+
+  // Returns the active sort label for visible filter chips.
+  public getSortLabel(): string {
+    const labels: Record<SearchSortMode, { EN: string; TC: string }> = {
+      relevance: { EN: 'Relevance', TC: '相關度' },
+      rating: { EN: 'Highest rated', TC: '評分最高' },
+      distance: { EN: 'Nearest', TC: '距離最近' },
+      open: { EN: 'Open first', TC: '營業中優先' }
+    };
+    return labels[this.sortMode][this.currentLang];
+  }
+
+  // Returns true when advanced client-side refinements are active.
+  public get hasAdvancedFilters(): boolean {
+    return this.openNowOnly
+      || this.minimumRating > 0
+      || this.selectedPaymentTokens.length > 0
+      || !!this.maximumDistanceKilometres
+      || this.sortMode !== 'relevance';
+  }
+
+  // Returns true when a restaurant is locally saved.
+  public isRestaurantSaved(restaurantId: string | null | undefined): boolean {
+    if (!restaurantId || !this.canUseSavedRestaurants) return false;
+    return this.savedRestaurantIds.has(restaurantId);
+  }
+
+  // Toggles local saved state without triggering the card router link.
+  public toggleSavedRestaurant(restaurant: Restaurant, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!this.canUseSavedRestaurants) return;
+    this.savedRestaurantsService.toggleRestaurant(restaurant);
+  }
+
   // Clear all selected filters
   public clearAllFilters(): void {
     this.selectedDistrictTokens = [];
     this.selectedKeywordTokens = [];
+    this.selectedPaymentTokens = [];
+    this.openNowOnly = false;
+    this.minimumRating = 0;
+    this.maximumDistanceKilometres = null;
+    this.sortMode = 'relevance';
     this.searchQuery = '';
     this.currentPage = 0;
     this.performSearch();
@@ -652,9 +728,59 @@ export class SearchPage implements OnInit, OnDestroy {
     }
   }
 
+  // Returns a rating value from loaded review stats, falling back to the restaurant record.
+  private getRestaurantRating(restaurant: Restaurant): number {
+    return this.ratingMap[restaurant.id]?.averageRating ?? restaurant.rating ?? 0;
+  }
+
+  // Returns a distance in metres when the app has enough location data to calculate it.
+  private getRestaurantDistanceMetres(restaurant: Restaurant & { distance?: number }): number | null {
+    if (typeof restaurant.distance === 'number') return restaurant.distance;
+    if (!restaurant.Latitude || !restaurant.Longitude) return null;
+    const result = this.locationService.calculateDistanceFromCurrentLocation(restaurant.Latitude, restaurant.Longitude);
+    return result?.distanceMeters ?? null;
+  }
+
+  // Returns true when a restaurant satisfies all client-side refinements.
+  private passesClientRefinements(restaurant: Restaurant & { distance?: number }): boolean {
+    if (this.openNowOnly && this.getOpeningStatus(restaurant) !== 'open') return false;
+    if (this.minimumRating > 0 && this.getRestaurantRating(restaurant) < this.minimumRating) return false;
+    if (this.selectedPaymentTokens.length > 0) {
+      const payments = Array.isArray(restaurant.Payments) ? restaurant.Payments : [];
+      const hasPayment = this.selectedPaymentTokens.some(payment => payments.includes(payment));
+      if (!hasPayment) return false;
+    }
+    if (this.maximumDistanceKilometres) {
+      const distanceMetres = this.getRestaurantDistanceMetres(restaurant);
+      if (distanceMetres === null || distanceMetres > this.maximumDistanceKilometres * 1000) return false;
+    }
+    return true;
+  }
+
+  // Sorts a copied restaurant list according to the active sort mode.
+  private sortDisplayRestaurants(restaurants: (Restaurant & { distance?: number })[]): (Restaurant & { distance?: number })[] {
+    const sortedRestaurants = [...restaurants];
+    if (this.sortMode === 'rating') {
+      sortedRestaurants.sort((firstRestaurant, secondRestaurant) =>
+        this.getRestaurantRating(secondRestaurant) - this.getRestaurantRating(firstRestaurant)
+      );
+    } else if (this.sortMode === 'distance') {
+      sortedRestaurants.sort((firstRestaurant, secondRestaurant) =>
+        (this.getRestaurantDistanceMetres(firstRestaurant) ?? Number.MAX_SAFE_INTEGER)
+        - (this.getRestaurantDistanceMetres(secondRestaurant) ?? Number.MAX_SAFE_INTEGER)
+      );
+    } else if (this.sortMode === 'open') {
+      sortedRestaurants.sort((firstRestaurant, secondRestaurant) =>
+        Number(this.getOpeningStatus(secondRestaurant) === 'open') - Number(this.getOpeningStatus(firstRestaurant) === 'open')
+      );
+    }
+    return sortedRestaurants;
+  }
+
   // Get the current display list (nearby results or normal search results)
   public getDisplayRestaurants(): (Restaurant & { distance?: number })[] {
-    return this.isNearMeActive ? this.nearbyRestaurants : this.restaurants;
+    const sourceRestaurants = this.isNearMeActive ? this.nearbyRestaurants : this.restaurants;
+    return this.sortDisplayRestaurants(sourceRestaurants.filter(restaurant => this.passesClientRefinements(restaurant)));
   }
 
   // Toggle between list and map view
@@ -1179,6 +1305,7 @@ export class SearchPage implements OnInit, OnDestroy {
     this.reviewsService.getBatchStats(ids).subscribe({
       next: (statsMap) => {
         this.ratingMap = { ...this.ratingMap, ...statsMap };
+        if (this.viewMode === 'map' && this.map) this.updateMapMarkers();
       },
       error: (err) => {
         console.warn('SearchPage: Failed to load batch ratings', err);
