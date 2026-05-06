@@ -59,6 +59,13 @@
   color: var(--ion-color-primary);
 }
 
+/* Keep a selected date readable when Ionic marks the same cell as both active and today. */
+.booking-datetime::part(calendar-day active today) {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
 .booking-datetime::part(calendar-day disabled) {
   color: rgba(var(--ion-color-medium-rgb), 0.35);
 }
