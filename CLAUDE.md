@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant Guide for Cross-Platform-Assignment
 
-> **Last Updated:** 2026-05-06 | **Version:** 1.17.53 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
+> **Last Updated:** 2026-10-18 | **Version:** 1.17.55 | **Angular:** 20.3.3 | **Ionic:** 8.7.9
 > **REST API:** `..\Vercel-Express-API` (Vercel) | **Socket.IO:** `..\Railway-Socket` (Railway)
 
 ## Table of Contents
@@ -630,8 +630,8 @@ export const environment = {
   production: false,
   apiUrl: 'https://vercel-express-api-alpha.vercel.app',
   socketUrl: 'https://railway-socket-production.up.railway.app', // v1.6.1
-  algoliaAppId: 'V9HMGL1VIZ',
-  algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
+  algoliaAppId: 'TRL0C36KHD',
+  algoliaSearchKey: '424e93ece22d9079edc967eec5c0f551',
   googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
   firebaseConfig: {
     apiKey: 'YOUR_API_KEY',
@@ -1820,7 +1820,7 @@ app.method('/API/Resource', authenticate, async (request, response) => {
 ## Quick Reference
 
 ### Codebase Knowledge Graph (graphify-out/)
-A pre-generated knowledge graph of the `src/` directory lives at `graphify-out/` (generated 2026-04-08, 951 nodes, 1347 edges, 78 communities). Use it for deep codebase exploration:
+A locally generated knowledge graph of the `src/` directory lives at `graphify-out/` (gitignored since v1.17.55, so it is absent from fresh clones; regenerate with `/graphify`; last generated 2026-04-08, 951 nodes, 1347 edges, 78 communities). Use it for deep codebase exploration:
 - `graphify-out/graph.html` — interactive visual graph (open in browser)
 - `graphify-out/graph.json` — machine-readable node/edge data
 - `graphify-out/GRAPH_REPORT.md` — god nodes, surprising connections, community summary
@@ -2006,5 +2006,9 @@ Follow-up APK validation confirmed the durable root cause was the shared `Restau
 
 
 - **v1.17.53** (2026-05-06): **Restaurant booking modal contrast, map close icon, and cached re-entry guard.** `src/app/pages/restaurant/booking-modal.component.html/scss` now uses the Ionic success colour for Confirm Booking, keeps the guest count on `--ion-text-color`, and adds datetime host variables for Ionic's internal time button surface so the inline date-time picker no longer falls back to a bright white time button in dark mode. The same booking modal styling now also includes a specific active-plus-today calendar-day override so today's selected date keeps contrast text on the selected background. `src/app/pages/restaurant/map-modal.component.ts` replaces the navigation modal's top-right text close action with an icon-only cross and accessible label. `src/app/pages/restaurant/restaurant.page.ts/html` now loads restaurant data from route parameter subscriptions rather than relying on `ngAfterViewInit`, restores title/share/map state in `ionViewWillEnter`, and provides a retry method for visible errors. This addresses the suspected Ionic in-app route-cache problem where navigating from Search back to the same Restaurant page could reuse the cached component without rerunning the original view initialisation path, leaving stale `isLoading` state visible.
+
+- **v1.17.54** (2026-05-13): **Project commit-history timeline documentation.** Added `PROJECT_TIMELINE.md`, a 25-item rough project timeline based on first-parent commit history from this frontend repository and the sibling `..\Vercel-Express-API` repository. The document uses `DD/MM/YYYY - DD/MM/YYYY` date ranges and summarises the project from early Ionic setup through backend separation, bookings, chat, Gemini, Stripe, FCM, QR scanning, Android hardening, maps, saved restaurants, and May 2026 UI polish. No application code changed.
+
+- **v1.17.55** (2026-10-18): **Algolia application migrated to a new Algolia app (Algolia for Firebase changed).** Application ID is now `TRL0C36KHD` with a new search-only key; the old app `V9HMGL1VIZ` is retired. Updated `algoliaAppId` / `algoliaSearchKey` in `src/environments/environment.ts` and `environment.prod.ts`, the config example in this file, and (sibling repo `..\Vercel-Express-API`) `.env` (`ALGOLIA_APP_ID` / `ALGOLIA_SEARCH_KEY`) plus its `CLAUDE.md` example. No TypeScript logic changed: the frontend never talks to Algolia directly (see `RestaurantsService` rule), it only calls `GET /API/Algolia/Restaurants`, so the live credentials that matter are the API's `ALGOLIA_*` env vars, and the frontend `environment` values are unused config kept in sync. The Algolia **write/admin key is deliberately not stored in either repo**: no code uses it, it belongs only in the Firebase "Search Firestore with Algolia" extension config, and the API's `.env` is tracked by git. The API route (`API/Routes/Algolia.ts`) hard-codes index name `Restaurants`; the extension's index name must match. Verified with `npx ng build` (only the existing `qrcode`/`jsqr` CommonJS warnings) and `npx cap copy android`; a read-only search with the new key returns real restaurants from the `Restaurants` index (75 records after the Firebase extension import). **Open item:** the new index has no `attributesForFaceting`, so the API's district/keyword `filters` currently return 0 hits and `GET /API/Algolia/Restaurants/facets/:facetName` returns 400; `District_EN`, `District_TC`, `Keyword_EN` and `Keyword_TC` must be added as `searchable(...)` facets in the Algolia dashboard (Index → Configuration → Facets). **Deployment note:** `..\Vercel-Express-API\vercel.json` bundles the tracked `.env` via `includeFiles` and `dotenv.config()` does not override existing variables, so that `.env` is the production source unless the Vercel dashboard also defines `ALGOLIA_*` (the dashboard wins); never untrack or gitignore that `.env`. **Repo hygiene (same session):** `graphify-out/`, `*.bak` backups, `PHP/vendor/` and one stray `android/app/build` file are no longer tracked (files remain on disk; `.gitignore` updated), and the API repo now ignores `.idea/` and `*.bak`.
 
 - **Consolidation note (<= v1.17.29):** Historical entries before **v1.17.30** are now treated as the consolidated legacy log block; keep new session updates at v1.17.30+ in chronological order.
