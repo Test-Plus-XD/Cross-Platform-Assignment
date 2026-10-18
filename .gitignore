@@ -12,6 +12,7 @@ serviceAccountKey.json
 *.tmp
 *.tmp.*
 .bak
+*.bak
 UserInterfaceState.xcuserstate
 $RECYCLE.BIN/
 
@@ -77,5 +78,8 @@ testem.log
 .DS_Store
 Thumbs.db
 
-#Graphify Cache
-src/graphify-out/cache/
+# Graphify knowledge graph (generated output, local only; regenerate with /graphify)
+graphify-out/
+
+# PHP Composer dependencies (restore with `composer install` in PHP/)
+/PHP/vendor/
