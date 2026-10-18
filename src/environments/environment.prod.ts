@@ -9,8 +9,8 @@ export const environment = {
     appId: "1:937491674619:web:81eb1b44453eacdf3a475e",
     measurementId: "G-FQEV6WSNPC"
   },
-  algoliaAppId: 'V9HMGL1VIZ',
-  algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
+  algoliaAppId: 'TRL0C36KHD',
+  algoliaSearchKey: '424e93ece22d9079edc967eec5c0f551',
   apiUrl: 'https://vercel-express-api-alpha.vercel.app',
   placeholderImageUrl: 'https://placehold.co/600x400?text=No+Image',
   restaurantPlaceholderImages: [

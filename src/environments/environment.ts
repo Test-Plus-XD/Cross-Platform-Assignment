@@ -21,8 +21,8 @@ export const environment = {
     appId: "1:937491674619:web:81eb1b44453eacdf3a475e",
     measurementId: "G-FQEV6WSNPC"
   },
-  algoliaAppId: 'V9HMGL1VIZ',
-  algoliaSearchKey: '563754aa2e02b4838af055fbf37f09b5',
+  algoliaAppId: 'TRL0C36KHD',
+  algoliaSearchKey: '424e93ece22d9079edc967eec5c0f551',
   apiUrl: '',
   //apiUrl: 'https://vercel-express-api-alpha.vercel.app', // use proxy in dev
   placeholderImageUrl: 'https://firebasestorage.googleapis.com/v0/b/cross-platform-assignmen-b97cc.firebasestorage.app/o/Placeholder.jpg?alt=media&token=068887ee-1ac3-4107-a15a-210b268b5183',
